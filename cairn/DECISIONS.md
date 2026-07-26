@@ -147,6 +147,27 @@ under test).
 milestone carries its own dependency gate for `tune`. Suggests-only means the
 memory benchmark must skip gracefully where `lobstr` or `mlbench` is absent.
 
+### D-007 (2026-07-25): M02 adds tune, workflows, and parsnip to Imports — resolves the deferral D-006 recorded
+
+**Context:** D-006 recorded `rsample` as M01's only hard dependency and
+deliberately deferred `tune`, stating it "is added by the orchestration
+milestone that needs it". M02 is that milestone. Its per-fold step calls
+`tune::tune_grid()`, `select_best()`, `finalize_workflow()`, and `last_fit()`,
+the last three of which operate on `workflow` objects.
+
+**Decision:** `tune`, `workflows`, and `parsnip` join `rsample` in Imports.
+`parsnip` is declared because offering the model abstraction is gap G3 — the
+canonical article bypasses parsnip entirely, and closing that is part of the
+package's premise. Considered and rejected: declaring `tune` alone and letting
+`workflows`/`parsnip` arrive transitively (relies on a dependency's own
+dependency list, which carries no contract); additionally declaring `yardstick`
+and `dials` (likely reached only through tune's re-exports, so `R CMD check`
+would flag them unused).
+
+**Consequences:** The hard-dependency surface is settled for the package's core:
+rsample, tune, workflows, parsnip. `R CMD check` gets slower from M02 onward.
+Any further dependency takes its own gate and D-entry.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
