@@ -31,8 +31,9 @@ a gap found while writing returns to plan rather than being patched here.
 
 ## Acceptance criteria
 
-- [ ] AC1: the vignette builds under `devtools::build_vignettes()` and
-      `devtools::check()` is clean with it built (0 errors, 0 warnings).
+- [ ] AC1: the vignette builds from source during `devtools::check()` — its
+      "checking re-building of vignette outputs" step passes — and the check is
+      clean with it built (0 errors, 0 warnings).
 - [ ] AC2: it states plainly what to report instead of the fitted model's own
       performance and why, and shows the full path from design to final model as
       code the reader can run (IP3).
@@ -76,6 +77,8 @@ a gap found while writing returns to plan rather than being patched here.
 - 2026-07-26: the run shows `mtry` disagreeing across folds while `min_n` agrees, so the instability section reads both cases rather than only disagreement; its heading and prose are worded from the counts rather than asserting a direction.
 - 2026-07-26: T5 done. `_pkgdown.yml` gains an explicit `articles:` index (`pkgdown::check_pkgdown()`: no problems found); README gains a guide pointer under the tagline and a runnable end-to-end section replacing the stale "ships the resampling structure only" paragraph; NEWS.md gains the guide entry. The README snippet was executed before committing and returns the same numbers the vignette does.
 - 2026-07-26: all tasks checked; status set to review.
+- 2026-07-26: AC1 amended via mini gate — it named `devtools::build_vignettes()`, deprecated in devtools 2.5.0 and now refusing to run without `remotes`; it now names the vignette-rebuild step inside `devtools::check()`, which builds from the tarball in a clean session and is strictly stronger. Scope, goal, and every other criterion unchanged.
+- 2026-07-26: milestone-local Decisions corrected — the shipped grid is six candidates, not the probe's five; folds disagree on `mtry` and agree on `min_n`.
 - 2026-07-26: `devtools::check()` clean with vignettes built — 0 errors, 0 warnings, 0 notes, 4m42s total, of which the vignette rebuild is 13s. `document()` produced no diff.
 
 ## Decisions
@@ -90,5 +93,12 @@ a gap found while writing returns to plan rather than being patched here.
   using it in teaching material); `PimaIndiansDiabetes` (slowest of the three,
   and its documented data-quality problems would need a caveat that spends the
   guide's space on the dataset rather than on nested CV).
+
+- 2026-07-26 (T2, correcting the entry above): the grid the vignette ships is
+  six candidates, `expand.grid(mtry = c(2L, 5L, 8L), min_n = c(2L, 10L))`, not
+  the five-point grid the T1 runtime probe used. Under it the outer folds
+  disagree on `mtry` and agree on `min_n`, rather than disagreeing on both. The
+  choice of dataset and engine is unaffected, and so is the runtime: the
+  vignette rebuilds in 13s inside `devtools::check()`.
 
 ## Review
