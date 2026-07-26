@@ -12,7 +12,7 @@ _Last hygiene check: 2026-07-26 (audit pass after M06 — all checks green, tree
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
-| M07 | Parallel outer folds | blocked | M02 | high | milestones/M07-parallel-outer-folds.md |
+| M07 | Parallel outer folds | in-progress | M02 | high | milestones/M07-parallel-outer-folds.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
