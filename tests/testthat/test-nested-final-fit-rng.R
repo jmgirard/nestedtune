@@ -102,17 +102,17 @@ test_that("the fit does not depend on the ambient RNG state or kind", {
 })
 
 test_that("the caller's RNG state and kind survive the call untouched", {
-  skip_if_no_engines()
+  skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
   folds <- final_nested(d)
-  wf <- det_workflow(d)
+  wf <- stoch_workflow(d)
   ms <- reg_metrics()
 
   set.seed(404)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
-  invisible(nested_final_fit(wf, folds, grid = det_grid(), metrics = ms))
+  invisible(nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms))
 
   expect_identical(.Random.seed, before_seed)
   expect_identical(RNGkind(), before_kind)
@@ -120,7 +120,7 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   # Net-zero stated the way a user would notice it.
   set.seed(404)
   with_call <- {
-    invisible(nested_final_fit(wf, folds, grid = det_grid(), metrics = ms))
+    invisible(nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms))
     runif(3)
   }
   set.seed(404)
@@ -130,10 +130,10 @@ test_that("the caller's RNG state and kind survive the call untouched", {
 })
 
 test_that("the RNG state is restored when the call errors after the snapshot", {
-  skip_if_no_engines()
+  skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  wf <- det_workflow(d)
+  wf <- stoch_workflow(d)
 
   # The failure has to land inside the guarded region to test anything: the
   # argument checks all fire before the snapshot, so an error from one of them
@@ -156,7 +156,7 @@ test_that("the RNG state is restored when the call errors after the snapshot", {
   before_kind <- RNGkind()
 
   expect_error(
-    nested_final_fit(wf, folds, grid = det_grid(), metrics = reg_metrics()),
+    nested_final_fit(wf, folds, grid = stoch_grid(), metrics = reg_metrics()),
     "could not be"
   )
 
@@ -165,10 +165,10 @@ test_that("the RNG state is restored when the call errors after the snapshot", {
 })
 
 test_that("the kind is restored on the error path from a non-default kind", {
-  skip_if_no_engines()
+  skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  wf <- det_workflow(d)
+  wf <- stoch_workflow(d)
 
   folds <- local({
     v <- 3
@@ -190,24 +190,24 @@ test_that("the kind is restored on the error path from a non-default kind", {
   before_seed <- .Random.seed
   before_kind <- RNGkind()
 
-  expect_error(nested_final_fit(wf, folds, grid = det_grid()), "could not be")
+  expect_error(nested_final_fit(wf, folds, grid = stoch_grid()), "could not be")
 
   expect_identical(RNGkind(), before_kind)
   expect_identical(.Random.seed, before_seed)
 })
 
 test_that("a session with no RNG state is left with a valid one", {
-  skip_if_no_engines()
+  skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
   folds <- final_nested(d)
-  wf <- det_workflow(d)
+  wf <- stoch_workflow(d)
 
   saved <- .Random.seed
   on.exit(assign(".Random.seed", saved, envir = globalenv()), add = TRUE)
   rm(".Random.seed", envir = globalenv())
 
-  expect_no_error(nested_final_fit(wf, folds, grid = det_grid()))
+  expect_no_error(nested_final_fit(wf, folds, grid = stoch_grid()))
   expect_true(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
   expect_no_error(runif(1))
 })

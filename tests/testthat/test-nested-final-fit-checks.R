@@ -41,6 +41,83 @@ test_that("the shared argument checks are wired into the final fit", {
   expect_error(nested_final_fit(wf, folds, metrics = "rmse"), "metric_set")
 })
 
+test_that("the remaining shared abort branches fire through the final fit too", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  wf <- det_workflow(d)
+
+  # A design with the two required columns but no id column.
+  no_id <- data.frame(row.names = seq_len(nrow(folds)))
+  no_id$splits <- folds$splits
+  no_id$inner_resamples <- folds$inner_resamples
+  attr(no_id, "inside") <- attr(folds, "inside")
+  expect_error(nested_final_fit(wf, no_id, grid = det_grid()), "no id column")
+
+  # rsample only warns for an outer bootstrap, so the design is reachable.
+  suppressWarnings(
+    boot_folds <- rsample::nested_cv(
+      d,
+      outside = rsample::bootstraps(times = 3),
+      inside = rsample::vfold_cv(v = 3)
+    )
+  )
+  expect_error(nested_final_fit(wf, boot_folds), "cannot use a bootstrap")
+
+  expect_error(
+    nested_final_fit(wf, folds, grid = det_grid()[0, , drop = FALSE]),
+    "at least one candidate"
+  )
+})
+
+test_that("a tuned parameter with no grid column is refused by the final fit", {
+  skip_if_no_engines(stochastic = TRUE)
+  skip_if_not_installed("dials")
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = tune::tune()),
+      "ranger",
+      num.threads = 1
+    ),
+    "regression"
+  )
+  wf <- workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)
+
+  expect_error(
+    nested_final_fit(wf, folds, grid = data.frame(min_n = c(2L, 10L))),
+    "no column for"
+  )
+})
+
+test_that("a missing engine package is refused by the final fit", {
+  skip_if_no_engines()
+  # A real engine that is almost certainly absent; skipped rather than
+  # asserted if it happens to be installed.
+  skip_if(rlang::is_installed("kknn"))
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  missing_engine <- workflows::workflow(
+    y ~ x1 + x2 + x3 + x4,
+    parsnip::set_mode(
+      parsnip::set_engine(
+        parsnip::nearest_neighbor(neighbors = tune::tune()),
+        "kknn"
+      ),
+      "regression"
+    )
+  )
+
+  expect_error(
+    nested_final_fit(missing_engine, folds, grid = data.frame(neighbors = 3L)),
+    "not installed"
+  )
+})
+
 test_that("a design carrying no inner specification is refused", {
   skip_if_no_engines()
 

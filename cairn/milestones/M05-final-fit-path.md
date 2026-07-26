@@ -160,6 +160,8 @@ existing candidate.
 - 2026-07-26: T8 in progress — pkgdown row, NEWS entries, and DESIGN.md Function Families + Architecture written; `devtools::check()` still running, so T8 stays unchecked until it comes back clean.
 - 2026-07-26: RR02 triage — rec 1, 2, 3, 4, 8, 9, 10 applied; rec 5 (`fit_best()` oracle strand) and rec 12 (print pointer to fold selections) applied at the user's choice; rec 11 (`extract_` accessor for the stored tuning run) deferred to a candidate row, a documented slot sufficing pre-1.0; rec 6 (mlr3 oracle) and rec 7 (size-matched final tuning) rejected on RR02's own reasoning.
 
+- 2026-07-26: review fan-out — two lenses clean; [O] diff-bug found 6. F5 (90) and F4 (87) fixed on the branch: five unfired shared abort branches added, and the four deterministic-engine RNG tests moved to `ranger` as AC3 requires. F1 (78), F2 (65), F3 (52), F6 (48) logged; F1 became a candidate row. The AC5 evidence line overclaimed and is corrected.
+
 ## Decisions
 
 - 2026-07-26: RR02 (archived) answers Q1–Q8 and is the record; its verdicts bind
@@ -191,15 +193,23 @@ PR #5. Test counts are per-file runs of `devtools::test(filter = ...)`._
   selection, predictions, and the tuning run's metrics; `.Random.seed` and
   `RNGkind()` identical before and after on the success path, on the error
   path, and from a non-default ambient kind; a follow-up `runif(3)` matching a
-  run with the call absent. All on `ranger`, with a seed-sensitivity test
-  guarding against a vacuous pass.
+  run with the call absent. All seven tests on `ranger`, with a
+  seed-sensitivity test guarding against a vacuous pass. _(Four of them ran on
+  the deterministic engine until review finding F4; AC3 says `ranger`, so they
+  were moved rather than the criterion read charitably.)_
 - AC4 — `test-nested-final-fit-print.R`, 58 passing. `collect_metrics()`,
   `show_best()`, and `select_best()` all error on the class (two through
   defaults tune wrote, one through dispatch failure). Print states the estimate
   belongs to `nested_tune_grid()`; snapshot recorded.
-- AC5 — `test-nested-final-fit-checks.R`, 11 passing. Every shared check fired
-  through the new export, plus the three new branches: no `inside` attribute,
-  an `inside` that fails to re-evaluate, and one that evaluates to a non-rset.
+- AC5 — `test-nested-final-fit-checks.R`, 22 passing. Every `cli_abort()` branch
+  reachable through `nested_final_fit()` is fired: the three new ones (no
+  `inside` attribute, an `inside` that fails to re-evaluate, one that evaluates
+  to a non-rset) and all the shared ones — non-workflow, already-fitted
+  workflow, missing engine package, non-design, zero-row design, missing `id`
+  column, outer bootstrap, non-design grid, zero-row grid, unknown grid column,
+  tuned parameter with no grid column, non-`metric_set` metrics. _(An earlier
+  draft of this line claimed every shared check was fired when five branches
+  were not; review finding F5 caught the overclaim and the five were added.)_
 - AC6 — `devtools::check(document = TRUE)`: **Status OK, 0 errors, 0 warnings,
   0 notes** (3m 11s, `testthat.R` 110s). `devtools::document()` leaves `man/`
   and `NAMESPACE` clean. `_pkgdown.yml` carries a "The final model" section
@@ -244,6 +254,45 @@ projections; it states "every equality below is exact (`identical()` /
 `expect_identical()`) … no numeric tolerance is granted or needed". Every
 equality it binds was asserted with `expect_identical()` and held exactly, so
 there is no shortfall to accept.
+
+**Independent review.** Three fresh-context lenses. [S] blame-history: no
+findings — the diff is additive in `R/checks.R`, `R/reexports.R`, and
+`helper-orchestration.R`, touches only prose in `nested-tune-grid.R`, and the
+IP1 amendment is a recorded decision rather than a silent contradiction. [S]
+prior-review: no findings — the GitHub inline-comment probe returned empty, and
+no archived `## Review` finding from M01–M04 or binding criterion from RR01 is
+regressed. [O] diff-bug: six findings, scored by a fresh [S] scorer.
+
+Actioned (>= 80), both fixed on the branch:
+
+- **F5 (90)** — "AC5 ('every `cli_abort()` branch on the new path is fired by a
+  test') is met for the three new branches but not for five shared branches now
+  reachable through `nested_final_fit()`: `check_model_spec()`'s
+  missing-engine-package abort, `check_nested()`'s missing-`id`-column and
+  bootstrap-outer aborts, `check_grid()`'s zero-row-data-frame abort, and
+  `check_grid_params()`'s 'no column for tuned parameter' abort." Fixed: three
+  new tests fire all five. The scorer also flagged this review's own AC5
+  evidence line as an overclaim; it is corrected above.
+- **F4 (87)** — "the net-zero-exit, error-path-restoration, non-default-kind,
+  and fresh-session tests all use `det_workflow()`/`det_grid()` (PCA + `lm`),
+  not `ranger`, contrary to AC3's explicit 'asserted with `ranger`'." Fixed:
+  all seven tests in the file now use the stochastic engine. The finding notes
+  the assertions were not vacuous either way — this is the literal-text rule,
+  not a correctness hole.
+
+Logged below threshold, not actioned (4):
+
+- F1 (78) — no test discriminates whether `metrics` reaches `tune_grid()`,
+  because every fixture's metric set equals tune's regression default; a
+  dropped argument would leave the suite green.
+- F2 (65) — shared check messages name `nested_tune_grid()` and describe
+  per-fold fitting when raised from the final-fit path.
+- F3 (52) — `eval_inside_spec()`'s advice bullet asserts a scope diagnosis for
+  every re-evaluation error, including ones that are not scope problems.
+- F6 (48) — the no-number print guard probes only fixed-decimal renderings, so
+  a low-precision display of a tuning metric would evade it.
+
+F1 is the substantive one of the four and became a candidate row.
 
 **Consistency gate.** `cairn_validate.py` exit 0 — 16 PASS, 6 advisories OK,
 1 WARN (`sizing`: 12 acceptance criteria against the >7 tripwire; not split,
