@@ -192,6 +192,27 @@ refuses it exactly as it refuses rsample's, so G1 stays open until M02's
 orchestrator, which consumes the inner `rset`s rather than the top-level object.
 Pre-1.0 the name and class stay changeable without a deprecation cycle (D-003).
 
+### D-009 (2026-07-25): `cli` and `rlang` join Imports — amends the dependency set D-006 fixed
+
+**Context:** D-006 set M01's hard dependency surface at `rsample` alone. Writing
+the scaffold surfaced two gaps it did not anticipate. The r-package profile's
+`test-doctrine` slot requires user-facing conditions to be raised with
+`cli::cli_abort()` rather than base `stop()`. And D-008 committed to
+`nested_resamples(data, outside, inside)` mirroring `rsample::nested_cv()`,
+whose `outside`/`inside` are *unevaluated expressions* — inspecting and
+modifying them needs `rlang::is_call()`, `call_modify()`, and `caller_env()`.
+
+**Decision:** `cli` and `rlang` join `rsample` in Imports. Considered and
+rejected: `cli` alone, hand-rolling call inspection with base `substitute()` and
+`match.call()` (reimplements rlang and diverges from how rsample does the same
+job); neither, using base `stop()` (contradicts the profile's error-condition
+rule outright).
+
+**Consequences:** No practical weight is added — `rsample` already imports both,
+so they are installed for every user of this package regardless, and `R CMD
+check` time is unchanged. The hard surface for M01 is now rsample, cli, rlang;
+D-007's tune/workflows/parsnip additions for M02 are unaffected.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

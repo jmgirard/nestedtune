@@ -1,0 +1,26 @@
+Package: nestedtune
+Title: Nested Cross-Validation for Tidymodels
+Version: 0.0.0.9000
+Authors@R:
+    person("Jeffrey", "Girard", , "jeffgirard@gmail.com", role = c("aut", "cre"))
+Description: Builds and orchestrates nested cross-validation designs for the
+    tidymodels ecosystem. Provides a memory-lean nested resampling
+    constructor whose object size does not grow with the outer fold count,
+    producing splits identical to those of 'rsample'.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+URL: https://github.com/jmgirard/nestedtune
+BugReports: https://github.com/jmgirard/nestedtune/issues
+Depends:
+    R (>= 4.1)
+Imports:
+    cli,
+    rlang,
+    rsample
+Suggests:
+    lobstr,
+    mlbench,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

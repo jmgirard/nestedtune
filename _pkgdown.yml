@@ -1,0 +1,12 @@
+url: https://jmgirard.github.io/nestedtune/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Nested resampling
+  desc: >
+    Build a nested resampling design whose size does not grow by a copy of the
+    data for every outer fold.
+  contents:
+  - nested_resamples
