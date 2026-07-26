@@ -248,7 +248,7 @@ test_that("a subset holding no completed fold refuses to summarize", {
   expect_error(collect_metrics(res[1L, ]), "no outer fold completed")
 })
 
-test_that("dropping the .completed column sheds the results class", {
+test_that("dropping any of the per-fold columns sheds the results class", {
   skip_if_no_engines()
   d <- make_reg_data()
 
@@ -260,7 +260,18 @@ test_that("dropping the .completed column sheds the results class", {
   # Without .completed nothing can answer for the run, so the object stops
   # claiming it can rather than answering from a stale attribute.
   expect_false(inherits(res["id"], "nested_results"))
-  expect_s3_class(res[, c("id", ".completed")], "nested_results")
+
+  # M03 asserted here that keeping .completed was enough to keep the class.
+  # Corrected at M04: it is not. Such an object kept the class while every
+  # method that reads .metrics or .selected -- collect_metrics() on M03,
+  # print() on M04 -- failed on it. The class is kept only when the whole
+  # per-fold record and an id column survive.
+  expect_false(inherits(res[, c("id", ".completed")], "nested_results"))
+  expect_false(
+    inherits(res[, c(".metrics", ".selected", ".notes", ".completed")],
+             "nested_results")
+  )
+  expect_s3_class(res[1:2, ], "nested_results")
 })
 
 # The thrown-error branches at each stage (M03 review, F3). The fixtures above

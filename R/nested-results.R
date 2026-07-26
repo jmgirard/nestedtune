@@ -25,6 +25,7 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   out <- new_tbl(cols)
   attr(out, "grid") <- grid
   attr(out, "metrics") <- metrics
+  attr(out, "outer_label") <- outer_scheme_label(resamples)
   # IP4: what ran is recorded positively, never inferred from what is absent.
   attr(out, "folds_attempted") <- n
   attr(out, "folds_completed") <- sum(completed)
@@ -32,17 +33,37 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   out
 }
 
+# How the outer resampling scheme describes itself, for printing.
+#
+# rsample answers this through pretty(), but a nested design dispatches to a
+# method describing both levels at once. Stripping the nested classes leaves the
+# outer rset, which describes only itself. A design built somewhere else may
+# carry no pretty() method at all, and then the run simply has no scheme to
+# name -- printing drops the line rather than inventing one.
+outer_scheme_label <- function(resamples) {
+  outer <- resamples
+  class(outer) <- setdiff(class(outer), c("nested_resamples", "nested_cv"))
+  label <- tryCatch(pretty(outer), error = function(cnd) NULL)
+  if (!is.character(label) || length(label) != 1L) {
+    return(NULL)
+  }
+  label
+}
+
 # The counts are attributes, so a row subset carries them along untouched and
 # they go on describing the run the rows came from -- which is how a subset
 # holding no completed fold could still claim its parent's two. Recomputed here
 # so the object's own record of what ran stays true of the object holding it
-# (IP4). A subset that drops `.completed` is no longer a results object at all,
-# and says so by shedding the class rather than answering for a run it can no
-# longer describe.
+# (IP4). A subset that drops any of the columns a results object is defined by
+# is no longer one at all, and says so by shedding the class rather than
+# answering for a run it can no longer describe. The test is the whole set and
+# not `.completed` alone: a column subset keeping `.completed` but dropping
+# `.metrics` used to stay classed, and every method reading the missing columns
+# then failed on an object that still claimed to be a results object.
 #' @export
 `[.nested_results` <- function(x, i, j, ...) {
   out <- NextMethod()
-  if (!is.data.frame(out) || !".completed" %in% names(out)) {
+  if (!is.data.frame(out) || !has_results_columns(out)) {
     if (inherits(out, "nested_results")) {
       class(out) <- setdiff(class(out), "nested_results")
     }
@@ -53,9 +74,22 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   }
   attr(out, "grid") <- attr(x, "grid")
   attr(out, "metrics") <- attr(x, "metrics")
+  # The scheme label is not recomputable from the rows, and the rows kept are
+  # no longer the design it names -- "10-fold cross-validation" over three rows
+  # is exactly the claim IP4 forbids. It goes rather than travels.
+  attr(out, "outer_label") <- NULL
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
   out
+}
+
+# The columns every `nested_results` method reads: the per-fold record, plus at
+# least one id column to label the folds with. `fold_ids()` greps for the id
+# column rather than naming it, because a repeated design carries `id` and
+# `id2`, so the check greps too.
+has_results_columns <- function(x) {
+  required <- c(".metrics", ".selected", ".notes", ".completed")
+  all(required %in% names(x)) && any(grepl("^id", names(x)))
 }
 
 # A tibble is a data frame with three classes and compact row names. Building
@@ -122,7 +156,18 @@ collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
   if (!summarize) {
     return(per_fold)
   }
+  summarize_folds(per_fold)
+}
 
+# The averaging, with no conditions of its own.
+#
+# Split out from collect_metrics() so that print.nested_results() can show the
+# same numbers without the warning and the abort: a summary is a request for an
+# estimate and owes the caller a condition when the design fell short, while a
+# print is a description of the object and says the same thing in its header
+# instead. Both read the estimate off this one function, so they can never
+# disagree about it.
+summarize_folds <- function(per_fold) {
   keys <- paste(per_fold$.metric, per_fold$.estimator, sep = "\r")
   first <- !duplicated(keys)
 

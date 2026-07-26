@@ -1,5 +1,24 @@
 # nestedtune 0.0.0.9000
 
+* Nested results now print as a report on the run rather than as a table of
+  list columns. It names the outer resampling scheme, says how many folds were
+  requested and how many completed, names any fold that failed along with the
+  stage it failed at, and gives the estimate across the folds that contributed.
+
+* Printing shows what each outer fold's inner tuning selected, marking whether
+  the folds agreed on a parameter or disagreed about it and, when they
+  disagreed, listing every fold's choice. Disagreement means the tuning
+  procedure is unstable on this data, which averaging the metrics would hide.
+
+* Printing also states plainly that the estimate describes the tune-and-fit
+  procedure rather than a model you can deploy — the caveat now travels with
+  the number instead of living only in the documentation.
+
+* Printing never warns and never errors, including for a run where no outer
+  fold completed at all. `collect_metrics()` still does both: asking for a
+  summary of a design that did not run deserves a condition, while describing
+  an object does not.
+
 * An outer fold that fails no longer ends the run. The remaining folds still
   run, and the failed one is recorded rather than thrown away: `.completed`
   marks it, and `.notes` says which stage failed and why, carrying tune's own
