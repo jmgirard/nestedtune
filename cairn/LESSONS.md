@@ -13,4 +13,4 @@ _Hard cap: 50 lines._
 
 ## Lessons
 
-<!-- - Lesson, one line, with the milestone that learned it. (M07) -->
+- `cairn/references/INDEX.md` entries must be bullet lines (`- page.md — what it covers`); the references check matches only that form, so a table-formatted index reads as empty and every page reports "no INDEX.md line". (design interview, 2026-07-25)
