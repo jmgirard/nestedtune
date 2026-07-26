@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M06 merged and archived — `vignette("nested-cv")` ships the guide IP3 requires, with every prose number produced at build; D-017 added, M01's row pruned under terminal-row retention, no planned work left, 12 candidates, 4 lessons added)_
+_Last hygiene check: 2026-07-26 (audit pass after M06 — all checks green, tree clean, no code or tracking change since; nothing in flight, no planned work, 12 candidates, both RBs ingested and archived, GitHub inboxes empty)_
 
 ## Milestones
 
