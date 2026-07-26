@@ -111,6 +111,10 @@ Reducing what each worker must serialize → candidate row, added by this plan.
 
 - 2026-07-26: created by /milestone-plan; mirai backend, plotting remainder left as a candidate, and the benchmark-as-evidence bar all settled at the plan gate.
 - 2026-07-26: in-progress on `m07-parallel-outer-folds`, cut from `main` at ca0cc66.
+- 2026-07-26: implement gate — mirai 2.7.2 installed locally (user approved); daemon tests run on CI but `skip_on_cran()`; T3's ip-touching tripwire escalated to a brief at user request.
+- 2026-07-26: probe (mirai 2.7.2, bare RNG, no tune): mirai pre-seeds each daemon with a distinct L'Ecuyer-CMRG stream, so D-011's kind pin is load-bearing rather than theoretical — without it a worker draws from a different generator than the serial run.
+- 2026-07-26: probe: with the kind pin applied, draws are identical across 1, 2, and 3 daemons and identical to serial `lapply()`; `mirai_map()` leaves the caller's `.Random.seed` and kind untouched, including under an ambient `RNGkind("L'Ecuyer-CMRG")`.
+- 2026-07-26: probe caveat: daemon RNG state persists across `mirai_map()` calls, so an early probe read a later question's answer off the earlier one's residue; every reading above was re-taken against freshly started daemons. Bare `rnorm()` only — `tune_grid()` inside a daemon is not yet probed.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
