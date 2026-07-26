@@ -241,6 +241,42 @@ outer-level semantics decided at that point. The `nested_tune_*` prefix is now
 the orchestrator family's naming convention. Pre-1.0 all of this stays
 changeable without a deprecation cycle (D-003).
 
+### D-011 (2026-07-25): Per-fold RNG is two kind-pinned integer seeds drawn at entry, and `nested_tune_grid()` is net-zero on the caller's RNG state — settles the IP2 question RB01 escalated
+
+**Context:** M02's driver must satisfy IP2 (same seed → same result regardless
+of worker count or serial/parallel execution). Three schemes were on the table
+and the question was escalated as RB01 rather than settled in session. RR01
+verified by execution against `tune` 2.1.0 that tune >= 2.0.0 already derives
+its own per-resample L'Ecuyer-CMRG substreams *even under
+`control_grid(allow_par = FALSE)`*, restores the caller's state and kind
+exactly, and that `last_fit()` alone consumes the ambient stream. A fold's
+entire stochastic outcome is therefore a function of exactly two RNG states.
+
+**Decision:** At entry `nested_tune_grid()` draws `2 * n_folds` seeds in one
+`sample.int()` call from the caller's state and assigns them by fold position;
+each fold seeds its tuning step and its outer fit separately with the RNG kind
+triple pinned (`kind = "Mersenne-Twister"`, `normal.kind = "Inversion"`,
+`sample.kind = "Rejection"`). Per-fold seeds are exposed on the results object
+and the hand-replication contract is documented. On exit the caller's
+`.Random.seed` and `RNGkind()` triple are restored exactly. Considered and
+rejected: L'Ecuyer-CMRG streams via `parallel::nextRNGStream()` (RR01 verified
+tune re-seeds from whatever state it finds, so provable stream independence
+never reaches tune's substreams — it buys only a theoretical residue, for a
+gated dependency and generator-kind surgery in an exported function);
+inheriting the caller's stream (fails IP2 by construction once folds reorder).
+
+**Consequences:** The kind pin is what makes a fresh parallel worker produce
+the same numbers as a serial run under a caller who set a non-default
+`RNGkind()` — the one latent defect in the unrefined scheme. Net-zero exit
+deliberately diverges from M01's `nested_resamples()`, which leaves the stream
+where `rsample::nested_cv()` would: the delegate being mirrored differs —
+rsample's constructor advances the stream, tune's estimator restores it. Two
+consecutive calls without an intervening `set.seed()` return identical results,
+as `tune_grid()` 2.x already does. IP2 binds only randomness flowing through
+R's RNG; engines that bypass it (kernlab's SVM, keras/torch) are outside its
+reach under any R-side scheme. The verified probe table and full reasoning are
+in `cairn/reviews/archive/RR01-rng-streams-outer-folds.md`.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
