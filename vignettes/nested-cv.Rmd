@@ -39,6 +39,20 @@ library(rsample)
 library(workflows)
 ```
 
+```{r deps, include = FALSE}
+has_ranger <- requireNamespace("ranger", quietly = TRUE)
+```
+
+```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+cat(
+  "The worked example below fits random forests with the **ranger** package,",
+  "which is not installed here, so the rest of this guide has been skipped.",
+  "Install ranger and rebuild to see it.\n"
+)
+
+knitr::knit_exit()
+```
+
 ## The design
 
 `nested_resamples()` builds the two-level structure: an outer resampling, with

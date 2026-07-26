@@ -86,6 +86,7 @@ a gap found while writing returns to plan rather than being patched here.
 
 - 2026-07-26: F1, F2, F4, F5 fixed on the branch; re-verified from scratch — check Status OK (0/0/0, vignette rebuild 10s/11s), 943 tests pass, `pkgdown::check_pkgdown()` clean, prose scan 0 hand-typed numbers. Status back to review; every AC ticked against its own recorded evidence.
 - 2026-07-26: F3 (78) and F6 (45) scored below the action threshold — logged in the Review section and raised as ROADMAP candidates, not fixed here.
+- 2026-07-26: user override at the merge gate — F3 fixed on the branch despite scoring below the action threshold, at the user's explicit direction. Guard verified by knitting a copy with the condition forced false: knitting stops after the notice (75 lines against 423), no error, nothing downstream evaluated. Re-verified after: check Status OK (0/0/0, vignette rebuild 13s/14s), `pkgdown::check_pkgdown()` clean, prose scan 0 hand-typed numbers.
 
 ## Decisions
 
@@ -188,8 +189,13 @@ Logged, below the action threshold, not fixed here:
 - **F3 (78) — the vignette uses the `ranger` engine unconditionally** though
   `ranger` is only in Suggests, unlike this repo's roxygen (`@examplesIf`) and
   tests (`skip_if_not_installed`). Under CRAN's noSuggests check flavor the
-  vignette rebuild would error, which a local check cannot surface. Raised as a
-  ROADMAP candidate.
+  vignette rebuild would error, which a local check cannot surface. **Fixed at
+  the user's direction at the merge gate**, overriding the score: a
+  `requireNamespace()` check with `knitr::knit_exit()` now ends the guide after
+  a short notice when `ranger` is absent, so the rebuild degrades instead of
+  erroring. Verified by forcing the condition false — knitting stops after the
+  notice, 75 lines against 423, no error. The ROADMAP candidate is dropped as
+  done rather than left standing.
 - **F6 (45) — the README's guide URL points at an undeployed site.** The pkgdown
   site root 404s, there is no `gh-pages` branch and no deploy workflow. AC5 as
   written requires `check_pkgdown()` to pass and the README to link to the
