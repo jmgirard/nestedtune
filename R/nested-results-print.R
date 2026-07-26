@@ -141,33 +141,67 @@ selection_params <- function(selected) {
 # One string per completed fold, in fold order. A fold with no value for this
 # parameter holds its place rather than shifting the rest, so position still
 # identifies the fold that chose each value.
+#
+# `NA_character_` here means "this fold has no value for this parameter" and
+# nothing else. A fold that genuinely selected `NA` renders the string "NA" and
+# counts as a value: collapsing the two would let a missing column read as a
+# selection, and a selection read as a missing column.
 selection_values <- function(selected, param) {
-  values <- vapply(selected, function(s) {
+  vapply(selected, function(s) {
     if (is.null(s) || !param %in% names(s)) {
       return(NA_character_)
     }
-    as.character(s[[param]][[1L]])
+    value <- s[[param]][[1L]]
+    # A list-valued selection is not something select_best() produces, but this
+    # method promises never to raise, and vapply() would abort on a length-2
+    # result rather than print anything at all.
+    if (length(value) != 1L) {
+      return(paste(format(value), collapse = ", "))
+    }
+    if (is.na(value)) {
+      return("NA")
+    }
+    as.character(value)
   }, character(1))
-  values[is.na(values)] <- "--"
-  values
 }
 
 # Unanimity collapses to the single value the folds agreed on; disagreement
 # prints every fold's choice. Both say so in words rather than only through the
 # bullet symbol, which is a tick or an exclamation mark depending on whether
 # the terminal draws unicode.
+#
+# Agreement is judged over the folds that have a value, never over the whole
+# column. A parameter only some folds carry would otherwise read as folds
+# disagreeing about it -- and a false instability flag is the most expensive
+# thing this method can print, since surfacing real instability is why it
+# exists. How many folds had no value is stated rather than swallowed.
 print_one_parameter <- function(param, values, n) {
-  if (length(unique(values)) == 1L) {
-    value <- values[[1L]]
-    if (n == 1L) {
+  present <- values[!is.na(values)]
+  absent <- sum(is.na(values))
+
+  if (length(present) == 0L) {
+    cli::cli_bullets(c(i = "{param}: no completed fold recorded a value."))
+    return(invisible(NULL))
+  }
+
+  if (length(unique(present)) == 1L) {
+    value <- present[[1L]]
+    chose <- length(present)
+    if (absent > 0L) {
+      cli::cli_bullets(c(
+        v = "{param}: {value} (all {chose} fold{?s} that chose it agree; \\
+             {absent} recorded no value)"
+      ))
+    } else if (n == 1L) {
       cli::cli_bullets(c(v = "{param}: {value} (the only completed fold)"))
     } else {
       cli::cli_bullets(c(v = "{param}: {value} (all {n} completed folds agree)"))
     }
     return(invisible(NULL))
   }
+
   shown <- cli::cli_vec(
-    values,
+    ifelse(is.na(values), "--", values),
     list("vec-sep" = ", ", "vec-last" = ", ", "vec-trunc" = 12)
   )
   cli::cli_bullets(c("!" = "{param}: {shown} (folds disagree)"))
@@ -186,7 +220,7 @@ print_estimate <- function(x) {
 
   # The fold count sits in the heading rather than beside each number, so a
   # partial run cannot be read as a whole one however far down the reader gets.
-  cli::cli_h2("Estimate ({completed} of {requested} outer folds)")
+  cli::cli_h2("Estimate ({completed} of {requested} outer fold{?s})")
   summarized <- summarize_folds(per_fold_metrics(x))
   for (i in seq_len(nrow(summarized))) {
     metric <- summarized$.metric[[i]]

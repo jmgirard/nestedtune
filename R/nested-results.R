@@ -54,13 +54,16 @@ outer_scheme_label <- function(resamples) {
 # they go on describing the run the rows came from -- which is how a subset
 # holding no completed fold could still claim its parent's two. Recomputed here
 # so the object's own record of what ran stays true of the object holding it
-# (IP4). A subset that drops `.completed` is no longer a results object at all,
-# and says so by shedding the class rather than answering for a run it can no
-# longer describe.
+# (IP4). A subset that drops any of the columns a results object is defined by
+# is no longer one at all, and says so by shedding the class rather than
+# answering for a run it can no longer describe. The test is the whole set and
+# not `.completed` alone: a column subset keeping `.completed` but dropping
+# `.metrics` used to stay classed, and every method reading the missing columns
+# then failed on an object that still claimed to be a results object.
 #' @export
 `[.nested_results` <- function(x, i, j, ...) {
   out <- NextMethod()
-  if (!is.data.frame(out) || !".completed" %in% names(out)) {
+  if (!is.data.frame(out) || !has_results_columns(out)) {
     if (inherits(out, "nested_results")) {
       class(out) <- setdiff(class(out), "nested_results")
     }
@@ -78,6 +81,15 @@ outer_scheme_label <- function(resamples) {
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
   out
+}
+
+# The columns every `nested_results` method reads: the per-fold record, plus at
+# least one id column to label the folds with. `fold_ids()` greps for the id
+# column rather than naming it, because a repeated design carries `id` and
+# `id2`, so the check greps too.
+has_results_columns <- function(x) {
+  required <- c(".metrics", ".selected", ".notes", ".completed")
+  all(required %in% names(x)) && any(grepl("^id", names(x)))
 }
 
 # A tibble is a data frame with three classes and compact row names. Building

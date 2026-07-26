@@ -178,6 +178,94 @@ test_that("print returns its input invisibly and is registered for S3 dispatch",
   )
 })
 
+test_that("a subset missing the per-fold record prints as a plain tibble", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # Keeping .completed alone once kept the class, and print() then read
+  # columns that were gone: two "unknown or uninitialised column" warnings
+  # and an "invalid 'times' argument" error, on a method that promises neither.
+  thin <- res[, c("id", ".completed")]
+  expect_false(inherits(thin, "nested_results"))
+  expect_no_error(utils::capture.output(print(thin)))
+  expect_no_warning(utils::capture.output(print(thin)))
+})
+
+test_that("a single completed fold reads in the singular", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  expect_match(print_text(res[1L, ]), "Estimate (1 of 1 outer fold)", fixed = TRUE)
+})
+
+test_that("a parameter only some folds chose is not reported as disagreement", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # One fold carries no value for num_comp. The folds that did choose agree,
+  # so flagging instability here would be a false alarm about the very thing
+  # this method exists to surface.
+  partial_param <- res
+  partial_param$.selected[[2L]] <-
+    partial_param$.selected[[2L]][, ".config", drop = FALSE]
+  txt <- print_text(partial_param)
+
+  expect_no_match(txt, "disagree")
+  expect_match(txt, "all 2 folds that chose it agree", fixed = TRUE)
+  expect_match(txt, "1 recorded no value", fixed = TRUE)
+})
+
+test_that("a fold that selected NA is a value, not an absent one", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  na_selected <- res
+  na_selected$.selected[[1L]]$num_comp <- NA_integer_
+  txt <- print_text(na_selected)
+
+  # NA is a choice this fold made and "--" means the fold had no column at
+  # all; rendering both the same way would make each unreadable as the other.
+  expect_match(txt, "num_comp: NA, 3, 3 (folds disagree)", fixed = TRUE)
+})
+
+test_that("a list-valued selection prints instead of aborting", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # Not something select_best() produces, but the method promises never to
+  # raise and vapply() would abort on a length-2 result before printing at all.
+  listy <- res
+  listy$.selected[[1L]]$num_comp <- list(1:2)
+
+  expect_no_error(print_text(listy))
+  expect_match(print_text(listy), "1, 2", fixed = TRUE)
+})
+
 test_that("printed output holds its shape", {
   skip_if_no_engines()
   d <- make_reg_data()
