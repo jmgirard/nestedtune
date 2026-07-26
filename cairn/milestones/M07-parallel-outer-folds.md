@@ -114,11 +114,11 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - [x] T2: Daemon-detection helper (M07-D1) that also reports the branch a run
       took, so tests can assert it (BC1); unit tests for absent,
       below-threshold, active.
-- [ ] T3: Replace the `lapply()` at `R/nested-tune-grid.R:157` with a
+- [x] T3: Replace the `lapply()` at `R/nested-tune-grid.R:157` with a
       dispatcher mapping `nested_fold_fit()` via `mirai::mirai_map()` + a plain
       blocking collect, never `.stop` (BC5); `lapply()` otherwise. Seeds stay
       drawn at entry by fold position.
-- [ ] T4: Classify collected elements by fold-record shape (BC3, M07-D2);
+- [x] T4: Classify collected elements by fold-record shape (BC3, M07-D2);
       `nanonext::nng_error()` for `errorValue` text, `"worker"` stage label;
       rethrow `miraiInterrupt` (BC4); pre-flight namespace round-trip (rec 8).
 - [ ] T5: Parallel test file, daemons primed under pkgload (rec 9): BC1, BC2,
@@ -146,6 +146,11 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - 2026-07-26: amendment compressed Scope, Tasks, and the milestone-local Decisions in one pass each to fit the 149-line cap; body now at 149/149 with no headroom.
 - 2026-07-26: T1 done — `mirai (>= 2.4.0)` and `pkgload` into Suggests, D-018 records the backend choice, the >= 2 threshold, and the daemons-must-load-it constraint; suite 943 pass / 0 fail.
 - 2026-07-26: T2 done — `R/parallel.R` holds detection (`mirai_workers()`, `use_parallel()`, threshold >= 2) and an out-of-band dispatch record, since putting the branch on the result object would break the very identity BC1 also demands; both guards proved by inversion; suite 957 pass / 0 fail.
+- 2026-07-26: T3+T4 landed together — the dispatcher cannot return safely without classification, so splitting the commit would have put a knowingly unsafe collect on the branch; tasks stay separately ticked.
+- 2026-07-26: T3 done — `dispatch_folds()` maps per-fold payloads via `mirai_map()` + a plain `collect_mirai()` (never `.stop`, BC5), `lapply()` below threshold; the worker resolves the namespace by name rather than carrying it, since a captured namespace silently degrades to the global environment on a daemon (RR03 Q5).
+- 2026-07-26: T4 done — `classify_fold_result()` validates fold-record shape positively; `failed_fold()` gained an optional `message` for the path where no condition exists. Inverting to the natural `inherits(x, "condition")` implementation reddens so many tests the run aborts, and dropping the interrupt branch reddens BC4's test.
+- 2026-07-26: deviation from RR03 rec 1 — `nanonext::nng_error()` is reached via `getExportedValue()` guarded by `tryCatch` rather than a hard `::` call, because nanonext is mirai's dependency and not ours; declaring it would need its own dependency gate for a note-text nicety. BC3 is unaffected, requiring only that the stage name the worker.
+- 2026-07-26: suite 980 pass / 0 fail; `document()` produces no diff.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

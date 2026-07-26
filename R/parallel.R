@@ -51,3 +51,107 @@ reset_dispatch_record <- function() {
   the$last_dispatch <- NULL
   invisible(NULL)
 }
+
+# Run every fold, serially or across daemons.
+#
+# `payloads` is one self-contained list per fold -- split, inner rset, and the
+# fold's two seeds. Mapping over per-fold payloads rather than passing the whole
+# design as a shared argument means a worker receives only the fold it runs.
+#
+# The seeds are already drawn and assigned by position before this is called
+# (D-011), so nothing here draws, and a fold's result cannot depend on where or
+# when it runs. That is the whole reason the loop is safe to parallelize.
+dispatch_folds <- function(payloads, object, grid, metrics) {
+  if (!use_parallel()) {
+    record_dispatch("serial")
+    return(lapply(payloads, fold_task, object = object, grid = grid, metrics = metrics))
+  }
+
+  record_dispatch("parallel")
+  mapped <- mirai::mirai_map(
+    .x = payloads,
+    .f = fold_task,
+    .args = list(object = object, grid = grid, metrics = metrics)
+  )
+  # A plain blocking collect: results in place, failures as values. mirai's
+  # `.stop` would abort the whole run on the first failing fold and discard the
+  # completed ones -- exactly what M03 exists to prevent.
+  collected <- mirai::collect_mirai(mapped)
+  lapply(collected, classify_fold_result)
+}
+
+# What a worker handed back, turned into a fold record.
+#
+# Classification is positive: a fold record is recognised by its shape, and
+# everything else is a worker failure. The two shapes mirai can return instead
+# defeat the obvious test -- neither `miraiError` nor the bare `errorValue` from
+# a daemon that died inherits "condition", and `conditionMessage()` raises on
+# the latter rather than describing it (RR03 Q4, verified). Asking "is this an
+# error?" therefore mistakes both for successes; asking "is this a fold record?"
+# cannot.
+classify_fold_result <- function(x) {
+  if (is_fold_record(x)) {
+    return(x)
+  }
+  if (inherits(x, "miraiInterrupt")) {
+    # Not a fold failure: the user stopped the run. Recording it as one would
+    # report a cancelled run as a design that executed and partly failed (IP4).
+    cli::cli_abort(
+      c(
+        "Run interrupted while waiting on outer folds.",
+        i = "No results are returned; the caller's RNG state is restored."
+      ),
+      class = "nestedtune_interrupted"
+    )
+  }
+  failed_fold("worker", NULL, NULL, message = worker_failure_message(x))
+}
+
+is_fold_record <- function(x) {
+  is.list(x) &&
+    is.logical(x$completed) &&
+    length(x$completed) == 1L &&
+    all(c("metrics", "selected", "notes") %in% names(x))
+}
+
+worker_failure_message <- function(x) {
+  if (isTRUE(try(mirai::is_mirai_error(x), silent = TRUE))) {
+    # A miraiError does carry the task's own error message.
+    return(conditionMessage(x))
+  }
+  if (isTRUE(try(mirai::is_error_value(x), silent = TRUE))) {
+    # A bare errorValue is an integer code. nanonext names it ("19 | Connection
+    # reset"); it always ships with mirai, but it is not a declared dependency
+    # of this package, so it is reached only if present and the code stands
+    # alone otherwise.
+    named <- tryCatch(
+      getExportedValue("nanonext", "nng_error")(as.integer(x)),
+      error = function(cnd) NULL
+    )
+    return(paste0(
+      "The worker failed with mirai error value ", as.integer(x),
+      if (!is.null(named)) paste0(" (", named, ")") else ""
+    ))
+  }
+  "The worker returned something that is not a fold record."
+}
+
+# One fold, as it runs on a worker.
+#
+# The namespace is resolved by name rather than captured: a closure carrying the
+# nestedtune namespace as its environment loses that environment when a daemon
+# cannot reconstruct it, silently falling back to the global environment where
+# none of the package's internals resolve (RR03 Q5). Looking the namespace up
+# here either works or fails loudly, and the pre-flight check makes it the
+# latter before any fold is dispatched.
+fold_task <- function(payload, object, grid, metrics) {
+  ns <- asNamespace("nestedtune")
+  ns$nested_fold_fit(
+    split = payload$split,
+    inner = payload$inner,
+    seeds = payload$seeds,
+    object = object,
+    grid = grid,
+    metrics = metrics
+  )
+}

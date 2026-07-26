@@ -154,16 +154,17 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
 
   seeds <- sample.int(.Machine$integer.max, 2L * n)
 
-  folds <- lapply(seq_len(n), function(i) {
-    nested_fold_fit(
+  # One self-contained payload per fold. Each carries only what that fold needs,
+  # so a worker is never sent the rest of the design.
+  payloads <- lapply(seq_len(n), function(i) {
+    list(
       split = resamples$splits[[i]],
       inner = resamples$inner_resamples[[i]],
-      seeds = seeds[c(2L * i - 1L, 2L * i)],
-      object = object,
-      grid = grid,
-      metrics = metrics
+      seeds = seeds[c(2L * i - 1L, 2L * i)]
     )
   })
+
+  folds <- dispatch_folds(payloads, object = object, grid = grid, metrics = metrics)
 
   out <- new_nested_results(resamples, folds, seeds, grid, metrics)
   warn_failed_folds(out, call = rlang::current_env())
@@ -247,11 +248,16 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
 # A fold that did not finish. `result` is whatever tune handed back before
 # giving up, which is where the actual cause lives -- our own note names the
 # stage, tune's notes say what happened (GP1).
-failed_fold <- function(stage, cnd, result) {
-  message <- if (is.null(cnd)) {
-    "The outer fit produced no metrics."
-  } else {
-    conditionMessage(cnd)
+failed_fold <- function(stage, cnd, result, message = NULL) {
+  # `message` is supplied only by the worker-failure path, where there is no
+  # condition to read: mirai's failure values are not conditions and one of them
+  # raises on conditionMessage() (M07-D2).
+  if (is.null(message)) {
+    message <- if (is.null(cnd)) {
+      "The outer fit produced no metrics."
+    } else {
+      conditionMessage(cnd)
+    }
   }
   list(
     completed = FALSE,
