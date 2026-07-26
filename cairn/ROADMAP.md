@@ -1,14 +1,14 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-25 (M01 merged and archived — the package now has source; 6 candidates, M02 ready to plan; all checks green)_
+_Last hygiene check: 2026-07-26 (M02 merged and archived — the nested loop runs end to end; RB01/RR01 archived, 5 lessons captured, 7 candidates, nothing planned; all checks green)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M01 | Memory-lean nested resampling structure | done | — | normal | milestones/archive/M01-memory-lean-nested-resampling.md |
-| M02 | Outer-loop orchestration | review | M01 | high | milestones/M02-outer-loop-orchestration.md |
+| M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
