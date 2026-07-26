@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M05 merged and archived — `nested_final_fit()` ships the deployable model as its own object; IP1 narrowed by D-015 and the RNG seed scope extended by D-016; M06 is the only planned work, 11 candidates, 4 lessons added)_
+_Last hygiene check: 2026-07-26 (M06 merged and archived — `vignette("nested-cv")` ships the guide IP3 requires, with every prose number produced at build; D-017 added, M01's row pruned under terminal-row retention, no planned work left, 12 candidates, 4 lessons added)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M01 | Memory-lean nested resampling structure | done | — | normal | milestones/archive/M01-memory-lean-nested-resampling.md |
 | M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
-| M06 | A guide that says what to report | review | M05 | normal | milestones/M06-nested-cv-vignette.md |
+| M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
