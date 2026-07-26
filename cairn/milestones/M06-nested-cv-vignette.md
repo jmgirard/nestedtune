@@ -1,10 +1,11 @@
 # M06: A guide that says what to report
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M05
 - **Driving RR:** —
 - **Principles touched:** IP3, GP3
+- **Branch:** `m06-nested-cv-vignette`
 
 ## Goal
 
@@ -67,6 +68,7 @@ a gap found while writing returns to plan rather than being patched here.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: implement started; branch `m06-nested-cv-vignette` cut from main. Runtime probe of the full path (5x5 design, 5-candidate ranger grid): ~9s on `mtcars`, ~40s on `mlbench::BostonHousing`; outer folds disagree on both.
 
 ## Decisions
 
