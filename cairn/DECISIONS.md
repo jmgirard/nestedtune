@@ -99,6 +99,54 @@ rather than case by case. A process discipline can be traded with stated
 justification; an artifact property cannot. Recorded because the asymmetry is
 otherwise readable as an oversight.
 
+### D-005 (2026-07-25): Building a resampling structure is in scope where it is memory-lean — narrows D-002's boundary and the DESIGN.md exclusion
+
+**Context:** DESIGN.md's Purpose & Scope listed "**Building the resampling
+structure** — `rsample::nested_cv()` does that" as explicitly not nestedtune's
+job, and D-002 rejected "staying at the splits layer and only fixing memory" as
+the contract boundary while keeping it "a candidate in its own right".
+Investigation for M01 found the memory blow-up is not inherent to rsample's
+`rsplit` design: `nested_cv()`'s helper `inside_resample()` calls
+`as.data.frame(src)`, materializing each outer fold's analysis set, so cost
+scales with the *outer* fold count. A lean structure is buildable from public
+rsample API (`make_splits()` + `manual_rset()`) with no fork and no compiled code.
+
+**Decision:** nestedtune may build and export a nested resampling structure,
+scoped to the memory-lean construction rsample does not provide. This narrows,
+and does not overturn, D-002: orchestrating the outer loop (G1–G3, G5) remains
+the contract, and this is an addition beside it, not a replacement. Considered
+and rejected: keeping the exclusion and building the lean structure only inside
+the orchestrator (leaves M01 with no user-visible deliverable and presupposes a
+milestone not yet planned); upstream-first, waiting on rsample#283 (open since
+2022-03-17 with "it isn't going to be absolute top priority" on the record).
+
+**Consequences:** The DESIGN.md exclusion is corrected in place to say what is
+now true. nestedtune duplicates a small part of rsample deliberately, which the
+"delegate rather than reimplement" convention otherwise disfavours — the
+justification is that the delegated version is the defect. Reporting the
+diagnosis upstream is not foreclosed; it is a ROADMAP candidate.
+
+### D-006 (2026-07-25): Dependency set for M01 — rsample hard, benchmarking tools dev-only
+
+**Context:** The universal rule is that dependency changes go through a question
+gate and are recorded here. nestedtune has no DESCRIPTION yet, so M01 sets the
+initial surface. D-002 already commits to `tune` as the tuning engine, but M01
+does not use it.
+
+**Decision:** `rsample` in Imports. `testthat`, `lobstr`, and `mlbench` in
+Suggests — `lobstr` because the memory measurement depends on accounting for
+shared references, which `utils::object.size()` does not do, and `mlbench` for
+`LetterRecognition`, the dataset rsample#283's own measurements use. `tune` is
+deliberately **not** recorded yet; it is added by the orchestration milestone
+that needs it. Considered and rejected: recording `tune` now (pulls a heavy
+dependency into a milestone that never calls it); testthat-only with
+`object.size()` and synthetic data (cheapest, but cannot measure the property
+under test).
+
+**Consequences:** `R CMD check` stays fast through M01. The orchestration
+milestone carries its own dependency gate for `tune`. Suggests-only means the
+memory benchmark must skip gracefully where `lobstr` or `mlbench` is absent.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

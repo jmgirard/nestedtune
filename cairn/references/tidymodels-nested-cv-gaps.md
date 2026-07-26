@@ -36,7 +36,7 @@ Tags: `fix-here` (this package's job) · `candidate` (worth a ROADMAP row, not y
 | G1 | Nested resampling objects cannot be consumed by the tuning layer | `tune` hard-aborts on class `nested_cv` (`R/checks.R:19-21`) | `fix-here` |
 | G2 | No orchestration of the nested loop | User writes the outer loop, inner tuning, and collection by hand, per the article | `fix-here` |
 | G3 | No parsnip/workflows path through a nested design | Article fits `kernlab::ksvm` directly, bypassing the model abstraction entirely | `fix-here` |
-| G4 | Memory scales linearly with folds | rsample#283 open since 2022; reported 13× object-size blow-up at 5×2 nesting | `candidate` |
+| G4 | Memory scales with the **outer** fold count | rsample#283 open since 2022; 13× object-size blow-up measured on a 10×10 scheme _(corrected 2026-07-25: the reprex read "5×2", but it passed `vfold_cv(times = 5)`/`(times = 2)` and `vfold_cv()` has no `times` argument — in 2022 it fell into `...` and both levels defaulted to `v = 10`; current rsample errors on that call via `check_dots_empty()`)_ | `fix-here` (M01) |
 | G5 | No collected-results object or summarization idiom | Article ends at `summary(results$RMSE)`; nothing comparable to `collect_metrics()` | `fix-here` |
 | G6 | No variance estimation or inference on the nested estimate | Absent everywhere; the underlying statistics are contested in the literature | `candidate` |
 | G7 | Upstream intends to close G1–G3 but has stalled | tune#969 open; prototype branch `nested` untouched since 2024-09-13 (~22 months) | `candidate` |
@@ -45,7 +45,7 @@ Tags: `fix-here` (this package's job) · `candidate` (worth a ROADMAP row, not y
 ## Disposition
 
 - **G1, G2, G3, G5** — the core premise of this package; they define the contract boundary settled in the design interview and land in `DESIGN.md` Purpose & Scope.
-- **G4** — a ROADMAP candidate row. It is upstream's defect, but a package that orchestrates nested resampling inherits its consequences, and a design that avoids materializing every inner split is a real differentiator.
+- **G4** — planned as M01 _(promoted from a candidate row, 2026-07-25)_. The cause is settled: `nested_cv()`'s helper `inside_resample()` calls `as.data.frame(src)`, materializing each outer fold's analysis set, so the inner `rset` references that copy rather than the original data. Cost is therefore V materialized analysis frames plus index vectors — driven by the outer fold count and nearly flat in the inner count, which is what the issue's own measurements show (10 outer × 5 bootstraps = 11.9×; 10 × 100 = 38.0×, the extra ≈26× being bootstrap index vectors). Not inherent to `rsplit`, and fixable from public rsample API (`make_splits()` + `manual_rset()`) without a fork. Scope consequence recorded as D-005.
 - **G6** — a ROADMAP candidate row, deliberately not committed to. The statistics are unsettled; shipping an interval here without oracle backing would violate the oracle convention in `DESIGN.md`.
 - **G7** — drives the coordination action chosen at the design interview: ask on tune#969 about the prototype's status and whether a companion package is welcome, before scoping the first milestone. Recorded as a D-entry when the answer arrives.
 - **G8** — forces a rename before any code is written. Recorded as a D-entry with the chosen name.
@@ -56,4 +56,4 @@ No rule was produced by this page, so no test locks it.
 
 - Whether the tune `nested` prototype is dormant by intent or by capacity, and whether a companion package is welcome — unasked as of 2026-07-25; the question is queued for tune#969 — observed 2026-07-25.
 - Whether the tune `nested` branch's prototype covers G2/G3/G5 or only G1 — branch not read beyond its commit metadata — observed 2026-07-25.
-- Whether rsample#283's memory behavior is inherent to the `rsplit` design or fixable within it — issue comments not read in full — observed 2026-07-25.
+- ~~Whether rsample#283's memory behavior is inherent to the `rsplit` design or fixable within it~~ — **settled 2026-07-25**: not inherent; caused by `inside_resample()`'s `as.data.frame()`. Issue and all three comments read in full; `R/nested_cv.R`, `R/misc.R` (`make_splits`), and `R/manual.R` (`manual_rset`) read at `main` — observed 2026-07-25. See the G4 disposition above.
