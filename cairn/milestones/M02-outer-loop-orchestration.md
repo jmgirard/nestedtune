@@ -107,10 +107,10 @@ planned once this milestone's results object exists and its real shape is known.
 
 ## Tasks
 
-- [ ] T1 — Add `tune (>= 2.0.0)`, `workflows`, and `parsnip` to DESCRIPTION
+- [x] T1 — Add `tune (>= 2.0.0)`, `workflows`, and `parsnip` to DESCRIPTION
       Imports per D-007 and the RR01 version floor, and `ranger` to Suggests for
-      the stochastic-engine tests; confirm `R CMD check` reports no unused
-      declared dependency.
+      the stochastic-engine tests. (The unused-declared-dependency confirmation
+      needs the code that uses them, so it runs at T9.)
 - [ ] T2 — Write the failing oracle tests first: the reference-loop equivalence
       (AC2/AC16, deterministic and stochastic variants, seeds derived from the
       documented contract) and the single-candidate-grid invariant (AC3/AC17,
@@ -133,7 +133,7 @@ planned once this milestone's results object exists and its real shape is known.
       (RB tripwire: ip-touching — IP1.)
 - [ ] T9 — Roxygen docs (including the hand-replication contract and IP2's
       R-RNG scope), `_pkgdown.yml` rows, NEWS.md entry, `document()` no-diff,
-      `devtools::check()` clean.
+      `devtools::check()` clean with no unused declared dependency.
 - [ ] T10 — RNG test battery per RR01: same-seed identity and seed sensitivity
       on a stochastic engine, permuted fold-order invariance, ambient-state
       independence of the per-fold worker, and the net-zero exit-state pin.
@@ -146,6 +146,7 @@ planned once this milestone's results object exists and its real shape is known.
 - 2026-07-25: blocked on RB01 (per-outer-fold RNG streams, T4). RB committed on the milestone branch rather than the default branch, since M02's branch was already open — keeps this milestone's tracking on one branch.
 - 2026-07-25: ingested RR01 ([F] Fable subagent, tune 2.1.0 installed and probed by execution). Applied: Scheme A′ (D-011), tune version floor, `ranger` in Suggests, deterministic engine for AC3 and both variants for AC2, the seeds-as-contract oracle construction. Rejected with reason (RR recs 2, 3, 7): L'Ecuyer streams, inherited state, and a `seed` argument. Deferred: B4 → ROADMAP candidate. BC1–BC10 ingested verbatim as AC8–AC17; no deviations.
 - 2026-07-25: dependency gate — user approved the `tune (>= 2.0.0)` floor and `ranger` in Suggests (D-012); user also elected to carry M02 as one milestone despite the 17-criteria / 10-task split tripwires.
+- 2026-07-25: T1 done — DESCRIPTION declares tune (>= 2.0.0), workflows, parsnip in Imports and ranger in Suggests; `devtools::test()` clean (549 pass). Minor task edit: the unused-dependency confirmation moved to T9, which is where code using them exists.
 - 2026-07-25: plan amendment (substantive) — AC1–AC7 and Scope Out compressed in one pass to fit the 150-line cap after the BC ingestion; no criterion dropped, AC2/AC3 shed detail now carried more precisely by AC16/AC17. T1/T2/T4/T5/T9 refined and T10 added for the RNG test battery.
 
 ## Decisions
