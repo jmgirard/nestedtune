@@ -27,5 +27,7 @@ Suggests:
     lobstr,
     mlbench,
     ranger,
-    testthat (>= 3.0.0)
+    recipes,
+    testthat (>= 3.0.0),
+    yardstick
 Config/testthat/edition: 3

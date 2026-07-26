@@ -308,6 +308,37 @@ skippable ones, which is a cost accepted rather than hidden. AC12 and AC13
 (RR01's BC5 and BC6) are satisfiable as written; no "Deviations from RR01" row
 is owed.
 
+### D-013 (2026-07-25): `recipes` and `yardstick` join Suggests for the test engines — same reasoning D-009 used for `cli` and `rlang`, and leaves D-007's Imports rejection standing
+
+**Context:** RR01's BC10 requires AC3's `fit_resamples()` invariant to run on an
+engine with no randomness at all, so the equality is exact rather than
+seed-contingent. parsnip's tunable model engines all pull an extra package
+(glmnet, kknn, xgboost) or, in rpart's case, consume RNG by default through
+`xval = 10`. A tunable recipe step with a plain `linear_reg()` lm model has no
+RNG anywhere in the path.
+
+`yardstick` is a separate need: it is not re-exported by `tune`, so without it
+no test can construct a `metric_set()` and the `metrics` argument ships
+untested.
+
+**Decision:** `recipes` and `yardstick` join Suggests. The deterministic engine
+is `step_pca(num_comp = tune())` ahead of `linear_reg()`; metric sets are built
+with `yardstick::metric_set()`. Considered and rejected: `rpart` (ships with R,
+but its default internal cross-validation draws from the RNG, so the RNG-free
+property would depend on remembering `xval = 0` — fragile in exactly the tests
+meant to catch fragility); testing only with `metrics = NULL` (avoids the
+`yardstick` line, at the price of never passing a value to one of the
+function's four arguments).
+
+**Consequences:** No practical weight — both are hard Imports of `tune`
+(`recipes` of `workflows` too), so they are installed for every user of this
+package regardless, exactly as D-009 argued for `cli` and `rlang`. D-007's
+rejection of `yardstick` and `dials` stands unchanged: it concerned *Imports*,
+where `R CMD check` would flag them unused, and Suggests carries no such claim.
+The deterministic test engine exercises the preprocessing path, which is also
+where IP1's "preprocessing is estimated on analysis data" clause bites, so the
+choice buys leakage-test relevance the model-only engines would not have.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

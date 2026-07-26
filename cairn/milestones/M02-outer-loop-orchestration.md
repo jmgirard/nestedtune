@@ -111,7 +111,7 @@ planned once this milestone's results object exists and its real shape is known.
       Imports per D-007 and the RR01 version floor, and `ranger` to Suggests for
       the stochastic-engine tests. (The unused-declared-dependency confirmation
       needs the code that uses them, so it runs at T9.)
-- [ ] T2 — Write the failing oracle tests first: the reference-loop equivalence
+- [x] T2 — Write the failing oracle tests first: the reference-loop equivalence
       (AC2/AC16, deterministic and stochastic variants, seeds derived from the
       documented contract) and the single-candidate-grid invariant (AC3/AC17,
       deterministic engine only).
@@ -147,6 +147,7 @@ planned once this milestone's results object exists and its real shape is known.
 - 2026-07-25: ingested RR01 ([F] Fable subagent, tune 2.1.0 installed and probed by execution). Applied: Scheme A′ (D-011), tune version floor, `ranger` in Suggests, deterministic engine for AC3 and both variants for AC2, the seeds-as-contract oracle construction. Rejected with reason (RR recs 2, 3, 7): L'Ecuyer streams, inherited state, and a `seed` argument. Deferred: B4 → ROADMAP candidate. BC1–BC10 ingested verbatim as AC8–AC17; no deviations.
 - 2026-07-25: dependency gate — user approved the `tune (>= 2.0.0)` floor and `ranger` in Suggests (D-012); user also elected to carry M02 as one milestone despite the 17-criteria / 10-task split tripwires.
 - 2026-07-25: T1 done — DESCRIPTION declares tune (>= 2.0.0), workflows, parsnip in Imports and ranger in Suggests; `devtools::test()` clean (549 pass). Minor task edit: the unused-dependency confirmation moved to T9, which is where code using them exists.
+- 2026-07-25: T2 done — oracle tests written and failing for the right reason ("could not find function nested_tune_grid", 3 errors). O1 (live reference loop, deterministic + stochastic) and O2 (fit_resamples invariant) recorded in the test file header per DESIGN Conventions. Suite is intentionally red until T3–T5 land; the verify slot's clean-before-checkoff gate cannot bind a task whose product is a failing test. Second dependency gate: `recipes` and `yardstick` to Suggests (D-013). Signature confirmed as `nested_tune_grid(object, resamples, grid, metrics)` — corrects D-010's parenthetical, which named the second argument `workflow`; substance of D-010 unchanged.
 - 2026-07-25: plan amendment (substantive) — AC1–AC7 and Scope Out compressed in one pass to fit the 150-line cap after the BC ingestion; no criterion dropped, AC2/AC3 shed detail now carried more precisely by AC16/AC17. T1/T2/T4/T5/T9 refined and T10 added for the RNG test battery.
 
 ## Decisions
