@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M07: Parallel outer folds
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M02   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** RR03   <!-- owner: plan · create/amend-via-gate -->
@@ -174,6 +174,7 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - 2026-07-26: roxygen corrected — the pre-flight check is bounded, the folds are not; the hang is now specifically about daemons dying *after* dispatch. Suite 1026 pass / 0 fail / 0 warn.
 - 2026-07-26: T8 — NEWS entry added; `devtools::check()` OK, 0 errors / 0 warnings / 0 notes, 5m 36s.
 - 2026-07-26: the second check (`_R_CHECK_DEPENDS_ONLY_=true`, CRAN's noSuggests flavor) failed first time and found a real bug: `worker_failure_message()` reached for `mirai::is_error_value()`, so with mirai absent an `errorValue` fell through to the generic note. Now dispatched on class (`miraiError` before `errorValue`, since the former inherits the latter), needing nothing loaded. Both checks OK, 0/0/0, 33 skips in the depends-only run.
+- 2026-07-26: all 8 tasks done, status review. Full check re-run after the final code change: OK 0/0/0.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
