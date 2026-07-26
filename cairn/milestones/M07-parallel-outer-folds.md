@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M07: Parallel outer folds
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** blocked   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M02   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
@@ -115,6 +115,7 @@ Reducing what each worker must serialize → candidate row, added by this plan.
 - 2026-07-26: probe (mirai 2.7.2, bare RNG, no tune): mirai pre-seeds each daemon with a distinct L'Ecuyer-CMRG stream, so D-011's kind pin is load-bearing rather than theoretical — without it a worker draws from a different generator than the serial run.
 - 2026-07-26: probe: with the kind pin applied, draws are identical across 1, 2, and 3 daemons and identical to serial `lapply()`; `mirai_map()` leaves the caller's `.Random.seed` and kind untouched, including under an ambient `RNGkind("L'Ecuyer-CMRG")`.
 - 2026-07-26: probe caveat: daemon RNG state persists across `mirai_map()` calls, so an early probe read a later question's answer off the earlier one's residue; every reading above was re-taken against freshly started daemons. Bare `rnorm()` only — `tune_grid()` inside a daemon is not yet probed.
+- 2026-07-26: blocked on RB03 (T3's ip-touching tripwire); brief committed on this branch rather than `main`, since the branch already carries M07's tracking state and a `main` commit would split the status mirror.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
