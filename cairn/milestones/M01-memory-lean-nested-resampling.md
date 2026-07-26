@@ -1,11 +1,11 @@
 # M01: Memory-lean nested resampling structure
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP1, GP3, GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m01-memory-lean-nested-resampling`
 
 ## Goal
 
@@ -93,6 +93,7 @@ identity, memory scaling, and every error branch. Roxygen docs for the export.
 
 - 2026-07-25: created by /milestone-plan; G4 ledger correction made at plan time rather than queued as a task (current knowledge is corrected where it sits).
 - 2026-07-25: DESIGN.md principle definitions reformatted to the `- IPn:` bullet form cairn_validate parses; wording unchanged, no principle added, retired, or renumbered.
+- 2026-07-25: /milestone-implement started on branch `m01-memory-lean-nested-resampling`; rsample 1.3.2, lobstr 1.2.1, mlbench 2.1.10 installed locally (R 4.6.1).
 
 ## Decisions
 

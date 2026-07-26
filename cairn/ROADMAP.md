@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-25 (design interview complete, both phases; 3 candi
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M01 | Memory-lean nested resampling structure | planned | — | normal | milestones/M01-memory-lean-nested-resampling.md |
+| M01 | Memory-lean nested resampling structure | in-progress | — | normal | milestones/M01-memory-lean-nested-resampling.md |
 | M02 | Outer-loop orchestration | planned | M01 | high | milestones/M02-outer-loop-orchestration.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
