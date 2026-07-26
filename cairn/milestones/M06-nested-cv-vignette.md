@@ -1,6 +1,6 @@
 # M06: A guide that says what to report
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M05
 - **Driving RR:** —
@@ -75,6 +75,7 @@ a gap found while writing returns to plan rather than being patched here.
 - 2026-07-26: the first build caught the AC4 guard doing its job: `.selected` is a list column of one-row tibbles, so `res$.selected$mtry` is `NULL` and the prose rendered "chose 0 distinct values". Fixed by stacking with `do.call(rbind, ...)`; a hand-typed number would have shipped the error.
 - 2026-07-26: the run shows `mtry` disagreeing across folds while `min_n` agrees, so the instability section reads both cases rather than only disagreement; its heading and prose are worded from the counts rather than asserting a direction.
 - 2026-07-26: T5 done. `_pkgdown.yml` gains an explicit `articles:` index (`pkgdown::check_pkgdown()`: no problems found); README gains a guide pointer under the tagline and a runnable end-to-end section replacing the stale "ships the resampling structure only" paragraph; NEWS.md gains the guide entry. The README snippet was executed before committing and returns the same numbers the vignette does.
+- 2026-07-26: all tasks checked; status set to review.
 - 2026-07-26: `devtools::check()` clean with vignettes built — 0 errors, 0 warnings, 0 notes, 4m42s total, of which the vignette rebuild is 13s. `document()` produced no diff.
 
 ## Decisions
