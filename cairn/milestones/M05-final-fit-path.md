@@ -15,19 +15,17 @@ deploy a model without ever reading the nested estimate as that model's score.
 
 ## Scope
 
-**In:** a `nested_final_fit(object, resamples, grid, metrics)` export, its
-`nested_final_fit` return class reached with `extract_workflow()`, and the
-roxygen IP3 obliges — the shape settled in D-014. It re-evaluates the design's
-stored `inside` specification against the full data, tunes, selects, finalizes,
-and fits every row, under the seed scope D-016 fixed. Argument validation reuses
-`R/checks.R`.
+**In:** a `nested_final_fit(object, resamples, grid, metrics)` export returning
+the `nested_final_fit` class reached with `extract_workflow()`, plus the roxygen
+IP3 obliges — shape per D-014, seed order per D-016. It re-evaluates the
+design's stored `inside` specification against the full data, tunes, selects,
+finalizes, and fits every row; validation reuses `R/checks.R`.
 
-**Out:** the long-form guide → M06. `predict()`/`augment()` methods and an
-`extract_`-family accessor for the stored tuning run → candidate rows;
-`extract_workflow()` is the door, as after `tune::last_fit()`. Storing the
-workflow on `nested_results` → unnecessary once the workflow is an argument.
-Parallelism → the existing candidate. An `inside` override argument → refused at
-the pre-implementation gate; a design with no re-runnable specification aborts.
+**Out:** the long-form guide → M06. `predict()`/`augment()` and an
+`extract_`-family accessor for the stored tuning run → candidate rows.
+Storing the workflow on `nested_results`, and an `inside` override argument →
+both refused, the latter at the pre-implementation gate. Parallelism → the
+existing candidate.
 
 ## Acceptance criteria
 
@@ -88,6 +86,12 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
       whether the caller's generator at entry is default Mersenne-Twister or
       L'Ecuyer-CMRG.
 
+### Deviations from RR02
+
+| Criterion | Departure | Why |
+|---|---|---|
+| AC12 (BC6) | The ambient-kind clause is asserted at the internal worker with the two seeds supplied, rather than at `nested_final_fit()` from a user-visible seed. | D-011 draws the entry seeds from the caller's current stream, and that draw is kind-dependent — measured: `set.seed(77); sample.int(.Machine$integer.max, 2)` gives `1251063725 1556411193` under Mersenne-Twister and `1253652724 1031889291` under L'Ecuyer-CMRG. Identical results across kinds from one user-visible seed is therefore unsatisfiable unless the entry draw stops honouring D-011, and IP2 claims kind-independence nowhere. What the kind pin does buy — everything downstream of the seeds being kind-independent — is asserted in full, in the idiom `test-nested-tune-grid-rng.R` already uses. BC6's error-path clause is met as written. Chosen by the user at the amendment gate over pinning the kind before the entry draw. |
+
 ## Coverage
 
 - AC1 → T2, T3
@@ -105,16 +109,14 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
 
 ## Tasks
 
-- [x] T1: extend `R/checks.R` with the final-fit input checks — reuse
-      `check_workflow()`, `check_grid()`, `check_grid_params()`,
-      `check_metrics()`; add one refusing a design with no `inside` call, and one
-      wrapping its re-evaluation so a failure aborts naming the stored call;
-      tests firing every branch.
+- [x] T1: extend `R/checks.R` — reuse the four existing checks, add one
+      refusing a design with no `inside` call and one wrapping its
+      re-evaluation so a failure aborts naming the stored call; test every
+      branch.
 - [x] T2: implement `nested_final_fit()` in `R/nested-final-fit.R` in D-016's
-      order — two seeds at entry, tuning seed, evaluate `inside` against the data
-      behind the splits, `tune_grid(control_grid(allow_par = FALSE))`,
-      `select_best()`, `finalize_workflow()`, fit seed, `fit()` on all rows; RNG
-      restored via `set_fold_seed()`/`restore_rng()` (`R/nested-tune-grid.R:342`).
+      order — two seeds at entry, tuning seed, evaluate `inside`, tune, select,
+      finalize, fit seed, `fit()` on all rows; RNG restored via
+      `set_fold_seed()`/`restore_rng()` (`R/nested-tune-grid.R:342`).
 - [x] T3: add `new_nested_final_fit()` carrying the workflow, selection, tuning
       run, and both seeds, plus the `extract_workflow()` method; test the
       extracted workflow is trained.
@@ -122,7 +124,7 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
       header — the contract-derived reference oracle, the forced-selection
       invariant oracle, and a `tune::fit_best()` strand (RR02 rec 5;
       `save_workflow = TRUE` on the test's own `tune_grid()`), on `ranger`.
-- [ ] T5: `tests/testthat/test-nested-final-fit-rng.R` — same-seed identity,
+- [x] T5: `tests/testthat/test-nested-final-fit-rng.R` — same-seed identity,
       seed sensitivity, net-zero exit including the fresh-session branch,
       error-path restoration triggered inside the guarded region, and
       ambient-kind independence.
@@ -151,6 +153,7 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
 - 2026-07-26: the `inside` re-evaluation guard fired on the repo's own `det_nested()` helper, whose `v` is a function parameter — exactly RR02 B1. Tests build designs with literals via a new `final_nested()` helper; substituting argument values at construction is now a candidate row.
 - 2026-07-26: T4 — three oracle strands green (contract-derived reference, single-candidate invariant, `tune::fit_best()` tail).
 - 2026-07-26: inversion showed the reference oracle did NOT guard D-016's ordering as RR02 assumed — swapping the rset construction outside the tuning seed's scope left selection and predictions unchanged because the selected `min_n` was stable across both fold sets. Added a direct assertion on the resamples the tuning run saw; that one reddens under the mutation.
+- 2026-07-26: T5 — RNG suite green. BC6's ambient-kind clause is unsatisfiable at the exported function (the entry draw reads the caller's stream and is itself kind-dependent, measured), so the body after the seed draw is split into `final_fit_worker()` and the property is asserted there; deviation table added at the user's choice at the amendment gate.
 - 2026-07-26: RR02 triage — rec 1, 2, 3, 4, 8, 9, 10 applied; rec 5 (`fit_best()` oracle strand) and rec 12 (print pointer to fold selections) applied at the user's choice; rec 11 (`extract_` accessor for the stored tuning run) deferred to a candidate row, a documented slot sufficing pre-1.0; rec 6 (mlr3 oracle) and rec 7 (size-matched final tuning) rejected on RR02's own reasoning.
 
 ## Decisions

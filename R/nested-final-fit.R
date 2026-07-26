@@ -61,6 +61,18 @@ nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
 
   seeds <- sample.int(.Machine$integer.max, 2L)
 
+  final_fit_worker(inside, data, env, seeds, object, grid, metrics)
+}
+
+# The final fit itself, once the seeds exist.
+#
+# Split from the entry point for the same reason `nested_fold_fit()` is:
+# everything it needs is an argument, so what it produces depends on the two
+# seeds and on nothing ambient. That is what makes the kind-independence
+# property testable -- from a user-visible seed it is not, because the entry
+# draw above reads the caller's stream and that draw is itself kind-dependent
+# (M05, deviating from RR02's BC6 as literally written).
+final_fit_worker <- function(inside, data, env, seeds, object, grid, metrics) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
   # the specification is evaluated *after* the seed is set. Building an rset
   # draws from the RNG, and a draw made outside this scope would leave the run
