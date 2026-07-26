@@ -119,18 +119,25 @@ rmse_row <- est[est$.metric == "rmse", ]
 Report that. The RMSE of `r round(rmse_row$mean, 2)` is an approximately
 unbiased — if anything slightly conservative — estimate of how this whole
 tune-and-fit procedure performs on new data drawn like `mtcars`, measured
-`r rmse_row$n` times on rows the procedure never touched. `std_err` is the
-spread of those `r rmse_row$n` outer scores, which is a description of the folds
-rather than a confidence interval; this package deliberately ships no inference
-on the nested estimate.
+`r rmse_row$n` times on rows the procedure never touched.
+
+`std_err` is the standard error *of that mean* — the standard deviation of the
+`r rmse_row$n` fold scores divided by the square root of how many there were. It
+is not the fold-to-fold spread, which is larger by that same factor, and it is
+not a confidence interval: this package deliberately ships no inference on the
+nested estimate.
 
 Now the number **not** to report. Any tuning run — the ones inside these outer
 folds, and the one behind the final model further down — carries resampling
 scores for every candidate it tried. Those scores are what selection *looked
-at*. Each one helped pick the winner, so the winner's score is the smallest of
-a set it was chosen from: optimistically biased as a performance claim, by an
-amount nothing in the output tells you. The final-model section below puts that
-number next to this one.
+at*, and the winner's is the best of a set scored on the very resamples that
+chose it. It therefore carries an optimistic component of unknown size, and
+nothing in the output tells you how large.
+
+What it is not is reliably *worse-looking*. At this sample size the bias is
+small next to resampling noise, so a single comparison can land either way — the
+structural argument is the reason to distrust the number, not its sign. The
+final-model section below puts the two side by side.
 
 Two things the nested estimate does not say, both easy to over-read:
 
@@ -174,11 +181,19 @@ selected parameters being the right ones.
 The per-fold scores are worth a look for the same reason:
 
 ```{r per-fold}
-collect_metrics(res, summarize = FALSE)
+per_fold <- collect_metrics(res, summarize = FALSE)
+per_fold
+
+fold_rmse <- per_fold$.estimate[per_fold$.metric == "rmse"]
+c(sd = sd(fold_rmse), std_err = sd(fold_rmse) / sqrt(length(fold_rmse)))
 ```
 
-Wide spread across outer folds at this sample size is expected, and it is the
-same spread `std_err` summarizes above.
+Wide spread across outer folds at this sample size is expected. Note the two
+numbers above: `r round(sd(fold_rmse), 2)` is how much the folds actually differ
+from each other, and `r round(sd(fold_rmse) / sqrt(length(fold_rmse)), 2)` is
+the `std_err` `collect_metrics()` reports — the precision of their *mean*.
+Quoting the second as though it described the folds understates their
+disagreement.
 
 ## The model you deploy
 
@@ -221,31 +236,62 @@ data.frame(
 ```
 
 The selection-time score is
-`r ifelse(best_selection_rmse < rmse_row$mean, "lower", "higher")` here —
-`r round(best_selection_rmse, 2)` against `r round(rmse_row$mean, 2)`. It is
-kept on the object because it is the record of what selection saw, not because
-it describes this model, and `collect_metrics()` will hand it over without
-warning you. The model in hand has no honest number of its own: everything
-computable from its training data was consumed by selecting it or by fitting
-it.
+`r ifelse(best_selection_rmse < rmse_row$mean, "lower", "higher")` than the
+nested estimate here — `r round(best_selection_rmse, 2)` against
+`r round(rmse_row$mean, 2)`. Do not read the direction as the lesson. With
+`r nrow(mtcars)` rows a difference this size is comfortably inside what
+resampling noise produces, and the point stands whichever way it falls: the
+selection-time number was computed on the very resamples that chose the winner,
+so it is not an estimate of performance on anything. It is kept on the object
+because it is the record of what selection saw, and `collect_metrics()` will
+hand it over without warning you.
 
-This is also why `show_best()` and `select_best()` have no method for either
-object this package returns. Both would rank outer folds and hand back
-something authoritative-looking and meaningless, so they error instead of
-answering.
+The model in hand has no honest number of its own. Everything computable from
+its training data was consumed by selecting it or by fitting it.
+
+That is why both objects refuse tune's ranking generics rather than answering
+them — for a different reason each. On the loop's results they would rank *outer
+folds*, which is not a ranking of anything a user wants. On the final fit there
+is only one model and nothing to rank at all; what they would surface is the
+selection-time metrics above, dressed as a score.
+
+```{r refusals, error = TRUE}
+tune::show_best(res, metric = "rmse")
+```
+
+```{r refusals-final, error = TRUE}
+tune::select_best(final, metric = "rmse")
+```
 
 ## Reproducibility
 
-There is no `seed` argument anywhere. Seed the session before the call, as
-elsewhere in tidymodels, and both functions draw and pin their own per-step
-seeds from that state — so a run is identical however the folds are scheduled,
-and the caller's random state is left exactly as it was found.
+Seed the session before the call, as elsewhere in tidymodels. Neither function
+takes a seed of its own:
 
-The seeds are stored, so any single piece is reproducible by hand:
+```{r signatures}
+args(nested_tune_grid)
+args(nested_final_fit)
+```
+
+Each draws and pins its own per-step seeds from the session state instead, and
+stores them, so any single piece is reproducible by hand:
 
 ```{r seeds}
 res$.tuning_seed
 final$tuning_seed
+```
+
+Because each fold's seeds are fixed by its *position* in the design rather than
+by the order the folds happen to run in, the result does not depend on how the
+loop is scheduled. And the caller's own random state is put back as it was
+found:
+
+```{r rng-restored}
+before <- .Random.seed
+
+invisible(nested_final_fit(wf, folds, grid = grid))
+
+identical(before, .Random.seed)
 ```
 
 `?nested_tune_grid` and `?nested_final_fit` give the exact hand-replication
