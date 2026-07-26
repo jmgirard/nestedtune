@@ -193,14 +193,17 @@ test_that("the RNG state is restored when folds fail but the run completes", {
     inside = rsample::vfold_cv(v = 3)
   )
 
+  # Both folds engineered to fail: the seeds are drawn, every fold fails inside
+  # tune, and the failures are recorded rather than raised. (A malformed grid
+  # would not do here -- that is refused up front now, before any seed is drawn.)
+  folds <- break_fold(break_fold(folds, 1L, "inner tuning"), 2L, "inner tuning")
+
   set.seed(505)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
 
-  # A grid naming a parameter the workflow does not tune: the seeds are drawn,
-  # then every fold fails inside tune and the failures are recorded.
   res <- suppressWarnings(
-    nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2))
+    nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics())
   )
   expect_identical(attr(res, "folds_completed"), 0L)
 

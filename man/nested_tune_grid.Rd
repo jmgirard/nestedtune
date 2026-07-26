@@ -15,7 +15,9 @@ for tuning with \code{\link[tune:tune]{tune::tune()}}.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to
-\code{\link[tune:tune_grid]{tune::tune_grid()}}.}
+\code{\link[tune:tune_grid]{tune::tune_grid()}}. A data frame is checked against the workflow before
+anything is fitted: every column must name a parameter marked with
+\code{\link[tune:tune]{tune::tune()}}, and every such parameter must have a column.}
 
 \item{metrics}{A \code{\link[yardstick:metric_set]{yardstick::metric_set()}}, or \code{NULL} to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner

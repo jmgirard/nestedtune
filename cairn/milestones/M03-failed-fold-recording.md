@@ -20,7 +20,11 @@ returns no usable candidates for `select_best()`. A per-fold outcome record on
 `nested_results` naming the failing stage and its condition message, plus the
 attempted/completed counts that make a partial run identifiable without inspecting
 every row. `collect_metrics()` averaging over the folds that completed, warning and
-naming the ones that did not, and aborting when none did.
+naming the ones that did not, and aborting when none did. Plus a pre-flight
+check of a data-frame `grid` against the workflow's tunable parameters, added
+by amendment (see Work log): recording fold failures instead of raising them
+would otherwise turn a malformed grid — wrong for every fold — into a whole
+design failing rather than the call error it is.
 
 **Out:**
 - Displaying any of this when the object prints → M04.
@@ -37,13 +41,15 @@ naming the ones that did not, and aborting when none did.
       thrown error and a tuning run that yields no usable candidate are recorded this way.
 - [ ] AC3: The object records folds attempted and folds completed, so a partial run is
       distinguishable from a complete one without reading per-fold contents.
-- [ ] AC4: `collect_metrics()` on a partially failed run returns the mean over completed
-      folds with `n` equal to that count, and warns naming the failed fold ids.
-- [ ] AC5: `collect_metrics()` on a run where no fold completed aborts naming the
-      failure, rather than returning `NA`.
-- [ ] AC6: Failure capture disturbs nothing M02 established: a fully successful run's
+- [ ] AC4: `collect_metrics()` reports only what ran — on a partially failed run it
+      means over the completed folds with `n` equal to that count and warns naming the
+      failed ids; on a run where none completed it aborts rather than returning `NA`.
+- [ ] AC5: Failure capture disturbs nothing M02 established: a fully successful run's
       `collect_metrics()` output is unchanged — same columns, same values, no warning —
       and a fold's two seeds are identical whether or not an earlier fold failed (IP2).
+- [ ] AC6: A data-frame `grid` is refused before any fitting when a column is not marked
+      for tuning, or when a tuned parameter has no column; both name the offender, and
+      neither draws from the RNG. A `grid` given as a size is exempt.
 - [ ] AC7: `devtools::test()` and `devtools::check()` clean (0 errors, 0 warnings).
 
 ## Coverage
@@ -52,9 +58,9 @@ naming the ones that did not, and aborting when none did.
 - AC2 → T1, T2, T3, T4
 - AC3 → T5
 - AC4 → T6
-- AC5 → T6
-- AC6 → T7
-- AC7 → T8
+- AC5 → T7
+- AC6 → T9
+- AC7 → T8, T9
 
 ## Tasks
 
@@ -74,6 +80,10 @@ naming the ones that did not, and aborting when none did.
       failure.
 - [x] T8: Roxygen for the failure record on `nested_tune_grid()`'s `@return` and on
       `collect_metrics()`; NEWS entry; `devtools::document()`; verify + `devtools::check()`.
+- [x] T9: `check_grid_params()` in `R/checks.R` comparing a data-frame `grid`'s columns
+      against `tune::extract_parameter_set_dials()`, called from `nested_tune_grid()`
+      before the seeds are drawn; tests in `test-nested-tune-grid-checks.R`; roxygen,
+      NEWS, and re-run verify + `devtools::check()`. Added by amendment.
 
 ## Work log
 
@@ -85,6 +95,8 @@ naming the ones that did not, and aborting when none did.
 - 2026-07-26: T7 updated two M02 tests to the new contract — the leakage stub gained the worker's new fields, and the RNG error-path test split in two (see Decisions).
 - 2026-07-26: T8 roxygen, NEWS, `devtools::document()`; `devtools::test()` 748 pass / 0 warn; `R CMD check` 0 errors, 0 warnings, 0 notes.
 - 2026-07-26: tasks were completed in one working pass rather than per-task checkpoint commits; a single implementation commit lands them together.
+- 2026-07-26: substantive amendment at the user's direction at the completion chip — pre-flight grid validation added to Scope as AC6/T9, restoring the immediate abort the Decisions entry had left to a candidate row; that candidate row is dropped as superseded. AC4 and AC5 merged into one criterion (both are `collect_metrics()` under failure, both mapped to T6) so the criterion count stays under the split tripwire.
+- 2026-07-26: probes confirmed tune already raises for both grid directions and that `tune::extract_parameter_set_dials()` is exported, so the check needed no new dependency. The rewritten RNG test lost its vehicle to the new check and now fails both folds via `break_fold()` instead.
 
 ## Decisions
 
@@ -110,5 +122,22 @@ workflow's tunable parameters, which would restore an immediate abort under GP3.
 Nothing in this milestone's Scope or criteria covers argument validation, so it
 is recorded as a ROADMAP candidate beside the two existing validation-hardening
 rows instead. Pre-1.0 the behavior change needs no deprecation cycle (D-003).
+
+### 2026-07-26: The pre-flight grid check is adopted after all — supersedes the paragraph above
+
+At the completion chip the maintainer directed that the check be added to this
+milestone rather than deferred. `check_grid_params()` compares a data-frame
+`grid`'s columns against `tune::extract_parameter_set_dials(object)$id` in both
+directions and aborts before any seed is drawn, so a malformed grid is again
+refused as the call error it is. No new dependency: tune already exports the
+extractor, and tune's own per-fold errors confirmed both directions are
+provable up front.
+
+What stands from the entry above: an all-fold failure arising from a genuine
+per-fold cause is still recorded rather than raised, and the RNG test split
+stands. What no longer holds: the deferral to a candidate row — that row is
+removed from the ROADMAP as superseded by this work, not left to imply the
+check is still outstanding. Scope, AC6 and T9 were amended in by the same
+direction (see Work log).
 
 ## Review

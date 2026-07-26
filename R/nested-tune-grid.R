@@ -19,7 +19,9 @@
 #'   [rsample::nested_cv()].
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
-#'   [tune::tune_grid()].
+#'   [tune::tune_grid()]. A data frame is checked against the workflow before
+#'   anything is fitted: every column must name a parameter marked with
+#'   [tune::tune()], and every such parameter must have a column.
 #' @param metrics A [yardstick::metric_set()], or `NULL` to use tune's defaults
 #'   for the model's mode. The first metric in the set selects the best inner
 #'   candidate.
@@ -125,6 +127,7 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
   check_workflow(object)
   check_nested(resamples)
   check_grid(grid)
+  check_grid_params(object, grid)
   check_metrics(metrics)
 
   n <- nrow(resamples)

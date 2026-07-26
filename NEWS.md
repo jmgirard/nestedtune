@@ -7,6 +7,12 @@
   quietly — inner tuning only raises once every candidate has failed, and the
   outer fit does not raise at all.
 
+* `nested_tune_grid()` now checks a data-frame `grid` against the workflow
+  before fitting anything: a column that is not marked for tuning, or a tuned
+  parameter with no column, is refused immediately and by name. Either mistake
+  is wrong for every fold rather than for one, so it is reported as what it is
+  — an error in the call — instead of as an entire design failing.
+
 * `collect_metrics()` now summarizes only the outer folds that completed, warns
   naming the ones that did not, and errors rather than returning `NA` when none
   completed. An estimate is never reported as though it came from a design that
