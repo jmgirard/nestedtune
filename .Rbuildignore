@@ -1,0 +1,6 @@
+^cairn$
+^CLAUDE\.md$
+^\.claude$
+^\.github$
+^.*\.Rproj$
+^\.Rproj\.user$

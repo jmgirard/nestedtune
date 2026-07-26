@@ -1,0 +1,10 @@
+# cairn
+cairn/references/sources/
+cairn/.merge-approved
+cairn/.merge-approved.pending
+
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
