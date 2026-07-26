@@ -118,7 +118,7 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
 - [x] T3: add `new_nested_final_fit()` carrying the workflow, selection, tuning
       run, and both seeds, plus the `extract_workflow()` method; test the
       extracted workflow is trained.
-- [ ] T4: `tests/testthat/test-nested-final-fit-oracles.R` with its provenance
+- [x] T4: `tests/testthat/test-nested-final-fit-oracles.R` with its provenance
       header — the contract-derived reference oracle, the forced-selection
       invariant oracle, and a `tune::fit_best()` strand (RR02 rec 5;
       `save_workflow = TRUE` on the test's own `tune_grid()`), on `ranger`.
@@ -149,6 +149,8 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
 - 2026-07-26: ingested RR02 — BC1–BC6 added verbatim as AC7–AC12; Scope compressed to stay under the cap; T9 added and done; RB/RR pair archived; status back to in-progress.
 - 2026-07-26: T1-T3 landed together — the new abort branches are only reachable through the export, so checks, function, and constructor share one commit. `nested_final_fit()` re-runs the inner spec on all rows in D-016's seed order and returns a class carrying the workflow, selection, tuning run, and both seeds; `extract_workflow()` is re-exported alongside `collect_metrics()`.
 - 2026-07-26: the `inside` re-evaluation guard fired on the repo's own `det_nested()` helper, whose `v` is a function parameter — exactly RR02 B1. Tests build designs with literals via a new `final_nested()` helper; substituting argument values at construction is now a candidate row.
+- 2026-07-26: T4 — three oracle strands green (contract-derived reference, single-candidate invariant, `tune::fit_best()` tail).
+- 2026-07-26: inversion showed the reference oracle did NOT guard D-016's ordering as RR02 assumed — swapping the rset construction outside the tuning seed's scope left selection and predictions unchanged because the selected `min_n` was stable across both fold sets. Added a direct assertion on the resamples the tuning run saw; that one reddens under the mutation.
 - 2026-07-26: RR02 triage — rec 1, 2, 3, 4, 8, 9, 10 applied; rec 5 (`fit_best()` oracle strand) and rec 12 (print pointer to fold selections) applied at the user's choice; rec 11 (`extract_` accessor for the stored tuning run) deferred to a candidate row, a documented slot sufficing pre-1.0; rec 6 (mlr3 oracle) and rec 7 (size-matched final tuning) rejected on RR02's own reasoning.
 
 ## Decisions
