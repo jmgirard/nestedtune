@@ -91,7 +91,7 @@ export. _(amended 2026-07-25)_
       constructor and `rsample::nested_cv()`, asserting AC3's flatness and AC4's
       analytic prediction; commit the generator per the profile's fixture
       provenance rule.
-- [ ] T7 — Roxygen docs for the export, `_pkgdown.yml` row, `document()` no-diff,
+- [x] T7 — Roxygen docs for the export, `_pkgdown.yml` row, `document()` no-diff,
       NEWS.md entry, `devtools::check()` clean.
 
 ## Work log
@@ -116,6 +116,9 @@ export. _(amended 2026-07-25)_
 
 - 2026-07-25: T6 done — memory benchmark on LetterRecognition (inner v=5), size as multiples of the 2.645 MB source: lean 1.186/1.734/2.649/9.965 vs rsample 2.156/5.612/11.373/57.458 at v=2/5/10/50. Slopes per outer fold: lean 0.183, rsample 1.152 (6.3x shallower). The analytic model predicts every measured size within 0.72%, well inside the 2% tolerance asserted.
 - 2026-07-25: DESIGN.md Conventions gained the oracle-records pointer the validation doctrine requires — its absence in a repo with numeric work is itself an audit finding. Records live in headers in the asserting test file.
+
+- 2026-07-25: T7 done — roxygen docs, `_pkgdown.yml` reference row, NEWS.md entries, and a hand-written README.md. `devtools::check()` is 0 errors / 0 warnings / 0 notes; `pkgdown::check_pkgdown()` clean after adding the pkgdown URL to DESCRIPTION.
+- 2026-07-25: two check WARNINGs fixed at T7 — an `@section` title containing `rsample::nested_cv()` in backticks made roxygen emit a malformed Rd section, and NEWS.md's `# nestedtune (development version)` heading was unparseable by R's news reader (now `# nestedtune 0.0.0.9000`).
 
 ## Decisions
 

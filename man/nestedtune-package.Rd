@@ -12,6 +12,7 @@ Builds and orchestrates nested cross-validation designs for the tidymodels ecosy
 Useful links:
 \itemize{
   \item \url{https://github.com/jmgirard/nestedtune}
+  \item \url{https://jmgirard.github.io/nestedtune/}
   \item Report bugs at \url{https://github.com/jmgirard/nestedtune/issues}
 }
 

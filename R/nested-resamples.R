@@ -27,7 +27,7 @@
 #'   working. It is the outer `rset` with an `inner_resamples` list column
 #'   added, one inner `rset` per outer split.
 #'
-#' @section Differences from `rsample::nested_cv()`:
+#' @section Differences from rsample:
 #'
 #' The splits themselves are identical: [rsample::analysis()] and
 #' [rsample::assessment()] return the same frames, attributes included, for the

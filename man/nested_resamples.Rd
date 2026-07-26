@@ -39,8 +39,8 @@ inner specification the same way, against the same transient frame, but keeps
 only the row indices it produces and remaps them onto the original data — so
 the inner splits reference the single shared copy the caller already has.
 }
-\section{Differences from \code{rsample}{
-:nested_cv()}:
+\section{Differences from rsample}{
+
 
 The splits themselves are identical: \code{\link[rsample:analysis]{rsample::analysis()}} and
 \code{\link[rsample:assessment]{rsample::assessment()}} return the same frames, attributes included, for the
