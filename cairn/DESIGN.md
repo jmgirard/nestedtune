@@ -7,9 +7,11 @@ _Architecture as it **is**, not as it will be. Future work lives in
 
 > **`/design-interview` complete, both phases (2026-07-25).** Purpose, contract
 > boundary, conventions, and the IP/GP principle set below are elicited, not
-> inferred. The package has no source yet; Function Families and Architecture
-> stay empty until it does. Elicitation provenance: run on Opus 5 rather than
-> the skill's recommended Fable, at the maintainer's choice.
+> inferred. Elicitation provenance: run on Opus 5 rather than the skill's
+> recommended Fable, at the maintainer's choice. _(The note here originally
+> added that the package had no source, so Function Families and Architecture
+> would stay empty until it did; both sections were filled at M02 and the
+> clause is corrected out — 2026-07-25.)_
 
 **nestedtune orchestrates nested cross-validation for the tidymodels
 ecosystem.** The package is named `nestedtune`, not `nestedcv` — that name is
@@ -54,8 +56,16 @@ The evidence behind the boundary is ledgered in
 
 ## Function Families
 
-_(none yet — the package has no source. A family is a group of exported
-functions sharing a contract and a naming convention.)_
+Two families, each a group of exported functions sharing a contract and a
+naming convention.
+
+- **Resampling construction** — `nested_resamples()`. Builds a nested
+  resampling design and returns an object carrying rsample's `nested_cv`
+  classes, so it is a drop-in for `rsample::nested_cv()`'s output (D-008).
+- **Orchestration — `nested_tune_*`** — `nested_tune_grid()`, plus the
+  `collect_metrics()` method on the `nested_results` object it returns. The
+  suffix names the inner tuning method, leaving `nested_tune_bayes()` free for
+  a Bayesian inner loop (D-010).
 
 ## Conventions
 
@@ -185,8 +195,39 @@ upstream's dormant prototype (tune#969), pending the maintainer's reply._
 
 ## Architecture
 
-_(none yet — no source. This section describes the structure as it exists,
-once it exists.)_
+`nested_resamples()` (`R/nested-resamples.R`) evaluates the inner specification
+against each outer fold's analysis frame exactly as rsample does, then keeps
+only the row indices and remaps them onto the original data, so the inner
+splits reference the one copy the caller already holds.
+
+`nested_tune_grid()` (`R/nested-tune-grid.R`) is a serial loop over outer
+folds. It validates its arguments (`R/checks.R`), draws every fold's seeds up
+front, and hands each fold to `nested_fold_fit()` — a worker whose inputs are
+the outer split, the inner `rset`, the fold's two seeds, and the static
+workflow/grid/metrics. The worker delegates the entire statistical pipeline to
+tune: `tune_grid()` on the inner `rset` with `control_grid(allow_par = FALSE)`,
+`select_best()`, `finalize_workflow()`, `last_fit()` on the outer split.
+Nothing is read from the enclosing loop and nothing is drawn inside it, which
+is what makes fold results independent of execution order and the loop safe to
+parallelize later.
+
+The reproducibility contract is D-011: `2 * n` seeds from one `sample.int()`
+call at entry, assigned by fold position, applied with the generator kind
+pinned, and the caller's RNG state restored on exit including on error. The
+kind pin is what makes a fresh worker agree with a serial run.
+
+`new_nested_results()` (`R/nested-results.R`) assembles one row per outer fold
+— split, id, metrics, selected parameters, and the fold's two seeds — as a
+plain tibble carrying class `nested_results`. It deliberately does **not**
+inherit `tune_results`: that would bring `show_best()` and `select_best()`
+along, and both would rank outer folds, which is the reading IP3 forbids
+(D-010). `collect_metrics()` is registered against tune's generic.
+
+The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows, and
+parsnip. The tune floor is load-bearing rather than defensive: every
+reproducibility guarantee above rests on tune >= 2.0.0 deriving its own
+per-resample streams and leaving the caller's RNG state untouched, verified by
+execution in RR01, and tune 1.x seeded differently (D-012).
 
 ## Known issues
 

@@ -18,10 +18,16 @@ Depends:
     R (>= 4.1)
 Imports:
     cli,
+    parsnip,
     rlang,
-    rsample
+    rsample,
+    tune (>= 2.0.0),
+    workflows
 Suggests:
     lobstr,
     mlbench,
-    testthat (>= 3.0.0)
+    ranger,
+    recipes,
+    testthat (>= 3.0.0),
+    yardstick
 Config/testthat/edition: 3

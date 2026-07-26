@@ -213,6 +213,132 @@ so they are installed for every user of this package regardless, and `R CMD
 check` time is unchanged. The hard surface for M01 is now rsample, cli, rlang;
 D-007's tune/workflows/parsnip additions for M02 are unaffected.
 
+### D-010 (2026-07-25): M02's orchestrator is `nested_tune_grid()` returning a standalone `nested_results` class — applies IP3 to the class choice, where D-008 applied compatibility
+
+**Context:** M02 ships the package's second export, and two things had to be
+settled before any code: what to call it, and whether its return value should
+carry tune's `tune_results` class. D-008 faced the same pair for
+`nested_resamples()` and answered "carry the upstream class" — there,
+inheriting `nested_cv` kept every existing method working and kept tune's
+refusal loud. The reasoning does not transfer: at the outer level the inherited
+methods are not merely unhelpful, several are wrong.
+
+**Decision:** The export is `nested_tune_grid(object, workflow, grid, metrics)`,
+returning an object of class `nested_results` that does **not** inherit
+`tune_results`. `collect_metrics()` is registered as a method on tune's
+generic. No `control` argument in M02: `control_grid(allow_par = FALSE)` is
+built internally. Considered and rejected: `tune_nested()` and `nested_tune()`
+(both follow tune's `tune_<method>` shape, but nested CV is not a tuning method
+— it wraps one — and neither leaves an obvious slot for a Bayesian inner loop);
+inheriting `tune_results` (brings `show_best()` and `select_best()` along, which
+would rank outer folds and return something authoritative-looking and
+meaningless — the exact misreading IP3 exists to forbid).
+
+**Consequences:** `show_best()`, `select_best()`, and `autoplot()` error as "no
+applicable method" on a `nested_results` object rather than answering wrongly;
+any of them that turns out to be genuinely wanted is written deliberately, with
+outer-level semantics decided at that point. The `nested_tune_*` prefix is now
+the orchestrator family's naming convention. Pre-1.0 all of this stays
+changeable without a deprecation cycle (D-003).
+
+### D-011 (2026-07-25): Per-fold RNG is two kind-pinned integer seeds drawn at entry, and `nested_tune_grid()` is net-zero on the caller's RNG state — settles the IP2 question RB01 escalated
+
+**Context:** M02's driver must satisfy IP2 (same seed → same result regardless
+of worker count or serial/parallel execution). Three schemes were on the table
+and the question was escalated as RB01 rather than settled in session. RR01
+verified by execution against `tune` 2.1.0 that tune >= 2.0.0 already derives
+its own per-resample L'Ecuyer-CMRG substreams *even under
+`control_grid(allow_par = FALSE)`*, restores the caller's state and kind
+exactly, and that `last_fit()` alone consumes the ambient stream. A fold's
+entire stochastic outcome is therefore a function of exactly two RNG states.
+
+**Decision:** At entry `nested_tune_grid()` draws `2 * n_folds` seeds in one
+`sample.int()` call from the caller's state and assigns them by fold position;
+each fold seeds its tuning step and its outer fit separately with the RNG kind
+triple pinned (`kind = "Mersenne-Twister"`, `normal.kind = "Inversion"`,
+`sample.kind = "Rejection"`). Per-fold seeds are exposed on the results object
+and the hand-replication contract is documented. On exit the caller's
+`.Random.seed` and `RNGkind()` triple are restored exactly. Considered and
+rejected: L'Ecuyer-CMRG streams via `parallel::nextRNGStream()` (RR01 verified
+tune re-seeds from whatever state it finds, so provable stream independence
+never reaches tune's substreams — it buys only a theoretical residue, for a
+gated dependency and generator-kind surgery in an exported function);
+inheriting the caller's stream (fails IP2 by construction once folds reorder).
+
+**Consequences:** The kind pin is what makes a fresh parallel worker produce
+the same numbers as a serial run under a caller who set a non-default
+`RNGkind()` — the one latent defect in the unrefined scheme. Net-zero exit
+deliberately diverges from M01's `nested_resamples()`, which leaves the stream
+where `rsample::nested_cv()` would: the delegate being mirrored differs —
+rsample's constructor advances the stream, tune's estimator restores it. Two
+consecutive calls without an intervening `set.seed()` return identical results,
+as `tune_grid()` 2.x already does. IP2 binds only randomness flowing through
+R's RNG; engines that bypass it (kernlab's SVM, keras/torch) are outside its
+reach under any R-side scheme. The verified probe table and full reasoning are
+in `cairn/reviews/archive/RR01-rng-streams-outer-folds.md`.
+
+### D-012 (2026-07-25): `tune` pinned at `>= 2.0.0` and `ranger` added to Suggests — amends the dependency set D-007 fixed, on RR01's evidence
+
+**Context:** D-007 added `tune`, `workflows`, and `parsnip` to Imports with no
+version floor. RR01 verified by execution against tune 2.1.0 that every
+reproducibility guarantee M02 relies on — per-resample L'Ecuyer substreams
+derived internally even under `allow_par = FALSE`, net-zero exit on the
+caller's RNG state, `last_fit()` consuming the ambient stream — is tune 2.x
+behavior. tune's own NEWS for 2.0.0 states that results differ from earlier
+versions; the foreach-era 1.x seeded differently. Separately, RR01 verified
+that with a deterministic engine every RNG test in M02 passes vacuously —
+including under the schemes the review rejected — so the RNG suite has no power
+without an engine whose randomness flows through R's RNG.
+
+**Decision:** DESCRIPTION declares `tune (>= 2.0.0)` in Imports and `ranger` in
+Suggests, the latter guarded by `skip_if_not_installed()` in the tests that use
+it. Considered and rejected: no floor on tune (the IP2 evidence was gathered on
+2.1.0 and does not transfer downward — a user on 1.x would get a driver whose
+reproducibility claim was never tested against their tune); a heavier
+stochastic engine such as `randomForest` or an xgboost path (ranger is
+parsnip-native, single-threaded by default, and draws its seed from the R
+stream, all verified); testing with deterministic engines only (leaves the
+seeding untested by construction).
+
+**Consequences:** The hard-dependency surface is rsample, cli, rlang, tune
+(>= 2.0.0), workflows, parsnip. `ranger` in Suggests means the stochastic-engine
+tests skip gracefully where it is absent, so CI without it stays green while
+losing that coverage — the tests that matter most for IP2 are exactly the
+skippable ones, which is a cost accepted rather than hidden. AC12 and AC13
+(RR01's BC5 and BC6) are satisfiable as written; no "Deviations from RR01" row
+is owed.
+
+### D-013 (2026-07-25): `recipes` and `yardstick` join Suggests for the test engines — same reasoning D-009 used for `cli` and `rlang`, and leaves D-007's Imports rejection standing
+
+**Context:** RR01's BC10 requires AC3's `fit_resamples()` invariant to run on an
+engine with no randomness at all, so the equality is exact rather than
+seed-contingent. parsnip's tunable model engines all pull an extra package
+(glmnet, kknn, xgboost) or, in rpart's case, consume RNG by default through
+`xval = 10`. A tunable recipe step with a plain `linear_reg()` lm model has no
+RNG anywhere in the path.
+
+`yardstick` is a separate need: it is not re-exported by `tune`, so without it
+no test can construct a `metric_set()` and the `metrics` argument ships
+untested.
+
+**Decision:** `recipes` and `yardstick` join Suggests. The deterministic engine
+is `step_pca(num_comp = tune())` ahead of `linear_reg()`; metric sets are built
+with `yardstick::metric_set()`. Considered and rejected: `rpart` (ships with R,
+but its default internal cross-validation draws from the RNG, so the RNG-free
+property would depend on remembering `xval = 0` — fragile in exactly the tests
+meant to catch fragility); testing only with `metrics = NULL` (avoids the
+`yardstick` line, at the price of never passing a value to one of the
+function's four arguments).
+
+**Consequences:** No practical weight — both are hard Imports of `tune`
+(`recipes` of `workflows` too), so they are installed for every user of this
+package regardless, exactly as D-009 argued for `cli` and `rlang`. D-007's
+rejection of `yardstick` and `dials` stands unchanged: it concerned *Imports*,
+where `R CMD check` would flag them unused, and Suggests carries no such claim.
+The deterministic test engine exercises the preprocessing path, which is also
+where IP1's "preprocessing is estimated on analysis data" clause bites, so the
+choice buys leakage-test relevance the model-only engines would not have.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
