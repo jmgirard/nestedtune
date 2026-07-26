@@ -8,7 +8,8 @@ _Architecture as it **is**, not as it will be. Future work lives in
 > **`/design-interview` complete, both phases (2026-07-25).** Purpose, contract
 > boundary, conventions, and the IP/GP principle set below are elicited, not
 > inferred. The package has no source yet; Function Families and Architecture
-> stay empty until it does.
+> stay empty until it does. Elicitation provenance: run on Opus 5 rather than
+> the skill's recommended Fable, at the maintainer's choice.
 
 **nestedtune orchestrates nested cross-validation for the tidymodels
 ecosystem.** The package is named `nestedtune`, not `nestedcv` — that name is
