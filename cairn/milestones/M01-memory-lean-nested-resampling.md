@@ -1,6 +1,6 @@
 # M01: Memory-lean nested resampling structure
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -119,6 +119,8 @@ export. _(amended 2026-07-25)_
 
 - 2026-07-25: T7 done — roxygen docs, `_pkgdown.yml` reference row, NEWS.md entries, and a hand-written README.md. `devtools::check()` is 0 errors / 0 warnings / 0 notes; `pkgdown::check_pkgdown()` clean after adding the pkgdown URL to DESCRIPTION.
 - 2026-07-25: two check WARNINGs fixed at T7 — an `@section` title containing `rsample::nested_cv()` in backticks made roxygen emit a malformed Rd section, and NEWS.md's `# nestedtune (development version)` heading was unparseable by R's news reader (now `# nestedtune 0.0.0.9000`).
+
+- 2026-07-25: all 7 tasks complete; `devtools::test()` 476 passing / 0 failures, `devtools::check()` 0/0/0, `document()` no-diff, `pkgdown::check_pkgdown()` clean, `cairn_validate` all green. Status in-progress -> review.
 
 ## Decisions
 
