@@ -72,3 +72,33 @@ test_that("a miraiInterrupt aborts instead of being recorded as a failed fold", 
   interrupt <- structure(20L, class = c("miraiInterrupt", "errorValue"))
   expect_error(classify_fold_result(interrupt), class = "nestedtune_interrupted")
 })
+
+test_that("dispatch refuses daemons that cannot load the package", {
+  skip_if_not_installed("mirai")
+  skip_on_cran()
+
+  # Bare daemons with no nestedtune on their library path: the one setup error
+  # users actually hit. Without the pre-flight round-trip this surfaces as every
+  # fold failing with the same opaque note (RR03 rec 8).
+  old <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"), names = TRUE)
+  Sys.setenv(R_LIBS = tempfile(), R_LIBS_USER = tempfile())
+  on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
+
+  mirai::daemons(0)
+  mirai::daemons(2)
+  on.exit(mirai::daemons(0), add = TRUE)
+  expect_error(
+    check_daemons_can_load(),
+    class = "nestedtune_daemons_cannot_load"
+  )
+})
+
+test_that("dispatch accepts daemons primed with the package", {
+  skip_if_not_installed("mirai")
+  skip_if_not_installed("pkgload")
+  skip_on_cran()
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+  expect_true(check_daemons_can_load())
+})

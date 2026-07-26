@@ -67,6 +67,8 @@ dispatch_folds <- function(payloads, object, grid, metrics) {
     return(lapply(payloads, fold_task, object = object, grid = grid, metrics = metrics))
   }
 
+  check_daemons_can_load()
+
   record_dispatch("parallel")
   mapped <- mirai::mirai_map(
     .x = payloads,
@@ -78,6 +80,37 @@ dispatch_folds <- function(payloads, object, grid, metrics) {
   # completed ones -- exactly what M03 exists to prevent.
   collected <- mirai::collect_mirai(mapped)
   lapply(collected, classify_fold_result)
+}
+
+# One round-trip before any fold is dispatched, to fail on the setup error users
+# will actually make.
+#
+# Daemons are separate R processes: they can load nestedtune only from an
+# installed library, and `devtools::load_all()` does not reach them. Without this
+# check that mistake surfaces as every fold failing with the same opaque note --
+# a run that looks like a statistical catastrophe and is really a library path
+# (RR03 rec 8). One round-trip buys an error that names the fix.
+check_daemons_can_load <- function(call = rlang::caller_env()) {
+  ok <- tryCatch(
+    isTRUE(mirai::mirai(requireNamespace("nestedtune", quietly = TRUE))[]),
+    error = function(cnd) FALSE
+  )
+  if (ok) {
+    return(invisible(TRUE))
+  }
+  cli::cli_abort(
+    c(
+      "The mirai daemons cannot load {.pkg nestedtune}.",
+      i = "Daemons are separate R processes and load the package from an
+           installed library; {.fn devtools::load_all} does not reach them.",
+      i = "Install the package, or prime the daemons with
+           {.code mirai::everywhere(pkgload::load_all('<path>'))}.",
+      i = "Alternatively call {.code mirai::daemons(0)} to run serially --
+           results are identical either way."
+    ),
+    class = "nestedtune_daemons_cannot_load",
+    call = call
+  )
 }
 
 # What a worker handed back, turned into a fold record.

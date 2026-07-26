@@ -151,6 +151,9 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - 2026-07-26: T4 done — `classify_fold_result()` validates fold-record shape positively; `failed_fold()` gained an optional `message` for the path where no condition exists. Inverting to the natural `inherits(x, "condition")` implementation reddens so many tests the run aborts, and dropping the interrupt branch reddens BC4's test.
 - 2026-07-26: deviation from RR03 rec 1 — `nanonext::nng_error()` is reached via `getExportedValue()` guarded by `tryCatch` rather than a hard `::` call, because nanonext is mirai's dependency and not ours; declaring it would need its own dependency gate for a note-text nicety. BC3 is unaffected, requiring only that the stage name the worker.
 - 2026-07-26: suite 980 pass / 0 fail; `document()` produces no diff.
+- 2026-07-26: T4 was ticked a commit early — the pre-flight round-trip rec 8 asked for was missing. `check_daemons_can_load()` now runs one round-trip before any fold is dispatched and aborts with the fix named; tests cover both the bare-daemon refusal and the primed-daemon pass.
+- 2026-07-26: test helper `helper-parallel.R` adds `prime_daemons()`/`start_daemons()` (RR03 rec 9); cleanup is left to each caller's `on.exit` so the helpers need no dependency beyond mirai, and `withr` stays undeclared.
+- 2026-07-26: suite 982 pass / 0 fail.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
