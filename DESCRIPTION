@@ -24,10 +24,13 @@ Imports:
     tune (>= 2.0.0),
     workflows
 Suggests:
+    knitr,
     lobstr,
     mlbench,
     ranger,
     recipes,
+    rmarkdown,
     testthat (>= 3.0.0),
     yardstick
+VignetteBuilder: knitr
 Config/testthat/edition: 3

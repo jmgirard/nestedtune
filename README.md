@@ -7,6 +7,10 @@
 
 Nested cross-validation for the tidymodels ecosystem.
 
+Start with [Nested cross-validation][guide] — what the estimate means, what to
+report instead of your model's own score, and how to read disagreement between
+outer folds.
+
 ## Installation
 
 ``` r
@@ -61,10 +65,47 @@ resampling, as multiples of the source data size:
 What remains is the index vectors, which rsample stores too; the copies of the
 data are gone.
 
-## Scope
+## Running the nested loop
 
-This release ships the resampling structure only. Running the nested loop —
-tuning on each outer fold's inner resamples, selecting, and scoring on the outer
-assessment set — is the package's purpose and is in development.
+`nested_tune_grid()` tunes on each outer fold's inner resamples, selects, fits
+on the outer analysis set, and scores on the outer assessment set — keeping what
+each fold chose. `nested_final_fit()` runs the same procedure once more with the
+whole dataset in hand, and gives back the model to deploy as its own object.
 
+``` r
+library(nestedtune)
+library(parsnip)
+library(rsample)
+library(workflows)
+
+wf <- workflow(
+  mpg ~ .,
+  rand_forest(mtry = tune(), min_n = tune()) |>
+    set_engine("ranger") |>
+    set_mode("regression")
+)
+grid <- expand.grid(mtry = c(2L, 5L, 8L), min_n = c(2L, 10L))
+
+set.seed(1)
+folds <- nested_resamples(
+  mtcars,
+  outside = vfold_cv(v = 5),
+  inside = vfold_cv(v = 5)
+)
+
+# The estimate: what the whole tune-and-fit procedure achieves. Report this.
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = grid)
+collect_metrics(res)
+
+# The model: what you deploy. It has no performance number of its own.
+set.seed(3)
+final <- nested_final_fit(wf, folds, grid = grid)
+predict(extract_workflow(final), new_data = mtcars[1:3, ])
+```
+
+Why the estimate belongs to the procedure rather than to the model, and what to
+write up, is the subject of [the guide][guide].
+
+[guide]: https://jmgirard.github.io/nestedtune/articles/nested-cv.html
 [issue]: https://github.com/tidymodels/rsample/issues/283

@@ -12,12 +12,13 @@ _Last hygiene check: 2026-07-26 (M05 merged and archived — `nested_final_fit()
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
-| M06 | A guide that says what to report | planned | M05 | normal | milestones/M06-nested-cv-vignette.md |
+| M06 | A guide that says what to report | review | M05 | normal | milestones/M06-nested-cv-vignette.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
+- Deploy the pkgdown site, so the URLs DESCRIPTION and README already advertise resolve — the site root 404s today, with no `gh-pages` branch and no deploy workflow (`usethis::use_pkgdown_github_pages()` is the standard route) — added 2026-07-26 — M06 review finding F6, scored 45; the dead URL predates M06, which only added a second link depending on it
 - Report the M01 diagnosis upstream on rsample#283 (cause is inside_resample()'s as.data.frame(); the 13x figure's reprex used a 10x10 scheme, not 5x2) — added 2026-07-25 — G4; promoted from the memory candidate, which became M01
 - Parallelism over outer folds, plus plotting selection instability — added 2026-07-25 — split from M02; failed-fold handling became M03 and print/summary became M04, leaving this remainder. Parallelism needs its own dependency gate and D-entry (tune 2.x carries mirai and future in Suggests); D-011's RNG scheme is already parallel-ready, so the work is verifying it across workers, not redesigning it
 - Give the orchestration tests a metric set that is not tune's default, so a dropped `metrics` argument fails something — today every fixture uses `metric_set(rmse, rsq)`, which equals the regression default, and `metrics = NULL` gives identical results — added 2026-07-26 — M05 review finding F1, scored 78 (below the action threshold); affects `nested_tune_grid()` as well as `nested_final_fit()`

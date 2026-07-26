@@ -3,6 +3,12 @@ url: https://jmgirard.github.io/nestedtune/
 template:
   bootstrap: 5
 
+articles:
+- title: Guides
+  navbar: ~
+  contents:
+  - nested-cv
+
 reference:
 - title: Nested resampling
   desc: >

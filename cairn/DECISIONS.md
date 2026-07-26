@@ -438,6 +438,31 @@ identity test would still pass" while the exposed-seed replication contract
 broke, so the guard is the contract-derived oracle (BC3) rather than a
 reproducibility test.
 
+### D-017 (2026-07-26): `knitr` and `rmarkdown` join Suggests as the vignette builder — the first non-test addition to the Suggests set D-006 opened
+
+**Context:** M06 ships the long-form guide IP3 obliges the package to carry, and
+that obligation is discharged only if the guide's claims stay true — which the
+milestone enforces by having every number in its prose produced by a chunk that
+executes at build, so drift fails the check rather than aging silently. The
+package has carried no vignette infrastructure at all: no `vignettes/` directory
+and no `VignetteBuilder` field, so there was nothing to execute chunks with.
+
+**Decision:** `knitr` and `rmarkdown` join Suggests and DESCRIPTION declares
+`VignetteBuilder: knitr`. Considered and rejected: Quarto vignettes (better
+output, but they require the `quarto` binary on the build machine — a heavier
+requirement for contributors and for CRAN's check farm than two pure-R
+packages); shipping the guide as static prose with hand-typed output (no
+build-time execution, so the drift guard that keeps IP3's obligation honest
+could not exist).
+
+**Consequences:** Install weight for users is unchanged — Suggests is not
+installed by default, and `R CMD check` on CRAN has both. Check time grows by
+the vignette's runtime, measured at roughly nine seconds for the full
+design → tune → final-fit path. The worked example adds nothing further to the
+dependency surface: `mtcars` is base R and `ranger` is already in Suggests
+(D-012). The hard-dependency surface is untouched: rsample, cli, rlang, tune
+(>= 2.0.0), workflows, parsnip.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
