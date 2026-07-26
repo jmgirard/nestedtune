@@ -112,13 +112,60 @@ reporting how many those were. It refuses outright when no fold completed:
 an estimate is never reported for a design that did not execute.
 }
 
+\section{Parallel execution}{
+
+
+The outer folds run in parallel when you have started mirai daemons, and
+serially otherwise. There is no argument for this — start daemons before the
+call and the loop uses them:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{mirai::daemons(4)
+res <- nested_tune_grid(wf, folds, grid = grid)
+mirai::daemons(0)
+}\if{html}{\out{</div>}}
+
+Two or more daemons are needed before the loop dispatches; below that it
+stays serial, the same threshold \code{tune} applies. Inner tuning always runs
+serially whatever you set, because nested parallelism oversubscribes cores.
+
+\strong{Results do not depend on how the loop ran.} The same seed gives the same
+result serially and in parallel, at any number of daemons — each fold's seeds
+are drawn up front and assigned by position, so a fold's outcome depends on
+where it sits in the design and never on which worker took it or in what
+order. One exception, and it carries no numbers: the backtraces stored in
+\code{.notes} record where a fold executed, so a fold that failed on a daemon
+carries that daemon's call stack rather than yours. The note text, its
+location, and its type are the same either way, though a daemon wraps long
+message lines to its own console width rather than your terminal's.
+
+Daemons are \strong{separate R processes}, which has consequences worth knowing:
+\itemize{
+\item They do not inherit your session's options, your \code{.libPaths()} changes, or
+environment variables you set after launching them. Set what a fold needs
+with \code{\link[mirai:everywhere]{mirai::everywhere()}}, or start the daemons after setting it.
+\item They load nestedtune from an installed library. Running under
+\code{devtools::load_all()} is not enough — the daemons cannot see it, and the
+call stops rather than failing every fold with the same opaque note. During
+development, prime them with
+\code{mirai::everywhere(pkgload::load_all("<path>"))}.
+\item If every daemon dies mid-run, the call blocks waiting for results that will
+never arrive; interrupt it. No per-fold timeout is imposed, because no
+timeout is defensible for an arbitrary model fit — a slow fold and a dead
+one would be indistinguishable.
+}
+
+A fold whose worker dies is recorded as a failed fold, exactly like any other
+failure: the run finishes, the other folds keep their results, and \code{.notes}
+names the worker as the stage. Interrupting a run is not a fold failure — the
+call aborts and returns nothing.
+}
+
 \section{Differences from calling tune directly}{
 
 
-Inner tuning always runs with \code{control_grid(allow_par = FALSE)}. Nested
-parallelism oversubscribes cores, so parallelism belongs over the outer folds
-rather than inside them; the setting is forced rather than left to chance,
-and there is deliberately no \code{control} argument to override it.
+Inner tuning always runs with \code{control_grid(allow_par = FALSE)}, forced
+rather than left to chance, and there is deliberately no \code{control} argument
+to override it. Parallelism belongs over the outer folds, as above.
 }
 
 \examples{

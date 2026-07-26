@@ -130,7 +130,7 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - [x] T5: Parallel test file, daemons primed under pkgload (rec 9): BC1, BC2,
       BC3, BC4, BC6, BC9, with BC7's oracles left untouched and green. Prove
       every guard by inversion (M05 lesson).
-- [ ] T6: Roxygen `@section Parallel execution:` carrying BC8 in full, plus
+- [x] T6: Roxygen `@section Parallel execution:` carrying BC8 in full, plus
       BC6's trace caveat and an amendment to "Differences from calling tune
       directly".
 - [ ] T7: Run and record the AC11 benchmark — machine, daemon count, design, both wall-clock figures.
@@ -165,6 +165,8 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - 2026-07-26: two bugs of my own found during T5, both mine not mirai's — a shared append-only ledger raced across processes and produced a phantom double-execution (per-task files fixed it), and an integer metrics column was compared against a double. mirai retries nothing: verified each task ran exactly once.
 - 2026-07-26: the 19 `'package:nestedtune' may not be available when loading` warnings are a pkgload artifact — verified absent when the package is installed to a scratch library, where parallel was also `identical()` to serial. Tests muffle that one message by text so real warnings still surface; T8's check confirms the installed path.
 - 2026-07-26: fourth compression pass to fit the cap — Scope, Decisions, and two task lines; body back to 149/149. The 12-criteria advisory and zero headroom both stand as reported at ingestion.
+- 2026-07-26: T6 done — `@section Parallel execution:` carries all six BC8 clauses plus BC6's trace caveat and the note-wrapping consequence; the tune-differences section now points at it rather than describing parallelism as hypothetical. Section title avoids backticked `::` (M01 lesson).
+- 2026-07-26: `checkRd()` non-ASCII flags are a standalone-invocation artifact — pre-existing Rd files show the same, and DESCRIPTION declares UTF-8; T8's `devtools::check()` is authoritative.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
