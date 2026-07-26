@@ -213,6 +213,34 @@ so they are installed for every user of this package regardless, and `R CMD
 check` time is unchanged. The hard surface for M01 is now rsample, cli, rlang;
 D-007's tune/workflows/parsnip additions for M02 are unaffected.
 
+### D-010 (2026-07-25): M02's orchestrator is `nested_tune_grid()` returning a standalone `nested_results` class — applies IP3 to the class choice, where D-008 applied compatibility
+
+**Context:** M02 ships the package's second export, and two things had to be
+settled before any code: what to call it, and whether its return value should
+carry tune's `tune_results` class. D-008 faced the same pair for
+`nested_resamples()` and answered "carry the upstream class" — there,
+inheriting `nested_cv` kept every existing method working and kept tune's
+refusal loud. The reasoning does not transfer: at the outer level the inherited
+methods are not merely unhelpful, several are wrong.
+
+**Decision:** The export is `nested_tune_grid(object, workflow, grid, metrics)`,
+returning an object of class `nested_results` that does **not** inherit
+`tune_results`. `collect_metrics()` is registered as a method on tune's
+generic. No `control` argument in M02: `control_grid(allow_par = FALSE)` is
+built internally. Considered and rejected: `tune_nested()` and `nested_tune()`
+(both follow tune's `tune_<method>` shape, but nested CV is not a tuning method
+— it wraps one — and neither leaves an obvious slot for a Bayesian inner loop);
+inheriting `tune_results` (brings `show_best()` and `select_best()` along, which
+would rank outer folds and return something authoritative-looking and
+meaningless — the exact misreading IP3 exists to forbid).
+
+**Consequences:** `show_best()`, `select_best()`, and `autoplot()` error as "no
+applicable method" on a `nested_results` object rather than answering wrongly;
+any of them that turns out to be genuinely wanted is written deliberately, with
+outer-level semantics decided at that point. The `nested_tune_*` prefix is now
+the orchestrator family's naming convention. Pre-1.0 all of this stays
+changeable without a deprecation cycle (D-003).
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
