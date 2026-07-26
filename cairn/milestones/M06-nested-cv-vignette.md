@@ -56,11 +56,11 @@ a gap found while writing returns to plan rather than being patched here.
 - [x] T1: pick and pin the worked dataset — small enough that the full nested
       run plus a final fit executes inside a check budget, from a package
       already in Suggests; a new dependency would need its own gate and D-entry.
-- [ ] T2: draft the vignette skeleton and the runnable end-to-end example, all
+- [x] T2: draft the vignette skeleton and the runnable end-to-end example, all
       output produced by executing chunks.
-- [ ] T3: write the "what to report, and why" section against IP3 — the
+- [x] T3: write the "what to report, and why" section against IP3 — the
       estimate describes the procedure, the model is a separate object.
-- [ ] T4: write the selection-instability section from actual
+- [x] T4: write the selection-instability section from actual
       `print.nested_results()` output.
 - [ ] T5: pkgdown articles entry, README pointer, and a full check with
       vignettes built.
@@ -71,6 +71,9 @@ a gap found while writing returns to plan rather than being patched here.
 - 2026-07-26: implement started; branch `m06-nested-cv-vignette` cut from main. Runtime probe of the full path (5x5 design, 5-candidate ranger grid): ~9s on `mtcars`, ~40s on `mlbench::BostonHousing`; outer folds disagree on both.
 - 2026-07-26: question gate settled four items — vignette toolchain (knitr + rmarkdown, D-017), worked dataset (`mtcars`, milestone Decisions), file name (`nested-cv.Rmd`, under Articles since a package-named vignette would bypass the articles index AC5 requires), README treatment (fix the stale scope paragraph beside the pointer).
 - 2026-07-26: T1 done. Minor amendment: the vignette toolchain (DESCRIPTION Suggests + `VignetteBuilder`) landed in T1 rather than T2, since its dependency gate ran alongside the dataset choice.
+- 2026-07-26: T2, T3, T4 done in one commit — they are three sections of one document, and splitting them would have meant reverting drafted prose rather than staging it. `vignettes/nested-cv.Rmd` builds in ~9s.
+- 2026-07-26: the first build caught the AC4 guard doing its job: `.selected` is a list column of one-row tibbles, so `res$.selected$mtry` is `NULL` and the prose rendered "chose 0 distinct values". Fixed by stacking with `do.call(rbind, ...)`; a hand-typed number would have shipped the error.
+- 2026-07-26: the run shows `mtry` disagreeing across folds while `min_n` agrees, so the instability section reads both cases rather than only disagreement; its heading and prose are worded from the counts rather than asserting a direction.
 
 ## Decisions
 
