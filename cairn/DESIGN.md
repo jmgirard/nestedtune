@@ -139,8 +139,14 @@ constrains how the package is developed, not what it does.
 - IP1: **No leakage across the outer boundary.** The outer assessment set never
   influences anything upstream of its own scoring: not inner tuning, not
   parameter selection, not preprocessing. This binds the final-fit path as well
-  as the loop — preprocessing is estimated on analysis data, never on the full
-  dataset. This is the property that makes the package's output mean anything.
+  as the loop: any preprocessing that feeds a reported estimate is estimated on
+  the analysis set of the resample being scored, never on data that includes the
+  corresponding assessment rows. The final model's own training preprocessing,
+  which yields no estimate, is estimated on its training data — the full dataset
+  — and is outside this clause. _(Middle clause narrowed at M05 by D-015, on
+  RR02's finding that the original wording forbade a correct final fit; git
+  holds the original.)_ This is the property that makes the package's output
+  mean anything.
 
 - IP2: **Reproducible results.** The same seed produces the same result
   regardless of the number of workers and regardless of whether execution is

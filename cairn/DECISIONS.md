@@ -375,6 +375,69 @@ D-010 chose for `nested_results`, for the same reason. `predict()` and
 `tune::last_fit()`. Pre-1.0 all of this stays changeable without a deprecation
 cycle (D-003).
 
+### D-015 (2026-07-26): IP1's middle clause is narrowed to preprocessing that feeds a reported estimate — amends the principle text D-004 classified, on RR02's finding
+
+**Context:** IP1 has read since the design interview that preprocessing "is
+estimated on analysis data, never on the full dataset", and says explicitly that
+this binds the final-fit path. M05 ships that path, and a trained model's
+preprocessing must be estimated on its training data, which for the final model
+is every row. RR02 (question 2) found the intent and the text diverge: the
+maintainer's reading — that IP1 governs estimation of a performance claim, and a
+fit producing no estimate is outside it — is sound as a matter of what leakage
+is, but the clause as written is an unconditional prohibition, so "a literal
+audit of IP1 against the shipped code flags a violation". The clause does have a
+true reading for the final-fit path — within the final tuning run, preprocessing
+must be estimated per resample, never once on pooled data — which RR02 verified
+tune 2.1.0 honours by extracting per-fold normalization means.
+
+**Decision:** IP1's middle clause is narrowed to the text RR02 proposed: any
+preprocessing that feeds a reported estimate is estimated on the analysis set of
+the resample being scored, never on data that includes the corresponding
+assessment rows; the final model's own training preprocessing, which yields no
+estimate, is estimated on the full dataset and is outside the clause. Considered
+and rejected: recording that the existing text already permitted it (nothing in
+the principle set moves, but the next audit hits the same apparent contradiction
+and the clause stays wrong on its face); changing M05's design to obey the
+literal text (RR02 rejects it as statistically wrong — a trained model's
+preprocessing has nowhere else to come from — and it would send M05 back to
+planning).
+
+**Consequences:** IP1 keeps its full force everywhere leakage can occur and
+stops forbidding a correct operation. The narrowing is what makes M05
+implementable without an IP violation, and it is the first amendment to an
+inviolable principle in this repo — made at the user's explicit decision, as the
+IP/GP rule requires. Nothing else in the principle set moves; IP1's number
+stays.
+
+### D-016 (2026-07-26): The tuning seed's scope includes building the resamples — amends the RNG contract D-011 fixed, on RR02's finding of a third stochastic stage
+
+**Context:** D-011 settled the reproducibility contract for `nested_tune_grid()`
+as two kind-pinned seeds per fold — one for tuning, one for the outer fit —
+because a fold's outcome hangs on exactly two RNG states. `nested_tune_grid()`
+receives its resamples already built. `nested_final_fit()` does not: it builds
+its inner `rset` by evaluating the design's stored `inside` specification, and
+RR02 verified by execution that `vfold_cv()` consumes the RNG. That draw is a
+third stochastic stage D-011 never had to place.
+
+**Decision:** The tuning seed's scope is defined as "construct the resamples and
+tune": the kind-pinned tuning seed is applied first, the `inside` specification
+is evaluated second, `tune_grid()` runs third. Both seeds are exposed on the
+returned object, and the documented hand-replication recipe includes the
+rset-construction step inside the tuning seed's scope. Two seeds remains the
+right number — RR02 reconfirmed that `tune_grid()` is net-zero on
+`.Random.seed` and that a plain `fit()` consumes the ambient stream exactly as
+`last_fit()` does, so RR01's argument for two-rather-than-one carries over
+verbatim.
+
+**Consequences:** D-011's two-seed contract is unchanged for
+`nested_tune_grid()` and extended, not replaced, for any function that builds
+its own resamples — the later parallelism milestone and any
+`nested_tune_bayes()` inherit this clause. The failure it prevents is silent:
+RR02 notes that with the draw on the caller's ambient stream "every same-seed
+identity test would still pass" while the exposed-seed replication contract
+broke, so the guard is the contract-derived oracle (BC3) rather than a
+reproducibility test.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
