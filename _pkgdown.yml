@@ -10,3 +10,15 @@ reference:
     data for every outer fold.
   contents:
   - nested_resamples
+
+- title: Running the loop
+  desc: >
+    Tune on each outer fold's inner resamples, select, then fit and score on
+    the outer split — and keep what each fold chose.
+  contents:
+  - nested_tune_grid
+  - collect_metrics.nested_results
+
+- title: Re-exports
+  contents:
+  - reexports

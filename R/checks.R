@@ -27,7 +27,30 @@ check_workflow <- function(object, call = rlang::caller_env()) {
       call = call
     )
   }
+  check_model_spec(workflows::extract_spec_parsnip(object), call = call)
   invisible(object)
+}
+
+# A missing engine package would surface anyway, but only once the first fold
+# starts fitting. Asking up front turns a wait-then-fail into an immediate
+# answer, which matters when the fold that fails is the tenth. The mode is not
+# checked here: workflows::workflow() already refuses a spec without one, so
+# there is no path that reaches us with an unknown mode.
+check_model_spec <- function(spec, call = rlang::caller_env()) {
+  needed <- parsnip::required_pkgs(spec)
+  missing <- needed[!vapply(needed, rlang::is_installed, logical(1))]
+  if (length(missing) > 0L) {
+    cli::cli_abort(
+      c(
+        "{.pkg {missing}} {?is/are} needed by the workflow's engine but \\
+         not installed.",
+        i = "Install {cli::qty(missing)}{?it/them} before running the loop."
+      ),
+      call = call
+    )
+  }
+
+  invisible(spec)
 }
 
 check_nested <- function(resamples, call = rlang::caller_env()) {

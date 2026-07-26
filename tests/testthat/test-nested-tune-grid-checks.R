@@ -30,6 +30,25 @@ test_that("`object` must be an unfitted workflow", {
   expect_error(nested_tune_grid(fitted, folds), "already be fitted")
 })
 
+test_that("the workflow's engine packages must be installed", {
+  skip_if_no_engines()
+  # A real engine that is almost certainly absent. Skipped rather than
+  # asserted if it happens to be installed.
+  skip_if(rlang::is_installed("kknn"))
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+
+  missing_engine <- workflows::workflow(
+    y ~ x1 + x2 + x3 + x4,
+    parsnip::set_mode(
+      parsnip::set_engine(parsnip::nearest_neighbor(), "kknn"),
+      "regression"
+    )
+  )
+  expect_error(nested_tune_grid(missing_engine, folds), "not installed")
+})
+
 test_that("`resamples` must be a nested resampling design", {
   skip_if_no_engines()
 
