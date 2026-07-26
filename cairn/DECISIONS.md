@@ -168,6 +168,51 @@ would flag them unused).
 rsample, tune, workflows, parsnip. `R CMD check` gets slower from M02 onward.
 Any further dependency takes its own gate and D-entry.
 
+### D-008 (2026-07-25): The memory-lean constructor is `nested_resamples()` and carries rsample's `nested_cv` class — implements the scope D-005 opened
+
+**Context:** D-005 put a memory-lean nested resampling constructor in scope, and
+M01 ships it as the package's first export. Two things had to be settled before
+any code: what to call it, and whether its return value should present itself as
+an rsample `nested_cv` object. `tune` hard-aborts on class `nested_cv` (G1), so
+the class choice also decides how the object behaves when handed to `tune`.
+
+**Decision:** The export is `nested_resamples(data, outside, inside)`, mirroring
+`rsample::nested_cv()`'s signature. Its return value carries
+`c("nested_resamples", "nested_cv", <outer rset classes>)` plus the `outside`
+and `inside` attributes rsample sets. Considered and rejected: naming it
+`nested_cv` (masks `rsample::nested_cv()` whenever both are attached);
+`lean_nested_cv` and `nested_rset` (leak an implementation property, and rsample
+vocabulary, into a name the applied audience reads); carrying a distinct class
+only (a user swapping the constructor into existing code would lose every method
+dispatching on `nested_cv`, and `tune` would stop refusing the object loudly and
+start mis-consuming it as a plain `rset` with a spare column).
+
+**Consequences:** The object is a drop-in for `rsample::nested_cv()`'s. `tune`
+refuses it exactly as it refuses rsample's, so G1 stays open until M02's
+orchestrator, which consumes the inner `rset`s rather than the top-level object.
+Pre-1.0 the name and class stay changeable without a deprecation cycle (D-003).
+
+### D-009 (2026-07-25): `cli` and `rlang` join Imports — amends the dependency set D-006 fixed
+
+**Context:** D-006 set M01's hard dependency surface at `rsample` alone. Writing
+the scaffold surfaced two gaps it did not anticipate. The r-package profile's
+`test-doctrine` slot requires user-facing conditions to be raised with
+`cli::cli_abort()` rather than base `stop()`. And D-008 committed to
+`nested_resamples(data, outside, inside)` mirroring `rsample::nested_cv()`,
+whose `outside`/`inside` are *unevaluated expressions* — inspecting and
+modifying them needs `rlang::is_call()`, `call_modify()`, and `caller_env()`.
+
+**Decision:** `cli` and `rlang` join `rsample` in Imports. Considered and
+rejected: `cli` alone, hand-rolling call inspection with base `substitute()` and
+`match.call()` (reimplements rlang and diverges from how rsample does the same
+job); neither, using base `stop()` (contradicts the profile's error-condition
+rule outright).
+
+**Consequences:** No practical weight is added — `rsample` already imports both,
+so they are installed for every user of this package regardless, and `R CMD
+check` time is unchanged. The hard surface for M01 is now rsample, cli, rlang;
+D-007's tune/workflows/parsnip additions for M02 are unaffected.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
