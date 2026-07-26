@@ -8,7 +8,7 @@
 - **Depends on:** M02   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** RR03   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** IP2, GP1, GP3, GP4   <!-- owner: plan · create/amend-via-gate -->
-- **Branch/PR:** `m07-parallel-outer-folds`   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m07-parallel-outer-folds` / https://github.com/jmgirard/nestedtune/pull/7   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
