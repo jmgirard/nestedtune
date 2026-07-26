@@ -277,6 +277,37 @@ R's RNG; engines that bypass it (kernlab's SVM, keras/torch) are outside its
 reach under any R-side scheme. The verified probe table and full reasoning are
 in `cairn/reviews/archive/RR01-rng-streams-outer-folds.md`.
 
+### D-012 (2026-07-25): `tune` pinned at `>= 2.0.0` and `ranger` added to Suggests — amends the dependency set D-007 fixed, on RR01's evidence
+
+**Context:** D-007 added `tune`, `workflows`, and `parsnip` to Imports with no
+version floor. RR01 verified by execution against tune 2.1.0 that every
+reproducibility guarantee M02 relies on — per-resample L'Ecuyer substreams
+derived internally even under `allow_par = FALSE`, net-zero exit on the
+caller's RNG state, `last_fit()` consuming the ambient stream — is tune 2.x
+behavior. tune's own NEWS for 2.0.0 states that results differ from earlier
+versions; the foreach-era 1.x seeded differently. Separately, RR01 verified
+that with a deterministic engine every RNG test in M02 passes vacuously —
+including under the schemes the review rejected — so the RNG suite has no power
+without an engine whose randomness flows through R's RNG.
+
+**Decision:** DESCRIPTION declares `tune (>= 2.0.0)` in Imports and `ranger` in
+Suggests, the latter guarded by `skip_if_not_installed()` in the tests that use
+it. Considered and rejected: no floor on tune (the IP2 evidence was gathered on
+2.1.0 and does not transfer downward — a user on 1.x would get a driver whose
+reproducibility claim was never tested against their tune); a heavier
+stochastic engine such as `randomForest` or an xgboost path (ranger is
+parsnip-native, single-threaded by default, and draws its seed from the R
+stream, all verified); testing with deterministic engines only (leaves the
+seeding untested by construction).
+
+**Consequences:** The hard-dependency surface is rsample, cli, rlang, tune
+(>= 2.0.0), workflows, parsnip. `ranger` in Suggests means the stochastic-engine
+tests skip gracefully where it is absent, so CI without it stays green while
+losing that coverage — the tests that matter most for IP2 are exactly the
+skippable ones, which is a cost accepted rather than hidden. AC12 and AC13
+(RR01's BC5 and BC6) are satisfiable as written; no "Deviations from RR01" row
+is owed.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

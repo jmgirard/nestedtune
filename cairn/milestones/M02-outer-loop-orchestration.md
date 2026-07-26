@@ -145,6 +145,7 @@ planned once this milestone's results object exists and its real shape is known.
 - 2026-07-25: question gate — entry point, results class, and the `control` argument settled (D-010 + milestone-local entry); T4's RNG scheme escalated to /milestone-brief on the user's selection (IP2 tripwire).
 - 2026-07-25: blocked on RB01 (per-outer-fold RNG streams, T4). RB committed on the milestone branch rather than the default branch, since M02's branch was already open — keeps this milestone's tracking on one branch.
 - 2026-07-25: ingested RR01 ([F] Fable subagent, tune 2.1.0 installed and probed by execution). Applied: Scheme A′ (D-011), tune version floor, `ranger` in Suggests, deterministic engine for AC3 and both variants for AC2, the seeds-as-contract oracle construction. Rejected with reason (RR recs 2, 3, 7): L'Ecuyer streams, inherited state, and a `seed` argument. Deferred: B4 → ROADMAP candidate. BC1–BC10 ingested verbatim as AC8–AC17; no deviations.
+- 2026-07-25: dependency gate — user approved the `tune (>= 2.0.0)` floor and `ranger` in Suggests (D-012); user also elected to carry M02 as one milestone despite the 17-criteria / 10-task split tripwires.
 - 2026-07-25: plan amendment (substantive) — AC1–AC7 and Scope Out compressed in one pass to fit the 150-line cap after the BC ingestion; no criterion dropped, AC2/AC3 shed detail now carried more precisely by AC16/AC17. T1/T2/T4/T5/T9 refined and T10 added for the RNG test battery.
 
 ## Decisions
