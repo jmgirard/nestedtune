@@ -84,7 +84,7 @@ export. _(amended 2026-07-25)_
       the outer analysis index vector, and discard the frame — so the same seed
       yields the same splits as rsample while nothing materialized is retained.
       (RB tripwire: ip-touching — IP2 reproducibility; settled at the gate.)
-- [ ] T5 — Support stratified and grouped inner specs under AC2; fire and test
+- [x] T5 — Support stratified and grouped inner specs under AC2; fire and test
       every `cli_abort()` branch the constructor does have (bad `outside`/
       `inside` arguments, outer bootstrap).
 - [ ] T6 — Memory benchmark test across v = 2, 5, 10, 50 measuring both the new
@@ -111,6 +111,8 @@ export. _(amended 2026-07-25)_
 - 2026-07-25: Scope amended at a mini gate — inner splits are reassembled into the spec's own rset rather than `manual_rset()`, which was measured to drop the inner class, the spec attributes, and a repeated spec's `id2` column. Approved by the user.
 
 - 2026-07-25: T4 done — 5 RNG-fidelity tests (same seed identical, different seed differs, RNG stream left in the same position as rsample, every inner split shares the caller's data by address via lobstr, indices confined to the outer analysis set). 272 assertions, 0 failures.
+
+- 2026-07-25: T5 done — stratified and grouped inner and outer specs all match `rsample::nested_cv()` with no special handling, plus group-integrity, character-vs-factor strata, and NA-row coverage; all 4 `cli_abort()` branches fired, and the zero-/one-row edge cases pinned to rsample's own message. 469 assertions, 0 failures.
 
 ## Decisions
 
