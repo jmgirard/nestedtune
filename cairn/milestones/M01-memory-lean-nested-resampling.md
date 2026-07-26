@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP1, GP3, GP4
-- **Branch/PR:** `m01-memory-lean-nested-resampling`
+- **Branch/PR:** `m01-memory-lean-nested-resampling` · https://github.com/jmgirard/nestedtune/pull/1
 
 ## Goal
 
@@ -34,27 +34,27 @@ export. _(amended 2026-07-25)_
 
 ## Acceptance criteria
 
-- [ ] AC1 — `devtools::check()` clean: 0 errors, 0 warnings, NOTEs justified in
+- [x] AC1 — `devtools::check()` clean: 0 errors, 0 warnings, NOTEs justified in
       the review evidence.
-- [ ] AC2 — For a fixed seed and inner/outer spec, every inner analysis set and
+- [x] AC2 — For a fixed seed and inner/outer spec, every inner analysis set and
       every inner assessment set is row-identical to the corresponding set from
       `rsample::nested_cv()`, compared as retrieved data frames. This is the
       reference-implementation oracle (GP2).
-- [ ] AC3 — Object size grows with the outer fold count only through index
+- [x] AC3 — Object size grows with the outer fold count only through index
       vectors, never through retained copies of the data. Measured at
       v = 2, 5, 10, 50 with the inner spec held fixed, the fitted size increase
       per additional outer fold is less than 0.25× the size of the source data,
       and is at least 5× shallower than the same measurement on
       `rsample::nested_cv()`, whose slope is ≈1× the source data per outer
       fold. Both measurements are recorded. _(amended 2026-07-25)_
-- [ ] AC4 — The measured size at each v matches an analytic prediction
+- [x] AC4 — The measured size at each v matches an analytic prediction
       (one shared copy of the data, plus the index vectors implied by the
       scheme) within a stated tolerance. This is the analytic oracle, the second
       independent type GP2 requires beside AC2.
-- [ ] AC5 — Stratified and grouped inner specs either produce splits meeting
+- [x] AC5 — Stratified and grouped inner specs either produce splits meeting
       AC2, or are refused with a `cli_abort()` naming the limitation; the
       chosen behavior is documented and each error branch is fired by a test.
-- [ ] AC6 — Every exported object has roxygen docs and a `_pkgdown.yml`
+- [x] AC6 — Every exported object has roxygen docs and a `_pkgdown.yml`
       reference row; `devtools::document()` produces no diff.
 
 ## Coverage
@@ -122,6 +122,8 @@ export. _(amended 2026-07-25)_
 
 - 2026-07-25: all 7 tasks complete; `devtools::test()` 476 passing / 0 failures, `devtools::check()` 0/0/0, `document()` no-diff, `pkgdown::check_pkgdown()` clean, `cairn_validate` all green. Status in-progress -> review.
 
+- 2026-07-25: review fan-out found 7 findings; 4 scored >=80 and were fixed on the branch (IP1 leakage via a prebuilt `outside` rset, missing per-split `$id`, lost split subclass, overclaiming docs). 3 below threshold logged; F7 added as a ROADMAP candidate. Suite 476 -> 549 assertions.
+
 ## Decisions
 
 - **Transient materialization, not a stand-in frame** (2026-07-25, question
@@ -153,3 +155,42 @@ export. _(amended 2026-07-25)_
   it describes rsample's indices, and carrying it over would be a stale claim.
 
 ## Review
+
+Evidence gathered fresh at review on R 4.6.1 / rsample 1.3.2, by command.
+
+- **AC1** — `devtools::check(document = TRUE, args = "--no-manual")` run fresh: **Status: OK — 0 errors, 0 warnings, 0 notes** (22s). No NOTEs to justify.
+- **AC2** — `test-nested-resamples-identity.R`: 221 assertions, 0 failures. Inner analysis and assessment sets compared to `rsample::nested_cv()` with `expect_identical()` and no normalization, across v-fold/v-fold, v-fold/bootstrap, a repeated outer scheme, and a pre-evaluated outer `rset`. `test-nested-resamples-specs.R` (197 assertions) extends the same comparison to stratified and grouped specs. Live reference-implementation oracle, recomputed at test time, not frozen.
+- **AC3** — Measured fresh on `mlbench::LetterRecognition` (20000 x 17, 2.645 MB), inner v = 5, as multiples of source-data size: v=2 lean 1.186 / rsample 2.156; v=5 1.734 / 5.612; v=10 2.649 / 11.373; v=50 9.965 / 57.458. Per-outer-fold slope: lean **0.1829** (bound < 0.25), rsample **1.1521** (the criterion's approx-1-copy-per-fold), **6.30x shallower** (bound >= 5x). Both measurements recorded here and in the asserting test's oracle header.
+- **AC4** — Analytic prediction `size(data) + 4 * n * (v - 1) * (inner_v + 1)`, derived from what the structure must hold rather than from the code. Max `|measured / analytic - 1|` = **0.72%** across v = 2, 5, 10, 50, against the **2%** tolerance the test asserts. A negative-control test asserts the same model does *not* fit `rsample::nested_cv()`'s sizes, so it cannot pass by fitting anything.
+- **AC5** — Chosen behavior is **support**, not refusal. Stratified and grouped inner specs match `rsample::nested_cv()` under AC2's comparison, as do stratified and grouped *outer* specs; a group-integrity test confirms no group straddles an inner split. Documented in the roxygen `Differences from rsample` section and in NEWS.md. All four `cli_abort()` branches fired by tests (non-data-frame `data`; non-`rset` `outside`; outer bootstrap, as a call *and* as a prebuilt object; non-call `inside`), plus zero-row and one-row edge cases pinned to rsample's own message. 197 assertions, 0 failures.
+- **AC6** — `devtools::document()` produces no diff against the committed tree. The single export `nested_resamples` has `man/nested_resamples.Rd` and a `_pkgdown.yml` reference row; `pkgdown::check_pkgdown()` reports no problems.
+
+### Consistency gate
+
+- `cairn_validate`: exit 0, all checks passed (16 PASS, 7 advisory OK).
+- No `DESIGN.md` IP/GP principle changed — only a Conventions line was added — so `cairn_impact` is skipped.
+- r-package `consistency-gate` slot: `document()` no diff; `NAMESPACE` and `man/` regenerate from roxygen; `pkgdown::check_pkgdown()` clean; NEWS.md carries the user-visible entries and no milestone numbers appear in user-facing text; no `.Rbuildignore` gaps (`check()` reported 0 NOTEs); full `check()` clean. No `README.Rmd` exists, so the knit check is a deliberate no-op recorded at T1.
+- CI on PR #1: all six jobs pass — macOS release, Windows release, ubuntu release, ubuntu devel, ubuntu oldrel-1, and test-coverage.
+
+### Independent review fan-out
+
+Three fresh-context lenses, then a Sonnet scorer that did not generate the findings.
+
+- **[S] prior-PR-comments:** no prior-review evidence — `milestones/archive/` holds only `.gitkeep` and the GitHub inline-comment probe returned empty. Zero findings, a clean no-op for the repo's first code milestone.
+- **[S] blame-history:** zero findings. Verified the shipped code against D-006/D-009 (dependency set), D-008 (export name and class), the AC3 and Scope amendments, the superseded row-name decision, and D-005's carve-out; found no contradiction and no leftover of an abandoned approach.
+- **[O] diff-bug:** seven findings, all reproduced by execution in the main session before scoring.
+
+Actioned (score >= 80), all four fixed on the branch:
+
+- **F1 (88) — IP1 leakage.** A pre-evaluated `outside` rset built on a *different* data frame had its indices remapped onto `data`, drawing inner analysis rows from the outer assessment set — 22 leaked rows in the reproduction, where `rsample::nested_cv()` leaks none because it ignores `data` for an rset. A row-count mismatch constructed silently and failed later with an out-of-range error naming nothing the user typed. **Fixed:** `nested_resamples()` now refuses when the rset's data is not the data it was handed, per GP3.
+- **F2 (85) — inner splits lacked `$id`.** Rebuilding splits with `make_splits()` bypassed the per-split id tibble rsample attaches, so `labels()` returned a 0x0 tibble and `rsample::add_resample_id()` errored — falsifying D-002's premise that each inner element is an ordinary `rset` tune accepts. **Fixed** with F3.
+- **F3 (82) — inner splits lost their subclass.** `vfold_split` became bare `rsplit`, so `rsample:::internal_calibration_split()` (tune's post-processing path) errored; the outer splits kept their class, leaving the object internally inconsistent. **Fixed:** rsample's own split objects are now kept and only their `data`/`in_id`/`out_id` fields rewritten, which closes F2 and F3 together. Verified: class and names match, the calibration generic returns `vfold_split_cal`, `add_resample_id()` works; the only residual differences are the three index-bearing fields, which is what the package exists to change.
+- **F5 (80) — docs overclaimed.** DESCRIPTION, NEWS.md, README.md, and the roxygen said the splits were "identical" and the object a "drop-in substitution". **Fixed:** narrowed to what is verified — the splits select the same rows, retrieved frames are identical, and each inner split carries the same class and resample id.
+
+Logged, below the 80 threshold, not actioned:
+
+- **F4 (68)** — the AC2 oracle compares retrieved frames and the inner rset's attributes but never the split objects, which is why F2/F3 went unnoticed. AC2's wording is satisfied, so this is a scope-of-oracle gap; the F2/F3 regression test now covers it incidentally.
+- **F7 (78)** — an `inside` expression evaluating to a non-`rset` surfaces rsample's internal "Split and ID vectors have different lengths" rather than a `cli_abort()`. Added as a ROADMAP candidate row.
+- **F6 (55)** — the analytic model's header overstated its independence. Corrected in place anyway, since it is one comment: charging both index vectors is structural for splits that index the whole data, because the complement is not derivable there.
+
+No acceptance criterion and no gate check failed, so the milestone stayed at `review` and the four findings were fixed on the branch per the fan-out's fix-now disposition.

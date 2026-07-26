@@ -29,9 +29,13 @@
 #'
 #' @section Differences from rsample:
 #'
-#' The splits themselves are identical: [rsample::analysis()] and
-#' [rsample::assessment()] return the same frames, attributes included, for the
-#' same seed and specifications. One behavior differs on purpose.
+#' The splits select the same rows. [rsample::analysis()] and
+#' [rsample::assessment()] return identical frames, attributes included, and
+#' each inner split carries the class and the resample id rsample gives it, so
+#' `labels()` and [rsample::add_resample_id()] behave the same. What differs is
+#' what the splits point at: nestedtune's index the original data, rsample's
+#' index a materialized copy of each outer fold's analysis set. One behavior
+#' differs on purpose.
 #'
 #' An **outer bootstrap is refused**, not warned about. The same observation can
 #' otherwise land in both the inner analysis and the inner assessment set, which
@@ -70,6 +74,23 @@ nested_resamples <- function(data, outside, inside) {
     cli::cli_abort(c(
       "{.arg outside} must be a resampling specification or an {.cls rset}.",
       x = "Got {.obj_type_friendly {outside}}."
+    ))
+  }
+  # An rset carries the data its indices refer to. If that is not the data we
+  # were handed, remapping those indices onto `data` would silently produce
+  # inner splits drawn from rows the outer fold assigned to assessment -- a
+  # leak across the outer boundary (IP1) that no inspection of the result would
+  # reveal. rsample sidesteps this by ignoring `data` entirely for an rset;
+  # refusing says so instead of quietly picking one.
+  if (!identical(split_data(outside), data)) {
+    cli::cli_abort(c(
+      "{.arg outside} was built on different data than {.arg data}.",
+      x = "Its row indices refer to that other data frame, so composing them \\
+           with {.arg data} would draw inner splits from rows the outer fold \\
+           holds out.",
+      i = "Pass the same data frame {.arg outside} was built from, or give \\
+           {.arg outside} as an unevaluated call such as \\
+           {.code vfold_cv(v = 5)}."
     ))
   }
   if (inherits(outside, "bootstraps")) {
@@ -120,14 +141,21 @@ inner_resamples_from_split <- function(split, cl, env, data) {
 
   inner_rset <- eval(rlang::call_modify(cl, data = analysis_frame), env)
 
+  # Rebuilding the splits from scratch would drop everything rsample attaches
+  # beyond the indices -- the split subclass and the per-split `id` tibble that
+  # labels()/add_resample_id() read. So the splits rsample just produced are
+  # kept and only their three index-bearing fields are rewritten.
+  #
+  # `out_id` is made explicit rather than left as NA. rsample can leave it NA
+  # because its inner splits index a frame that *is* the analysis set, so the
+  # complement is derivable; ours index the whole data, where the complement
+  # would sweep in the outer fold's assessment rows.
   splits <- lapply(inner_rset$splits, function(inner_split) {
-    rsample::make_splits(
-      list(
-        analysis = outer_idx[as.integer(inner_split$in_id)],
-        assessment = outer_idx[as.integer(rsample::complement(inner_split))]
-      ),
-      data = data
-    )
+    assessment_idx <- outer_idx[as.integer(rsample::complement(inner_split))]
+    inner_split$in_id <- outer_idx[as.integer(inner_split$in_id)]
+    inner_split$out_id <- assessment_idx
+    inner_split$data <- data
+    inner_split
   })
 
   # Keep the inner rset the specification produced -- its class, its id columns
@@ -139,4 +167,10 @@ inner_resamples_from_split <- function(split, cl, env, data) {
   attr(out, "fingerprint") <-
     attr(rsample::manual_rset(splits, inner_rset$id), "fingerprint")
   out
+}
+
+# The data an rset's indices refer to. Every split in an rset shares one data
+# frame, so the first split answers for all of them.
+split_data <- function(x) {
+  x$splits[[1]]$data
 }

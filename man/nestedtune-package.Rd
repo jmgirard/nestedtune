@@ -6,7 +6,7 @@
 \alias{nestedtune-package}
 \title{nestedtune: Nested Cross-Validation for Tidymodels}
 \description{
-Builds and orchestrates nested cross-validation designs for the tidymodels ecosystem. Provides a memory-lean nested resampling constructor whose object size does not grow with the outer fold count, producing splits identical to those of 'rsample'.
+Builds and orchestrates nested cross-validation designs for the tidymodels ecosystem. Provides a memory-lean nested resampling constructor whose object size does not grow with the outer fold count, producing the same splits as 'rsample'.
 }
 \seealso{
 Useful links:

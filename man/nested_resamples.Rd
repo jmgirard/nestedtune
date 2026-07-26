@@ -42,9 +42,13 @@ the inner splits reference the single shared copy the caller already has.
 \section{Differences from rsample}{
 
 
-The splits themselves are identical: \code{\link[rsample:analysis]{rsample::analysis()}} and
-\code{\link[rsample:assessment]{rsample::assessment()}} return the same frames, attributes included, for the
-same seed and specifications. One behavior differs on purpose.
+The splits select the same rows. \code{\link[rsample:analysis]{rsample::analysis()}} and
+\code{\link[rsample:assessment]{rsample::assessment()}} return identical frames, attributes included, and
+each inner split carries the class and the resample id rsample gives it, so
+\code{labels()} and \code{\link[rsample:add_resample_id]{rsample::add_resample_id()}} behave the same. What differs is
+what the splits point at: nestedtune's index the original data, rsample's
+index a materialized copy of each outer fold's analysis set. One behavior
+differs on purpose.
 
 An \strong{outer bootstrap is refused}, not warned about. The same observation can
 otherwise land in both the inner analysis and the inner assessment set, which

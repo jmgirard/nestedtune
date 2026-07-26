@@ -33,9 +33,11 @@ folds <- nested_resamples(
 folds$inner_resamples[[1]]
 ```
 
-For the same seed and the same specifications the splits are identical to
-rsample's, down to the attributes of the retrieved frames — so it is a drop-in
-substitution, not an approximation.
+For the same seed and the same specifications the splits select the same rows
+as rsample's: `analysis()` and `assessment()` return identical frames, and each
+inner split carries the same class and resample id, so anything dispatching on
+those keeps working. What differs is what the splits point at — the original
+data rather than a materialized copy per outer fold.
 
 ## Why
 

@@ -13,7 +13,12 @@
 #                 arithmetic, independent of the implementation under test
 #       source    derived in `analytic_size()` below from what the structure
 #                 must hold: one shared copy of the data, the outer splits'
-#                 index vectors, and the inner splits' index vectors
+#                 index vectors, and the inner splits' index vectors. The
+#                 inner term charges both an analysis and an assessment index
+#                 because splits indexing the whole data cannot derive the
+#                 complement -- rsample's inner splits can leave `out_id = NA`
+#                 only because they index a frame that already *is* the
+#                 analysis set.
 #       asserts   the measured size at every v, in `measured size matches the
 #                 analytic prediction` below
 #

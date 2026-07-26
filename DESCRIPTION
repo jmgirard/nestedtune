@@ -6,7 +6,7 @@ Authors@R:
 Description: Builds and orchestrates nested cross-validation designs for the
     tidymodels ecosystem. Provides a memory-lean nested resampling
     constructor whose object size does not grow with the outer fold count,
-    producing splits identical to those of 'rsample'.
+    producing the same splits as 'rsample'.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
