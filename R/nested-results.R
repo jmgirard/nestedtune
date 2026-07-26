@@ -32,6 +32,32 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   out
 }
 
+# The counts are attributes, so a row subset carries them along untouched and
+# they go on describing the run the rows came from -- which is how a subset
+# holding no completed fold could still claim its parent's two. Recomputed here
+# so the object's own record of what ran stays true of the object holding it
+# (IP4). A subset that drops `.completed` is no longer a results object at all,
+# and says so by shedding the class rather than answering for a run it can no
+# longer describe.
+#' @export
+`[.nested_results` <- function(x, i, j, ...) {
+  out <- NextMethod()
+  if (!is.data.frame(out) || !".completed" %in% names(out)) {
+    if (inherits(out, "nested_results")) {
+      class(out) <- setdiff(class(out), "nested_results")
+    }
+    return(out)
+  }
+  if (!inherits(out, "nested_results")) {
+    class(out) <- c("nested_results", class(out))
+  }
+  attr(out, "grid") <- attr(x, "grid")
+  attr(out, "metrics") <- attr(x, "metrics")
+  attr(out, "folds_attempted") <- nrow(out)
+  attr(out, "folds_completed") <- sum(out$.completed)
+  out
+}
+
 # A tibble is a data frame with three classes and compact row names. Building
 # one directly costs a line and saves a dependency on tibble for the sake of
 # a constructor.
@@ -136,10 +162,12 @@ collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
 # completed there is no estimate to give, and returning NA would let a caller
 # treat the absence of a result as a result.
 check_any_completed <- function(x, call = rlang::caller_env()) {
-  if (attr(x, "folds_completed") > 0L) {
+  # Read from the column, never from the stamped count: the column travels with
+  # the rows, so the two can never disagree about the object actually in hand.
+  if (any(x$.completed)) {
     return(invisible(x))
   }
-  n <- attr(x, "folds_attempted")
+  n <- nrow(x)
   cli::cli_abort(
     c(
       "There is nothing to summarize: no outer fold completed.",
@@ -158,10 +186,10 @@ warn_partial_summary <- function(x, call = rlang::caller_env()) {
   if (length(failed) == 0L) {
     return(invisible(x))
   }
-  n <- attr(x, "folds_attempted")
+  n <- nrow(x)
   cli::cli_warn(
     c(
-      "!" = "This summary covers {attr(x, 'folds_completed')} of {n} outer fold{?s}.",
+      "!" = "This summary covers {sum(x$.completed)} of {n} outer fold{?s}.",
       x = "Failed: {.val {failed}}.",
       i = "It describes the folds that ran, not the design that was requested."
     ),

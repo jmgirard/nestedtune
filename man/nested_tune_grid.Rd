@@ -95,6 +95,16 @@ Both stages can fail quietly. Inner tuning raises only once every candidate
 has failed, and the outer fit does not raise at all — it hands back a result
 with no metrics. Both are recorded as failures here.
 
+A fold can also complete \emph{and} carry notes. When only some of a fold's inner
+resamples fail, tuning still returns a candidate and the fold finishes, but
+its parameters were chosen on less of the inner design than was asked for.
+Those notes are kept, so \code{.completed} being \code{TRUE} with a non-empty \code{.notes}
+means exactly that: it worked, on less than the whole design.
+
+Subsetting rows recomputes \code{folds_attempted} and \code{folds_completed} for the
+rows kept, so the counts always describe the object in hand. Dropping the
+\code{.completed} column drops the \code{nested_results} class with it.
+
 The run warns when it finishes with any fold unfinished, and
 \code{\link[=collect_metrics]{collect_metrics()}} warns again, summarizing only the folds that ran and
 reporting how many those were. It refuses outright when no fold completed:

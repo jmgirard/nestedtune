@@ -80,6 +80,16 @@
 #' has failed, and the outer fit does not raise at all — it hands back a result
 #' with no metrics. Both are recorded as failures here.
 #'
+#' A fold can also complete *and* carry notes. When only some of a fold's inner
+#' resamples fail, tuning still returns a candidate and the fold finishes, but
+#' its parameters were chosen on less of the inner design than was asked for.
+#' Those notes are kept, so `.completed` being `TRUE` with a non-empty `.notes`
+#' means exactly that: it worked, on less than the whole design.
+#'
+#' Subsetting rows recomputes `folds_attempted` and `folds_completed` for the
+#' rows kept, so the counts always describe the object in hand. Dropping the
+#' `.completed` column drops the `nested_results` class with it.
+#'
 #' The run warns when it finishes with any fold unfinished, and
 #' [collect_metrics()] warns again, summarizing only the folds that ran and
 #' reporting how many those were. It refuses outright when no fold completed:
@@ -212,11 +222,19 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
     return(failed_fold("outer fit", NULL, fitted))
   }
 
+  # A fold can complete and still have had trouble: tune_grid() returns a usable
+  # result when only some inner splits fail, and select_best() then chooses from
+  # the survivors. Discarding those notes would report a selection made on a
+  # truncated inner design as though the whole design had run (IP4), and would
+  # drop notes tune itself kept (GP1).
   list(
     completed = TRUE,
     metrics = fold_metrics,
     selected = selected,
-    notes = empty_notes()
+    notes = bind_notes(
+      tune_notes(tuned, "inner tuning"),
+      tune_notes(fitted, "outer fit")
+    )
   )
 }
 

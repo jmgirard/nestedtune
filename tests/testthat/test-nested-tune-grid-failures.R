@@ -191,3 +191,74 @@ test_that("a fold's seeds do not move when an earlier fold fails (IP2)", {
   expect_identical(clean$.metrics[[3L]], broken$.metrics[[3L]])
   expect_identical(clean$.selected[[2L]], broken$.selected[[2L]])
 })
+
+# Review findings, regression-tested (M03 review, F1 scored 96 and F2 scored 82).
+
+test_that("a fold that completed on a truncated inner design keeps tune's notes", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  # One of fold 2's three inner splits is broken: tuning still returns a
+  # candidate, so the fold completes -- but not on the design that was asked for.
+  nested <- break_inner_split(det_nested(d), fold = 2L, split = 1L)
+
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+  )
+
+  expect_true(res$.completed[[2L]])
+  expect_true(nrow(res$.notes[[2L]]) > 0L)
+  expect_true(any(grepl("Not all variables in the recipe", res$.notes[[2L]]$note)))
+  # A genuinely clean fold still carries nothing.
+  expect_identical(nrow(res$.notes[[1L]]), 0L)
+})
+
+test_that("subsetting keeps the object's record of what ran true", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  nested <- break_fold(det_nested(d), fold = 1L, stage = "inner tuning")
+
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+  )
+
+  # The counts describe the rows in hand, not the run they came from.
+  kept <- res[res$.completed, ]
+  expect_identical(attr(kept, "folds_attempted"), 2L)
+  expect_identical(attr(kept, "folds_completed"), 2L)
+
+  failed_only <- res[1L, ]
+  expect_identical(attr(failed_only, "folds_attempted"), 1L)
+  expect_identical(attr(failed_only, "folds_completed"), 0L)
+})
+
+test_that("a subset holding no completed fold refuses to summarize", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  nested <- break_fold(det_nested(d), fold = 1L, stage = "inner tuning")
+
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+  )
+
+  # Before the fix this passed the guard on the parent's stale count and
+  # returned a 0-row tibble, reporting "2 of 3" for an object covering none.
+  expect_error(collect_metrics(res[1L, ]), "no outer fold completed")
+})
+
+test_that("dropping the .completed column sheds the results class", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # Without .completed nothing can answer for the run, so the object stops
+  # claiming it can rather than answering from a stale attribute.
+  expect_false(inherits(res["id"], "nested_results"))
+  expect_s3_class(res[, c("id", ".completed")], "nested_results")
+})

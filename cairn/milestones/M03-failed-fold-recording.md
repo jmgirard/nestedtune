@@ -97,6 +97,7 @@ design failing rather than the call error it is.
 - 2026-07-26: tasks were completed in one working pass rather than per-task checkpoint commits; a single implementation commit lands them together.
 - 2026-07-26: substantive amendment at the user's direction at the completion chip — pre-flight grid validation added to Scope as AC6/T9, restoring the immediate abort the Decisions entry had left to a candidate row; that candidate row is dropped as superseded. AC4 and AC5 merged into one criterion (both are `collect_metrics()` under failure, both mapped to T6) so the criterion count stays under the split tripwire.
 - 2026-07-26: probes confirmed tune already raises for both grid directions and that `tune::extract_parameter_set_dials()` is exported, so the check needed no new dependency. The rewritten RNG test lost its vehicle to the new check and now fails both folds via `break_fold()` instead.
+- 2026-07-26: review fan-out actioned F1 (96, stale-attribute disagreement in `collect_metrics()`) and F2 (82, a partly-failed fold recorded as clean with its notes discarded); F3 (42) logged as a candidate row. Four regression tests added; suite 766 pass, check 0/0/0.
 
 ## Decisions
 
@@ -185,6 +186,45 @@ columns. And an interrupt condition does not inherit `"error"`, verified by
 execution, so the per-stage `tryCatch(error = )` propagates a user interrupt rather
 than recording it as a fold failure — the failure mode a too-broad catch would have
 introduced on exactly the long runs this feature exists for.
+
+**Independent review fan-out.** Three fresh-context lenses. Blame-history: clean —
+the two modified M02 tests kept the properties they guarded, and the malformed-grid
+guarantee was restored earlier than before rather than lost. Prior-PR-comments:
+clean — RR01's binding RNG criteria still hold, M02's below-threshold F5/F6 are
+neither worsened nor silently resolved, and the inline-comment probe returned empty
+so the thread walk was correctly skipped. Diff-bug: three findings, scored by a
+fourth agent that did not generate them.
+
+- **F1 (96) — actioned, fixed.** `collect_metrics()` read two disagreeing sources
+  for "did the design run?": `check_any_completed()` took the stamped
+  `folds_completed` attribute, `warn_partial_summary()` took the `.completed`
+  column. Subsetting preserves class and attributes, so a subset answered from its
+  parent's counts — `collect_metrics(res[1, ])` on a failed fold passed the guard
+  on a stale 2, warned "covers 2 of 3", and returned a 0-row tibble where AC4
+  requires an abort. Fixed by deriving both from `.completed`, plus a
+  `[.nested_results` method recomputing the counts for the rows kept and shedding
+  the class when `.completed` is dropped. Verified: that call now aborts.
+- **F2 (82) — actioned, fixed.** The success path hardcoded `empty_notes()`, so a
+  fold whose inner tuning *partly* failed was recorded as a clean completion and
+  tune's notes were discarded — contradicting this milestone's own roxygen
+  ("anything that went wrong") and GP1. Fixed by carrying both stages' notes on
+  the success path. Verified: a fold with one broken inner split completes with
+  3 notes; a clean fold still carries 0.
+- **F3 (42) — below threshold, logged not actioned.** Two untested error branches
+  (nothing makes `last_fit()` or `tune_grid()` itself raise) plus `finalize_workflow()`
+  sitting outside both guarded regions. The scorer judged it a missing-test issue
+  rather than a demonstrated defect, and its second half had no constructible
+  trigger. Recorded as a candidate row.
+
+F1's second scenario resolved differently from how it was reported: after the fix
+`collect_metrics(res[res$.completed, ])` still does not warn, because the subset is
+now a self-consistent 2-of-2 object. The counts no longer lie; what the package
+will not do is remember a design the caller deliberately discarded.
+
+**Post-fix re-verification.** `devtools::test()` 766 passed / 0 failed / 0 skipped
+(up 11 — four new regression tests). `devtools::check()` 0 errors, 0 warnings,
+0 notes. `devtools::document()` clean; the new `[` method registers as
+`S3method("[", nested_results)`.
 
 **Consistency gate.** `cairn_validate` exit 0, every check PASS, no advisories.
 `cairn_impact` skipped: `DESIGN.md` is not in the diff, so no principle changed.

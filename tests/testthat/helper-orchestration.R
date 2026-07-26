@@ -117,6 +117,16 @@ break_fold <- function(nested, fold, stage = c("inner tuning", "outer fit")) {
   nested
 }
 
+# One inner split of one outer fold, rebuilt on a foreign frame. That inner
+# resample fails while the rest of the fold's inner design survives, so tuning
+# still yields a candidate and the fold completes -- on a truncated inner design
+# that tune recorded notes about.
+break_inner_split <- function(nested, fold, split = 1L) {
+  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
+  nested$inner_resamples[[fold]]$splits[[split]] <- foreign$splits[[1L]]
+  nested
+}
+
 # The two stages fail differently, and the difference is the point: inner
 # tuning raises ("All models failed") while the outer fit stays silent and
 # hands back NULL metrics. Both are failures; only one of them says so.

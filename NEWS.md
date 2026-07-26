@@ -7,6 +7,11 @@
   quietly — inner tuning only raises once every candidate has failed, and the
   outer fit does not raise at all.
 
+* A fold that completes on only part of its inner design now keeps the notes
+  explaining what was lost. `.completed` being `TRUE` alongside a non-empty
+  `.notes` means the fold worked, but chose its parameters on less of the inner
+  design than was requested.
+
 * `nested_tune_grid()` now checks a data-frame `grid` against the workflow
   before fitting anything: a column that is not marked for tuning, or a tuned
   parameter with no column, is refused immediately and by name. Either mistake
