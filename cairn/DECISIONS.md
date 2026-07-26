@@ -463,6 +463,40 @@ dependency surface: `mtcars` is base R and `ranger` is already in Suggests
 (D-012). The hard-dependency surface is untouched: rsample, cli, rlang, tune
 (>= 2.0.0), workflows, parsnip.
 
+### D-018 (2026-07-26): `mirai` is the outer-loop parallel backend and joins Suggests with `pkgload` — extends the dependency set D-017 last amended, and gives D-011's kind pin its first parallel consumer
+
+**Context:** M07 makes `nested_tune_grid()`'s outer loop run its folds
+concurrently. D-011 fixed the reproducibility scheme in anticipation of exactly
+this — seeds drawn at entry, assigned by fold position, generator kind pinned
+per fold — and D-016 recorded that "the later parallelism milestone" inherits
+that clause. What was open was the backend. tune 2.x carries both `mirai`
+(>= 2.4.0) and `future` (>= 1.33.0) in Suggests and dispatches through mirai,
+going parallel only at `status()$connections >= 2`.
+
+**Decision:** `mirai (>= 2.4.0)` joins Suggests as the sole parallel backend,
+with `pkgload` beside it so tests can prime daemons during development.
+Parallelism is enabled solely by the user calling `mirai::daemons(n)`;
+`nested_tune_grid()` gains no argument, and the dispatch threshold mirrors
+tune's `>= 2` connections. Considered and rejected at the M07 plan gate:
+`future`/`future.apply` (mature and already common, but tidymodels is moving
+off it, so the package would diverge from the ecosystem it delegates to);
+base `parallel` (no new dependency, but PSOCK workers need everything exported
+by hand and the fork path excludes Windows); a user-supplied mapper argument
+(maximum flexibility, but a knob where GP3 asks for one obvious path).
+
+**Consequences:** Install weight for users is unchanged — Suggests is not
+installed by default, and the serial path is untouched when mirai is absent or
+below threshold. The hard-dependency surface stays rsample, cli, rlang, tune
+(>= 2.0.0), workflows, parsnip. RR03 verified by execution that D-011's kind
+pin is load-bearing rather than precautionary: mirai starts every daemon on its
+own L'Ecuyer-CMRG stream, so without the pin a worker would draw from a
+different generator than the serial run, and with it results are `identical()`
+to serial at every daemon count. One user-visible constraint follows and is
+documented rather than engineered away: daemons are separate R processes, so
+`nestedtune` must be installed in a library they can load — `devtools::load_all()`
+alone does not reach them, and a stale installed copy makes daemons run stale
+code while the host runs development code.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

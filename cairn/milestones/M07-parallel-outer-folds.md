@@ -109,7 +109,7 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 
 ## Tasks
 
-- [ ] T1: `mirai` → Suggests; D-entry amending the dependency chain
+- [x] T1: `mirai` → Suggests; D-entry amending the dependency chain
       (D-006 → D-007 → D-009 → D-012 → D-013 → D-017) with M07-D1 and M07-D4.
 - [ ] T2: Daemon-detection helper (M07-D1) that also reports the branch a run
       took, so tests can assert it (BC1); unit tests for absent,
@@ -144,6 +144,7 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - 2026-07-26: RR03 ingested, back to in-progress. IP2 confirmed by execution through the real composition; 9 binding criteria ingested verbatim (no deviations), AC block replaced, 5 milestone-local decisions recorded, recs 8 and 9 folded into T4 and T5, recs 10 and 11 rejected as RR03 advised.
 - 2026-07-26: RR03 found a defect in the plan's own AC3 — it would have passed against a pin-less implementation, because a caller on L'Ecuyer-CMRG matches the daemons' own kind; BC2 replaces it with a kind that reddens.
 - 2026-07-26: amendment compressed Scope, Tasks, and the milestone-local Decisions in one pass each to fit the 149-line cap; body now at 149/149 with no headroom.
+- 2026-07-26: T1 done — `mirai (>= 2.4.0)` and `pkgload` into Suggests, D-018 records the backend choice, the >= 2 threshold, and the daemons-must-load-it constraint; suite 943 pass / 0 fail.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
