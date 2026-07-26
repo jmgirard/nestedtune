@@ -1,6 +1,6 @@
 # M02: Outer-loop orchestration
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M01
 - **Driving RR:** RR01
@@ -151,6 +151,7 @@ planned once this milestone's results object exists and its real shape is known.
 - 2026-07-25: T3 and T5 done — `nested_tune_grid()` plus the `nested_fold_fit()` worker, the `nested_results` constructor, `collect_metrics()`, and the argument checks landed across R/nested-tune-grid.R, R/nested-results.R, R/checks.R, R/reexports.R. All three T2 oracles pass first run; full suite 572 pass, 0 fail. T4/T6/T7 code is present but stays unchecked until its own tests exist (T10 for the RNG contract, T6/T7 for the method and error branches). Results object is a hand-built tibble rather than an import of `tibble` — one line of `structure()` against a dependency.
 - 2026-07-25: T4, T6, T7, T8, T10 done — RNG battery (order invariance, ambient-state independence, net-zero exit, error path, fresh session), leakage instrumentation via a mocked handoff that catches split/inner mis-pairing, `collect_metrics()` both modes, and every `cli_abort()` branch. Suite 701 pass, 0 fail. Inversion check: dropping the kind pin from `set_fold_seed()` reddens the ambient-state test, so it has power. `check_workflow()` uses `workflows::is_trained_workflow()` — trained-ness is a field, not a class, and the first attempt tested `inherits(x, "trained_workflow")`, which never fires.
 - 2026-07-25: T9 done — roxygen (Reproducibility and Differences-from-tune sections carry the hand-replication contract and IP2's R-RNG scope), `_pkgdown.yml` rows for `nested_tune_grid`, the `collect_metrics` method and reexports, NEWS.md entries. `document()` no-diff; `check_pkgdown()` clean; `devtools::check()` 0 errors / 0 warnings / 0 notes. The unused-`parsnip` NOTE T1 anticipated was resolved by giving the import a real use — `parsnip::required_pkgs()` refuses a missing engine package up front instead of failing inside fold 1. A companion unknown-mode check was written and removed: `workflows::workflow()` already refuses such a spec, so the branch was unreachable and could not be fired by a test.
+- 2026-07-25: all ten tasks done; status → review. Suite 702 pass / 0 fail; `devtools::check()` 0/0/0; `document()` no-diff; `check_pkgdown()` clean; `cairn_validate` green apart from the accepted sizing advisory. Open concern for review: DESIGN.md's Function Families and Architecture sections still read "(none yet — the package has no source)", which has been false since M01 and is now two exports out of date.
 - 2026-07-25: plan amendment (substantive) — AC1–AC7 and Scope Out compressed in one pass to fit the 150-line cap after the BC ingestion; no criterion dropped, AC2/AC3 shed detail now carried more precisely by AC16/AC17. T1/T2/T4/T5/T9 refined and T10 added for the RNG test battery.
 
 ## Decisions
