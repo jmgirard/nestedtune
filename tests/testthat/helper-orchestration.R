@@ -90,6 +90,43 @@ reference_nested_loop <- function(wf, nested, grid, metrics, seed, metric_name) 
   })
 }
 
+# The hand-rolled reference final fit (AC2/AC9).
+#
+# Written from the documented contract, never from the object: its own
+# `set.seed(s)` and its own `sample.int(.Machine$integer.max, 2)`, its own inner
+# rset built under the first of those seeds, and the inner specification spelled
+# out here rather than read off the design. Nothing is taken from what
+# nested_final_fit() returned, so a function that misassigns its seeds *and*
+# reports the assignment consistently still fails.
+#
+# The rset is built after the tuning seed is set, which is the ordering D-016
+# fixed: building an rset draws from the RNG, so a reference that built it
+# earlier would disagree with a correct implementation.
+reference_final_fit <- function(wf, data, grid, metrics, seed, metric_name,
+                                v = 3) {
+  set.seed(seed)
+  seeds <- sample.int(.Machine$integer.max, 2L)
+
+  set.seed(seeds[[1L]], kind = "Mersenne-Twister",
+           normal.kind = "Inversion", sample.kind = "Rejection")
+  inner <- rsample::vfold_cv(data, v = v)
+  tuned <- tune::tune_grid(
+    wf,
+    resamples = inner,
+    grid = grid,
+    metrics = metrics,
+    control = tune::control_grid(allow_par = FALSE, save_workflow = TRUE)
+  )
+  best <- tune::select_best(tuned, metric = metric_name)
+  final_wf <- tune::finalize_workflow(wf, best)
+
+  set.seed(seeds[[2L]], kind = "Mersenne-Twister",
+           normal.kind = "Inversion", sample.kind = "Rejection")
+  fitted <- parsnip::fit(final_wf, data = data)
+
+  list(seeds = seeds, selected = best, workflow = fitted, tuned = tuned)
+}
+
 ref_field <- function(ref, field) {
   vapply(ref, function(x) x[[field]], integer(1))
 }
@@ -136,6 +173,23 @@ det_nested <- function(data, v = 3, seed = 11) {
     data,
     outside = rsample::vfold_cv(v = v),
     inside = rsample::vfold_cv(v = v)
+  )
+}
+
+# A design whose inner specification is written with literal arguments, so it
+# survives re-evaluation when the final fit re-runs it (M05).
+#
+# det_nested() above deliberately does not: its `v` is a parameter of the helper
+# and is gone by the time nested_final_fit() evaluates the stored call. That is
+# the hazard RR02 named as B1 and test-nested-final-fit-checks.R pins, and it is
+# why the documentation asks for literals -- a design built inside any function
+# that parameterizes its resampling has the same problem.
+final_nested <- function(data, seed = 11) {
+  set.seed(seed)
+  nested_resamples(
+    data,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 3)
   )
 }
 

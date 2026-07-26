@@ -63,8 +63,8 @@ print.nested_results <- function(x, ...) {
   cli::cli_text("")
   cli::cli_bullets(c(
     i = "A nested estimate describes the tune-and-fit procedure, not a model \\
-         you can deploy. Fit the final model separately, and report this \\
-         estimate as what that procedure achieves."
+         you can deploy. Build that with {.fn nested_final_fit}, and report \\
+         this estimate as what its procedure achieves."
   ))
   invisible(x)
 }

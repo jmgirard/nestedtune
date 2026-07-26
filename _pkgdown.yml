@@ -20,6 +20,15 @@ reference:
   - collect_metrics.nested_results
   - print.nested_results
 
+- title: The final model
+  desc: >
+    Run the same tuning procedure once more with the whole dataset in hand,
+    and get back the model to deploy — as its own object, never a field on
+    the results.
+  contents:
+  - nested_final_fit
+  - print.nested_final_fit
+
 - title: Re-exports
   contents:
   - reexports
