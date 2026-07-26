@@ -10,8 +10,9 @@
 #'
 #' The estimate this returns describes the whole tune-and-fit *procedure*, not
 #' any single fitted model. It is not the performance of a model you can deploy,
-#' and no final model is returned here — fit that separately on the full data
-#' once you are satisfied with the procedure.
+#' and no final model is returned here: build that with [nested_final_fit()],
+#' which runs the same procedure again with the whole dataset in hand. The
+#' estimate from this function is what you report for it.
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
@@ -131,7 +132,7 @@
 #' }
 #' }
 #'
-#' @seealso [nested_resamples()], [tune::tune_grid()]
+#' @seealso [nested_resamples()], [nested_final_fit()], [tune::tune_grid()]
 #' @export
 nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
   check_workflow(object)

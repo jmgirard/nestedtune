@@ -18,8 +18,8 @@
       rsq (standard): 0.708
       
       i A nested estimate describes the tune-and-fit procedure, not a model you can
-        deploy. Fit the final model separately, and report this estimate as what that
-        procedure achieves.
+        deploy. Build that with `nested_final_fit()`, and report this estimate as
+        what its procedure achieves.
 
 ---
 
@@ -43,8 +43,8 @@
       rsq (standard): 0.664
       
       i A nested estimate describes the tune-and-fit procedure, not a model you can
-        deploy. Fit the final model separately, and report this estimate as what that
-        procedure achieves.
+        deploy. Build that with `nested_final_fit()`, and report this estimate as
+        what its procedure achieves.
 
 ---
 
@@ -66,8 +66,8 @@
       rsq (standard): 0.716
       
       i A nested estimate describes the tune-and-fit procedure, not a model you can
-        deploy. Fit the final model separately, and report this estimate as what that
-        procedure achieves.
+        deploy. Build that with `nested_final_fit()`, and report this estimate as
+        what its procedure achieves.
 
 ---
 
@@ -89,8 +89,8 @@
       rsq (standard): 0.123
       
       i A nested estimate describes the tune-and-fit procedure, not a model you can
-        deploy. Fit the final model separately, and report this estimate as what that
-        procedure achieves.
+        deploy. Build that with `nested_final_fit()`, and report this estimate as
+        what its procedure achieves.
 
 ---
 
@@ -115,6 +115,6 @@
       i No outer fold completed, so there is no estimate.
       
       i A nested estimate describes the tune-and-fit procedure, not a model you can
-        deploy. Fit the final model separately, and report this estimate as what that
-        procedure achieves.
+        deploy. Build that with `nested_final_fit()`, and report this estimate as
+        what its procedure achieves.
 

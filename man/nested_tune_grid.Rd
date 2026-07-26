@@ -43,8 +43,9 @@ parameters rather than discarding them.
 \details{
 The estimate this returns describes the whole tune-and-fit \emph{procedure}, not
 any single fitted model. It is not the performance of a model you can deploy,
-and no final model is returned here — fit that separately on the full data
-once you are satisfied with the procedure.
+and no final model is returned here: build that with \code{\link[=nested_final_fit]{nested_final_fit()}},
+which runs the same procedure again with the whole dataset in hand. The
+estimate from this function is what you report for it.
 }
 \section{Reproducibility}{
 
@@ -151,5 +152,5 @@ if (rlang::is_installed(c("recipes", "yardstick"))) {
 
 }
 \seealso{
-\code{\link[=nested_resamples]{nested_resamples()}}, \code{\link[tune:tune_grid]{tune::tune_grid()}}
+\code{\link[=nested_resamples]{nested_resamples()}}, \code{\link[=nested_final_fit]{nested_final_fit()}}, \code{\link[tune:tune_grid]{tune::tune_grid()}}
 }
