@@ -133,7 +133,7 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - [x] T6: Roxygen `@section Parallel execution:` carrying BC8 in full, plus
       BC6's trace caveat and an amendment to "Differences from calling tune
       directly".
-- [ ] T7: Run and record the AC11 benchmark — machine, daemon count, design, both wall-clock figures.
+- [x] T7: Run and record the AC11 benchmark — machine, daemon count, design, both wall-clock figures.
 - [ ] T8: `devtools::check()` both ways per AC12; update `NEWS.md`.
 
 ## Work log
@@ -167,6 +167,10 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - 2026-07-26: fourth compression pass to fit the cap — Scope, Decisions, and two task lines; body back to 149/149. The 12-criteria advisory and zero headroom both stand as reported at ingestion.
 - 2026-07-26: T6 done — `@section Parallel execution:` carries all six BC8 clauses plus BC6's trace caveat and the note-wrapping consequence; the tune-differences section now points at it rather than describing parallelism as hypothetical. Section title avoids backticked `::` (M01 lesson).
 - 2026-07-26: `checkRd()` non-ASCII flags are a standalone-invocation artifact — pre-existing Rd files show the same, and DESCRIPTION declares UTF-8; T8's `devtools::check()` is authoritative.
+- 2026-07-26: T7 benchmark — R 4.6.1, aarch64-apple-darwin25.4.0, 8 cores, tune 2.1.0 / mirai 2.7.2 / ranger 0.18.0; design 6 outer x 5 inner, grid of 5, ranger 1000 trees, n = 600. Serial 52.6 s. Warm: 2 daemons 27.0 s (1.95x), 4 daemons 23.1 s (2.27x), 6 daemons 18.6 s (2.83x). Cold (first run on fresh daemons): 33.4 / 27.6 / 27.5 s. Every run `identical()` to serial.
+- 2026-07-26: benchmark reading — scaling is near-linear at 2 daemons and falls off after: 2.83x on 6. Two causes, neither a defect in dispatch: a fresh daemon loads the whole tidymodels stack inside the first timed run (cold-vs-warm gap), and this is an 8-core Apple silicon machine whose efficiency cores are far slower than its performance cores, so daemons 5 and 6 do not contribute a full core each. Six outer folds across 4 daemons also splits unevenly.
+- 2026-07-26: an earlier, lighter design (1.7 s per fold) measured only 1.29x and would have been misleading — at that size daemon startup dominates. The recorded figures use a workload where per-fold work exceeds the fixed cost, which is the regime a user running nested CV is actually in.
+- 2026-07-26: `benchmarks/parallel-speedup.R` committed so the figures are reproducible, with an `^benchmarks$` .Rbuildignore entry; no test asserts a speedup (AC11).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
