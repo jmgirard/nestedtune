@@ -23,13 +23,12 @@ as `tune` detects them and enabled by `mirai::daemons(n)` alone (M07-D1).
 Worker failure is a recorded fold failure, an interrupt an abort (M07-D2).
 The D-011/D-016 reproducibility contract is reused, never redesigned.
 
-**Out:** L'Ecuyer-CMRG stream seeding (D-011; RR03 rec 11 confirms nothing
-reopens it) · parallelism inside `tune`, which stays `allow_par = FALSE` ·
-a `future` backend and a user-supplied mapper, declined at the plan gate ·
-per-task `.timeout` (RR03 rec 10 — the all-daemons-dead hang is documented
-instead, BC8) · parallelizing `nested_final_fit()`, which is one fit. None
-carries a ROADMAP row. Plotting selection instability and per-worker payload
-size → both candidate rows.
+**Out**, none carrying a ROADMAP row: L'Ecuyer-CMRG stream seeding (D-011,
+RR03 rec 11) · parallelism inside `tune` · a `future` backend and a
+user-supplied mapper (plan gate) · per-task `.timeout` (RR03 rec 10; the
+all-daemons-dead hang is documented instead, BC8) · parallelizing
+`nested_final_fit()`. Plotting instability and per-worker payload size →
+candidate rows.
 
 ## Acceptance criteria
 
@@ -90,7 +89,14 @@ size → both candidate rows.
 - [ ] AC12: `devtools::check()` clean — no ERRORs, WARNINGs, or new NOTEs —
       with `mirai` installed and again with the mirai-dependent tests skipped.
 
-_No deviations from RR03: all nine binding criteria are ingested verbatim._
+### Deviations from RR03
+
+All nine are ingested verbatim; two are *satisfied* differently than their wording assumes, both found by execution in T5 (work log has the detail).
+
+| BC | Departure | Why |
+|---|---|---|
+| BC6 | note text compared whitespace-normalized, not `identical()` | cli wraps to the formatting process's console width, so a daemon wraps at its own; words, location, type identical |
+| BC3 | daemon killed at the dispatch layer, not inside a real fold | no injection point in production code, and mocking cannot reach another process; the real collect → classify path still runs |
 
 ## Coverage
 
@@ -121,14 +127,13 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - [x] T4: Classify collected elements by fold-record shape (BC3, M07-D2);
       `nanonext::nng_error()` for `errorValue` text, `"worker"` stage label;
       rethrow `miraiInterrupt` (BC4); pre-flight namespace round-trip (rec 8).
-- [ ] T5: Parallel test file, daemons primed under pkgload (rec 9): BC1, BC2,
+- [x] T5: Parallel test file, daemons primed under pkgload (rec 9): BC1, BC2,
       BC3, BC4, BC6, BC9, with BC7's oracles left untouched and green. Prove
       every guard by inversion (M05 lesson).
 - [ ] T6: Roxygen `@section Parallel execution:` carrying BC8 in full, plus
       BC6's trace caveat and an amendment to "Differences from calling tune
       directly".
-- [ ] T7: Run and record the AC11 benchmark — machine, daemon count, design,
-      both wall-clock figures.
+- [ ] T7: Run and record the AC11 benchmark — machine, daemon count, design, both wall-clock figures.
 - [ ] T8: `devtools::check()` both ways per AC12; update `NEWS.md`.
 
 ## Work log
@@ -154,22 +159,23 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - 2026-07-26: T4 was ticked a commit early — the pre-flight round-trip rec 8 asked for was missing. `check_daemons_can_load()` now runs one round-trip before any fold is dispatched and aborts with the fix named; tests cover both the bare-daemon refusal and the primed-daemon pass.
 - 2026-07-26: test helper `helper-parallel.R` adds `prime_daemons()`/`start_daemons()` (RR03 rec 9); cleanup is left to each caller's `on.exit` so the helpers need no dependency beyond mirai, and `withr` stays undeclared.
 - 2026-07-26: suite 982 pass / 0 fail.
+- 2026-07-26: T5 done — `test-parallel-identity.R` covers BC1, BC2, BC4's exit contract, BC6, BC9, and BC3's daemon kill; suite 1024 pass / 0 fail / 0 warn.
+- 2026-07-26: T5 found BC6 unsatisfiable as worded — cli hard-wraps a note to the console width of the process that formats it, so a daemon wraps at its own width and serial/parallel note text differs by line breaks alone. Words, location, and type are identical. Comparison normalizes whitespace; recorded as a Deviations row. RR03's probe formatted both sides at one width and so did not see it.
+- 2026-07-26: T5 deviation on BC3 — the daemon is killed at the dispatch layer, since production code has no injection point and mocking cannot cross a process boundary; the real `collect_mirai()` → `classify_fold_result()` path still runs against a genuinely dead worker. Recorded as a Deviations row.
+- 2026-07-26: two bugs of my own found during T5, both mine not mirai's — a shared append-only ledger raced across processes and produced a phantom double-execution (per-task files fixed it), and an integer metrics column was compared against a double. mirai retries nothing: verified each task ran exactly once.
+- 2026-07-26: the 19 `'package:nestedtune' may not be available when loading` warnings are a pkgload artifact — verified absent when the package is installed to a scratch library, where parallel was also `identical()` to serial. Tests muffle that one message by text so real warnings still surface; T8's check confirms the installed path.
+- 2026-07-26: fourth compression pass to fit the cap — Scope, Decisions, and two task lines; body back to 149/149. The 12-criteria advisory and zero headroom both stand as reported at ingestion.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
-_Evidence for all five is RR03 (archived); it is cross-referenced, not restated._
+_All five decided 2026-07-26 on RR03's evidence (archived), cross-referenced not restated._
 
-- 2026-07-26 M07-D1: dispatch threshold mirrors tune's `>= 2` connections, so
-  "parallel" means the same in both packages (GP1; RR03 B1).
-- 2026-07-26 M07-D2: worker failures classified by positive fold-record shape,
-  never condition inheritance; `miraiInterrupt` aborts (RR03 Q4).
-- 2026-07-26 M07-D3: `notes$trace` is outside the IP2 identity claim — a
-  daemon's backtrace can never equal the host's (RR03 Q5).
-- 2026-07-26 M07-D4: parallel use requires `nestedtune` installed where daemons
-  load it; `load_all()` does not reach them (RR03 Q5).
-- 2026-07-26 M07-D5: RR03's rejections stand — no per-task `.timeout`, and
-  D-011 is not reopened.
+- M07-D1: dispatch threshold mirrors tune's `>= 2` connections, so "parallel" means the same in both packages (GP1; RR03 B1).
+- M07-D2: worker failures classified by positive fold-record shape, never condition inheritance; `miraiInterrupt` aborts (RR03 Q4).
+- M07-D3: `notes$trace` is outside the IP2 identity claim — a daemon's backtrace can never equal the host's (RR03 Q5).
+- M07-D4: parallel use requires `nestedtune` installed where daemons load it; `load_all()` does not reach them (RR03 Q5).
+- M07-D5: RR03's rejections stand — no per-task `.timeout`, and D-011 is not reopened.
 
 ## Review
 <!-- owner: review · exclusive -->

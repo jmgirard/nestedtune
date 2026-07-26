@@ -70,9 +70,18 @@ dispatch_folds <- function(payloads, object, grid, metrics) {
   check_daemons_can_load()
 
   record_dispatch("parallel")
+  # The task is sent with its environment stripped to the global one. Left
+  # attached, the nestedtune namespace travels with the closure and mirai warns
+  # that the package "may not be available when loading" on every dispatch --
+  # and where it truly is unavailable the environment silently degrades to the
+  # global one anyway (RR03 Q5). Since the body resolves the namespace by name
+  # regardless, carrying it buys nothing and costs a warning per fold.
+  task <- fold_task
+  environment(task) <- globalenv()
+
   mapped <- mirai::mirai_map(
     .x = payloads,
-    .f = fold_task,
+    .f = task,
     .args = list(object = object, grid = grid, metrics = metrics)
   )
   # A plain blocking collect: results in place, failures as values. mirai's
