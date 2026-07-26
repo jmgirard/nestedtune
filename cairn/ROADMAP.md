@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M02 merged and archived — the nested loop runs end to end; RB01/RR01 archived, 5 lessons captured, 7 candidates, nothing planned; all checks green)_
+_Last hygiene check: 2026-07-26 (M03 and M04 planned from the M02 split candidate, whose remainder is now parallelism plus instability plotting; 2 planned, 7 candidates, nothing in progress)_
 
 ## Milestones
 
@@ -9,13 +9,15 @@ _Last hygiene check: 2026-07-26 (M02 merged and archived — the nested loop run
 |---|---|---|---|---|---|
 | M01 | Memory-lean nested resampling structure | done | — | normal | milestones/archive/M01-memory-lean-nested-resampling.md |
 | M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
+| M03 | Fold failures are recorded, never fatal | planned | M02 | high | milestones/M03-failed-fold-recording.md |
+| M04 | Printing surfaces the run and its disagreement | planned | M03 | normal | milestones/M04-print-nested-results.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
 - Report the M01 diagnosis upstream on rsample#283 (cause is inside_resample()'s as.data.frame(); the 13x figure's reprex used a 10x10 scheme, not 5x2) — added 2026-07-25 — G4; promoted from the memory candidate, which became M01
-- Parallelism over outer folds, failed-fold handling (IP4), and print/summary surfacing selection instability — added 2026-07-25 — split from M02; plan once M02's results object exists
+- Parallelism over outer folds, plus plotting selection instability — added 2026-07-25 — split from M02; failed-fold handling became M03 and print/summary became M04, leaving this remainder. Parallelism needs its own dependency gate and D-entry (tune 2.x carries mirai and future in Suggests); D-011's RNG scheme is already parallel-ready, so the work is verifying it across workers, not redesigning it
 - Final-fit path as a separate object, never a field on the results — added 2026-07-25 — IP3, DESIGN Conventions; plan after M02
 - Variance estimation / inference on the nested estimate — added 2026-07-25 — G6; needs oracle-grade literature support before it is plannable. Absorbs M02 review finding F5 (scored 73): `collect_metrics()` already ships a naive `std_err` across outer folds, mirroring tune's columns, with no roxygen caveat saying it is not an oracle-backed interval — document or drop it when this is planned
 - Route a preprocessor-only workflow through `nested_tune_grid()`'s own `cli_abort()` instead of letting `workflows::extract_spec_parsnip()` raise it, so every bad-`object` shape fails with the same discipline — added 2026-07-25 — M02 review finding F6, scored 75 (below the action threshold)
