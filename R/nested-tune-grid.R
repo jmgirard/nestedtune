@@ -203,11 +203,16 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
     return(failed_fold("inner tuning", selected, tuned))
   }
 
-  final_wf <- tune::finalize_workflow(object, selected)
-
-  set_fold_seed(seeds[[2L]])
+  # Finalizing and seeding sit inside the guard rather than between the two
+  # guarded regions. An error anywhere between selection and the fit is still
+  # this fold's failure, and leaving them outside left a path that could abort
+  # the whole run -- the one outcome this function exists to prevent.
   fitted <- tryCatch(
-    tune::last_fit(final_wf, split = split, metrics = metrics),
+    {
+      final_wf <- tune::finalize_workflow(object, selected)
+      set_fold_seed(seeds[[2L]])
+      tune::last_fit(final_wf, split = split, metrics = metrics)
+    },
     error = function(cnd) cnd
   )
   if (inherits(fitted, "condition")) {

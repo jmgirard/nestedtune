@@ -54,8 +54,8 @@ design failing rather than the call error it is.
 
 ## Coverage
 
-- AC1 → T2, T3
-- AC2 → T1, T2, T3, T4
+- AC1 → T2, T3, T10
+- AC2 → T1, T2, T3, T4, T10
 - AC3 → T5
 - AC4 → T6
 - AC5 → T7
@@ -84,6 +84,10 @@ design failing rather than the call error it is.
       against `tune::extract_parameter_set_dials()`, called from `nested_tune_grid()`
       before the seeds are drawn; tests in `test-nested-tune-grid-checks.R`; roxygen,
       NEWS, and re-run verify + `devtools::check()`. Added by amendment.
+- [x] T10: Move `finalize_workflow()` and the outer-fit seeding inside the guarded
+      region, and cover the thrown-error branch at each stage — `tune_grid()` raising,
+      `last_fit()` raising, and finalizing raising under a mock. Added at the merge gate
+      from review finding F3.
 
 ## Work log
 
@@ -98,6 +102,7 @@ design failing rather than the call error it is.
 - 2026-07-26: substantive amendment at the user's direction at the completion chip — pre-flight grid validation added to Scope as AC6/T9, restoring the immediate abort the Decisions entry had left to a candidate row; that candidate row is dropped as superseded. AC4 and AC5 merged into one criterion (both are `collect_metrics()` under failure, both mapped to T6) so the criterion count stays under the split tripwire.
 - 2026-07-26: probes confirmed tune already raises for both grid directions and that `tune::extract_parameter_set_dials()` is exported, so the check needed no new dependency. The rewritten RNG test lost its vehicle to the new check and now fails both folds via `break_fold()` instead.
 - 2026-07-26: review fan-out actioned F1 (96, stale-attribute disagreement in `collect_metrics()`) and F2 (82, a partly-failed fold recorded as clean with its notes discarded); F3 (42) logged as a candidate row. Four regression tests added; suite 766 pass, check 0/0/0.
+- 2026-07-26: at the merge gate the maintainer directed F3 be fixed before merge despite its 42 score; status returned to in-progress. T10 added (minor amendment): finalizing and outer-fit seeding moved inside the guard, and the thrown-error branch covered at each stage. The finalize guard's test was mutation-checked — reverting the fix makes it fail — and the F3 candidate row is removed as superseded. Suite 775 pass, check 0/0/0.
 
 ## Decisions
 
@@ -215,6 +220,18 @@ fourth agent that did not generate them.
   sitting outside both guarded regions. The scorer judged it a missing-test issue
   rather than a demonstrated defect, and its second half had no constructible
   trigger. Recorded as a candidate row.
+- **F3 — reopened and fixed at the maintainer's direction.** At the merge gate the
+  maintainer chose to fix F3 before merging rather than accept its 42 score, so the
+  milestone returned to `in-progress` for T10 and the candidate row was removed as
+  superseded. Finalizing and the outer-fit seeding now sit inside the guarded
+  region, and the thrown-error branch is covered at each stage: `tune_grid()`
+  raising (a `tune()`-marked parameter the `lm` engine cannot tune passes the
+  pre-flight check, then raises), `last_fit()` raising (a split that is not an
+  `rsplit`), and finalizing raising (mocked; nothing reachable makes it raise, and
+  the mock skips below testthat 3.2.0 rather than raising a declared floor for one
+  test). The finalize guard's test was mutation-checked: reverting the fix makes it
+  fail, so it is not vacuous. Post-fix suite 775 passed / 0 failed / 0 skipped;
+  `devtools::check()` 0/0/0; `cairn_validate` exit 0.
 
 F1's second scenario resolved differently from how it was reported: after the fix
 `collect_metrics(res[res$.completed, ])` still does not warn, because the subset is

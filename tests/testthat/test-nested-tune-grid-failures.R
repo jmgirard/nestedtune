@@ -262,3 +262,74 @@ test_that("dropping the .completed column sheds the results class", {
   expect_false(inherits(res["id"], "nested_results"))
   expect_s3_class(res[, c("id", ".completed")], "nested_results")
 })
+
+# The thrown-error branches at each stage (M03 review, F3). The fixtures above
+# all reach the *quiet* paths -- tune returning a useless result rather than
+# raising -- which left the raise branches structurally plausible and unproven.
+
+test_that("an error raised by tune_grid() itself is recorded, not propagated", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  # `penalty` is marked for tuning but the lm engine cannot tune it. It is not
+  # in the workflow's tunable set, so a grid naming only `num_comp` passes the
+  # pre-flight check -- and then tune_grid() raises before returning anything.
+  rec <- recipes::step_pca(
+    recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d),
+    recipes::all_predictors(),
+    num_comp = tune::tune()
+  )
+  wf <- workflows::workflow(rec, parsnip::linear_reg(penalty = tune::tune()))
+
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(wf, det_nested(d), grid = det_grid(), metrics = reg_metrics())
+  )
+
+  expect_false(any(res$.completed))
+  expect_identical(res$.notes[[1L]]$location[[1L]], "inner tuning")
+  expect_true(any(grepl("will not be tuned", res$.notes[[1L]]$note)))
+})
+
+test_that("an error raised by last_fit() is recorded against the outer fit", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  # A split that is not an rsplit: tuning succeeds, and last_fit() raises rather
+  # than filing the problem in its notes as a foreign-but-valid split would.
+  nested <- det_nested(d)
+  nested$splits[[2L]] <- list(not = "a split")
+
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+  )
+
+  expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
+  expect_identical(res$.notes[[2L]]$location[[1L]], "outer fit")
+  expect_true(any(grepl("rsplit", res$.notes[[2L]]$note)))
+})
+
+test_that("an error while finalizing is this fold's failure, not the run's", {
+  skip_if_no_engines()
+  # Mocking a binding in another package needs testthat 3.2.0; the declared
+  # floor is lower, so this skips rather than raising it for one test.
+  skip_if_not_installed("testthat", "3.2.0")
+  d <- make_reg_data()
+
+  # finalize_workflow() sits between selection and the fit. Nothing reachable
+  # makes it raise, so it is mocked -- the point is that the region is guarded.
+  testthat::local_mocked_bindings(
+    finalize_workflow = function(...) stop("engineered finalize failure"),
+    .package = "tune"
+  )
+
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics())
+  )
+
+  expect_false(any(res$.completed))
+  expect_identical(nrow(res), 3L)
+  expect_true(any(grepl("engineered finalize failure", res$.notes[[1L]]$note)))
+})
