@@ -62,7 +62,7 @@ a gap found while writing returns to plan rather than being patched here.
       estimate describes the procedure, the model is a separate object.
 - [x] T4: write the selection-instability section from actual
       `print.nested_results()` output.
-- [ ] T5: pkgdown articles entry, README pointer, and a full check with
+- [x] T5: pkgdown articles entry, README pointer, and a full check with
       vignettes built.
 
 ## Work log
@@ -74,6 +74,8 @@ a gap found while writing returns to plan rather than being patched here.
 - 2026-07-26: T2, T3, T4 done in one commit — they are three sections of one document, and splitting them would have meant reverting drafted prose rather than staging it. `vignettes/nested-cv.Rmd` builds in ~9s.
 - 2026-07-26: the first build caught the AC4 guard doing its job: `.selected` is a list column of one-row tibbles, so `res$.selected$mtry` is `NULL` and the prose rendered "chose 0 distinct values". Fixed by stacking with `do.call(rbind, ...)`; a hand-typed number would have shipped the error.
 - 2026-07-26: the run shows `mtry` disagreeing across folds while `min_n` agrees, so the instability section reads both cases rather than only disagreement; its heading and prose are worded from the counts rather than asserting a direction.
+- 2026-07-26: T5 done. `_pkgdown.yml` gains an explicit `articles:` index (`pkgdown::check_pkgdown()`: no problems found); README gains a guide pointer under the tagline and a runnable end-to-end section replacing the stale "ships the resampling structure only" paragraph; NEWS.md gains the guide entry. The README snippet was executed before committing and returns the same numbers the vignette does.
+- 2026-07-26: `devtools::check()` clean with vignettes built — 0 errors, 0 warnings, 0 notes, 4m42s total, of which the vignette rebuild is 13s. `document()` produced no diff.
 
 ## Decisions
 

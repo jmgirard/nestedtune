@@ -1,5 +1,13 @@
 # nestedtune 0.0.0.9000
 
+* A new guide, `vignette("nested-cv")`, runs the whole path — build a nested
+  design, run the loop, read what each fold selected, fit the model to deploy —
+  as code you can run, and says plainly what to report for that model and why.
+  It puts the nested estimate next to the selection-time score users are most
+  tempted to report, and closes with a worked write-up. Every number in its
+  prose is produced when the vignette is built, so a claim that stops being true
+  fails the check rather than ageing quietly.
+
 * New `nested_final_fit()` builds the model you actually deploy. It runs the
   same tuning procedure the nested estimate describes, this time with the whole
   dataset in hand: it re-evaluates the design's inner resampling specification
