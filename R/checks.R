@@ -173,6 +173,81 @@ check_grid_params <- function(object, grid, call = rlang::caller_env()) {
   invisible(grid)
 }
 
+# The design's inner resampling specification, which the final fit re-runs over
+# every row.
+#
+# `nested_resamples()` and `rsample::nested_cv()` both store it as an
+# unevaluated call, and that is the whole reason a final fit can be built from
+# the design alone: the procedure the nested estimate describes can be run
+# again. A design assembled some other way carries no such call and cannot be
+# re-run, which is worth saying here rather than letting the re-evaluation fail
+# on something else.
+check_inside_spec <- function(resamples, call = rlang::caller_env()) {
+  inside <- attr(resamples, "inside")
+  if (!rlang::is_call(inside)) {
+    cli::cli_abort(
+      c(
+        "{.arg resamples} carries no inner resampling specification to re-run.",
+        x = "Its {.field inside} attribute is \\
+             {.obj_type_friendly {inside}}, not a call.",
+        i = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
+             always carry one; a design assembled by hand does not."
+      ),
+      call = call
+    )
+  }
+  invisible(inside)
+}
+
+# Re-evaluate that specification against the whole data.
+#
+# The stored call travels without its environment, so it is evaluated wherever
+# the caller stands now rather than where the design was built. A specification
+# written against a variable -- `vfold_cv(v = k)` -- therefore resolves to
+# whatever `k` means here: to a different design if `k` changed, and to nothing
+# at all if `k` is gone. The first case is undetectable from the design alone
+# and the documentation is what defends against it by asking for literals. This
+# is the second case, turned into an error naming the call that was attempted
+# instead of one from inside rsample.
+eval_inside_spec <- function(inside, data, env, call = rlang::caller_env()) {
+  spec <- paste(deparse(inside), collapse = " ")
+  # The data is bound to a name in a child environment rather than inlined into
+  # the call. Inlining is what `nested_resamples()` does and is equivalent here,
+  # but any condition raised downstream deparses the call it was raised from --
+  # and a call carrying the whole data frame produces an error message thousands
+  # of lines long, which is the opposite of what this wrapper is for.
+  eval_env <- rlang::new_environment(list(.nestedtune_data = data), parent = env)
+  out <- tryCatch(
+    eval(rlang::call_modify(inside, data = quote(.nestedtune_data)), eval_env),
+    error = function(cnd) cnd
+  )
+  if (inherits(out, "condition")) {
+    cli::cli_abort(
+      c(
+        "The design's inner resampling specification could not be \\
+         re-evaluated.",
+        x = "Tried to run {.code {spec}}.",
+        i = "It is re-evaluated when {.fn nested_final_fit} is called, so \\
+             every variable in it must still be in scope. Literal arguments \\
+             such as {.code vfold_cv(v = 5)} always are."
+      ),
+      parent = out,
+      call = call
+    )
+  }
+  if (!inherits(out, "rset")) {
+    cli::cli_abort(
+      c(
+        "The design's inner resampling specification did not produce an \\
+         {.cls rset}.",
+        x = "{.code {spec}} gave {.obj_type_friendly {out}}."
+      ),
+      call = call
+    )
+  }
+  out
+}
+
 check_metrics <- function(metrics, call = rlang::caller_env()) {
   if (!is.null(metrics) && !inherits(metrics, "metric_set")) {
     cli::cli_abort(

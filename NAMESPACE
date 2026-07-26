@@ -2,8 +2,12 @@
 
 S3method("[",nested_results)
 S3method(collect_metrics,nested_results)
+S3method(extract_workflow,nested_final_fit)
 S3method(print,nested_results)
 export(collect_metrics)
+export(extract_workflow)
+export(nested_final_fit)
 export(nested_resamples)
 export(nested_tune_grid)
 importFrom(tune,collect_metrics)
+importFrom(tune,extract_workflow)

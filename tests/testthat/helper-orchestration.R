@@ -139,6 +139,23 @@ det_nested <- function(data, v = 3, seed = 11) {
   )
 }
 
+# A design whose inner specification is written with literal arguments, so it
+# survives re-evaluation when the final fit re-runs it (M05).
+#
+# det_nested() above deliberately does not: its `v` is a parameter of the helper
+# and is gone by the time nested_final_fit() evaluates the stored call. That is
+# the hazard RR02 named as B1 and test-nested-final-fit-checks.R pins, and it is
+# why the documentation asks for literals -- a design built inside any function
+# that parameterizes its resampling has the same problem.
+final_nested <- function(data, seed = 11) {
+  set.seed(seed)
+  nested_resamples(
+    data,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 3)
+  )
+}
+
 # A design whose outer folds genuinely disagree about the best candidate (M04).
 #
 # The disagreement is earned rather than staged: y depends on x1 alone and the

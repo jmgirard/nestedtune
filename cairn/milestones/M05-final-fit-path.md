@@ -105,17 +105,17 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
 
 ## Tasks
 
-- [ ] T1: extend `R/checks.R` with the final-fit input checks — reuse
+- [x] T1: extend `R/checks.R` with the final-fit input checks — reuse
       `check_workflow()`, `check_grid()`, `check_grid_params()`,
       `check_metrics()`; add one refusing a design with no `inside` call, and one
       wrapping its re-evaluation so a failure aborts naming the stored call;
       tests firing every branch.
-- [ ] T2: implement `nested_final_fit()` in `R/nested-final-fit.R` in D-016's
+- [x] T2: implement `nested_final_fit()` in `R/nested-final-fit.R` in D-016's
       order — two seeds at entry, tuning seed, evaluate `inside` against the data
       behind the splits, `tune_grid(control_grid(allow_par = FALSE))`,
       `select_best()`, `finalize_workflow()`, fit seed, `fit()` on all rows; RNG
       restored via `set_fold_seed()`/`restore_rng()` (`R/nested-tune-grid.R:342`).
-- [ ] T3: add `new_nested_final_fit()` carrying the workflow, selection, tuning
+- [x] T3: add `new_nested_final_fit()` carrying the workflow, selection, tuning
       run, and both seeds, plus the `extract_workflow()` method; test the
       extracted workflow is trained.
 - [ ] T4: `tests/testthat/test-nested-final-fit-oracles.R` with its provenance
@@ -147,6 +147,8 @@ the pre-implementation gate; a design with no re-runnable specification aborts.
 - 2026-07-26: blocked on RB02 (`cairn/reviews/RB02-final-fit-path.md`), 8 questions on the final-fit path's correctness, IP1 reading, RNG contract, and oracle independence.
 - 2026-07-26: RB02 committed on this branch rather than the default branch, deviating from /milestone-brief step 2 — the branch already carried M05 at in-progress, so flipping the status on main would have left the two mirrors disagreeing and conflicted at merge.
 - 2026-07-26: ingested RR02 — BC1–BC6 added verbatim as AC7–AC12; Scope compressed to stay under the cap; T9 added and done; RB/RR pair archived; status back to in-progress.
+- 2026-07-26: T1-T3 landed together — the new abort branches are only reachable through the export, so checks, function, and constructor share one commit. `nested_final_fit()` re-runs the inner spec on all rows in D-016's seed order and returns a class carrying the workflow, selection, tuning run, and both seeds; `extract_workflow()` is re-exported alongside `collect_metrics()`.
+- 2026-07-26: the `inside` re-evaluation guard fired on the repo's own `det_nested()` helper, whose `v` is a function parameter — exactly RR02 B1. Tests build designs with literals via a new `final_nested()` helper; substituting argument values at construction is now a candidate row.
 - 2026-07-26: RR02 triage — rec 1, 2, 3, 4, 8, 9, 10 applied; rec 5 (`fit_best()` oracle strand) and rec 12 (print pointer to fold selections) applied at the user's choice; rec 11 (`extract_` accessor for the stored tuning run) deferred to a candidate row, a documented slot sufficing pre-1.0; rec 6 (mlr3 oracle) and rec 7 (size-matched final tuning) rejected on RR02's own reasoning.
 
 ## Decisions
