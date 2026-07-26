@@ -1,11 +1,11 @@
 # M02: Outer-loop orchestration
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M01
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, IP3, GP1, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m02-outer-loop-orchestration`
 
 ## Goal
 
@@ -91,6 +91,7 @@ bootstrap refused outright. Serial execution. Docs, NEWS.md, pkgdown rows.
 ## Work log
 
 - 2026-07-25: created by /milestone-plan, absorbing the orchestration candidate row.
+- 2026-07-25: /milestone-implement started; branch `m02-outer-loop-orchestration` cut from main.
 
 ## Decisions
 
