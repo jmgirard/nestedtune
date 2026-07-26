@@ -79,7 +79,7 @@ export. _(amended 2026-07-25)_
       inner spec, compose outer-analysis indices with inner indices and build
       each inner split via `rsample::make_splits(list(analysis =, assessment =),
       data = <original>)`, reassembled into the inner spec's own `rset`.
-- [ ] T4 — RNG fidelity: evaluate the inner spec against each outer fold's
+- [x] T4 — RNG fidelity: evaluate the inner spec against each outer fold's
       analysis frame built transiently, harvest its indices, remap them through
       the outer analysis index vector, and discard the frame — so the same seed
       yields the same splits as rsample while nothing materialized is retained.
@@ -109,6 +109,8 @@ export. _(amended 2026-07-25)_
 - 2026-07-25: T3 done — `nested_resamples()` implemented and exported; all 6 identity tests green plus 3 new ones for inner-rset identity (221 assertions, 0 failures).
 - 2026-07-25: milestone-local decision on row-name divergence superseded — the premise was false, `analysis()` renumbers on retrieval either way, so AC2 is now asserted with exact `expect_identical()`.
 - 2026-07-25: Scope amended at a mini gate — inner splits are reassembled into the spec's own rset rather than `manual_rset()`, which was measured to drop the inner class, the spec attributes, and a repeated spec's `id2` column. Approved by the user.
+
+- 2026-07-25: T4 done — 5 RNG-fidelity tests (same seed identical, different seed differs, RNG stream left in the same position as rsample, every inner split shares the caller's data by address via lobstr, indices confined to the outer analysis set). 272 assertions, 0 failures.
 
 ## Decisions
 
