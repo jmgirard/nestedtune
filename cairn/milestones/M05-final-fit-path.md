@@ -1,6 +1,6 @@
 # M05: The final model is its own object
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** high
 - **Depends on:** M02
 - **Driving RR:** —
@@ -105,6 +105,8 @@ existing parallelism candidate.
 - 2026-07-26: in-progress on branch m05-final-fit-path, cut from main at 4d78627.
 - 2026-07-26: pre-implementation gate — a design with no re-runnable `inside` is refused, as planned, so no scope change; `extract_workflow()` registers against tune's re-export of hardhat's generic, so no DESCRIPTION change and no dependency gate.
 - 2026-07-26: at the user's choice the IP1/IP2 reading behind T2 and T5 goes to a Review Brief before any code is written; no task started yet.
+- 2026-07-26: blocked on RB02 (`cairn/reviews/RB02-final-fit-path.md`), 8 questions on the final-fit path's correctness, IP1 reading, RNG contract, and oracle independence.
+- 2026-07-26: RB02 committed on this branch rather than the default branch, deviating from /milestone-brief step 2 — the branch already carried M05 at in-progress, so flipping the status on main would have left the two mirrors disagreeing and conflicted at merge.
 
 ## Decisions
 
