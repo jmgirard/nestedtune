@@ -132,10 +132,13 @@
 #'   call stops rather than failing every fold with the same opaque note. During
 #'   development, prime them with
 #'   `mirai::everywhere(pkgload::load_all("<path>"))`.
-#' - If every daemon dies mid-run, the call blocks waiting for results that will
-#'   never arrive; interrupt it. No per-fold timeout is imposed, because no
-#'   timeout is defensible for an arbitrary model fit — a slow fold and a dead
-#'   one would be indistinguishable.
+#' - Before dispatching, the call checks that the daemons can actually load the
+#'   package, and stops if they cannot or do not answer within 30 seconds. That
+#'   check is bounded; the folds themselves are not. If every daemon dies *after*
+#'   folds are dispatched, the call blocks waiting for results that will never
+#'   arrive, and you interrupt it. No per-fold timeout is imposed, because no
+#'   time limit is defensible for an arbitrary model fit — a slow fold and a
+#'   dead one would be indistinguishable.
 #'
 #' A fold whose worker dies is recorded as a failed fold, exactly like any other
 #' failure: the run finishes, the other folds keep their results, and `.notes`

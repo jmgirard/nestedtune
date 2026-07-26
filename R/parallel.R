@@ -99,17 +99,37 @@ dispatch_folds <- function(payloads, object, grid, metrics) {
 # check that mistake surfaces as every fold failing with the same opaque note --
 # a run that looks like a statistical catastrophe and is really a library path
 # (RR03 rec 8). One round-trip buys an error that names the fix.
-check_daemons_can_load <- function(call = rlang::caller_env()) {
-  ok <- tryCatch(
-    isTRUE(mirai::mirai(requireNamespace("nestedtune", quietly = TRUE))[]),
+# Bounded, because a daemon that never connects would otherwise block here
+# forever. mirai reports connections from the pool's configuration, so a daemon
+# that died during startup -- one whose own library is broken, say -- is counted
+# but will never answer. This is deliberately NOT the per-fold timeout RR03
+# rejected: a model fit has no defensible time limit, but a round-trip that only
+# calls requireNamespace() does, and bounding it converts an unbreakable hang
+# into an error naming the cause (M07-D6).
+preflight_timeout_ms <- 30000L
+
+daemons_can_load <- function(timeout = preflight_timeout_ms) {
+  isTRUE(tryCatch(
+    mirai::mirai(
+      requireNamespace("nestedtune", quietly = TRUE),
+      .timeout = timeout
+    )[],
     error = function(cnd) FALSE
-  )
+  ))
+}
+
+# `ok` is an argument so the failure branch is reachable in a test without
+# breaking a library path. Doing that for real also stops the daemon loading
+# *mirai*, which kills it at startup and hangs the very probe under test --
+# found the hard way when it hung `R CMD check` for 39 minutes.
+check_daemons_can_load <- function(ok = daemons_can_load(),
+                                   call = rlang::caller_env()) {
   if (ok) {
     return(invisible(TRUE))
   }
   cli::cli_abort(
     c(
-      "The mirai daemons cannot load {.pkg nestedtune}.",
+      "The mirai daemons cannot load {.pkg nestedtune}, or did not respond.",
       i = "Daemons are separate R processes and load the package from an
            installed library; {.fn devtools::load_all} does not reach them.",
       i = "Install the package, or prime the daemons with

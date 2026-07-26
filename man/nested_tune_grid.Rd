@@ -148,10 +148,13 @@ with \code{\link[mirai:everywhere]{mirai::everywhere()}}, or start the daemons a
 call stops rather than failing every fold with the same opaque note. During
 development, prime them with
 \code{mirai::everywhere(pkgload::load_all("<path>"))}.
-\item If every daemon dies mid-run, the call blocks waiting for results that will
-never arrive; interrupt it. No per-fold timeout is imposed, because no
-timeout is defensible for an arbitrary model fit — a slow fold and a dead
-one would be indistinguishable.
+\item Before dispatching, the call checks that the daemons can actually load the
+package, and stops if they cannot or do not answer within 30 seconds. That
+check is bounded; the folds themselves are not. If every daemon dies \emph{after}
+folds are dispatched, the call blocks waiting for results that will never
+arrive, and you interrupt it. No per-fold timeout is imposed, because no
+time limit is defensible for an arbitrary model fit — a slow fold and a
+dead one would be indistinguishable.
 }
 
 A fold whose worker dies is recorded as a failed fold, exactly like any other

@@ -74,23 +74,31 @@ test_that("a miraiInterrupt aborts instead of being recorded as a failed fold", 
 })
 
 test_that("dispatch refuses daemons that cannot load the package", {
+  # The probe result is injected rather than engineered. Producing it for real
+  # means pointing the daemons' library path somewhere empty, which also stops
+  # them loading *mirai* -- they die at startup, are still counted as
+  # connections, and the pre-flight round-trip then blocks forever. That hung
+  # `R CMD check` for 39 minutes before this test was rewritten, and it is the
+  # reason the probe is now bounded (M07-D6).
+  expect_error(
+    check_daemons_can_load(ok = FALSE),
+    class = "nestedtune_daemons_cannot_load"
+  )
+})
+
+test_that("an unresponsive daemon pool fails fast instead of hanging", {
   skip_if_not_installed("mirai")
   skip_on_cran()
 
-  # Bare daemons with no nestedtune on their library path: the one setup error
-  # users actually hit. Without the pre-flight round-trip this surfaces as every
-  # fold failing with the same opaque note (RR03 rec 8).
-  old <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"), names = TRUE)
-  Sys.setenv(R_LIBS = tempfile(), R_LIBS_USER = tempfile())
-  on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
-
+  # A pool configured against a URL nothing will ever dial into: connections are
+  # reported, no daemon answers. Unbounded, this is the documented hang.
   mirai::daemons(0)
-  mirai::daemons(2)
+  mirai::daemons(url = "tcp://127.0.0.1:45997")
   on.exit(mirai::daemons(0), add = TRUE)
-  expect_error(
-    check_daemons_can_load(),
-    class = "nestedtune_daemons_cannot_load"
-  )
+
+  elapsed <- system.time(ok <- daemons_can_load(timeout = 2000L))[["elapsed"]]
+  expect_false(ok)
+  expect_lt(elapsed, 30)
 })
 
 test_that("dispatch accepts daemons primed with the package", {

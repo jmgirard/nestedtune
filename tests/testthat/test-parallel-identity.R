@@ -105,13 +105,13 @@ test_that("BC4: an aborted parallel run still restores the caller's RNG state", 
   # An interrupt unwinds through the same on.exit() the pre-flight abort does,
   # so this pins the exit contract BC4 depends on. The interrupt value itself is
   # classified in test-parallel-classify.R, where it can be constructed exactly.
-  old <- Sys.getenv(c("R_LIBS", "R_LIBS_USER"), names = TRUE)
-  Sys.setenv(R_LIBS = tempfile(), R_LIBS_USER = tempfile())
-  on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
+  #
+  # The abort is induced by mocking the probe, not by breaking the library path:
+  # real daemons with no library cannot load mirai either, so they die at
+  # startup and the probe hangs (M07-D6).
+  local_mocked_bindings(daemons_can_load = function(...) FALSE)
   on.exit(mirai::daemons(0), add = TRUE)
-
-  mirai::daemons(0)
-  mirai::daemons(2)
+  start_daemons(2)
 
   data <- make_reg_data()
   nested <- det_nested(data)

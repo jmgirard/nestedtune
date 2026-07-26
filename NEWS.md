@@ -1,5 +1,21 @@
 # nestedtune 0.0.0.9000
 
+* `nested_tune_grid()` now runs its outer folds in parallel. Start workers with
+  `mirai::daemons(n)` before the call and the loop uses them; there is no
+  argument to set, and no daemons means the serial behaviour is unchanged.
+  Inner tuning still runs serially, because nesting parallelism inside
+  parallelism oversubscribes cores.
+
+* Parallel results are identical to serial ones. The same seed gives the same
+  answer at any number of workers, because each fold's seeds are drawn before
+  the loop starts and assigned by position — a fold's result depends on where it
+  sits in the design, never on which worker ran it. A fold whose worker dies is
+  recorded as a failed fold like any other, and the run finishes.
+
+* `?nested_tune_grid` gains a "Parallel execution" section covering what workers
+  do and do not inherit from your session, and why the package must be installed
+  where they can load it.
+
 * A new guide, `vignette("nested-cv")`, runs the whole path — build a nested
   design, run the loop, read what each fold selected, fit the model to deploy —
   as code you can run, and says plainly what to report for that model and why.

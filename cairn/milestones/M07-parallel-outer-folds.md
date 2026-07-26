@@ -117,9 +117,7 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 
 - [x] T1: `mirai` → Suggests; D-entry amending the dependency chain
       (D-006 → D-007 → D-009 → D-012 → D-013 → D-017) with M07-D1 and M07-D4.
-- [x] T2: Daemon-detection helper (M07-D1) that also reports the branch a run
-      took, so tests can assert it (BC1); unit tests for absent,
-      below-threshold, active.
+- [x] T2: Daemon-detection helper (M07-D1) reporting the branch a run took so tests can assert it (BC1); unit tests for absent, below-threshold, active.
 - [x] T3: Replace the `lapply()` at `R/nested-tune-grid.R:157` with a
       dispatcher mapping `nested_fold_fit()` via `mirai::mirai_map()` + a plain
       blocking collect, never `.stop` (BC5); `lapply()` otherwise. Seeds stay
@@ -171,6 +169,9 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - 2026-07-26: benchmark reading — scaling is near-linear at 2 daemons and falls off after: 2.83x on 6. Two causes, neither a defect in dispatch: a fresh daemon loads the whole tidymodels stack inside the first timed run (cold-vs-warm gap), and this is an 8-core Apple silicon machine whose efficiency cores are far slower than its performance cores, so daemons 5 and 6 do not contribute a full core each. Six outer folds across 4 daemons also splits unevenly.
 - 2026-07-26: an earlier, lighter design (1.7 s per fold) measured only 1.29x and would have been misleading — at that size daemon startup dominates. The recorded figures use a workload where per-fold work exceeds the fixed cost, which is the regime a user running nested CV is actually in.
 - 2026-07-26: `benchmarks/parallel-speedup.R` committed so the figures are reproducible, with an `^benchmarks$` .Rbuildignore entry; no test asserts a speedup (AC11).
+- 2026-07-26: T8's first `devtools::check()` HUNG for 39 minutes and was killed. Cause was my own BC4 test: pointing `R_LIBS` at an empty dir to simulate daemons that cannot load nestedtune also stops them loading *mirai*, so they die at startup, stay counted as connections, and the unbounded pre-flight collect waits forever. The suite could hang CI and CRAN.
+- 2026-07-26: fixed three ways — the pre-flight probe is bounded at 30 s (M07-D6), `check_daemons_can_load()` takes its probe result as an argument so the failure branch is testable without process games, and the two tests that broke `R_LIBS` now inject the result or mock the binding instead. A new test drives a pool nothing dials into and asserts it fails fast rather than hanging.
+- 2026-07-26: roxygen corrected — the pre-flight check is bounded, the folds are not; the hang is now specifically about daemons dying *after* dispatch. Suite 1026 pass / 0 fail / 0 warn.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
@@ -182,6 +183,7 @@ _All five decided 2026-07-26 on RR03's evidence (archived), cross-referenced not
 - M07-D3: `notes$trace` is outside the IP2 identity claim — a daemon's backtrace can never equal the host's (RR03 Q5).
 - M07-D4: parallel use requires `nestedtune` installed where daemons load it; `load_all()` does not reach them (RR03 Q5).
 - M07-D5: RR03's rejections stand — no per-task `.timeout`, and D-011 is not reopened.
+- M07-D6: the *pre-flight* probe is bounded at 30 s. Not a departure from rec 10, which rejected a time limit on model fits; a `requireNamespace()` round-trip has a defensible one, and unbounded it hangs forever on daemons that died at startup.
 
 ## Review
 <!-- owner: review · exclusive -->
