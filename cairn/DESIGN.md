@@ -5,9 +5,10 @@ _Architecture as it **is**, not as it will be. Future work lives in
 
 ## Purpose & Scope
 
-> **Phase 1 of `/design-interview` complete (2026-07-25).** Purpose, contract
-> boundary, and conventions below are elicited. The Design Principles block is
-> still pending Phase 2.
+> **`/design-interview` complete, both phases (2026-07-25).** Purpose, contract
+> boundary, conventions, and the IP/GP principle set below are elicited, not
+> inferred. The package has no source yet; Function Families and Architecture
+> stay empty until it does.
 
 **nestedtune orchestrates nested cross-validation for the tidymodels
 ecosystem.** The package is named `nestedtune`, not `nestedcv` — that name is
@@ -88,7 +89,12 @@ functions sharing a contract and a naming convention.)_
 - **Performance is a design constraint, not a later optimization.** Benchmarks
   and memory behavior are tracked from early releases. Slowness is the stated
   reason practitioners skip nested CV, so being usable on real data is part of
-  the product.
+  the product. Subordinate to IP2 where the two conflict.
+- **A failed fold keeps its partial results but never a complete summary.**
+  Expensive compute is not discarded when one outer fold errors; the results
+  object records the failure and summary methods refuse to report a
+  nine-fold estimate as the ten-fold design that was requested. An instance
+  of IP4, not a special case.
 - Toolchain mechanics (test commands, check gates, release walk) live in
   `cairn/PROFILE.md`, not here.
 
@@ -101,29 +107,68 @@ tradeable with stated justification. The IP block comes first. Numbers run
 within each type and are **never reused or renumbered** — retiring a
 principle takes a D-entry and its number stays retired._
 
+**The IP/GP split here follows a stated line: inviolable principles bind the
+artifact, guiding principles bind the process** (D-004). All four inviolables
+share a basis — each forbids a failure that is *invisible in the output*, one
+a user cannot detect by inspection. That is why oracle verification, which is
+equally about invisible wrongness, is guiding rather than inviolable: it
+constrains how the package is developed, not what it does.
+
 ### Inviolable (IP)
 
-_(pending Phase 2 of `/design-interview`.)_
+**IP1 — No leakage across the outer boundary.** The outer assessment set never
+influences anything upstream of its own scoring: not inner tuning, not
+parameter selection, not preprocessing. This binds the final-fit path as well
+as the loop — preprocessing is estimated on analysis data, never on the full
+dataset. This is the property that makes the package's output mean anything.
+
+**IP2 — Reproducible results.** The same seed produces the same result
+regardless of the number of workers and regardless of whether execution is
+parallel or serial. This requires RNG streams managed per outer fold rather
+than inherited from a worker, and it constrains which parallel backends are
+usable. Deliberately **not** claimed, because it cannot be honoured: identity
+across R versions, across platforms, or across `tune` versions.
+
+**IP3 — The estimate describes the procedure, never the shipped model.** The
+nested estimate characterizes the whole tune-and-fit procedure. The API never
+presents it as a property of a fitted model, however convenient that would be;
+the final model is a separate object. Because this refuses the applied
+audience's most natural request, it carries an obligation: the documentation
+must say plainly what a user should report instead, and why.
+
+**IP4 — The estimate describes the design actually executed.** No estimate is
+reported as though it came from a design that did not run — a failed fold, a
+truncated grid, a silently coerced scheme. The results object positively
+records what ran (folds attempted and completed, the grid actually evaluated,
+any coercion applied), so the principle is checkable rather than aspirational.
 
 ### Guiding (GP)
 
-_(pending Phase 2.)_
+**GP1 — Delegation fidelity.** Inner results match what a user would get
+calling `tune` directly. Divergence is permitted where necessary — forcing
+tune's control to sequential for the parallelism split is one such case — but
+it is documented, never silent.
 
-### Banked candidates (Phase 1 → Phase 2)
+**GP2 — Numeric results are oracle-verified.** Confirmed against ≥2
+independent oracle types before shipping. Guiding rather than inviolable per
+the artifact/process line above (D-004).
 
-_Working ledger, not commitments. Each arrives at Phase 2 classified as
-proposed IP / GP / skip; this section is deleted at Phase 2 write-out._
+**GP3 — Hard to misuse over configurable.** Provably invalid designs are
+refused rather than warned about, deliberately stricter than `rsample`; one
+obvious path is preferred to a knob. Both faces of the same instinct.
 
-| # | Candidate | Source |
-|---|---|---|
-| BC1 | Delegate to tidymodels rather than reimplement | boundary choice |
-| BC2 | Numeric results are oracle-verified — promote to IP? | scaffold convention |
-| BC3 | Don't ship inference the literature hasn't settled | G6 disposition |
-| BC4 | The estimate describes the procedure, never the shipped model | misreading wart |
-| BC5 | Refuse invalid designs rather than warn about them | strictness choice |
-| BC6 | Surface what other tools hide (selection instability) | instability wart |
-| BC7 | Usable on real data is part of correctness, not polish | speed wart |
-| BC8 | One obvious path over configurability | audience choice |
+**GP4 — Usable on real data is part of correctness.** Performance and memory
+are design constraints, not polish. **Explicitly subordinate to IP2**: where
+reproducibility and speed conflict, reproducibility wins, and the fastest
+schedulers are ruled out on that basis.
+
+**GP5 — Don't ship inference the literature hasn't settled.** Where the
+statistics are contested, the package declines rather than picking a side.
+
+_Not at principle strength, by decision: surfacing what other tools hide
+(selection instability). It remains a convention below — the only positive
+obligation among a set of prohibitions — and nothing at principle strength
+defends it if default output gets crowded._
 
 _Still open, deliberately not invented by the interview: posture toward
 upstream's dormant prototype (tune#969), pending the maintainer's reply._

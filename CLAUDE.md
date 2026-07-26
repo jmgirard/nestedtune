@@ -3,8 +3,8 @@
 Nested cross-validation for the tidymodels ecosystem. Orchestrates the outer
 loop and delegates inner tuning to `tune`.
 
-The package is `nestedtune` (D-001); the repository and working directory are
-still named `nestedcv`, which is cosmetic and carries no weight.
+The package and GitHub repository are `nestedtune` (D-001). The local working
+directory is still `nestedcv`, which is cosmetic and carries no weight.
 
 ## Project tracking (cairn)
 
