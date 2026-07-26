@@ -169,7 +169,7 @@ test_that("print returns its input invisibly and is registered for S3 dispatch",
     det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
   )
 
-  utils::capture.output(returned <- withVisible(print(res)))
+  cli::cli_fmt(returned <- withVisible(print(res)))
   expect_false(returned$visible)
   expect_identical(returned$value, res)
 
@@ -192,10 +192,18 @@ test_that("printed output holds its shape", {
     det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
     grid = det_grid(), metrics = reg_metrics()
   ))
+  # Unanimity has to be checked, not assumed: the same design on the smaller
+  # frame splits 3, 3, 2, 3, 3, so a fixture labelled unanimous that quietly
+  # stopped being unanimous would still record a perfectly valid snapshot.
+  big <- make_reg_data(n = 150)
   set.seed(2)
   unanimous <- nested_tune_grid(
-    det_workflow(d), det_nested(d, v = 5), grid = det_grid(),
+    det_workflow(big), det_nested(big, v = 5), grid = det_grid(),
     metrics = reg_metrics()
+  )
+  expect_identical(
+    vapply(unanimous$.selected, function(s) s$num_comp, integer(1)),
+    rep(3L, 5L)
   )
   set.seed(2)
   divergent <- nested_tune_grid(

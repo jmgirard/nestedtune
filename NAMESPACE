@@ -2,6 +2,7 @@
 
 S3method("[",nested_results)
 S3method(collect_metrics,nested_results)
+S3method(print,nested_results)
 export(collect_metrics)
 export(nested_resamples)
 export(nested_tune_grid)

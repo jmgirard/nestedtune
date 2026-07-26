@@ -25,11 +25,29 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   out <- new_tbl(cols)
   attr(out, "grid") <- grid
   attr(out, "metrics") <- metrics
+  attr(out, "outer_label") <- outer_scheme_label(resamples)
   # IP4: what ran is recorded positively, never inferred from what is absent.
   attr(out, "folds_attempted") <- n
   attr(out, "folds_completed") <- sum(completed)
   class(out) <- c("nested_results", class(out))
   out
+}
+
+# How the outer resampling scheme describes itself, for printing.
+#
+# rsample answers this through pretty(), but a nested design dispatches to a
+# method describing both levels at once. Stripping the nested classes leaves the
+# outer rset, which describes only itself. A design built somewhere else may
+# carry no pretty() method at all, and then the run simply has no scheme to
+# name -- printing drops the line rather than inventing one.
+outer_scheme_label <- function(resamples) {
+  outer <- resamples
+  class(outer) <- setdiff(class(outer), c("nested_resamples", "nested_cv"))
+  label <- tryCatch(pretty(outer), error = function(cnd) NULL)
+  if (!is.character(label) || length(label) != 1L) {
+    return(NULL)
+  }
+  label
 }
 
 # The counts are attributes, so a row subset carries them along untouched and
@@ -53,6 +71,10 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   }
   attr(out, "grid") <- attr(x, "grid")
   attr(out, "metrics") <- attr(x, "metrics")
+  # The scheme label is not recomputable from the rows, and the rows kept are
+  # no longer the design it names -- "10-fold cross-validation" over three rows
+  # is exactly the claim IP4 forbids. It goes rather than travels.
+  attr(out, "outer_label") <- NULL
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
   out
@@ -122,7 +144,18 @@ collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
   if (!summarize) {
     return(per_fold)
   }
+  summarize_folds(per_fold)
+}
 
+# The averaging, with no conditions of its own.
+#
+# Split out from collect_metrics() so that print.nested_results() can show the
+# same numbers without the warning and the abort: a summary is a request for an
+# estimate and owes the caller a condition when the design fell short, while a
+# print is a description of the object and says the same thing in its header
+# instead. Both read the estimate off this one function, so they can never
+# disagree about it.
+summarize_folds <- function(per_fold) {
   keys <- paste(per_fold$.metric, per_fold$.estimator, sep = "\r")
   first <- !duplicated(keys)
 

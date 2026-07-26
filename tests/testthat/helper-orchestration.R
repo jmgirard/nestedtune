@@ -173,12 +173,17 @@ break_every_fold <- function(nested, stage = "inner tuning") {
 }
 
 # Printed output as one string, at a width wide enough that cli's wrapping does
-# not decide whether an assertion matches. The snapshots below set their own
-# width through testthat, so they are unaffected by this.
+# not decide whether an assertion matches. The snapshots set their own width
+# through testthat, so they are unaffected by this.
+#
+# cli::cli_fmt() rather than capture.output(): cli deliberately writes to stderr
+# whenever a sink is active on stdout, so capture.output() around a cli-based
+# print method captures nothing at all and every assertion on it passes or
+# fails for the wrong reason.
 print_text <- function(x, width = 200) {
   op <- options(width = width, cli.width = width)
   on.exit(options(op), add = TRUE)
-  paste(utils::capture.output(print(x)), collapse = "\n")
+  paste(cli::cli_fmt(print(x)), collapse = "\n")
 }
 
 skip_if_no_engines <- function(stochastic = FALSE) {
