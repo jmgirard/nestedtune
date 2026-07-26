@@ -111,7 +111,7 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 
 - [x] T1: `mirai` → Suggests; D-entry amending the dependency chain
       (D-006 → D-007 → D-009 → D-012 → D-013 → D-017) with M07-D1 and M07-D4.
-- [ ] T2: Daemon-detection helper (M07-D1) that also reports the branch a run
+- [x] T2: Daemon-detection helper (M07-D1) that also reports the branch a run
       took, so tests can assert it (BC1); unit tests for absent,
       below-threshold, active.
 - [ ] T3: Replace the `lapply()` at `R/nested-tune-grid.R:157` with a
@@ -145,6 +145,7 @@ _No deviations from RR03: all nine binding criteria are ingested verbatim._
 - 2026-07-26: RR03 found a defect in the plan's own AC3 — it would have passed against a pin-less implementation, because a caller on L'Ecuyer-CMRG matches the daemons' own kind; BC2 replaces it with a kind that reddens.
 - 2026-07-26: amendment compressed Scope, Tasks, and the milestone-local Decisions in one pass each to fit the 149-line cap; body now at 149/149 with no headroom.
 - 2026-07-26: T1 done — `mirai (>= 2.4.0)` and `pkgload` into Suggests, D-018 records the backend choice, the >= 2 threshold, and the daemons-must-load-it constraint; suite 943 pass / 0 fail.
+- 2026-07-26: T2 done — `R/parallel.R` holds detection (`mirai_workers()`, `use_parallel()`, threshold >= 2) and an out-of-band dispatch record, since putting the branch on the result object would break the very identity BC1 also demands; both guards proved by inversion; suite 957 pass / 0 fail.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
