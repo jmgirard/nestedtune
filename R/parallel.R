@@ -177,11 +177,13 @@ is_fold_record <- function(x) {
 }
 
 worker_failure_message <- function(x) {
-  if (isTRUE(try(mirai::is_mirai_error(x), silent = TRUE))) {
+  # Dispatched on class rather than through mirai's predicates, so classification
+  # needs nothing loaded. Order matters: a miraiError is also an errorValue.
+  if (inherits(x, "miraiError")) {
     # A miraiError does carry the task's own error message.
     return(conditionMessage(x))
   }
-  if (isTRUE(try(mirai::is_error_value(x), silent = TRUE))) {
+  if (inherits(x, "errorValue")) {
     # A bare errorValue is an integer code. nanonext names it ("19 | Connection
     # reset"); it always ships with mirai, but it is not a declared dependency
     # of this package, so it is reached only if present and the code stands

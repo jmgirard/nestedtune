@@ -132,7 +132,7 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
       BC6's trace caveat and an amendment to "Differences from calling tune
       directly".
 - [x] T7: Run and record the AC11 benchmark — machine, daemon count, design, both wall-clock figures.
-- [ ] T8: `devtools::check()` both ways per AC12; update `NEWS.md`.
+- [x] T8: `devtools::check()` both ways per AC12; update `NEWS.md`.
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates. -->
@@ -172,6 +172,8 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - 2026-07-26: T8's first `devtools::check()` HUNG for 39 minutes and was killed. Cause was my own BC4 test: pointing `R_LIBS` at an empty dir to simulate daemons that cannot load nestedtune also stops them loading *mirai*, so they die at startup, stay counted as connections, and the unbounded pre-flight collect waits forever. The suite could hang CI and CRAN.
 - 2026-07-26: fixed three ways — the pre-flight probe is bounded at 30 s (M07-D6), `check_daemons_can_load()` takes its probe result as an argument so the failure branch is testable without process games, and the two tests that broke `R_LIBS` now inject the result or mock the binding instead. A new test drives a pool nothing dials into and asserts it fails fast rather than hanging.
 - 2026-07-26: roxygen corrected — the pre-flight check is bounded, the folds are not; the hang is now specifically about daemons dying *after* dispatch. Suite 1026 pass / 0 fail / 0 warn.
+- 2026-07-26: T8 — NEWS entry added; `devtools::check()` OK, 0 errors / 0 warnings / 0 notes, 5m 36s.
+- 2026-07-26: the second check (`_R_CHECK_DEPENDS_ONLY_=true`, CRAN's noSuggests flavor) failed first time and found a real bug: `worker_failure_message()` reached for `mirai::is_error_value()`, so with mirai absent an `errorValue` fell through to the generic note. Now dispatched on class (`miraiError` before `errorValue`, since the former inherits the latter), needing nothing loaded. Both checks OK, 0/0/0, 33 skips in the depends-only run.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
