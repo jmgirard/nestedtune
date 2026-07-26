@@ -67,6 +67,11 @@ functions sharing a contract and a naming convention.)_
   not an oracle. See the plugin's `skills/shared/validation-doctrine.md`.
   For a resampling package this is load-bearing: a subtly wrong outer-loop
   estimate is self-consistent and will pass its own unit tests.
+- **Oracle records: provenance headers in the asserting test file.** Each oracle
+  is recorded at the top of the `tests/testthat/test-*.R` file that asserts it,
+  by ID, type, source, and which test pins it — the asserting test is the single
+  source of truth, never a restated value. This is the declared location every
+  ≥2-types audit reads off. _(added 2026-07-25, M01.)_
 - **Pure R — no compiled code.** No `src/`, no `LinkingTo`, no C/C++/Fortran
   toolchain. Adding compiled code later is additive and would be a design
   decision recorded as a D-entry.

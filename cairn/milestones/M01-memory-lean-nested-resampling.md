@@ -87,7 +87,7 @@ export. _(amended 2026-07-25)_
 - [x] T5 — Support stratified and grouped inner specs under AC2; fire and test
       every `cli_abort()` branch the constructor does have (bad `outside`/
       `inside` arguments, outer bootstrap).
-- [ ] T6 — Memory benchmark test across v = 2, 5, 10, 50 measuring both the new
+- [x] T6 — Memory benchmark test across v = 2, 5, 10, 50 measuring both the new
       constructor and `rsample::nested_cv()`, asserting AC3's flatness and AC4's
       analytic prediction; commit the generator per the profile's fixture
       provenance rule.
@@ -113,6 +113,9 @@ export. _(amended 2026-07-25)_
 - 2026-07-25: T4 done — 5 RNG-fidelity tests (same seed identical, different seed differs, RNG stream left in the same position as rsample, every inner split shares the caller's data by address via lobstr, indices confined to the outer analysis set). 272 assertions, 0 failures.
 
 - 2026-07-25: T5 done — stratified and grouped inner and outer specs all match `rsample::nested_cv()` with no special handling, plus group-integrity, character-vs-factor strata, and NA-row coverage; all 4 `cli_abort()` branches fired, and the zero-/one-row edge cases pinned to rsample's own message. 469 assertions, 0 failures.
+
+- 2026-07-25: T6 done — memory benchmark on LetterRecognition (inner v=5), size as multiples of the 2.645 MB source: lean 1.186/1.734/2.649/9.965 vs rsample 2.156/5.612/11.373/57.458 at v=2/5/10/50. Slopes per outer fold: lean 0.183, rsample 1.152 (6.3x shallower). The analytic model predicts every measured size within 0.72%, well inside the 2% tolerance asserted.
+- 2026-07-25: DESIGN.md Conventions gained the oracle-records pointer the validation doctrine requires — its absence in a repo with numeric work is itself an audit finding. Records live in headers in the asserting test file.
 
 ## Decisions
 
