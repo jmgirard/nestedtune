@@ -170,7 +170,7 @@ Evidence gathered fresh at review on R 4.6.1 / rsample 1.3.2, by command.
 - `cairn_validate`: exit 0, all checks passed (16 PASS, 7 advisory OK).
 - No `DESIGN.md` IP/GP principle changed — only a Conventions line was added — so `cairn_impact` is skipped.
 - r-package `consistency-gate` slot: `document()` no diff; `NAMESPACE` and `man/` regenerate from roxygen; `pkgdown::check_pkgdown()` clean; NEWS.md carries the user-visible entries and no milestone numbers appear in user-facing text; no `.Rbuildignore` gaps (`check()` reported 0 NOTEs); full `check()` clean. No `README.Rmd` exists, so the knit check is a deliberate no-op recorded at T1.
-- CI on PR #1: all six jobs pass — macOS release, Windows release, ubuntu release, ubuntu devel, ubuntu oldrel-1, and test-coverage.
+- CI on PR #1: all six jobs pass — macOS release, Windows release, ubuntu release, ubuntu devel, ubuntu oldrel-1, and test-coverage. Re-run green on the review-fix commit; `check()` and `cairn_validate` also re-run clean after the fixes.
 
 ### Independent review fan-out
 
