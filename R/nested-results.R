@@ -13,15 +13,48 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   for (nm in id_cols) {
     cols[[nm]] <- resamples[[nm]]
   }
+  completed <- vapply(folds, function(x) x$completed, logical(1))
+
   cols[[".metrics"]] <- lapply(folds, function(x) x$metrics)
   cols[[".selected"]] <- lapply(folds, function(x) x$selected)
+  cols[[".notes"]] <- lapply(folds, function(x) x$notes)
+  cols[[".completed"]] <- completed
   cols[[".tuning_seed"]] <- seeds[seq(1L, by = 2L, length.out = n)]
   cols[[".outer_fit_seed"]] <- seeds[seq(2L, by = 2L, length.out = n)]
 
   out <- new_tbl(cols)
   attr(out, "grid") <- grid
   attr(out, "metrics") <- metrics
+  # IP4: what ran is recorded positively, never inferred from what is absent.
+  attr(out, "folds_attempted") <- n
+  attr(out, "folds_completed") <- sum(completed)
   class(out) <- c("nested_results", class(out))
+  out
+}
+
+# The counts are attributes, so a row subset carries them along untouched and
+# they go on describing the run the rows came from -- which is how a subset
+# holding no completed fold could still claim its parent's two. Recomputed here
+# so the object's own record of what ran stays true of the object holding it
+# (IP4). A subset that drops `.completed` is no longer a results object at all,
+# and says so by shedding the class rather than answering for a run it can no
+# longer describe.
+#' @export
+`[.nested_results` <- function(x, i, j, ...) {
+  out <- NextMethod()
+  if (!is.data.frame(out) || !".completed" %in% names(out)) {
+    if (inherits(out, "nested_results")) {
+      class(out) <- setdiff(class(out), "nested_results")
+    }
+    return(out)
+  }
+  if (!inherits(out, "nested_results")) {
+    class(out) <- c("nested_results", class(out))
+  }
+  attr(out, "grid") <- attr(x, "grid")
+  attr(out, "metrics") <- attr(x, "metrics")
+  attr(out, "folds_attempted") <- nrow(out)
+  attr(out, "folds_completed") <- sum(out$.completed)
   out
 }
 
@@ -52,6 +85,11 @@ new_tbl <- function(cols) {
 #' tune-and-fit procedure achieves on data it never saw. It is not the
 #' performance of any model you have in hand.
 #'
+#' Only the outer folds that completed are summarized, and `n` counts them, so
+#' a run with failures never reports its estimate as though the whole design
+#' had run. Those folds are dropped with a warning naming them; when no fold
+#' completed at all, this errors instead of returning `NA`.
+#'
 #' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
 #' data(mtcars)
 #'
@@ -77,6 +115,9 @@ new_tbl <- function(cols) {
 #'
 #' @export
 collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
+  check_any_completed(x)
+  warn_partial_summary(x)
+
   per_fold <- per_fold_metrics(x)
   if (!summarize) {
     return(per_fold)
@@ -115,6 +156,47 @@ collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
     n = n_of,
     std_err = se_of
   ))
+}
+
+# IP4: nothing is reported for a design that did not run at all. With no fold
+# completed there is no estimate to give, and returning NA would let a caller
+# treat the absence of a result as a result.
+check_any_completed <- function(x, call = rlang::caller_env()) {
+  # Read from the column, never from the stamped count: the column travels with
+  # the rows, so the two can never disagree about the object actually in hand.
+  if (any(x$.completed)) {
+    return(invisible(x))
+  }
+  n <- nrow(x)
+  cli::cli_abort(
+    c(
+      "There is nothing to summarize: no outer fold completed.",
+      x = "All {n} outer fold{?s} failed.",
+      i = "See {.code x$.notes} for what went wrong."
+    ),
+    call = call
+  )
+}
+
+# A partial run is still summarized -- expensive compute is not thrown away --
+# but never quietly. The count in `n` says how many folds contributed; this
+# says which ones did not, and that the design asked for more.
+warn_partial_summary <- function(x, call = rlang::caller_env()) {
+  failed <- fold_ids(x)[!x$.completed]
+  if (length(failed) == 0L) {
+    return(invisible(x))
+  }
+  n <- nrow(x)
+  cli::cli_warn(
+    c(
+      "!" = "This summary covers {sum(x$.completed)} of {n} outer fold{?s}.",
+      x = "Failed: {.val {failed}}.",
+      i = "It describes the folds that ran, not the design that was requested."
+    ),
+    class = "nestedtune_partial_summary",
+    call = call
+  )
+  invisible(x)
 }
 
 # One row per outer fold and metric. The per-fold tibbles come straight from

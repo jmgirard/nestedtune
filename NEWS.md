@@ -1,5 +1,28 @@
 # nestedtune 0.0.0.9000
 
+* An outer fold that fails no longer ends the run. The remaining folds still
+  run, and the failed one is recorded rather than thrown away: `.completed`
+  marks it, and `.notes` says which stage failed and why, carrying tune's own
+  notes about the underlying cause. This matters because both stages can fail
+  quietly — inner tuning only raises once every candidate has failed, and the
+  outer fit does not raise at all.
+
+* A fold that completes on only part of its inner design now keeps the notes
+  explaining what was lost. `.completed` being `TRUE` alongside a non-empty
+  `.notes` means the fold worked, but chose its parameters on less of the inner
+  design than was requested.
+
+* `nested_tune_grid()` now checks a data-frame `grid` against the workflow
+  before fitting anything: a column that is not marked for tuning, or a tuned
+  parameter with no column, is refused immediately and by name. Either mistake
+  is wrong for every fold rather than for one, so it is reported as what it is
+  — an error in the call — instead of as an entire design failing.
+
+* `collect_metrics()` now summarizes only the outer folds that completed, warns
+  naming the ones that did not, and errors rather than returning `NA` when none
+  completed. An estimate is never reported as though it came from a design that
+  did not run.
+
 * Added `nested_tune_grid()`, which runs the nested cross-validation loop end to
   end. For each outer fold it tunes on that fold's inner resamples with
   `tune::tune_grid()`, selects the best candidate, finalizes the workflow, and

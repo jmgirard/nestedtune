@@ -147,3 +147,77 @@ test_that("the checks fire before any fitting happens", {
   expect_error(nested_tune_grid(wf, folds, metrics = "rmse"))
   expect_identical(.Random.seed, before)
 })
+
+# The grid is judged against the workflow up front (M03). Both directions are
+# wrong for every fold rather than for one, so both are call errors -- and once
+# fold failures are recorded rather than raised, an unchecked grid would show up
+# as an entire design failing instead.
+
+test_that("a grid column not marked for tuning is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  expect_error(
+    nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2)),
+    "not marked for tuning"
+  )
+  # Named, so the caller knows which column to fix.
+  expect_error(
+    nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2)),
+    "not_a_param"
+  )
+})
+
+test_that("a tuned parameter with no grid column is refused", {
+  skip_if_no_engines()
+  skip_if_not_installed("dials")
+
+  d <- make_reg_data()
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = tune::tune()),
+      "ranger",
+      num.threads = 1
+    ),
+    "regression"
+  )
+  skip_if_not_installed("ranger")
+  wf <- workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)
+  folds <- valid_folds(d)
+
+  expect_error(
+    nested_tune_grid(wf, folds, grid = data.frame(min_n = c(2L, 10L))),
+    "no column for"
+  )
+  expect_error(
+    nested_tune_grid(wf, folds, grid = data.frame(min_n = c(2L, 10L))),
+    "trees"
+  )
+})
+
+test_that("a grid given as a size is not held to the column check", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  # There are no columns to judge yet; tune generates them.
+  expect_no_error(check_grid_params(wf, 5))
+})
+
+test_that("the grid check fires before any fitting happens", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  set.seed(1)
+  before <- .Random.seed
+  expect_error(nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2)))
+  expect_identical(.Random.seed, before)
+})

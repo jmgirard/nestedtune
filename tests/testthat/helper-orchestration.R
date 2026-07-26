@@ -94,6 +94,51 @@ ref_field <- function(ref, field) {
   vapply(ref, function(x) x[[field]], integer(1))
 }
 
+# One outer fold engineered to fail, at a stage of our choosing (M03).
+#
+# The failure is injected into the *design*, not the workflow: the named fold's
+# inner rset -- or its outer split -- is rebuilt on a frame the recipe cannot
+# prep, so that fold fails at that stage while its neighbours run untouched.
+# Keyed to fold position rather than to a counter, so it stays deterministic
+# however the loop is scheduled.
+foreign_frame <- function(n = 30, seed = 909) {
+  set.seed(seed)
+  data.frame(z = rnorm(n), w = rnorm(n))
+}
+
+break_fold <- function(nested, fold, stage = c("inner tuning", "outer fit")) {
+  stage <- match.arg(stage)
+  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
+  if (stage == "inner tuning") {
+    nested$inner_resamples[[fold]] <- foreign
+  } else {
+    nested$splits[[fold]] <- foreign$splits[[1L]]
+  }
+  nested
+}
+
+# One inner split of one outer fold, rebuilt on a foreign frame. That inner
+# resample fails while the rest of the fold's inner design survives, so tuning
+# still yields a candidate and the fold completes -- on a truncated inner design
+# that tune recorded notes about.
+break_inner_split <- function(nested, fold, split = 1L) {
+  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
+  nested$inner_resamples[[fold]]$splits[[split]] <- foreign$splits[[1L]]
+  nested
+}
+
+# The two stages fail differently, and the difference is the point: inner
+# tuning raises ("All models failed") while the outer fit stays silent and
+# hands back NULL metrics. Both are failures; only one of them says so.
+det_nested <- function(data, v = 3, seed = 11) {
+  set.seed(seed)
+  nested_resamples(
+    data,
+    outside = rsample::vfold_cv(v = v),
+    inside = rsample::vfold_cv(v = v)
+  )
+}
+
 skip_if_no_engines <- function(stochastic = FALSE) {
   testthat::skip_if_not_installed("recipes")
   testthat::skip_if_not_installed("yardstick")

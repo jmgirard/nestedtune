@@ -175,7 +175,12 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   expect_identical(with_call, without_call)
 })
 
-test_that("the RNG state is restored even when a fold errors", {
+# Two properties, not one. Before M03 a failing fold aborted the call, so a
+# single test covered both the failure and the error exit. Now a fold failure
+# is recorded and the call returns, which leaves the error path needing its
+# own vehicle -- and the on.exit() restore has to hold on both.
+
+test_that("the RNG state is restored when folds fail but the run completes", {
   skip_if_no_engines()
 
   d <- make_reg_data()
@@ -188,14 +193,51 @@ test_that("the RNG state is restored even when a fold errors", {
     inside = rsample::vfold_cv(v = 3)
   )
 
+  # Both folds engineered to fail: the seeds are drawn, every fold fails inside
+  # tune, and the failures are recorded rather than raised. (A malformed grid
+  # would not do here -- that is refused up front now, before any seed is drawn.)
+  folds <- break_fold(break_fold(folds, 1L, "inner tuning"), 2L, "inner tuning")
+
   set.seed(505)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
 
-  # A grid naming a parameter the workflow does not tune: the seeds are drawn,
-  # then the first fold fails inside tune.
+  res <- suppressWarnings(
+    nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics())
+  )
+  expect_identical(attr(res, "folds_completed"), 0L)
+
+  expect_identical(.Random.seed, before_seed)
+  expect_identical(RNGkind(), before_kind)
+})
+
+test_that("the RNG state is restored when the call itself errors", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  set.seed(7)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 3)
+  )
+
+  # The worker is stubbed to throw, so the error escapes the loop rather than
+  # being recorded -- which is the only remaining way out of the call after the
+  # seeds have been drawn, and the case on.exit() exists for.
+  testthat::local_mocked_bindings(
+    nested_fold_fit = function(...) stop("engineered worker failure")
+  )
+
+  set.seed(505)
+  before_seed <- .Random.seed
+  before_kind <- RNGkind()
+
   expect_error(
-    nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2))
+    nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics()),
+    "engineered worker failure"
   )
 
   expect_identical(.Random.seed, before_seed)

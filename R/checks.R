@@ -125,6 +125,54 @@ check_grid <- function(grid, call = rlang::caller_env()) {
   invisible(grid)
 }
 
+# A grid can be judged against the workflow before any fitting: tune knows which
+# parameters are marked for tuning, and a column that is not one of them -- or a
+# tuned parameter with no column -- is wrong for every fold rather than for this
+# one. tune raises exactly this, but per fold, and M03 records fold failures
+# instead of re-raising them; without this check a malformed grid would surface
+# as an entire design failing rather than as the call error it is (GP3).
+check_grid_params <- function(object, grid, call = rlang::caller_env()) {
+  if (!is.data.frame(grid)) {
+    return(invisible(grid))
+  }
+  # A check that cannot be made is skipped, never turned into a false refusal:
+  # extraction can fail for reasons that are not the caller's doing.
+  ids <- tryCatch(
+    tune::extract_parameter_set_dials(object)$id,
+    error = function(cnd) NULL
+  )
+  if (is.null(ids)) {
+    return(invisible(grid))
+  }
+
+  unknown <- setdiff(names(grid), ids)
+  if (length(unknown) > 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg grid} has {length(unknown)} column{?s} not marked for tuning: \\
+         {.val {unknown}}.",
+        i = "Mark {cli::qty(unknown)}{?it/them} with {.fn tune::tune}, or drop \\
+             {cli::qty(unknown)}{?it/them} from the grid."
+      ),
+      call = call
+    )
+  }
+
+  missing <- setdiff(ids, names(grid))
+  if (length(missing) > 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg grid} has no column for {length(missing)} tuned parameter{?s}: \\
+         {.val {missing}}.",
+        i = "Every parameter marked with {.fn tune::tune} needs candidate values."
+      ),
+      call = call
+    )
+  }
+
+  invisible(grid)
+}
+
 check_metrics <- function(metrics, call = rlang::caller_env()) {
   if (!is.null(metrics) && !inherits(metrics, "metric_set")) {
     cli::cli_abort(
