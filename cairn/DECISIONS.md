@@ -168,6 +168,30 @@ would flag them unused).
 rsample, tune, workflows, parsnip. `R CMD check` gets slower from M02 onward.
 Any further dependency takes its own gate and D-entry.
 
+### D-008 (2026-07-25): The memory-lean constructor is `nested_resamples()` and carries rsample's `nested_cv` class — implements the scope D-005 opened
+
+**Context:** D-005 put a memory-lean nested resampling constructor in scope, and
+M01 ships it as the package's first export. Two things had to be settled before
+any code: what to call it, and whether its return value should present itself as
+an rsample `nested_cv` object. `tune` hard-aborts on class `nested_cv` (G1), so
+the class choice also decides how the object behaves when handed to `tune`.
+
+**Decision:** The export is `nested_resamples(data, outside, inside)`, mirroring
+`rsample::nested_cv()`'s signature. Its return value carries
+`c("nested_resamples", "nested_cv", <outer rset classes>)` plus the `outside`
+and `inside` attributes rsample sets. Considered and rejected: naming it
+`nested_cv` (masks `rsample::nested_cv()` whenever both are attached);
+`lean_nested_cv` and `nested_rset` (leak an implementation property, and rsample
+vocabulary, into a name the applied audience reads); carrying a distinct class
+only (a user swapping the constructor into existing code would lose every method
+dispatching on `nested_cv`, and `tune` would stop refusing the object loudly and
+start mis-consuming it as a plain `rset` with a spare column).
+
+**Consequences:** The object is a drop-in for `rsample::nested_cv()`'s. `tune`
+refuses it exactly as it refuses rsample's, so G1 stays open until M02's
+orchestrator, which consumes the inner `rset`s rather than the top-level object.
+Pre-1.0 the name and class stay changeable without a deprecation cycle (D-003).
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
