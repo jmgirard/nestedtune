@@ -19,8 +19,10 @@ than a model you can ship.
 and how many folds completed (reading M03's counts), names any failed fold and its
 stage, lays out each tuned parameter's selected value across folds while distinguishing
 unanimous selection from disagreement, and carries one plain sentence saying the
-estimate characterizes the tune-and-fit procedure and not a fitted model (IP3). Snapshot
-tests over the output shapes that carry meaning.
+estimate characterizes the tune-and-fit procedure and not a fitted model (IP3). It also
+shows the summarized metric estimate across the folds that completed, immediately above
+that sentence, computed by the same path `collect_metrics()` uses but never warning or
+erroring. Snapshot tests over the output shapes that carry meaning.
 
 **Out:**
 - `summary()` and `autoplot()` methods → not planned; D-010 has `autoplot()` deliberately
@@ -43,6 +45,9 @@ tests over the output shapes that carry meaning.
 - [ ] AC6: Snapshot tests cover four shapes — a complete run, a partially failed run,
       unanimous selection, and divergent selection.
 - [ ] AC7: `devtools::test()` and `devtools::check()` clean (0 errors, 0 warnings).
+- [ ] AC8: Printing shows the summarized metric estimate across completed folds and the
+      number of folds it covers, and neither warns nor errors when folds failed or when
+      none completed.
 
 ## Coverage
 
@@ -53,6 +58,7 @@ tests over the output shapes that carry meaning.
 - AC5 → T5, T6
 - AC6 → T1
 - AC7 → T6
+- AC8 → T1, T7
 
 ## Tasks
 
@@ -63,6 +69,8 @@ tests over the output shapes that carry meaning.
 - [ ] T3: Failure formatter reading M03's per-fold outcome record.
 - [ ] T4: Selection formatter — pivot `.selected` across folds, mark the parameters that
       varied, and handle the single-fold and no-tuned-parameter cases.
+- [ ] T7: Estimate formatter — the summary across completed folds, silent on a partial
+      run and on one where nothing completed. (Added by the 2026-07-26 amendment.)
 - [ ] T5: `print.nested_results()` in `R/nested-results.R` assembling the pieces with
       cli, carrying the IP3 sentence, returning `x` invisibly.
 - [ ] T6: Roxygen for the method, NEWS entry, `_pkgdown.yml` reference row,
@@ -71,6 +79,9 @@ tests over the output shapes that carry meaning.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan; absorbs the print/summary half of the M02 split candidate row.
+- 2026-07-26: branch `m04-print-nested-results` cut; status in-progress.
+- 2026-07-26: amendment (gated) — print also shows the metric summary across completed folds; Scope In extended, AC8 added, T7 added, Coverage AC8 → T1, T7. Escalation was offered on the IP3 reading and declined.
+- 2026-07-26: gate — selection laid out one line per parameter in fold order, collapsed when unanimous, rather than a fold-by-parameter table.
 
 ## Decisions
 
