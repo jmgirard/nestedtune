@@ -18,10 +18,12 @@ with the outer fold count, producing splits row-identical to
 **In:** The R package skeleton (DESCRIPTION, NAMESPACE, `R/`, `tests/testthat/`,
 LICENSE, NEWS.md, `_pkgdown.yml`, CI). One exported constructor that builds the
 nested structure by **index composition** — inner splits are built with
-`rsample::make_splits()` over the *original* data and assembled with
-`manual_rset()`, rather than over a materialized analysis frame. RNG fidelity so
-inner splits match rsample's for the same seed and spec. Tests for content
-identity, memory scaling, and every error branch. Roxygen docs for the export.
+`rsample::make_splits()` over the *original* data and reassembled into an inner
+`rset` that keeps the inner specification's own class, `id` columns, and
+attributes, rather than being built over a materialized analysis frame. RNG
+fidelity so inner splits match rsample's for the same seed and spec. Tests for
+content identity, memory scaling, and every error branch. Roxygen docs for the
+export. _(amended 2026-07-25)_
 
 **Out:**
 - Outer-loop orchestration, `tune` integration, collected results (G1–G3, G5) →
@@ -73,10 +75,10 @@ identity, memory scaling, and every error branch. Roxygen docs for the export.
 - [x] T2 — Write the failing content-identity tests first: build the same scheme
       with `rsample::nested_cv()` and with the (not yet existing) constructor
       under one seed, and compare every inner analysis/assessment set.
-- [ ] T3 — Implement the index-composition core: given an outer `rset` and an
+- [x] T3 — Implement the index-composition core: given an outer `rset` and an
       inner spec, compose outer-analysis indices with inner indices and build
       each inner split via `rsample::make_splits(list(analysis =, assessment =),
-      data = <original>)`, assembled with `manual_rset()`.
+      data = <original>)`, reassembled into the inner spec's own `rset`.
 - [ ] T4 — RNG fidelity: evaluate the inner spec against each outer fold's
       analysis frame built transiently, harvest its indices, remap them through
       the outer analysis index vector, and discard the frame — so the same seed
@@ -104,6 +106,9 @@ identity, memory scaling, and every error branch. Roxygen docs for the export.
 - 2026-07-25: dependency gate — `cli` and `rlang` added to Imports, recorded as D-009 amending D-006; both are already rsample dependencies, so no practical weight is added.
 - 2026-07-25: T2 done — 6 content-identity tests against `rsample::nested_cv()` (v-fold/v-fold, v-fold/bootstrap, repeated outer, pre-evaluated outer rset, class + spec attributes, deliberate row-name divergence), all red on "could not find function". Red is T2's intended state; the verify slot's clean-test bar applies from T3 on.
 - 2026-07-25: minor plan amendment — a README is deferred to T7 with the rest of the user-facing docs rather than added at T1; it will be hand-written `README.md` with no `README.Rmd`, so the consistency gate's knit check is a deliberate no-op.
+- 2026-07-25: T3 done — `nested_resamples()` implemented and exported; all 6 identity tests green plus 3 new ones for inner-rset identity (221 assertions, 0 failures).
+- 2026-07-25: milestone-local decision on row-name divergence superseded — the premise was false, `analysis()` renumbers on retrieval either way, so AC2 is now asserted with exact `expect_identical()`.
+- 2026-07-25: Scope amended at a mini gate — inner splits are reassembled into the spec's own rset rather than `manual_rset()`, which was measured to drop the inner class, the spec attributes, and a repeated spec's `id2` column. Approved by the user.
 
 ## Decisions
 
@@ -121,5 +126,18 @@ identity, memory scaling, and every error branch. Roxygen docs for the export.
   retrieved rows keep their original names. AC2's "row-identical" is read as
   identity of the rows themselves; tests compare with row names normalized and
   assert the divergence deliberately rather than tolerating it silently.
+- **Supersedes the entry above: there is no row-name divergence** (2026-07-25,
+  found at T3). The premise was wrong. `rsample::analysis()` and
+  `assessment()` renumber row names on retrieval, so it is not observable that
+  nestedtune's splits index the original data while rsample's index a
+  materialized frame — the retrieved frames are identical including attributes.
+  The tests therefore compare with `expect_identical()` and no normalization,
+  which is a stronger form of AC2 than the entry above proposed.
+- **Inner rsets keep their spec's identity, not `manual_rset()`'s**
+  (2026-07-25, Scope amended at a mini gate). `manual_rset()` was measured to
+  drop the inner spec's class, its spec attributes, and — for a repeated inner
+  spec — the whole `id2` column. The remapped splits are instead swapped into
+  the rset the spec produced. Its `fingerprint` is the one attribute recomputed:
+  it describes rsample's indices, and carrying it over would be a stale claim.
 
 ## Review
