@@ -1,6 +1,6 @@
 # M04: Printing surfaces the run and its disagreement
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M03
 - **Driving RR:** —
@@ -73,7 +73,7 @@ erroring. Snapshot tests over the output shapes that carry meaning.
       run and on one where nothing completed. (Added by the 2026-07-26 amendment.)
 - [x] T5: `print.nested_results()` in `R/nested-results-print.R` assembling the pieces with
       cli, carrying the IP3 sentence, returning `x` invisibly.
-- [ ] T6: Roxygen for the method, NEWS entry, `_pkgdown.yml` reference row,
+- [x] T6: Roxygen for the method, NEWS entry, `_pkgdown.yml` reference row,
       `devtools::document()`, verify + `devtools::check()`.
 
 ## Work log
@@ -86,6 +86,7 @@ erroring. Snapshot tests over the output shapes that carry meaning.
 - 2026-07-26: T2-T5, T7 — `print.nested_results()` and its formatters land in `R/nested-results-print.R`; `summarize_folds()` split out of `collect_metrics()` so printing shows the same numbers without its warning or abort. Full suite green (814 pass, 0 warn).
 - 2026-07-26: cli writes to stderr whenever a sink is on stdout, so `capture.output()` around a cli print method captures nothing — the test helper uses `cli::cli_fmt()`. `cli_alert_*()` does not wrap at console width; `cli_bullets()` does, so every line goes through the latter.
 - 2026-07-26: the 5-fold deterministic fixture turned out to select 3, 3, 2, 3, 3 rather than unanimously — the unanimous snapshot uses a 150-row frame and asserts unanimity rather than assuming it.
+- 2026-07-26: T6 — roxygen + `man/print.nested_results.Rd`, NEWS entries, `_pkgdown.yml` row; `document()` no-diff, `pkgdown::check_pkgdown()` clean, `devtools::check()` 0 errors / 0 warnings / 0 notes. All tasks done; status review.
 - 2026-07-26: minor plan edit — T5's method and its formatters go in `R/nested-results-print.R`, mirroring the test file the plan already names, rather than growing `R/nested-results.R`.
 
 ## Decisions
