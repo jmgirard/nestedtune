@@ -70,7 +70,7 @@ identity, memory scaling, and every error branch. Roxygen docs for the export.
       lobstr, mlbench in Suggests, per D-006), roxygen NAMESPACE, MIT LICENSE,
       NEWS.md, `_pkgdown.yml`, `.Rbuildignore` entries, and the usethis CI pair
       (`check-standard`, `test-coverage`).
-- [ ] T2 — Write the failing content-identity tests first: build the same scheme
+- [x] T2 — Write the failing content-identity tests first: build the same scheme
       with `rsample::nested_cv()` and with the (not yet existing) constructor
       under one seed, and compare every inner analysis/assessment set.
 - [ ] T3 — Implement the index-composition core: given an outer `rset` and an
@@ -102,6 +102,7 @@ identity, memory scaling, and every error branch. Roxygen docs for the export.
 - 2026-07-25: T4 reworded from a stand-in frame to transient materialization, and T5 from support-or-refuse to support, both settled at the question gate; export name and class recorded as D-008.
 - 2026-07-25: T1 done — package skeleton (DESCRIPTION, MIT LICENSE, NEWS.md, `_pkgdown.yml`, `.Rbuildignore`, `R/`, `tests/testthat/`) and the usethis CI pair; `document()` writes NAMESPACE and the package Rd, `load_all()` clean. `devtools::test()` still aborts "No test files found" until T2 — expected, not a failure.
 - 2026-07-25: dependency gate — `cli` and `rlang` added to Imports, recorded as D-009 amending D-006; both are already rsample dependencies, so no practical weight is added.
+- 2026-07-25: T2 done — 6 content-identity tests against `rsample::nested_cv()` (v-fold/v-fold, v-fold/bootstrap, repeated outer, pre-evaluated outer rset, class + spec attributes, deliberate row-name divergence), all red on "could not find function". Red is T2's intended state; the verify slot's clean-test bar applies from T3 on.
 - 2026-07-25: minor plan amendment — a README is deferred to T7 with the rest of the user-facing docs rather than added at T1; it will be hand-written `README.md` with no `README.Rmd`, so the consistency gate's knit check is a deliberate no-op.
 
 ## Decisions
