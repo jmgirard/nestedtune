@@ -69,6 +69,19 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
   if (nrow(resamples) == 0L) {
     cli::cli_abort("{.arg resamples} has no outer folds.", call = call)
   }
+  # The results object labels its rows from these. Without one, the loop would
+  # run to completion and only then assemble a malformed object -- the whole
+  # cost paid before anything complains, which is what checking here prevents.
+  if (!any(grepl("^id", names(resamples)))) {
+    cli::cli_abort(
+      c(
+        "{.arg resamples} has no {.field id} column naming its outer folds.",
+        i = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
+             always carry one."
+      ),
+      call = call
+    )
+  }
   # rsample only warns for a bootstrap here. The same row can land in both the
   # inner analysis and the inner assessment set, which makes the estimate
   # invalid rather than merely unusual, so this refuses (GP3). nested_resamples()

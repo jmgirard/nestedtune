@@ -68,6 +68,23 @@ test_that("`resamples` must be a nested resampling design", {
   expect_error(nested_tune_grid(wf, empty), "no outer folds")
 })
 
+test_that("`resamples` must name its outer folds", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  # Splits and inner resamples but no id column. Without this check the whole
+  # loop runs and only then assembles a results object whose columns disagree
+  # in length -- every fold's compute spent before anything complains.
+  no_id <- data.frame(row.names = seq_len(nrow(folds)))
+  no_id$splits <- folds$splits
+  no_id$inner_resamples <- folds$inner_resamples
+
+  expect_error(nested_tune_grid(wf, no_id, grid = det_grid()), "no id column")
+})
+
 test_that("an outer bootstrap is refused, not warned about", {
   skip_if_no_engines()
 

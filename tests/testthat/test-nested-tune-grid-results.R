@@ -83,6 +83,49 @@ test_that("a single outer fold gives an NA standard error rather than an error",
   expect_true(all(summarized$n == 1L))
 })
 
+test_that("a fold scoring NA is dropped from the summary rather than poisoning it", {
+  skip_if_no_engines()
+
+  res <- example_results()
+  # The real route here is an outer assessment set with a single class, where
+  # last_fit() returns roc_auc = NA. The shape is what matters, so it is
+  # injected rather than contrived out of imbalanced data.
+  is_rmse <- res$.metrics[[1]]$.metric == "rmse"
+  res$.metrics[[1]]$.estimate[is_rmse] <- NA_real_
+
+  summarized <- collect_metrics(res)
+  rmse <- summarized[summarized$.metric == "rmse", ]
+  rsq <- summarized[summarized$.metric == "rsq", ]
+
+  # n counts the folds that actually contributed, so the row never reports no
+  # estimate while claiming every fold was in it.
+  expect_identical(rmse$n, 2L)
+  expect_false(is.na(rmse$mean))
+  expect_identical(rsq$n, 3L)
+
+  per_fold <- collect_metrics(res, summarize = FALSE)
+  vals <- per_fold$.estimate[per_fold$.metric == "rmse"]
+  expect_equal(rmse$mean, mean(vals[!is.na(vals)]))
+  expect_equal(rmse$std_err, stats::sd(vals[!is.na(vals)]) / sqrt(2))
+})
+
+test_that("a metric that is NA in every fold summarizes to NA with n = 0", {
+  skip_if_no_engines()
+
+  res <- example_results()
+  for (i in seq_len(nrow(res))) {
+    is_rmse <- res$.metrics[[i]]$.metric == "rmse"
+    res$.metrics[[i]]$.estimate[is_rmse] <- NA_real_
+  }
+
+  summarized <- collect_metrics(res)
+  rmse <- summarized[summarized$.metric == "rmse", ]
+
+  expect_identical(rmse$n, 0L)
+  expect_true(is.na(rmse$mean))
+  expect_true(is.na(rmse$std_err))
+})
+
 test_that("the results object is not a tune_results, so tune's selectors refuse it", {
   skip_if_no_engines()
 

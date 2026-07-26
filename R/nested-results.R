@@ -84,25 +84,36 @@ collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
 
   keys <- paste(per_fold$.metric, per_fold$.estimator, sep = "\r")
   first <- !duplicated(keys)
-  order_of <- match(keys[first], keys[first])
+
+  # A fold can score NA -- an outer assessment set with one class gives
+  # roc_auc = NA, which small folds on imbalanced data reach routinely. Those
+  # folds are dropped from the summary rather than allowed to poison it, and
+  # `n` counts the folds that actually contributed, so a summary row never
+  # reports no estimate while claiming every fold was in it. This is what
+  # tune::estimate_tune_results() does, and GP1 says to match it.
+  estimates_for <- function(k) {
+    vals <- per_fold$.estimate[keys == k]
+    vals[!is.na(vals)]
+  }
 
   mean_of <- vapply(keys[first], function(k) {
-    mean(per_fold$.estimate[keys == k])
+    vals <- estimates_for(k)
+    if (length(vals) == 0L) NA_real_ else mean(vals)
   }, numeric(1), USE.NAMES = FALSE)
   n_of <- vapply(keys[first], function(k) {
-    sum(keys == k)
+    length(estimates_for(k))
   }, integer(1), USE.NAMES = FALSE)
   se_of <- vapply(keys[first], function(k) {
-    vals <- per_fold$.estimate[keys == k]
+    vals <- estimates_for(k)
     if (length(vals) < 2L) NA_real_ else stats::sd(vals) / sqrt(length(vals))
   }, numeric(1), USE.NAMES = FALSE)
 
   new_tbl(list(
-    .metric = per_fold$.metric[first][order_of],
-    .estimator = per_fold$.estimator[first][order_of],
-    mean = mean_of[order_of],
-    n = n_of[order_of],
-    std_err = se_of[order_of]
+    .metric = per_fold$.metric[first],
+    .estimator = per_fold$.estimator[first],
+    mean = mean_of,
+    n = n_of,
+    std_err = se_of
   ))
 }
 

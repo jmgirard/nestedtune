@@ -49,8 +49,8 @@ test_that("per-fold metrics and selections match a hand-rolled reference loop", 
   expect_identical(res$.outer_fit_seed, ref_field(ref, "outer_fit_seed"))
 
   for (i in seq_len(nrow(res))) {
-    expect_equal(res$.metrics[[i]], ref[[i]]$metrics)
-    expect_equal(res$.selected[[i]], ref[[i]]$selected)
+    expect_identical(res$.metrics[[i]], ref[[i]]$metrics)
+    expect_identical(res$.selected[[i]], ref[[i]]$selected)
   }
 })
 
@@ -79,8 +79,8 @@ test_that("the reference loop also matches with a stochastic engine", {
   expect_identical(res$.outer_fit_seed, ref_field(ref, "outer_fit_seed"))
 
   for (i in seq_len(nrow(res))) {
-    expect_equal(res$.metrics[[i]], ref[[i]]$metrics)
-    expect_equal(res$.selected[[i]], ref[[i]]$selected)
+    expect_identical(res$.metrics[[i]], ref[[i]]$metrics)
+    expect_identical(res$.selected[[i]], ref[[i]]$selected)
   }
 })
 
@@ -119,7 +119,7 @@ test_that("a single-candidate grid degenerates to fit_resamples()", {
     fold_ref <- plain_metrics[plain_metrics$id == outer$id[[i]], ]
     fold_res <- res$.metrics[[i]]
     for (m in fold_ref$.metric) {
-      expect_equal(
+      expect_identical(
         fold_res$.estimate[fold_res$.metric == m],
         fold_ref$.estimate[fold_ref$.metric == m]
       )
