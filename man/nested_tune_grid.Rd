@@ -25,8 +25,9 @@ candidate.}
 An object of class \code{nested_results}: one row per outer fold, with the
 fold's split and id, the metrics scored on its assessment set
 (\code{.metrics}), the parameters chosen for it by inner tuning (\code{.selected}),
-and the two seeds that reproduce it (\code{.tuning_seed}, \code{.outer_fit_seed}).
-Use \code{\link[=collect_metrics]{collect_metrics()}} to summarize.
+whether the fold finished (\code{.completed}), anything that went wrong
+(\code{.notes}), and the two seeds that reproduce it (\code{.tuning_seed},
+\code{.outer_fit_seed}). Use \code{\link[=collect_metrics]{collect_metrics()}} to summarize.
 }
 \description{
 \code{nested_tune_grid()} drives the outer loop of nested cross-validation. For
@@ -75,6 +76,27 @@ results, exactly as repeated \code{tune_grid()} calls do.
 This binds randomness that flows through R's generator. Engines that
 randomize outside it — kernlab's SVMs, the deep-learning engines — cannot be
 pinned by any R-side scheme, here or in tune.
+}
+
+\section{When a fold fails}{
+
+
+A fold that fails does not end the run. The remaining folds still run, and
+the fold that failed is recorded rather than discarded: \code{.completed} is
+\code{FALSE} for it and \code{.notes} holds what went wrong, in the same shape tune
+uses — one row naming the stage that failed (\code{"inner tuning"} or
+\code{"outer fit"}), followed by tune's own notes about the underlying cause.
+The number of folds attempted and the number completed are stored on the
+object as the \code{folds_attempted} and \code{folds_completed} attributes.
+
+Both stages can fail quietly. Inner tuning raises only once every candidate
+has failed, and the outer fit does not raise at all — it hands back a result
+with no metrics. Both are recorded as failures here.
+
+The run warns when it finishes with any fold unfinished, and
+\code{\link[=collect_metrics]{collect_metrics()}} warns again, summarizing only the folds that ran and
+reporting how many those were. It refuses outright when no fold completed:
+an estimate is never reported for a design that did not execute.
 }
 
 \section{Differences from calling tune directly}{

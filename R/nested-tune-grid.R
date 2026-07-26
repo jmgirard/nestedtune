@@ -27,8 +27,9 @@
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
 #'   (`.metrics`), the parameters chosen for it by inner tuning (`.selected`),
-#'   and the two seeds that reproduce it (`.tuning_seed`, `.outer_fit_seed`).
-#'   Use [collect_metrics()] to summarize.
+#'   whether the fold finished (`.completed`), anything that went wrong
+#'   (`.notes`), and the two seeds that reproduce it (`.tuning_seed`,
+#'   `.outer_fit_seed`). Use [collect_metrics()] to summarize.
 #'
 #' @section Reproducibility:
 #'
@@ -62,6 +63,25 @@
 #' This binds randomness that flows through R's generator. Engines that
 #' randomize outside it — kernlab's SVMs, the deep-learning engines — cannot be
 #' pinned by any R-side scheme, here or in tune.
+#'
+#' @section When a fold fails:
+#'
+#' A fold that fails does not end the run. The remaining folds still run, and
+#' the fold that failed is recorded rather than discarded: `.completed` is
+#' `FALSE` for it and `.notes` holds what went wrong, in the same shape tune
+#' uses — one row naming the stage that failed (`"inner tuning"` or
+#' `"outer fit"`), followed by tune's own notes about the underlying cause.
+#' The number of folds attempted and the number completed are stored on the
+#' object as the `folds_attempted` and `folds_completed` attributes.
+#'
+#' Both stages can fail quietly. Inner tuning raises only once every candidate
+#' has failed, and the outer fit does not raise at all — it hands back a result
+#' with no metrics. Both are recorded as failures here.
+#'
+#' The run warns when it finishes with any fold unfinished, and
+#' [collect_metrics()] warns again, summarizing only the folds that ran and
+#' reporting how many those were. It refuses outright when no fold completed:
+#' an estimate is never reported for a design that did not execute.
 #'
 #' @section Differences from calling tune directly:
 #'
@@ -131,7 +151,9 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
     )
   })
 
-  new_nested_results(resamples, folds, seeds, grid, metrics)
+  out <- new_nested_results(resamples, folds, seeds, grid, metrics)
+  warn_failed_folds(out, call = rlang::current_env())
+  out
 }
 
 # One outer fold, start to finish.
@@ -143,27 +165,148 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
 # to reorder or, later, to parallelize (IP2).
 nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
   set_fold_seed(seeds[[1L]])
-  tuned <- tune::tune_grid(
-    object,
-    resamples = inner,
-    grid = grid,
-    metrics = metrics,
-    control = tune::control_grid(allow_par = FALSE)
-  )
 
-  # Resolved from the tuned object rather than from `metrics`, so the same
-  # code answers whether the caller supplied a metric set or let tune pick.
-  metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
-  selected <- tune::select_best(tuned, metric = metric_name)
+  # `tuned` is assigned inside the tryCatch expression, which evaluates in this
+  # frame -- so when select_best() is what errors, tune's own notes explaining
+  # why every model failed are still in hand to record.
+  tuned <- NULL
+  selected <- tryCatch(
+    {
+      tuned <- tune::tune_grid(
+        object,
+        resamples = inner,
+        grid = grid,
+        metrics = metrics,
+        control = tune::control_grid(allow_par = FALSE)
+      )
+      # Resolved from the tuned object rather than from `metrics`, so the same
+      # code answers whether the caller supplied a metric set or let tune pick.
+      metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
+      tune::select_best(tuned, metric = metric_name)
+    },
+    error = function(cnd) cnd
+  )
+  if (inherits(selected, "condition")) {
+    return(failed_fold("inner tuning", selected, tuned))
+  }
+
   final_wf <- tune::finalize_workflow(object, selected)
 
   set_fold_seed(seeds[[2L]])
-  fitted <- tune::last_fit(final_wf, split = split, metrics = metrics)
+  fitted <- tryCatch(
+    tune::last_fit(final_wf, split = split, metrics = metrics),
+    error = function(cnd) cnd
+  )
+  if (inherits(fitted, "condition")) {
+    return(failed_fold("outer fit", fitted, NULL))
+  }
+
+  # last_fit() does not raise when the fit fails: it returns NULL metrics and
+  # files the reason in its notes. Catching only thrown errors would record
+  # this fold as a success carrying nothing.
+  fold_metrics <- tryCatch(tune::collect_metrics(fitted), error = function(cnd) NULL)
+  if (is.null(fold_metrics) || nrow(fold_metrics) == 0L) {
+    return(failed_fold("outer fit", NULL, fitted))
+  }
 
   list(
-    metrics = tune::collect_metrics(fitted),
-    selected = selected
+    completed = TRUE,
+    metrics = fold_metrics,
+    selected = selected,
+    notes = empty_notes()
   )
+}
+
+# A fold that did not finish. `result` is whatever tune handed back before
+# giving up, which is where the actual cause lives -- our own note names the
+# stage, tune's notes say what happened (GP1).
+failed_fold <- function(stage, cnd, result) {
+  message <- if (is.null(cnd)) {
+    "The outer fit produced no metrics."
+  } else {
+    conditionMessage(cnd)
+  }
+  list(
+    completed = FALSE,
+    metrics = empty_metrics(),
+    selected = NULL,
+    notes = bind_notes(own_note(stage, message), tune_notes(result, stage))
+  )
+}
+
+own_note <- function(stage, message) {
+  new_tbl(list(
+    location = stage,
+    type = "error",
+    note = message,
+    trace = list(NULL)
+  ))
+}
+
+# tune's notes, verbatim, relabelled with the stage they came from. The `id`
+# column is present for a tune_grid() result and absent for a last_fit() one,
+# so it is folded into the location rather than assumed.
+tune_notes <- function(result, stage) {
+  notes <- tryCatch(tune::collect_notes(result), error = function(cnd) NULL)
+  if (is.null(notes) || nrow(notes) == 0L) {
+    return(empty_notes())
+  }
+  inner_id <- if ("id" %in% names(notes)) paste0(" (", notes$id, ")") else ""
+  new_tbl(list(
+    location = paste0(stage, inner_id, ": ", notes$location),
+    type = notes$type,
+    note = notes$note,
+    trace = notes$trace
+  ))
+}
+
+bind_notes <- function(a, b) {
+  new_tbl(list(
+    location = c(a$location, b$location),
+    type = c(a$type, b$type),
+    note = c(a$note, b$note),
+    trace = c(a$trace, b$trace)
+  ))
+}
+
+empty_notes <- function() {
+  new_tbl(list(
+    location = character(0),
+    type = character(0),
+    note = character(0),
+    trace = list()
+  ))
+}
+
+# A failed fold contributes no rows rather than a NULL, so every downstream
+# assembly over `.metrics` keeps working without a special case.
+empty_metrics <- function() {
+  new_tbl(list(
+    .metric = character(0),
+    .estimator = character(0),
+    .estimate = numeric(0),
+    .config = character(0)
+  ))
+}
+
+# tune warns at the end of a run that had issues; so does this (GP1). A user
+# who never calls collect_metrics() still hears about it.
+warn_failed_folds <- function(x, call = rlang::caller_env()) {
+  failed <- fold_ids(x)[!x$.completed]
+  if (length(failed) == 0L) {
+    return(invisible(x))
+  }
+  n <- attr(x, "folds_attempted")
+  cli::cli_warn(
+    c(
+      "!" = "{length(failed)} of {n} outer fold{?s} failed.",
+      x = "Failed: {.val {failed}}.",
+      i = "See {.code x$.notes} for what went wrong."
+    ),
+    class = "nestedtune_failed_folds",
+    call = call
+  )
+  invisible(x)
 }
 
 # The generator kind is pinned, not just the seed. set.seed() seeds whichever

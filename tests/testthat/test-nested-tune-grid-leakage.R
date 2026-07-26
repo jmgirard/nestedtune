@@ -12,10 +12,12 @@ record_handoffs <- function(wf, folds, grid, metrics) {
   stub <- function(split, inner, seeds, object, grid, metrics) {
     seen[[length(seen) + 1L]] <<- list(split = split, inner = inner)
     list(
+      completed = TRUE,
       metrics = data.frame(
         .metric = "rmse", .estimator = "standard", .estimate = 0
       ),
-      selected = data.frame(.config = "stub")
+      selected = data.frame(.config = "stub"),
+      notes = nestedtune:::empty_notes()
     )
   }
   testthat::local_mocked_bindings(nested_fold_fit = stub)

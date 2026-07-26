@@ -1,11 +1,11 @@
 # M03: Fold failures are recorded, never fatal
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M02
 - **Driving RR:** —
 - **Principles touched:** IP4, IP2, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m03-failed-fold-recording`
 
 ## Goal
 
@@ -58,27 +58,57 @@ naming the ones that did not, and aborting when none did.
 
 ## Tasks
 
-- [ ] T1: Fixtures in `tests/testthat/helper-orchestration.R`: a workflow that errors
+- [x] T1: Fixtures in `tests/testthat/helper-orchestration.R`: a workflow that errors
       deterministically on a chosen outer fold, and one whose inner tuning leaves
       `select_best()` with no candidate.
-- [ ] T2: Failing tests for the non-aborting loop and the per-fold outcome record.
-- [ ] T3: `nested_fold_fit()` (`R/nested-tune-grid.R:144`) returns an outcome record
+- [x] T2: Failing tests for the non-aborting loop and the per-fold outcome record.
+- [x] T3: `nested_fold_fit()` (`R/nested-tune-grid.R:144`) returns an outcome record
       rather than throwing — each stage wrapped, stage and condition captured.
-- [ ] T4: Guard the no-usable-candidate path ahead of `select_best()`
+- [x] T4: Guard the no-usable-candidate path ahead of `select_best()`
       (`R/nested-tune-grid.R:156`) so it lands in the same record.
-- [ ] T5: `new_nested_results()` (`R/nested-results.R:8`) carries the outcome column and
+- [x] T5: `new_nested_results()` (`R/nested-results.R:8`) carries the outcome column and
       the attempted/completed counts.
-- [ ] T6: `collect_metrics()` (`R/nested-results.R:79`) warns and counts on a partial
+- [x] T6: `collect_metrics()` (`R/nested-results.R:79`) warns and counts on a partial
       run; aborts on an all-failed one. Message quantities take `{cli::qty()}`.
-- [ ] T7: Regression tests — untouched happy path, and fold seeds stable across a
+- [x] T7: Regression tests — untouched happy path, and fold seeds stable across a
       failure.
-- [ ] T8: Roxygen for the failure record on `nested_tune_grid()`'s `@return` and on
+- [x] T8: Roxygen for the failure record on `nested_tune_grid()`'s `@return` and on
       `collect_metrics()`; NEWS entry; `devtools::document()`; verify + `devtools::check()`.
 
 ## Work log
 
 - 2026-07-26: created by /milestone-plan; absorbs the failed-fold half of the M02 split candidate row.
+- 2026-07-26: branch `m03-failed-fold-recording` cut; gate settled the record shape (tune-shaped `.notes` plus a `.completed` flag), a run-end warning mirroring tune, and carrying tune's own notes verbatim.
+- 2026-07-26: probes pinned both failure surfaces — inner tuning raises only at `select_best()`/`collect_metrics()` after `tune_grid()` returns with a warning, and `last_fit()` never raises at all, returning `NULL` metrics.
+- 2026-07-26: T1–T2 fixtures inject the failure into the design (a fold's inner rset or outer split rebuilt on a foreign frame), so exactly one fold fails at one stage, keyed to position rather than execution order.
+- 2026-07-26: T3–T6 implemented; both stages wrapped, notes carried through, `.notes`/`.completed` columns and `folds_attempted`/`folds_completed` attributes added.
+- 2026-07-26: T7 updated two M02 tests to the new contract — the leakage stub gained the worker's new fields, and the RNG error-path test split in two (see Decisions).
+- 2026-07-26: T8 roxygen, NEWS, `devtools::document()`; `devtools::test()` 748 pass / 0 warn; `R CMD check` 0 errors, 0 warnings, 0 notes.
+- 2026-07-26: tasks were completed in one working pass rather than per-task checkpoint commits; a single implementation commit lands them together.
 
 ## Decisions
+
+### 2026-07-26: An all-fold failure is recorded, not raised — including when the cause is a malformed call
+
+M02 aborted as soon as a fold errored, so `nested_tune_grid(wf, folds, grid =
+data.frame(not_a_param = 1:2))` — a grid naming a parameter the workflow does not
+tune — failed immediately. M03 catches fold errors by design, so that same call
+now completes, warns that every fold failed, and carries tune's explanation in
+`.notes`; `collect_metrics()` then refuses to summarize it. The change is
+entailed by the milestone's goal rather than chosen alongside it: once an error
+is caught inside the loop, nothing distinguishes "this fold could not fit" from
+"this call was malformed".
+
+An existing RNG test asserted the old abort as its vehicle for checking that the
+caller's RNG state survives an error exit. It was split in two — the state is now
+checked both when failures are recorded and the run completes, and when the call
+genuinely errors (worker stubbed to throw), which is the only remaining exit
+after the seeds are drawn.
+
+Not adopted here: a pre-flight check comparing the grid's columns against the
+workflow's tunable parameters, which would restore an immediate abort under GP3.
+Nothing in this milestone's Scope or criteria covers argument validation, so it
+is recorded as a ROADMAP candidate beside the two existing validation-hardening
+rows instead. Pre-1.0 the behavior change needs no deprecation cycle (D-003).
 
 ## Review

@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-26 (M03 and M04 planned from the M02 split candidat
 |---|---|---|---|---|---|
 | M01 | Memory-lean nested resampling structure | done | — | normal | milestones/archive/M01-memory-lean-nested-resampling.md |
 | M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
-| M03 | Fold failures are recorded, never fatal | planned | M02 | high | milestones/M03-failed-fold-recording.md |
+| M03 | Fold failures are recorded, never fatal | review | M02 | high | milestones/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | planned | M03 | normal | milestones/M04-print-nested-results.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
@@ -23,4 +23,5 @@ _Last hygiene check: 2026-07-26 (M03 and M04 planned from the M02 split candidat
 - Route a preprocessor-only workflow through `nested_tune_grid()`'s own `cli_abort()` instead of letting `workflows::extract_spec_parsnip()` raise it, so every bad-`object` shape fails with the same discipline — added 2026-07-25 — M02 review finding F6, scored 75 (below the action threshold)
 - Settle posture toward upstream's dormant tune prototype once tune#969 is answered — added 2026-07-25 — G7
 - Document IP2's enforceable scope in DESIGN.md — it binds only randomness flowing through R's RNG, so engines that bypass it (kernlab SVM, keras/torch) are unreachable by any R-side scheme — added 2026-07-25 — RR01 B4; amending IP text needs a D-entry
+- Pre-flight check that `grid`'s columns are parameters the workflow actually tunes, so a malformed grid aborts immediately instead of surfacing as every outer fold failing — added 2026-07-26 — M03 Decisions; joins the same validation-hardening family as the preprocessor-only and `inside`-rset rows
 - Validate that `inside` evaluates to an `rset` and `cli_abort()` if not; today a non-rset spec surfaces rsample's internal "Split and ID vectors have different lengths" — added 2026-07-25 — M01 review finding F7, scored 78 (below the action threshold)

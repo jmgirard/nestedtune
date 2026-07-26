@@ -26,6 +26,11 @@ Collect the metrics from a nested resampling run
 The summarized value is the nested cross-validation estimate: what the
 tune-and-fit procedure achieves on data it never saw. It is not the
 performance of any model you have in hand.
+
+Only the outer folds that completed are summarized, and \code{n} counts them, so
+a run with failures never reports its estimate as though the whole design
+had run. Those folds are dropped with a warning naming them; when no fold
+completed at all, this errors instead of returning \code{NA}.
 }
 \examples{
 \dontshow{if (rlang::is_installed(c("recipes", "yardstick"))) withAutoprint(\{ # examplesIf}
