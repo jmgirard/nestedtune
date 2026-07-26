@@ -103,6 +103,8 @@ existing parallelism candidate.
 
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: in-progress on branch m05-final-fit-path, cut from main at 4d78627.
+- 2026-07-26: pre-implementation gate — a design with no re-runnable `inside` is refused, as planned, so no scope change; `extract_workflow()` registers against tune's re-export of hardhat's generic, so no DESCRIPTION change and no dependency gate.
+- 2026-07-26: at the user's choice the IP1/IP2 reading behind T2 and T5 goes to a Review Brief before any code is written; no task started yet.
 
 ## Decisions
 
