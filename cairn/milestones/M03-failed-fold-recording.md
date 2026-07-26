@@ -5,7 +5,7 @@
 - **Depends on:** M02
 - **Driving RR:** —
 - **Principles touched:** IP4, IP2, GP1
-- **Branch/PR:** `m03-failed-fold-recording`
+- **Branch/PR:** `m03-failed-fold-recording` / https://github.com/jmgirard/nestedtune/pull/3
 
 ## Goal
 
@@ -34,23 +34,23 @@ design failing rather than the call error it is.
 
 ## Acceptance criteria
 
-- [ ] AC1: A workflow that errors on one outer fold returns a `nested_results` with a
+- [x] AC1: A workflow that errors on one outer fold returns a `nested_results` with a
       row for every fold; the call does not abort and later folds still run.
-- [ ] AC2: The object records, per fold, whether it completed and — when it did not —
+- [x] AC2: The object records, per fold, whether it completed and — when it did not —
       the failing stage (inner tuning or outer fit) and the condition message. Both a
       thrown error and a tuning run that yields no usable candidate are recorded this way.
-- [ ] AC3: The object records folds attempted and folds completed, so a partial run is
+- [x] AC3: The object records folds attempted and folds completed, so a partial run is
       distinguishable from a complete one without reading per-fold contents.
-- [ ] AC4: `collect_metrics()` reports only what ran — on a partially failed run it
+- [x] AC4: `collect_metrics()` reports only what ran — on a partially failed run it
       means over the completed folds with `n` equal to that count and warns naming the
       failed ids; on a run where none completed it aborts rather than returning `NA`.
-- [ ] AC5: Failure capture disturbs nothing M02 established: a fully successful run's
+- [x] AC5: Failure capture disturbs nothing M02 established: a fully successful run's
       `collect_metrics()` output is unchanged — same columns, same values, no warning —
       and a fold's two seeds are identical whether or not an earlier fold failed (IP2).
-- [ ] AC6: A data-frame `grid` is refused before any fitting when a column is not marked
+- [x] AC6: A data-frame `grid` is refused before any fitting when a column is not marked
       for tuning, or when a tuned parameter has no column; both name the offender, and
       neither draws from the RNG. A `grid` given as a size is exempt.
-- [ ] AC7: `devtools::test()` and `devtools::check()` clean (0 errors, 0 warnings).
+- [x] AC7: `devtools::test()` and `devtools::check()` clean (0 errors, 0 warnings).
 
 ## Coverage
 
@@ -141,3 +141,53 @@ check is still outstanding. Scope, AC6 and T9 were amended in by the same
 direction (see Work log).
 
 ## Review
+
+Verified 2026-07-26 against `m03-failed-fold-recording` @ 2926e12, PR #3. Suite run
+fresh: 755 passed, 0 failed, 0 warnings, **0 skipped** — the engine-dependent tests
+executed rather than skipping, so the RNG and oracle coverage is real, not vacuous.
+
+**Evidence per criterion**
+
+- AC1 — `tune-grid-failures`: "a fold that fails at inner tuning does not abort the
+  run" (3 pass) and "a fold that fails at the outer fit does not abort the run"
+  (2 pass). Both assert `nrow(res) == 3L` and the exact `.completed` vector, so a
+  run that dropped the failed row would fail them.
+- AC2 — `tune-grid-failures`: "the failing stage and its cause are recorded, tune's
+  own notes included" (7 pass) covers both stages and asserts the note table's
+  column names, the stage in `location[[1]]`, and that tune's underlying cause
+  ("Not all variables in the recipe") survives; "a completed fold carries an empty
+  note table" (2 pass) pins the clean case.
+- AC3 — `tune-grid-failures`: "the object records folds attempted and completed"
+  (2 pass), asserting `folds_attempted == 3L` and `folds_completed == 2L` by
+  `expect_identical()`, so the counts are exact and integer-typed.
+- AC4 — `tune-grid-failures`: "collect_metrics() averages the completed folds and
+  warns about the rest" (4 pass) checks `n == 2L`, the warning class
+  `nestedtune_partial_summary`, the named fold, and that the mean equals the mean of
+  the two surviving folds computed independently; "collect_metrics() aborts when no
+  fold completed" (3 pass) covers both `summarize` values.
+- AC5 — `tune-grid-failures`: "failure capture leaves a clean run exactly as M02
+  left it" (5 pass, incl. `expect_no_warning()` and the M02 column set) and "a
+  fold's seeds do not move when an earlier fold fails (IP2)" (4 pass), which
+  compares a clean run against a broken one by `expect_identical()` on both seed
+  vectors and on a surviving fold's metrics and selection.
+- AC6 — `tune-grid-checks`: "a grid column not marked for tuning is refused"
+  (2 pass), "a tuned parameter with no grid column is refused" (2 pass), "a grid
+  given as a size is not held to the column check" (1 pass), "the grid check fires
+  before any fitting happens" (2 pass, asserting `.Random.seed` is untouched).
+- AC7 — `devtools::test()` 755 pass / 0 fail; `devtools::check()` 0 errors,
+  0 warnings, 0 notes.
+
+**Independent checks beyond the criteria.** Two edge cases the suite does not cover
+were run by hand at review. A repeated outer design (`id` + `id2`) labels a failed
+fold by its composite id — the warning named `"Repeat1, Fold2"` and the summary
+reported `n = 3` of 4 — so `fold_ids()` still composes correctly with the new
+columns. And an interrupt condition does not inherit `"error"`, verified by
+execution, so the per-stage `tryCatch(error = )` propagates a user interrupt rather
+than recording it as a fold failure — the failure mode a too-broad catch would have
+introduced on exactly the long runs this feature exists for.
+
+**Consistency gate.** `cairn_validate` exit 0, every check PASS, no advisories.
+`cairn_impact` skipped: `DESIGN.md` is not in the diff, so no principle changed.
+Toolchain slot: `devtools::document()` leaves `man/` and `NAMESPACE` clean;
+`pkgdown::check_pkgdown()` "No problems found"; `NEWS.md` carries entries for both
+user-visible changes; no new top-level files, so no `.Rbuildignore` additions owed.
