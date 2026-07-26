@@ -1,6 +1,6 @@
 # M02: Outer-loop orchestration
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** high
 - **Depends on:** M01
 - **Driving RR:** —
@@ -93,6 +93,7 @@ bootstrap refused outright. Serial execution. Docs, NEWS.md, pkgdown rows.
 - 2026-07-25: created by /milestone-plan, absorbing the orchestration candidate row.
 - 2026-07-25: /milestone-implement started; branch `m02-outer-loop-orchestration` cut from main.
 - 2026-07-25: question gate — entry point, results class, and the `control` argument settled (D-010 + milestone-local entry); T4's RNG scheme escalated to /milestone-brief on the user's selection (IP2 tripwire).
+- 2026-07-25: blocked on RB01 (per-outer-fold RNG streams, T4). RB committed on the milestone branch rather than the default branch, since M02's branch was already open — keeps this milestone's tracking on one branch.
 
 ## Decisions
 
