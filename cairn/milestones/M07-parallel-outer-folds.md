@@ -3,12 +3,12 @@
      Per-section owners are tagged below. -->
 # M07: Parallel outer folds
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M02   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** IP2, GP1, GP3, GP4   <!-- owner: plan · create/amend-via-gate -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m07-parallel-outer-folds`   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -110,6 +110,7 @@ Reducing what each worker must serialize → candidate row, added by this plan.
 <!-- owner: any skill · append-only; one line per entry; absolute dates. -->
 
 - 2026-07-26: created by /milestone-plan; mirai backend, plotting remainder left as a candidate, and the benchmark-as-evidence bar all settled at the plan gate.
+- 2026-07-26: in-progress on `m07-parallel-outer-folds`, cut from `main` at ca0cc66.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
