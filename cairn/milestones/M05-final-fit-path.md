@@ -29,58 +29,58 @@ existing candidate.
 
 ## Acceptance criteria
 
-- [ ] AC1: `nested_final_fit()` is exported and returns a `nested_final_fit`
+- [x] AC1: `nested_final_fit()` is exported and returns a `nested_final_fit`
       object holding the trained workflow, the selected parameters, and the
       tuning results; `extract_workflow()` on it satisfies
       `workflows::is_trained_workflow()`.
-- [ ] AC2: under one seed its selected parameters and its predictions are
+- [x] AC2: under one seed its selected parameters and its predictions are
       `expect_identical()` to a hand-written tune pipeline over the same inner
       specification on the full data (reference-implementation oracle), and to a
       direct `fit()` of the finalized workflow under a one-row grid that forces
       the selection (invariant oracle) — two independent oracle types, recorded
       by the provenance header in the asserting test file (GP2).
-- [ ] AC3: the same seed produces an identical fit, and `.Random.seed` and
+- [x] AC3: the same seed produces an identical fit, and `.Random.seed` and
       `RNGkind()` are unchanged after the call — on success and on error alike —
       asserted with `ranger`, whose randomness flows through R's RNG (IP2).
-- [ ] AC4: `collect_metrics()`, `show_best()`, and `select_best()` have no
+- [x] AC4: `collect_metrics()`, `show_best()`, and `select_best()` have no
       method for the class and error rather than returning a number readable as
       the model's own performance; `print()` says in words that this object's
       performance is the nested estimate from `nested_tune_grid()`, pinned by a
       snapshot (IP3).
-- [ ] AC5: every `cli_abort()` branch on the new path is fired by a test,
+- [x] AC5: every `cli_abort()` branch on the new path is fired by a test,
       including a design carrying no usable `inside` specification.
-- [ ] AC6: `devtools::test()` and `devtools::check()` are clean (0 errors, 0
+- [x] AC6: `devtools::test()` and `devtools::check()` are clean (0 errors, 0
       warnings), `devtools::document()` produces no diff, and the new export has
       a `_pkgdown.yml` row and a NEWS entry.
-- [ ] AC7 (BC1): `nested_final_fit()` draws its two seeds in one
+- [x] AC7 (BC1): `nested_final_fit()` draws its two seeds in one
       `sample.int(.Machine$integer.max, 2)` call at entry; the kind-pinned tuning
       seed is applied **before** the stored `inside` specification is evaluated,
       which is before `tune_grid()` runs; the kind-pinned fit seed is applied
       immediately before the full-data `fit()`; both seeds are exposed on the
       returned object; and the roxygen states the hand-replication recipe with
       the rset-construction step inside the tuning seed's scope.
-- [ ] AC8 (BC2): Before M05 merges, `cairn/DECISIONS.md` carries a decision entry
+- [x] AC8 (BC2): Before M05 merges, `cairn/DECISIONS.md` carries a decision entry
       reconciling IP1's middle clause with the shipped behavior — either amending
       the clause so "never on the full dataset" scopes to preprocessing that
       feeds a reported estimate (with the final model's training preprocessing
       explicitly outside it), or recording the maintainer's reading that the
       existing text already permits it. The entry names IP1 and M05.
-- [ ] AC9 (BC3): The reference-implementation oracle derives its expected seeds
+- [x] AC9 (BC3): The reference-implementation oracle derives its expected seeds
       from the documented contract via its own `set.seed()` and
       `sample.int(.Machine$integer.max, 2)` call, asserts them equal to the
       object's exposed seeds, constructs the inner rset itself under the first
       seed per the documented recipe, and reads neither seeds nor resamples off
       the returned object.
-- [ ] AC10 (BC4): `print.nested_final_fit()` output contains no numeric value
+- [x] AC10 (BC4): `print.nested_final_fit()` output contains no numeric value
       derived from the stored tuning run, and the roxygen states that metrics
       computed from the stored tuning run are selection-time quantities,
       optimistically biased as a performance claim, naming the nested estimate as
       what to report instead.
-- [ ] AC11 (BC5): A stored `inside` call that fails to re-evaluate at final-fit
+- [x] AC11 (BC5): A stored `inside` call that fails to re-evaluate at final-fit
       time (at minimum: a free variable absent from the evaluation environment)
       is raised as a `cli_abort` naming the stored call, fired by a test; the
       roxygen states that the specification is re-evaluated at call time.
-- [ ] AC12 (BC6): The error-path RNG-restoration test triggers its failure after
+- [x] AC12 (BC6): The error-path RNG-restoration test triggers its failure after
       the entry snapshot (inside the guarded region), not via argument
       validation; and a test asserts `identical()` results for the same seed
       whether the caller's generator at entry is default Mersenne-Twister or
@@ -168,3 +168,89 @@ existing candidate.
   stochastic stage (Q4), and IP1's text forbade what its intent permits (Q2).
 
 ## Review
+
+_2026-07-26. Evidence gathered fresh by command on branch `m05-final-fit-path`,
+PR #5. Test counts are per-file runs of `devtools::test(filter = ...)`._
+
+**Per-criterion evidence.**
+
+- AC1 — `test-nested-final-fit-results.R`, 14 passing. Asserts the
+  `nested_final_fit` class, its five named elements, `extract_workflow()`
+  satisfying `workflows::is_trained_workflow()`, a one-row selection drawn from
+  the grid asked for, a `tune_results` tuning run, and two distinct integer
+  seeds. A third test reads the fitted mould and confirms `nrow(predictors)`
+  equals `nrow(data)` — the final fit trains on every row, not on an outer
+  analysis set.
+- AC2 — `test-nested-final-fit-oracles.R`, 7 passing. Reference strand:
+  selection and predictions `expect_identical()` to `reference_final_fit()`.
+  Invariant strand: a one-row grid gives predictions `expect_identical()` to a
+  direct `fit()` of the finalized workflow, on the deterministic engine so no
+  seed enters the comparison. Oracle records O3/O4/O5 head the file per the
+  DESIGN Conventions.
+- AC3 — `test-nested-final-fit-rng.R`, 22 passing. Same-seed identity across
+  selection, predictions, and the tuning run's metrics; `.Random.seed` and
+  `RNGkind()` identical before and after on the success path, on the error
+  path, and from a non-default ambient kind; a follow-up `runif(3)` matching a
+  run with the call absent. All on `ranger`, with a seed-sensitivity test
+  guarding against a vacuous pass.
+- AC4 — `test-nested-final-fit-print.R`, 58 passing. `collect_metrics()`,
+  `show_best()`, and `select_best()` all error on the class (two through
+  defaults tune wrote, one through dispatch failure). Print states the estimate
+  belongs to `nested_tune_grid()`; snapshot recorded.
+- AC5 — `test-nested-final-fit-checks.R`, 11 passing. Every shared check fired
+  through the new export, plus the three new branches: no `inside` attribute,
+  an `inside` that fails to re-evaluate, and one that evaluates to a non-rset.
+- AC6 — `devtools::check(document = TRUE)`: **Status OK, 0 errors, 0 warnings,
+  0 notes** (3m 11s, `testthat.R` 110s). `devtools::document()` leaves `man/`
+  and `NAMESPACE` clean. `_pkgdown.yml` carries a "The final model" section
+  with `nested_final_fit` and `print.nested_final_fit`; `NEWS.md` carries three
+  entries.
+- AC7 (BC1) — code at `R/nested-final-fit.R`: one
+  `sample.int(.Machine$integer.max, 2L)` at entry; `set_fold_seed(seeds[[1L]])`
+  precedes `eval_inside_spec()`, which precedes `tune_grid()`;
+  `set_fold_seed(seeds[[2L]])` immediately precedes `parsnip::fit()`. Both
+  seeds exposed as `$tuning_seed` / `$fit_seed`. The oracle asserts the seed
+  layout against contract-derived values, and asserts the folds the tuning run
+  saw — **verified by inversion**: moving the rset build outside the tuning
+  seed's scope reddens that assertion (1 failure) and leaves the rest green.
+  Roxygen carries the replication recipe with the build step inside the scope.
+- AC8 (BC2) — `cairn/DECISIONS.md` D-015 narrows IP1's middle clause, naming
+  IP1 and M05. `cairn_impact.py IP1` lists 19 references; every one was read and
+  none relies on the absolute wording that was narrowed — the two in
+  append-only history (D-013's consequence line, M01's archive summary) remain
+  true under the amended text, so nothing is left diverging.
+- AC9 (BC3) — `reference_final_fit()` in `helper-orchestration.R` runs its own
+  `set.seed(seed)` and `sample.int(.Machine$integer.max, 2L)`, builds its own
+  rset under the first seed, and spells out the inner specification. It reads
+  nothing off the returned object; the object's seeds are an assertion target,
+  never an input.
+- AC10 (BC4) — the print test collects every metric the stored tuning run
+  offers and asserts each is absent from the output at 3–6 decimal digits,
+  rather than assuming absence. Roxygen names those metrics selection-time
+  quantities, optimistically biased as a performance claim, and names the
+  nested estimate as what to report.
+- AC11 (BC5) — `eval_inside_spec()` re-raises with the deparsed call and the
+  original as `parent`; fired by a test using a design built in a `local()`
+  whose `v` is gone. Roxygen states the specification is re-evaluated at call
+  time and asks for literals.
+- AC12 (BC6) — the error-path test fails inside the guarded region (the
+  `inside` re-evaluation, which runs after the snapshot and after a
+  `set.seed()`), not via argument validation; a second test repeats it from an
+  L'Ecuyer-CMRG ambient kind. The ambient-kind clause is asserted at
+  `final_fit_worker()` per the recorded deviation above.
+
+**Projection vs outcome (Driving RR: RR02).** RR02 carries no numeric
+projections; it states "every equality below is exact (`identical()` /
+`expect_identical()`) … no numeric tolerance is granted or needed". Every
+equality it binds was asserted with `expect_identical()` and held exactly, so
+there is no shortfall to accept.
+
+**Consistency gate.** `cairn_validate.py` exit 0 — 16 PASS, 6 advisories OK,
+1 WARN (`sizing`: 12 acceptance criteria against the >7 tripwire; not split,
+because AC7–AC12 are RR-bound refinements of existing tasks and add no
+shippable slice). `cairn_impact.py IP1` reconciled above. Profile
+`consistency-gate` slot: `document()` no diff; generated files not hand-edited;
+no `README.Rmd` in the repo, so the knit check no-ops; `check_pkgdown()` reports
+no problems; `NEWS.md` has this milestone's user-visible entries; no new
+top-level files, and `_pkgdown.yml` was already in `.Rbuildignore`; full
+`check()` clean.
