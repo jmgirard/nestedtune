@@ -1,5 +1,23 @@
 # nestedtune 0.0.0.9000
 
+* New `nested_final_fit()` builds the model you actually deploy. It runs the
+  same tuning procedure the nested estimate describes, this time with the whole
+  dataset in hand: it re-evaluates the design's inner resampling specification
+  against every row, tunes, selects, and fits. Reach the trained workflow with
+  `extract_workflow()`.
+
+* The final model is a separate object rather than a field on the results, and
+  it carries no performance number of its own. Report the estimate from
+  `collect_metrics()` on the `nested_tune_grid()` result for it — the
+  documentation says why, and what that number does and does not claim.
+  `collect_metrics()`, `show_best()`, and `select_best()` deliberately refuse a
+  final fit rather than returning something that reads as its score.
+
+* Because the inner resampling specification is stored unevaluated and
+  re-evaluated at final-fit time, write it with literal arguments —
+  `inside = vfold_cv(v = 5)`, not `inside = vfold_cv(v = k)`. A specification
+  whose variables have gone out of scope now fails with a message naming it.
+
 * Nested results now print as a report on the run rather than as a table of
   list columns. It names the outer resampling scheme, says how many folds were
   requested and how many completed, names any fold that failed along with the

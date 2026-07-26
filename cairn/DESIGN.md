@@ -66,6 +66,11 @@ naming convention.
   `collect_metrics()` method on the `nested_results` object it returns. The
   suffix names the inner tuning method, leaving `nested_tune_bayes()` free for
   a Bayesian inner loop (D-010).
+- **Final fit** — `nested_final_fit()`, returning a `nested_final_fit` object
+  reached with `extract_workflow()`. It runs the same procedure the estimate
+  describes over the whole dataset, and answers none of tune's ranking or
+  collecting generics, so no number it holds can be read as the model's score
+  (D-014).
 
 ## Conventions
 
@@ -228,6 +233,24 @@ plain tibble carrying class `nested_results`. It deliberately does **not**
 inherit `tune_results`: that would bring `show_best()` and `select_best()`
 along, and both would rank outer folds, which is the reading IP3 forbids
 (D-010). `collect_metrics()` is registered against tune's generic.
+
+`nested_final_fit()` (`R/nested-final-fit.R`) is the deployment path. It reuses
+the same argument checks, then draws two seeds and hands everything to
+`final_fit_worker()`, which sets the tuning seed, re-evaluates the design's
+stored `inside` call against the full data, tunes, selects, finalizes, sets the
+fit seed, and fits on every row. The seed scope is D-016: building an `rset`
+draws from the RNG, so the construction sits inside the tuning seed's scope
+rather than before it, and the run is reproducible from the two seeds alone.
+The worker exists as a separate function for the same reason `nested_fold_fit()`
+does — everything it needs is an argument — which is also what makes its
+independence from the ambient generator testable, since the entry draw itself
+is kind-dependent and so cannot be.
+
+`new_nested_final_fit()` assembles a plain list carrying the trained workflow,
+the selection, the tuning run, and both seeds. The tuning run travels with it as
+the record of what selection saw; its metrics are selection-time quantities, so
+nothing in the package's own surface turns them into a claim — the print method
+shows no number from it, and tune's ranking generics are left unregistered.
 
 The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows, and
 parsnip. The tune floor is load-bearing rather than defensive: every
