@@ -1,0 +1,131 @@
+# The results object.
+#
+# Deliberately NOT a `tune_results`. Inheriting it would bring show_best() and
+# select_best() along, and both would happily rank outer folds -- output that
+# looks authoritative and means nothing, since there is nothing to select at
+# the outer level. Refusing the class makes them error instead (D-010).
+
+new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
+  n <- length(folds)
+  id_cols <- setdiff(names(resamples), c("splits", "inner_resamples"))
+
+  cols <- list(splits = resamples$splits)
+  for (nm in id_cols) {
+    cols[[nm]] <- resamples[[nm]]
+  }
+  cols[[".metrics"]] <- lapply(folds, function(x) x$metrics)
+  cols[[".selected"]] <- lapply(folds, function(x) x$selected)
+  cols[[".tuning_seed"]] <- seeds[seq(1L, by = 2L, length.out = n)]
+  cols[[".outer_fit_seed"]] <- seeds[seq(2L, by = 2L, length.out = n)]
+
+  out <- new_tbl(cols)
+  attr(out, "grid") <- grid
+  attr(out, "metrics") <- metrics
+  class(out) <- c("nested_results", class(out))
+  out
+}
+
+# A tibble is a data frame with three classes and compact row names. Building
+# one directly costs a line and saves a dependency on tibble for the sake of
+# a constructor.
+new_tbl <- function(cols) {
+  structure(
+    cols,
+    class = c("tbl_df", "tbl", "data.frame"),
+    row.names = .set_row_names(length(cols[[1L]]))
+  )
+}
+
+#' Collect the metrics from a nested resampling run
+#'
+#' @param x A `nested_results` object from [nested_tune_grid()].
+#' @param summarize Whether to average the per-fold metrics (`TRUE`, the
+#'   default) or return them one row per outer fold (`FALSE`).
+#' @param ... Not used.
+#'
+#' @return A tibble. Summarized, one row per metric with the mean across outer
+#'   folds, the number of folds, and the standard error of that mean.
+#'   Unsummarized, one row per outer fold and metric.
+#'
+#' @details
+#' The summarized value is the nested cross-validation estimate: what the
+#' tune-and-fit procedure achieves on data it never saw. It is not the
+#' performance of any model you have in hand.
+#'
+#' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
+#' data(mtcars)
+#'
+#' rec <- recipes::step_pca(
+#'   recipes::recipe(mpg ~ ., data = mtcars),
+#'   recipes::all_predictors(),
+#'   num_comp = tune::tune()
+#' )
+#' wf <- workflows::workflow(rec, parsnip::linear_reg())
+#'
+#' set.seed(1)
+#' folds <- nested_resamples(
+#'   mtcars,
+#'   outside = rsample::vfold_cv(v = 3),
+#'   inside = rsample::vfold_cv(v = 3)
+#' )
+#'
+#' set.seed(2)
+#' res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+#'
+#' collect_metrics(res)
+#' collect_metrics(res, summarize = FALSE)
+#'
+#' @export
+collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
+  per_fold <- per_fold_metrics(x)
+  if (!summarize) {
+    return(per_fold)
+  }
+
+  keys <- paste(per_fold$.metric, per_fold$.estimator, sep = "\r")
+  first <- !duplicated(keys)
+  order_of <- match(keys[first], keys[first])
+
+  mean_of <- vapply(keys[first], function(k) {
+    mean(per_fold$.estimate[keys == k])
+  }, numeric(1), USE.NAMES = FALSE)
+  n_of <- vapply(keys[first], function(k) {
+    sum(keys == k)
+  }, integer(1), USE.NAMES = FALSE)
+  se_of <- vapply(keys[first], function(k) {
+    vals <- per_fold$.estimate[keys == k]
+    if (length(vals) < 2L) NA_real_ else stats::sd(vals) / sqrt(length(vals))
+  }, numeric(1), USE.NAMES = FALSE)
+
+  new_tbl(list(
+    .metric = per_fold$.metric[first][order_of],
+    .estimator = per_fold$.estimator[first][order_of],
+    mean = mean_of[order_of],
+    n = n_of[order_of],
+    std_err = se_of[order_of]
+  ))
+}
+
+# One row per outer fold and metric. The per-fold tibbles come straight from
+# tune::last_fit(), so their columns are tune's, not ours.
+per_fold_metrics <- function(x) {
+  ids <- fold_ids(x)
+  n_rows <- vapply(x$.metrics, nrow, integer(1))
+
+  new_tbl(list(
+    id = rep(ids, times = n_rows),
+    .metric = unlist(lapply(x$.metrics, function(m) m$.metric), use.names = FALSE),
+    .estimator = unlist(lapply(x$.metrics, function(m) m$.estimator), use.names = FALSE),
+    .estimate = unlist(lapply(x$.metrics, function(m) m$.estimate), use.names = FALSE)
+  ))
+}
+
+# The outer fold labels. A repeated design carries id and id2; pasting them
+# keeps each row's label unique without assuming which columns are present.
+fold_ids <- function(x) {
+  id_cols <- grep("^id", names(x), value = TRUE)
+  if (length(id_cols) == 1L) {
+    return(x[[id_cols]])
+  }
+  do.call(paste, c(lapply(id_cols, function(nm) x[[nm]]), list(sep = ", ")))
+}

@@ -115,7 +115,7 @@ planned once this milestone's results object exists and its real shape is known.
       (AC2/AC16, deterministic and stochastic variants, seeds derived from the
       documented contract) and the single-candidate-grid invariant (AC3/AC17,
       deterministic engine only).
-- [ ] T3 — Implement the per-fold step: `tune_grid()` on the inner `rset` with
+- [x] T3 — Implement the per-fold step: `tune_grid()` on the inner `rset` with
       `control_grid(allow_par = FALSE)`, `select_best()`,
       `finalize_workflow()`, then `last_fit()` on the outer split.
 - [ ] T4 — Implement the serial driver over outer folds per D-011: draw
@@ -123,7 +123,7 @@ planned once this milestone's results object exists and its real shape is known.
       seeded with the kind triple pinned, and restore the caller's RNG state and
       kind on exit (including on error). (RB tripwire: ip-touching — IP2;
       settled by RR01.)
-- [ ] T5 — Results object: class, constructor, and storage of per-fold metrics
+- [x] T5 — Results object: class, constructor, and storage of per-fold metrics
       alongside each fold's selected parameters and its two seeds.
 - [ ] T6 — `collect_metrics()` method returning per-fold and summarized metrics.
 - [ ] T7 — Input validation: refuse an outer bootstrap, and validate the
@@ -148,6 +148,7 @@ planned once this milestone's results object exists and its real shape is known.
 - 2026-07-25: dependency gate — user approved the `tune (>= 2.0.0)` floor and `ranger` in Suggests (D-012); user also elected to carry M02 as one milestone despite the 17-criteria / 10-task split tripwires.
 - 2026-07-25: T1 done — DESCRIPTION declares tune (>= 2.0.0), workflows, parsnip in Imports and ranger in Suggests; `devtools::test()` clean (549 pass). Minor task edit: the unused-dependency confirmation moved to T9, which is where code using them exists.
 - 2026-07-25: T2 done — oracle tests written and failing for the right reason ("could not find function nested_tune_grid", 3 errors). O1 (live reference loop, deterministic + stochastic) and O2 (fit_resamples invariant) recorded in the test file header per DESIGN Conventions. Suite is intentionally red until T3–T5 land; the verify slot's clean-before-checkoff gate cannot bind a task whose product is a failing test. Second dependency gate: `recipes` and `yardstick` to Suggests (D-013). Signature confirmed as `nested_tune_grid(object, resamples, grid, metrics)` — corrects D-010's parenthetical, which named the second argument `workflow`; substance of D-010 unchanged.
+- 2026-07-25: T3 and T5 done — `nested_tune_grid()` plus the `nested_fold_fit()` worker, the `nested_results` constructor, `collect_metrics()`, and the argument checks landed across R/nested-tune-grid.R, R/nested-results.R, R/checks.R, R/reexports.R. All three T2 oracles pass first run; full suite 572 pass, 0 fail. T4/T6/T7 code is present but stays unchecked until its own tests exist (T10 for the RNG contract, T6/T7 for the method and error branches). Results object is a hand-built tibble rather than an import of `tibble` — one line of `structure()` against a dependency.
 - 2026-07-25: plan amendment (substantive) — AC1–AC7 and Scope Out compressed in one pass to fit the 150-line cap after the BC ingestion; no criterion dropped, AC2/AC3 shed detail now carried more precisely by AC16/AC17. T1/T2/T4/T5/T9 refined and T10 added for the RNG test battery.
 
 ## Decisions
