@@ -139,6 +139,48 @@ det_nested <- function(data, v = 3, seed = 11) {
   )
 }
 
+# A design whose outer folds genuinely disagree about the best candidate (M04).
+#
+# The disagreement is earned rather than staged: y depends on x1 alone and the
+# other five predictors are noise, so how many principal components help is a
+# question each outer fold answers from its own data. The path is still PCA and
+# lm, so it stays deterministic -- the same seeds give the same disagreement.
+unstable_data <- function(n = 60, seed = 7, k = 6, noise = 3) {
+  set.seed(seed)
+  d <- as.data.frame(matrix(rnorm(n * k), nrow = n, ncol = k))
+  names(d) <- paste0("x", seq_len(k))
+  d$y <- 2 * d$x1 + noise * rnorm(n)
+  d
+}
+
+unstable_workflow <- function(data) {
+  rec <- recipes::step_pca(
+    recipes::recipe(y ~ ., data = data),
+    recipes::all_predictors(),
+    num_comp = tune::tune()
+  )
+  workflows::workflow(rec, parsnip::linear_reg())
+}
+
+unstable_grid <- function() data.frame(num_comp = 1:4)
+
+# Every outer fold broken, for the run that has nothing to report at all.
+break_every_fold <- function(nested, stage = "inner tuning") {
+  for (i in seq_len(nrow(nested))) {
+    nested <- break_fold(nested, i, stage)
+  }
+  nested
+}
+
+# Printed output as one string, at a width wide enough that cli's wrapping does
+# not decide whether an assertion matches. The snapshots below set their own
+# width through testthat, so they are unaffected by this.
+print_text <- function(x, width = 200) {
+  op <- options(width = width, cli.width = width)
+  on.exit(options(op), add = TRUE)
+  paste(utils::capture.output(print(x)), collapse = "\n")
+}
+
 skip_if_no_engines <- function(stochastic = FALSE) {
   testthat::skip_if_not_installed("recipes")
   testthat::skip_if_not_installed("yardstick")

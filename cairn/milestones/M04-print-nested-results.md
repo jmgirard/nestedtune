@@ -71,7 +71,7 @@ erroring. Snapshot tests over the output shapes that carry meaning.
       varied, and handle the single-fold and no-tuned-parameter cases.
 - [ ] T7: Estimate formatter — the summary across completed folds, silent on a partial
       run and on one where nothing completed. (Added by the 2026-07-26 amendment.)
-- [ ] T5: `print.nested_results()` in `R/nested-results.R` assembling the pieces with
+- [ ] T5: `print.nested_results()` in `R/nested-results-print.R` assembling the pieces with
       cli, carrying the IP3 sentence, returning `x` invisibly.
 - [ ] T6: Roxygen for the method, NEWS entry, `_pkgdown.yml` reference row,
       `devtools::document()`, verify + `devtools::check()`.
@@ -82,6 +82,8 @@ erroring. Snapshot tests over the output shapes that carry meaning.
 - 2026-07-26: branch `m04-print-nested-results` cut; status in-progress.
 - 2026-07-26: amendment (gated) — print also shows the metric summary across completed folds; Scope In extended, AC8 added, T7 added, Coverage AC8 → T1, T7. Escalation was offered on the IP3 reading and declined.
 - 2026-07-26: gate — selection laid out one line per parameter in fold order, collapsed when unanimous, rather than a fold-by-parameter table.
+- 2026-07-26: T1 tests written and committed red (the object still prints as a bare tibble); box stays unticked until the method exists. Added `unstable_data()`/`unstable_workflow()` — a deterministic PCA+lm fixture whose four outer folds land on 4, 4, 4, 3 — plus `break_every_fold()` and `print_text()` helpers.
+- 2026-07-26: minor plan edit — T5's method and its formatters go in `R/nested-results-print.R`, mirroring the test file the plan already names, rather than growing `R/nested-results.R`.
 
 ## Decisions
 
