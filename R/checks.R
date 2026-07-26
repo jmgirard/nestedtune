@@ -15,7 +15,9 @@ check_workflow <- function(object, call = rlang::caller_env()) {
       call = call
     )
   }
-  if (inherits(object, "trained_workflow")) {
+  # Trained-ness is a field on a workflow, not a class, so this asks rather
+  # than tests inherits().
+  if (workflows::is_trained_workflow(object)) {
     cli::cli_abort(
       c(
         "{.arg object} must not already be fitted.",

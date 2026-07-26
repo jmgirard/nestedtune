@@ -118,23 +118,23 @@ planned once this milestone's results object exists and its real shape is known.
 - [x] T3 — Implement the per-fold step: `tune_grid()` on the inner `rset` with
       `control_grid(allow_par = FALSE)`, `select_best()`,
       `finalize_workflow()`, then `last_fit()` on the outer split.
-- [ ] T4 — Implement the serial driver over outer folds per D-011: draw
+- [x] T4 — Implement the serial driver over outer folds per D-011: draw
       `2 * n_folds` seeds at entry, run each fold through a pure per-fold worker
       seeded with the kind triple pinned, and restore the caller's RNG state and
       kind on exit (including on error). (RB tripwire: ip-touching — IP2;
       settled by RR01.)
 - [x] T5 — Results object: class, constructor, and storage of per-fold metrics
       alongside each fold's selected parameters and its two seeds.
-- [ ] T6 — `collect_metrics()` method returning per-fold and summarized metrics.
-- [ ] T7 — Input validation: refuse an outer bootstrap, and validate the
+- [x] T6 — `collect_metrics()` method returning per-fold and summarized metrics.
+- [x] T7 — Input validation: refuse an outer bootstrap, and validate the
       workflow, grid, and metric-set arguments; test every `cli_abort()` branch.
-- [ ] T8 — Leakage test: instrument row membership per outer fold and assert
+- [x] T8 — Leakage test: instrument row membership per outer fold and assert
       inner tuning and the outer fit never touch that fold's assessment rows.
       (RB tripwire: ip-touching — IP1.)
 - [ ] T9 — Roxygen docs (including the hand-replication contract and IP2's
       R-RNG scope), `_pkgdown.yml` rows, NEWS.md entry, `document()` no-diff,
       `devtools::check()` clean with no unused declared dependency.
-- [ ] T10 — RNG test battery per RR01: same-seed identity and seed sensitivity
+- [x] T10 — RNG test battery per RR01: same-seed identity and seed sensitivity
       on a stochastic engine, permuted fold-order invariance, ambient-state
       independence of the per-fold worker, and the net-zero exit-state pin.
 
@@ -149,6 +149,7 @@ planned once this milestone's results object exists and its real shape is known.
 - 2026-07-25: T1 done — DESCRIPTION declares tune (>= 2.0.0), workflows, parsnip in Imports and ranger in Suggests; `devtools::test()` clean (549 pass). Minor task edit: the unused-dependency confirmation moved to T9, which is where code using them exists.
 - 2026-07-25: T2 done — oracle tests written and failing for the right reason ("could not find function nested_tune_grid", 3 errors). O1 (live reference loop, deterministic + stochastic) and O2 (fit_resamples invariant) recorded in the test file header per DESIGN Conventions. Suite is intentionally red until T3–T5 land; the verify slot's clean-before-checkoff gate cannot bind a task whose product is a failing test. Second dependency gate: `recipes` and `yardstick` to Suggests (D-013). Signature confirmed as `nested_tune_grid(object, resamples, grid, metrics)` — corrects D-010's parenthetical, which named the second argument `workflow`; substance of D-010 unchanged.
 - 2026-07-25: T3 and T5 done — `nested_tune_grid()` plus the `nested_fold_fit()` worker, the `nested_results` constructor, `collect_metrics()`, and the argument checks landed across R/nested-tune-grid.R, R/nested-results.R, R/checks.R, R/reexports.R. All three T2 oracles pass first run; full suite 572 pass, 0 fail. T4/T6/T7 code is present but stays unchecked until its own tests exist (T10 for the RNG contract, T6/T7 for the method and error branches). Results object is a hand-built tibble rather than an import of `tibble` — one line of `structure()` against a dependency.
+- 2026-07-25: T4, T6, T7, T8, T10 done — RNG battery (order invariance, ambient-state independence, net-zero exit, error path, fresh session), leakage instrumentation via a mocked handoff that catches split/inner mis-pairing, `collect_metrics()` both modes, and every `cli_abort()` branch. Suite 701 pass, 0 fail. Inversion check: dropping the kind pin from `set_fold_seed()` reddens the ambient-state test, so it has power. `check_workflow()` uses `workflows::is_trained_workflow()` — trained-ness is a field, not a class, and the first attempt tested `inherits(x, "trained_workflow")`, which never fires.
 - 2026-07-25: plan amendment (substantive) — AC1–AC7 and Scope Out compressed in one pass to fit the 150-line cap after the BC ingestion; no criterion dropped, AC2/AC3 shed detail now carried more precisely by AC16/AC17. T1/T2/T4/T5/T9 refined and T10 added for the RNG test battery.
 
 ## Decisions
