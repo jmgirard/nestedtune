@@ -339,6 +339,42 @@ The deterministic test engine exercises the preprocessing path, which is also
 where IP1's "preprocessing is estimated on analysis data" clause bites, so the
 choice buys leakage-test relevance the model-only engines would not have.
 
+### D-014 (2026-07-26): The final-fit path is `nested_final_fit()`, re-running the tuning procedure on the full data and returning its own object — extends to the model the separation D-010 applied to the results class
+
+**Context:** IP3 and the DESIGN convention have said since the interview that the
+final model is a separate object, and `nested_tune_grid()` tells users to "fit
+that separately" without giving them a way to. Planning M05 had to settle three
+things before any code: where the final model's parameters come from, what comes
+back, and what it is called. The enabling fact is that both `nested_resamples()`
+and `rsample::nested_cv()` store the inner specification as an unevaluated call
+in `attr(x, "inside")`, so the design object alone is enough to re-run the
+procedure on the complete dataset.
+
+**Decision:** The export is `nested_final_fit(object, resamples, grid, metrics)`,
+mirroring `nested_tune_grid()`'s signature. It re-evaluates the stored `inside`
+specification against the full data, tunes, selects, finalizes, and fits on every
+row, returning a `nested_final_fit` object holding the trained workflow, the
+selected parameters, and the tuning run, reached with `extract_workflow()`.
+Considered and rejected: reusing the outer folds' selections, e.g. by modal vote
+(cheaper, and it reuses work already paid for, but no settled statistical basis
+for the tie-break, and it makes the results object the source of the model —
+the reading IP3 forbids); offering both routes behind an argument (GP3 prefers
+one obvious path to a knob the literature cannot help a user turn); returning a
+bare fitted workflow (every `predict()`/`extract_*()` for free, but nothing then
+records the selection or states that this model's performance is not the nested
+estimate, which DESIGN requires print methods to say); `fit_final()` and
+`final_workflow()` as names (the first claims a very general name for a small
+package, the second hides that an expensive tuning run happens inside).
+
+**Consequences:** The package's naming gains a third shape beside
+`nested_resamples()` and the `nested_tune_*` family D-010 established.
+`collect_metrics()`, `show_best()`, and `select_best()` deliberately have no
+method for the new class and error rather than answering — the same refusal
+D-010 chose for `nested_results`, for the same reason. `predict()` and
+`augment()` are not shipped in M05; `extract_workflow()` is the door, as after
+`tune::last_fit()`. Pre-1.0 all of this stays changeable without a deprecation
+cycle (D-003).
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
