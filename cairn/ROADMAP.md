@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-25 (design interview Phase 1; 3 candidates banked, no milestones yet)_
+_Last hygiene check: 2026-07-25 (design interview complete, both phases; 3 candidates banked, no milestones yet; all checks green)_
 
 ## Milestones
 
