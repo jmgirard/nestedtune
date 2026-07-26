@@ -1,11 +1,11 @@
 # M04: Printing surfaces the run and its disagreement
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M03
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4
-- **Branch/PR:** —
+- **Branch/PR:** `m04-print-nested-results`
 
 ## Goal
 

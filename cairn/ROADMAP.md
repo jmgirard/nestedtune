@@ -10,7 +10,7 @@ _Last hygiene check: 2026-07-26 (M03 merged and archived — a failing fold is n
 | M01 | Memory-lean nested resampling structure | done | — | normal | milestones/archive/M01-memory-lean-nested-resampling.md |
 | M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
-| M04 | Printing surfaces the run and its disagreement | planned | M03 | normal | milestones/M04-print-nested-results.md |
+| M04 | Printing surfaces the run and its disagreement | in-progress | M03 | normal | milestones/M04-print-nested-results.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
