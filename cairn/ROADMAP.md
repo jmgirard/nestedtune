@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M03 merged and archived — a failing fold is now recorded rather than fatal; M04 planned and workable, 7 candidates, nothing in progress; 4 lessons captured, all checks green)_
+_Last hygiene check: 2026-07-26 (M04 merged and archived — nested results now print as a report on the run, with fold disagreement surfaced; nothing in progress, 7 candidates, 3 lessons captured, all checks green)_
 
 ## Milestones
 
@@ -10,7 +10,7 @@ _Last hygiene check: 2026-07-26 (M03 merged and archived — a failing fold is n
 | M01 | Memory-lean nested resampling structure | done | — | normal | milestones/archive/M01-memory-lean-nested-resampling.md |
 | M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
-| M04 | Printing surfaces the run and its disagreement | review | M03 | normal | milestones/M04-print-nested-results.md |
+| M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
