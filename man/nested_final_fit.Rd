@@ -25,7 +25,7 @@ candidate.}
 }
 \value{
 An object of class \code{nested_final_fit} with elements \code{workflow} (the
-trained workflow, better reached with \code{\link[hardhat:extract_workflow]{extract_workflow()}}), \code{selected}
+trained workflow, better reached with \code{\link[=extract_workflow]{extract_workflow()}}), \code{selected}
 (the parameters chosen), \code{tuning} (the tuning run they were chosen from),
 and \code{tuning_seed} and \code{fit_seed} (the two seeds that reproduce it).
 }
@@ -37,5 +37,5 @@ candidate, finalizes the workflow, and fits it on all the data. The result is
 the model to deploy.
 }
 \seealso{
-\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[hardhat:extract_workflow]{extract_workflow()}}
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=extract_workflow]{extract_workflow()}}
 }

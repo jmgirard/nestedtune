@@ -3,6 +3,7 @@
 S3method("[",nested_results)
 S3method(collect_metrics,nested_results)
 S3method(extract_workflow,nested_final_fit)
+S3method(print,nested_final_fit)
 S3method(print,nested_results)
 export(collect_metrics)
 export(extract_workflow)

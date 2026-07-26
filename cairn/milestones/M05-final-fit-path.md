@@ -128,7 +128,7 @@ existing candidate.
       seed sensitivity, net-zero exit including the fresh-session branch,
       error-path restoration triggered inside the guarded region, and
       ambient-kind independence.
-- [ ] T6: `print.nested_final_fit()` in `R/nested-final-fit-print.R` showing no
+- [x] T6: `print.nested_final_fit()` in `R/nested-final-fit-print.R` showing no
       number from the tuning run and pointing at the nested run's `.selected` for
       comparison (RR02 B3); tests that tune's ranking generics have no method.
 - [ ] T7: roxygen — the replication recipe, what to report instead and why, the
@@ -154,6 +154,7 @@ existing candidate.
 - 2026-07-26: T4 — three oracle strands green (contract-derived reference, single-candidate invariant, `tune::fit_best()` tail).
 - 2026-07-26: inversion showed the reference oracle did NOT guard D-016's ordering as RR02 assumed — swapping the rset construction outside the tuning seed's scope left selection and predictions unchanged because the selected `min_n` was stable across both fold sets. Added a direct assertion on the resamples the tuning run saw; that one reddens under the mutation.
 - 2026-07-26: T5 — RNG suite green. BC6's ambient-kind clause is unsatisfiable at the exported function (the entry draw reads the caller's stream and is itself kind-dependent, measured), so the body after the seed draw is split into `final_fit_worker()` and the property is asserted there; deviation table added at the user's choice at the amendment gate.
+- 2026-07-26: T6 — print shows the selection and points at the nested estimate and at `.selected`, never a number from the stored tuning run; that absence is asserted against every metric the run offers rather than assumed. tune's three ranking generics refuse, two through defaults tune wrote and one through dispatch failure.
 - 2026-07-26: RR02 triage — rec 1, 2, 3, 4, 8, 9, 10 applied; rec 5 (`fit_best()` oracle strand) and rec 12 (print pointer to fold selections) applied at the user's choice; rec 11 (`extract_` accessor for the stored tuning run) deferred to a candidate row, a documented slot sufficing pre-1.0; rec 6 (mlr3 oracle) and rec 7 (size-matched final tuning) rejected on RR02's own reasoning.
 
 ## Decisions
