@@ -11,7 +11,7 @@ _Last hygiene check: 2026-07-26 (M05 and M06 planned — the final-fit path and 
 | M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
-| M05 | The final model is its own object | in-progress | M02 | high | milestones/M05-final-fit-path.md |
+| M05 | The final model is its own object | review | M02 | high | milestones/M05-final-fit-path.md |
 | M06 | A guide that says what to report | planned | M05 | normal | milestones/M06-nested-cv-vignette.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
@@ -27,4 +27,4 @@ _Last hygiene check: 2026-07-26 (M05 and M06 planned — the final-fit path and 
 - Route a preprocessor-only workflow through `nested_tune_grid()`'s own `cli_abort()` instead of letting `workflows::extract_spec_parsnip()` raise it, so every bad-`object` shape fails with the same discipline — added 2026-07-25 — M02 review finding F6, scored 75 (below the action threshold)
 - Settle posture toward upstream's dormant tune prototype once tune#969 is answered — added 2026-07-25 — G7
 - Document IP2's enforceable scope in DESIGN.md — it binds only randomness flowing through R's RNG, so engines that bypass it (kernlab SVM, keras/torch) are unreachable by any R-side scheme — added 2026-07-25 — RR01 B4; amending IP text needs a D-entry
-- Validate that `inside` evaluates to an `rset` and `cli_abort()` if not; today a non-rset spec surfaces rsample's internal "Split and ID vectors have different lengths" — added 2026-07-25 — M01 review finding F7, scored 78 (below the action threshold)
+- Validate that `inside` evaluates to an `rset` and `cli_abort()` if not, at `nested_resamples()` construction time; today a non-rset spec surfaces rsample's internal "Split and ID vectors have different lengths" — added 2026-07-25 — M01 review finding F7, scored 78 (below the action threshold). Trimmed to its remainder 2026-07-26: M05 covers the final-fit half, where `eval_inside_spec()` refuses a specification that does not produce an `rset`; construction is still unguarded

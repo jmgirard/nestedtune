@@ -1,6 +1,6 @@
 # M05: The final model is its own object
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M02
 - **Driving RR:** RR02
@@ -135,7 +135,7 @@ existing candidate.
       stored run's selection-time bias, re-evaluation of `inside` at call time
       with literals as the safe form, and repeated-call identity (RR02 B2);
       cross-link from `R/nested-tune-grid.R:11`.
-- [ ] T8: `_pkgdown.yml` row, NEWS entry, DESIGN.md Function Families and
+- [x] T8: `_pkgdown.yml` row, NEWS entry, DESIGN.md Function Families and
       Architecture updated, full check clean.
 - [x] T9: record RR02's IP1 and RNG-contract findings as D-015 and D-016 and
       amend IP1's middle clause in DESIGN.md.
@@ -156,6 +156,7 @@ existing candidate.
 - 2026-07-26: T5 — RNG suite green. BC6's ambient-kind clause is unsatisfiable at the exported function (the entry draw reads the caller's stream and is itself kind-dependent, measured), so the body after the seed draw is split into `final_fit_worker()` and the property is asserted there; deviation table added at the user's choice at the amendment gate.
 - 2026-07-26: T6 — print shows the selection and points at the nested estimate and at `.selected`, never a number from the stored tuning run; that absence is asserted against every metric the run offers rather than assumed. tune's three ranking generics refuse, two through defaults tune wrote and one through dispatch failure.
 - 2026-07-26: T7 — roxygen carries the replication recipe, what to report and why, the stored run's selection-time bias, the re-evaluation caveat, and repeated-call identity. `nested_results`' print now names `nested_final_fit()` instead of saying to fit separately; that snapshot change is the only one, reviewed line by line before accepting.
+- 2026-07-26: T8 done — `devtools::check()` clean (0 errors, 0 warnings, 0 notes), `document()` produces no diff, `pkgdown::check_pkgdown()` finds no problems. All tasks complete; status to review.
 - 2026-07-26: T8 in progress — pkgdown row, NEWS entries, and DESIGN.md Function Families + Architecture written; `devtools::check()` still running, so T8 stays unchecked until it comes back clean.
 - 2026-07-26: RR02 triage — rec 1, 2, 3, 4, 8, 9, 10 applied; rec 5 (`fit_best()` oracle strand) and rec 12 (print pointer to fold selections) applied at the user's choice; rec 11 (`extract_` accessor for the stored tuning run) deferred to a candidate row, a documented slot sufficing pre-1.0; rec 6 (mlr3 oracle) and rec 7 (size-matched final tuning) rejected on RR02's own reasoning.
 
