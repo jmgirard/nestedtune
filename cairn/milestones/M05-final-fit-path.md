@@ -1,10 +1,11 @@
 # M05: The final model is its own object
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M02
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, IP3, GP1, GP2, GP3
+- **Branch/PR:** m05-final-fit-path
 
 ## Goal
 
@@ -101,6 +102,7 @@ existing parallelism candidate.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: in-progress on branch m05-final-fit-path, cut from main at 4d78627.
 
 ## Decisions
 
