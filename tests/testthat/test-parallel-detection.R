@@ -74,6 +74,14 @@ test_that("the probe reaches every daemon, not just a loadable one", {
   connections <- start_mixed_daemons(lean)
   skip_if(connections < 2, "the heterogeneous pool did not assemble")
 
+  # The precondition, asserted rather than assumed: the two daemons really do
+  # have different libraries. Without this the test reports a comfortable green
+  # whenever the fixture quietly fails and both daemons share one library --
+  # which is what setting only R_LIBS_USER did, on a machine whose packages live
+  # in the site library.
+  libs <- collect_bounded(mirai::everywhere(.libPaths()), seconds = 30)
+  expect_false(identical(libs[[1]], libs[[2]]))
+
   # ranger stands in for nestedtune: installed here, absent from the scratch
   # library, and not something mirai drags in. Probing for nestedtune itself
   # would need it installed, and priming a daemon with everywhere() reaches

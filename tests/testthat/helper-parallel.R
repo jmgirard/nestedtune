@@ -7,6 +7,24 @@
 # pkgload closes both holes; under R CMD check the package is installed and the
 # daemons inherit the library through the environment, so priming is a no-op.
 
+# Collect a mirai_map with a deadline, never open-endedly.
+#
+# `map[]` blocks until every element resolves, so one wedged daemon hangs the
+# suite -- the failure AC4 exists to make impossible. Polling to a deadline and
+# then reading each element's `$data` (which yields `unresolvedValue` rather
+# than waiting) cannot block at all. Same shape as the production probe in
+# R/parallel.R, for the same reason.
+collect_bounded <- function(map, seconds = 60) {
+  deadline <- Sys.time() + seconds
+  while (mirai::unresolved(map) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  if (mirai::unresolved(map)) {
+    mirai::stop_mirai(map)
+  }
+  lapply(seq_along(map), function(i) map[[i]]$data)
+}
+
 prime_daemons <- function() {
   if (!requireNamespace("pkgload", quietly = TRUE)) {
     return(invisible(FALSE))
@@ -15,7 +33,15 @@ prime_daemons <- function() {
     return(invisible(FALSE))
   }
   path <- pkgload::pkg_path()
-  mirai::everywhere(pkgload::load_all(path, quiet = TRUE), .args = list(path = path))
+  # Collected, not fired and forgotten. load_all() in a cold daemon is slow, and
+  # returning before it finishes leaves the daemons still priming: the pre-flight
+  # probe then queues behind it on every daemon and can ride out its whole bound.
+  # M07's probe hid this by asking a single daemon, so whichever one was free
+  # answered; asking all of them is what surfaced it.
+  collect_bounded(mirai::everywhere(
+    pkgload::load_all(path, quiet = TRUE),
+    .args = list(path = path)
+  ), seconds = 120)
   invisible(TRUE)
 }
 
@@ -71,16 +97,18 @@ start_mixed_daemons <- function(lean_lib, timeout = 60) {
   mirai::daemons(n = 0, url = "tcp://127.0.0.1:0", dispatcher = TRUE)
   url <- mirai::status()$daemons
 
+  # --vanilla so no user .Rprofile or .Renviron can put a library back that the
+  # env vars below deliberately withhold, and all three library variables
+  # because R_LIBS alone only PREPENDS -- it cannot take the site library away.
   spawn <- function(env) {
     system2(
       file.path(R.home("bin"), "Rscript"),
-      c("-e", shQuote(sprintf('mirai::daemon("%s")', url))),
+      c("--vanilla", "-e", shQuote(sprintf('mirai::daemon("%s")', url))),
       env = env, wait = FALSE, stdout = FALSE, stderr = FALSE
     )
   }
   spawn(character(0))                                     # the full library
-  spawn(c(sprintf("R_LIBS_SITE=%s", lean_lib),            # mirai and no more
-          sprintf("R_LIBS_USER=%s", lean_lib)))
+  spawn(sprintf(c("R_LIBS=%s", "R_LIBS_SITE=%s", "R_LIBS_USER=%s"), lean_lib))
 
   deadline <- Sys.time() + timeout
   while (mirai::status()$connections < 2 && Sys.time() < deadline) {

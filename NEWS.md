@@ -16,7 +16,7 @@
   keeps working unchanged.
 
 * The wait for that check, previously fixed at 30 seconds, is now settable with
-  `options(nestedtune.preflight_timeout = )`, in milliseconds. The default is
+  `options(nestedtune.preflight_timeout = <milliseconds>)`. The default is
   unchanged, and no statistical result depends on it. It must be a single
   positive, finite number — an unbounded wait would restore the hang the bound
   exists to turn into an error.
