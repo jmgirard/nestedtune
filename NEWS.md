@@ -1,5 +1,34 @@
 # nestedtune 0.0.0.9000
 
+* `autoplot()` now draws a nested cross-validation result. Its default view puts
+  one point per outer fold at the value that fold's inner tuning selected, one
+  panel per tuned parameter: a flat row means the folds agreed, and scatter means
+  they disagreed and the value your deployed model carries was largely arbitrary.
+  Printing has said this in words since the last release; now you can see it.
+
+* `autoplot(x, type = "performance")` draws each outer fold's score with a dashed
+  line at the nested estimate. That line is the number `collect_metrics()`
+  reports, read from the same place rather than recomputed, so the figure and the
+  summary cannot disagree. Its subtitle says the estimate describes the
+  tune-and-fit procedure rather than a model you can deploy, so the caveat
+  travels with a figure exported into a slide or a paper.
+
+* Both views keep every outer fold that was *attempted* on the axis. A fold that
+  failed, or one that completed without recording a value for a parameter, leaves
+  a visible gap rather than being quietly dropped or drawn at an invented value.
+
+* The subtitle says how much of the requested design ran, and each panel says
+  when fewer folds contributed to it than completed — `mtry (2 of 3 chose)`,
+  `rmse (from 2 folds)`. Counting per panel rather than per figure is what keeps
+  the claim true: a parameter only some folds chose a value for would otherwise
+  read as unanimity, and a metric one fold could not score would read as an
+  estimate from more folds than it had. A metric no completed fold could score
+  keeps an empty panel rather than vanishing from the figure.
+
+* `ggplot2` is now a hard dependency. Plotting a run where no outer fold
+  completed, or asking for the parameters view of a design with no tuned
+  parameters, is refused with a message saying which it was.
+
 * `nested_tune_grid()` now runs its outer folds in parallel. Start workers with
   `mirai::daemons(n)` before the call and the loop uses them; there is no
   argument to set, and no daemons means the serial behaviour is unchanged.

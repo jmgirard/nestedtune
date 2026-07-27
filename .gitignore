@@ -4,6 +4,15 @@ cairn/.merge-approved
 cairn/.merge-approved.pending
 
 # R
+# R opens `pdf()` when something needs a device and none is current, leaving an
+# Rplots.pdf wherever it was working. It is detritus, and `R CMD check` NOTEs it
+# as a non-standard top-level file.
+Rplots.pdf
+**/Rplots.pdf
+# testthat writes `*.new.*` beside a snapshot whose candidate did not match, and
+# removes it on the next clean run. Transient by construction, so it is never
+# committed -- a committed one reads as a second approved snapshot.
+tests/testthat/_snaps/**/*.new.*
 .Rproj.user
 .Rhistory
 .RData

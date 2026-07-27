@@ -252,8 +252,10 @@ the record of what selection saw; its metrics are selection-time quantities, so
 nothing in the package's own surface turns them into a claim — the print method
 shows no number from it, and tune's ranking generics are left unregistered.
 
-The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows, and
-parsnip. The tune floor is load-bearing rather than defensive: every
+The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows,
+parsnip, and ggplot2 _(ggplot2 added 2026-07-26 at M08, D-019: the first Import
+that is not needed to compute a result — it carries `autoplot()`)_. The tune
+floor is load-bearing rather than defensive: every
 reproducibility guarantee above rests on tune >= 2.0.0 deriving its own
 per-resample streams and leaving the caller's RNG state untouched, verified by
 execution in RR01, and tune 1.x seeded differently (D-012).

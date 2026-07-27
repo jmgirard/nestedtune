@@ -5,6 +5,7 @@
 \alias{reexports}
 \alias{collect_metrics}
 \alias{extract_workflow}
+\alias{autoplot}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -12,6 +13,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
+  \item{ggplot2}{\code{\link[ggplot2:autoplot]{autoplot()}}}
+
   \item{tune}{\code{\link[tune:collect_metrics]{collect_metrics()}}, \code{\link[tune:extract_workflow]{extract_workflow}}}
 }}
 
