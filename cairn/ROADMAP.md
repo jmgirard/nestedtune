@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M10 merged and archived — the parallel startup check now probes every daemon and separates a load failure from a non-response; review fixed six defects including a bound validated only after dispatch, M05's row pruned under terminal-row retention, 13 candidates, 2 lessons added and 2 retired)_
+_Last hygiene check: 2026-07-27 (M11 merged and archived — CI now skips tracking-only commits and cancels superseded runs off the default branch, removing 39 of 108 runs and 790 machine-minutes; two review passes, 22 findings, 8 actioned, AC4/AC5 amended at a gate; M08's row pruned under terminal-row retention, 15 candidates, 1 lesson added)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M11 | Every CI run is one somebody is waiting for | review | — | normal | milestones/M11-ci-run-economy.md |
+| M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
 | M10 | The startup check inspects every worker and says what went wrong | done | — | normal | milestones/archive/M10-preflight-probe-coverage.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 | M07 | Parallel outer folds | done | M02 | high | milestones/archive/M07-parallel-outer-folds.md |
-| M08 | Selection instability you can see | done | — | normal | milestones/archive/M08-autoplot-nested-results.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
