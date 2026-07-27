@@ -80,7 +80,7 @@ candidate row. Dependency caching → already provided by
 
 ## Tasks
 
-- [ ] T1. Write `.github/ci-usage.py`: fetch runs + jobs from the Actions REST
+- [x] T1. Write `.github/ci-usage.py`: fetch runs + jobs from the Actions REST
       API, bound a window on `created_at` and `status == completed`, and report
       run/job counts and per-job raw minutes. Record the AC5 baseline.
 - [ ] T2. Add the `concurrency` block to both workflows
@@ -100,6 +100,8 @@ candidate row. Dependency caching → already provided by
 
 - 2026-07-27: created by /milestone-plan.
 - 2026-07-27: started; branch `m11-ci-run-economy` cut from `main` at c248bcd.
+- 2026-07-27: T1 — `.github/ci-usage.py` reproduces the AC5 baseline exactly (108 runs / 324 jobs / 2276 min; 30/628 skipped; 32/823 superseded, 9/248 off-branch) and the AC4 classification (15 of 24 commits skipped, all 9 others touching a packaged path).
+- 2026-07-27: minor reorder — T1 also delivered T4's workflow-file parsing, since the script needs one ignore-list source, not two; T4 now only regenerates the committed baseline once T3 gives the workflows a real list to read.
 
 ## Decisions
 
