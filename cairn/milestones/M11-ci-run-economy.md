@@ -1,6 +1,6 @@
 # M11: Every CI run is one somebody is waiting for
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -93,7 +93,7 @@ candidate row. Dependency caching → already provided by
       replay default-branch history through it; commit the classification.
 - [x] T5. Rewrite the `cairn/PROFILE.md:45` CI bullet for AC6, including the
       pending-check reconciliation.
-- [ ] T6. Push twice in quick succession to capture the AC2 cancellation
+- [x] T6. Push twice in quick succession to capture the AC2 cancellation
       evidence, then run `devtools::check()` for AC7.
 
 ## Work log
@@ -107,6 +107,10 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: `devtools::test()` clean on the branch — FAIL 0, WARN 0, SKIP 0, PASS 1175.
 - 2026-07-27: the filter list is spelled out under each of the four triggers rather than shared by a YAML anchor — GitHub Actions does not resolve anchors in workflow files, and an unresolved alias would have silently disabled the filter.
 - 2026-07-27: T6 — PR #11 opened at the user's direction so AC2's cancellation could be observed here; a branch gets no runs without one, since the `push` trigger is limited to `main`/`master`. Review records the URL in the header slot as usual.
+- 2026-07-27: AC2 evidence — pushes at 07:53:04Z and 07:53:43Z on PR #11. Superseded runs 30247760551 (R-CMD-check) and 30247760779 (test-coverage) both ended `cancelled` within 46s; replacements 30247801003 and 30247800950 both ended `success`.
+- 2026-07-27: AC3 second clause checked mechanically against the workflows' own list — no packaged path (`R/`, `tests/`, `man/`, `vignettes/`, `DESCRIPTION`, `NAMESPACE`, `.github/`, `_pkgdown.yml`) matches any glob, and every tracking path does.
+- 2026-07-27: AC7 — `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes in 5m23s; the two new `.github/` files need no `.Rbuildignore` entry beyond `^\.github$`.
+- 2026-07-27: all tasks done, status → review.
 
 ## Decisions
 
