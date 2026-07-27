@@ -1,6 +1,6 @@
 # M15: An interrupted run stops the work it started
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -95,6 +95,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: T4 — the interrupt contract now says the folds are cancelled on the way out, and that this holds for any exit once they are dispatched; no sentence there was made false by the change, so the paragraph gained rather than lost. `devtools::document()` clean; full suite and `check()` run at completion.
 - 2026-07-27: T5 — probe re-run against mirai 2.7.2 / nanonext 1.10.1: pool `executing 2`, `everywhere()` returned in 0.001 s with the probe unresolved and queued (`awaiting 2`). The header comment now anchors the non-blocking-send claim to that version and states what a version whose send blocked would cost, instead of claiming nothing on the path can hang.
 - 2026-07-27: T6 — NEWS entry added at the top of the dev section, in user-facing words and naming no milestone.
+- 2026-07-27: all tasks done; `devtools::check()` clean (0 errors, 0 warnings, 0 notes, 3m38s) with the suite passing under `R CMD check`, where the new test delivers a real SIGINT to the checking process; `cairn_validate` all green. Status → review.
 
 ## Decisions
 
