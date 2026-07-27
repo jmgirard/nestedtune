@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m16-suite-worst-case-budget`
+- **Branch/PR:** `m16-suite-worst-case-budget` / https://github.com/jmgirard/nestedtune/pull/15
 
 ## Goal
 
@@ -37,12 +37,12 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
 
 ## Acceptance criteria
 
-- [ ] AC1 `HangTraceReporter` emits a `start` and a matching `end` line naming
+- [x] AC1 `HangTraceReporter` emits a `start` and a matching `end` line naming
       both the file and the `test_that()` description, to unbuffered `stderr()`,
       alongside the per-file lines M14 ships; a test drives a two-block fixture
       through the reporter and asserts both blocks appear, paired and named. The
       class is reachable from a test file, which it is not where M14 left it.
-- [ ] AC2 A committed ledger, `benchmarks/test-time-budget.R`, lists every
+- [x] AC2 A committed ledger, `benchmarks/test-time-budget.R`, lists every
       declared wait bound reachable from `test-parallel-classify.R`,
       `test-parallel-detection.R`, `test-parallel-identity.R` and
       `test-parallel-interrupt.R` — each with its `file:line`, its seconds, and
@@ -50,27 +50,27 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
       contributes its own declared seconds; an enclosing `setTimeLimit()` never
       caps that contribution, because M14 established by execution that it does
       not interrupt a blocked `mirai` wait.
-- [ ] AC3 A test fails when a `collect_bounded(`, `daemons_load_status(`,
+- [x] AC3 A test fails when a `collect_bounded(`, `daemons_load_status(`,
       `setTimeLimit(`, `check_daemons_can_load(`, `start_daemons(` or
       `start_mixed_daemons(` call in those four files or in `helper-parallel.R`
       carries no ledger row, by the parse-token method `test-suite-hygiene.R`
       already uses, so a new unbudgeted wait cannot land silently.
-- [ ] AC4 The ledger's worst-case total for `test-parallel-classify.R` is under
+- [x] AC4 The ledger's worst-case total for `test-parallel-classify.R` is under
       480 seconds and at most half the pre-milestone figure, which the ledger
       records beside it; the other three files' totals are recorded without a
       ceiling, `test-parallel-identity.R`'s cross-referenced to its candidate row.
-- [ ] AC5 The pool at `test-parallel-classify.R:213` binds an ephemeral port
+- [x] AC5 The pool at `test-parallel-classify.R:213` binds an ephemeral port
       (`tcp://127.0.0.1:0`) rather than the hardcoded 45997, and its test still
       asserts what it asserted: a set pool with zero connections classifying as
       `no_response` rather than as a load failure.
-- [ ] AC6 With `expect_lt(elapsed, 15)` at `test-parallel-classify.R:198`
+- [x] AC6 With `expect_lt(elapsed, 15)` at `test-parallel-classify.R:198`
       inverted to force a failure, the run shows positively that the block's
       `stop_mirai(busy)` already ran before the aborting assertion — teardown
       silence is not evidence, since the block's own `on.exit(daemons(0))` runs
       on abort and the teardown stays silent today, pre-fix. A positive control
       that deliberately leaks a pool shows `teardown-zz-nothing-survives.R` does
       fire, so its silence in the first run means something.
-- [ ] AC7 The profile's `verify` slot is clean and its `consistency-gate` slot's
+- [x] AC7 The profile's `verify` slot is clean and its `consistency-gate` slot's
       full check too (`cairn/PROFILE.md`), and
       `benchmarks/stress-daemon-ledger.md` carries a dated superseding note
       correcting its per-test-hook claim rather than a silent rewrite.
@@ -127,3 +127,51 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
 ## Decisions
 
 ## Review
+
+Fresh evidence, gathered 2026-07-27 on `m16-suite-worst-case-budget` at PR #15.
+
+- **AC1** — `test-hang-trace.R` 3 tests / 11 assertions pass. Emitted lines observed
+  directly: `start test-demo.R`, `start test-demo.R :: alpha block`,
+  `end test-demo.R :: alpha block`, same pair for `beta block`, `end test-demo.R` —
+  per-test markers named and paired, bracketed by the per-file markers M14 ships.
+  The class is reachable from a test file (the tests import it from the helper),
+  and `R CMD check` passing proves the runner's `source()` resolves.
+- **AC2** — `benchmarks/test-time-budget.R` runs and prints per-file totals over a
+  ledger of 47 rows covering all four daemon files plus `helper-parallel.R`, each
+  with `file:line`, seconds and payer. The summing convention is stated in the
+  ledger header and in the report's own output.
+- **AC3** — verified by inversion, not by a green run. Deleting the ledger row for
+  `test-parallel-classify.R:38` makes the guard FAIL naming exactly that site;
+  restoring it returns 8/8 green. The reverse direction (a row pointing at no call)
+  is a second test. A `expect_gt(length(found), 20L)` floor stops the guard passing
+  by finding nothing.
+- **AC4** — measured 408.7 s for `test-parallel-classify.R`, against the 480 s
+  ceiling and a recorded 1008.7 s pre-M16 figure: under the ceiling and under half.
+  Verified by inversion too — restoring `WARM_DAEMONS_BOUND_S` to 180 s makes both
+  assertions fail. The other three files are reported without a ceiling
+  (identity 1200.0, interrupt 255.0, detection 120.0) and identity carries its
+  candidate-row cross-reference in the ledger.
+- **AC5** — `test-parallel-classify.R:236` binds `tcp://127.0.0.1:0`; no hardcoded
+  port remains in the file. The test's own assertions are unchanged and the whole
+  file passes (94 assertions, 0 failures).
+- **AC6** — positive observation, not teardown silence. By execution: without the
+  cancel the task is still unresolved after `daemons(0)` (TRUE — the orphan);
+  with it, resolved (FALSE). Positive control: a deliberately leaked pool makes
+  `teardown-zz-nothing-survives.R` fire, so its silence is informative. The
+  `on.exit` cancel is registered with `after = FALSE`, ahead of the pool teardown.
+- **AC7** — `devtools::test()` 1233 pass / 0 fail / 0 warn / 0 skip.
+  `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes.
+  `devtools::document()` no diff; `pkgdown::check_pkgdown()` no problems; no
+  README.Rmd to knit; no NEWS entry owed (nothing user-visible changed).
+  `benchmarks/stress-daemon-ledger.md` carries the dated superseding note.
+
+**Consistency gate.** `cairn_validate` all checks passed (exit 0). Toolchain slot
+(`r-package`): document no-diff, pkgdown clean, full check clean, changelog not
+owed. No `DESIGN.md` principle changed, so `cairn_impact` is not run.
+
+**Returns:** none. This is M16's first pass through review.
+
+**Side effect worth recording.** The bound cuts reach every daemon file, not only
+the localized one: declared worst case across the four fell 4743.7 s -> 1983.7 s.
+`test-parallel-identity.R` is 1200.0 s, exactly the 20-minute job cap, and stays
+the subject of its own candidate row.
