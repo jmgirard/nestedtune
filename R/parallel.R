@@ -85,6 +85,22 @@ dispatch_folds <- function(payloads, object, grid, metrics,
     .f = task,
     .args = list(object = object, grid = grid, metrics = metrics)
   )
+  # Leaving this function without returning must not leave folds running.
+  #
+  # The collect below blocks, and interrupting it unwinds the host while saying
+  # nothing to the daemons: the folds keep computing results nobody will read,
+  # on the very pool the user reuses next (verified by execution against mirai
+  # 2.7.2 -- the pool reported `executing = 2` after the interrupt).
+  #
+  # Unconditional rather than gated on a "did we finish" flag, so it covers
+  # every way out between here and the return rather than the ones anticipated:
+  # the interrupt above, an error raised by the collect itself, and an abort
+  # from classification. The last two leave nothing outstanding -- collect_mirai()
+  # returns only once every element has resolved -- and stop_mirai() on a map
+  # that has fully resolved is a no-op that returns FALSE per element and
+  # touches neither the collected values nor the pool (same probe). So there is
+  # nothing for a flag to save and one less thing to reason about.
+  on.exit(mirai::stop_mirai(mapped), add = TRUE)
   # A plain blocking collect: results in place, failures as values. mirai's
   # `.stop` would abort the whole run on the first failing fold and discard the
   # completed ones -- exactly what M03 exists to prevent.

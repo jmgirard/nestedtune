@@ -67,9 +67,9 @@ comment needs work. All test-suite diagnosability work → M14.
 
 ## Tasks
 
-- [ ] T1 Write the failing test: dispatch long folds, interrupt the collect,
+- [x] T1 Write the failing test: dispatch long folds, interrupt the collect,
       assert the pool goes idle within a bounded wait. Confirm it fails first.
-- [ ] T2 Add the cancelling `on.exit()` around the dispatched map in
+- [x] T2 Add the cancelling `on.exit()` around the dispatched map in
       `dispatch_folds()` (`R/parallel.R:83-93`); confirm no exported signature
       moved.
 - [ ] T3 Enumerate the non-local exits reachable between dispatch and return —
@@ -88,7 +88,28 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: plan chose a comment correction over a code change to the pre-flight probe, because `everywhere()` was shown by execution to return in 0.00 s on a saturated dispatcher-backed pool, disproving the blocking-send theory the scope was drafted around; falsified by a mirai version where the send does block.
 - 2026-07-27: criteria audit (fresh-context [O], pre-gate) found the drafted AC2 unsatisfiable — `collect_mirai()` returns only once every element has resolved, so classification always runs with zero outstanding tasks — and it was re-aimed at non-local exits generally; the drafted AC3 was found trivially satisfiable by moving a deadline assignment and was replaced by AC4's version anchor; the formals clause was scoped to exported functions, since `test-parallel-classify.R:439` already asserts it.
 - 2026-07-27: implement started on branch `m15-interrupt-leaves-no-work`; pre-gate probes against mirai 2.7.2 / nanonext 1.10.1 reproduced the defect with a real SIGINT (pool left `executing = 2`), confirmed the cancelling `on.exit()` fixes it (`executing = 0`), and found `stop_mirai()` on an already-collected map a harmless no-op.
+- 2026-07-27: question gate settled both open choices — unconditional cancel on every exit, and a real-SIGINT test over stand-in folds rather than a simulated unwind.
+- 2026-07-27: T1 — `tests/testthat/test-parallel-interrupt.R` delivers a real SIGINT once both stand-in folds have marked themselves started, so the signal cannot race the pre-flight probe; confirmed red against unchanged code (`executing` was 2, expected 0) with both markers present, so the pass is not vacuous.
+- 2026-07-27: T2 — unconditional `on.exit(mirai::stop_mirai(mapped))` in `dispatch_folds()`; the new test goes green and the full suite is clean (1216 pass, 0 fail, 0 skip), which includes the formals assertion at `test-parallel-classify.R:439`.
 
 ## Decisions
+
+### 2026-07-27: The cancel on unwind is unconditional, not gated on a "finished" flag
+
+`dispatch_folds()` cancels the dispatched map from an unconditional `on.exit()`,
+so the normal return path calls `stop_mirai()` too. The alternative — a flag set
+once the collect returns, cancelling only when the function is left early — was
+declined at the implementation question gate.
+
+Probe against mirai 2.7.2 / nanonext 1.10.1: `stop_mirai()` on a map whose
+elements have all resolved returns `FALSE` per element, leaves the collected
+values untouched, and leaves `status()$mirai` at `executing 0 completed 2`. There
+is nothing for a flag to protect, and the unconditional form covers every exit
+between the dispatch and the return rather than only the ones anticipated —
+which is what lets AC2's enumeration state what is *reachable* rather than argue
+what is *covered*.
+
+Falsified by a mirai version where `stop_mirai()` on a resolved map is not inert:
+a collected value damaged or a pool disturbed by it would make the flag necessary.
 
 ## Review
