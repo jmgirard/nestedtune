@@ -191,11 +191,16 @@ blocking wait before any worker's return value is classified, so an ordinary
 interrupt propagates and no nestedtune condition class is attached — the RNG
 state is still restored, but do not write a handler expecting one.
 
-What an interrupt does not leave behind is work. The folds still running are
-cancelled on the way out, so the daemons are idle by the time your prompt
-comes back and the pool is ready for the next call rather than still
-computing folds whose results nobody will read. That holds however the call
-is left once the folds are dispatched, not only for an interrupt.
+An interrupt also asks the folds it leaves behind to stop. However the call
+is left once its folds are dispatched — an interrupt, or an error — the
+outstanding ones are cancelled on the way out, so the pool goes idle shortly
+after rather than computing folds whose results nobody will read. Two limits
+are worth knowing. Cancelling needs mirai's dispatcher, which
+\code{mirai::daemons(n)} starts by default; on a pool started with
+\code{dispatcher = FALSE} the request cannot reach the workers at all and the
+folds run to completion. And stopping is a request rather than a guarantee:
+a fold already inside a compiled fitting routine may not be interruptible,
+and one that has nearly finished may simply finish.
 
 One case cannot be told apart, and is documented rather than guessed at:
 calling \code{mirai::daemons(0)} while folds are outstanding produces exactly the

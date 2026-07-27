@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP4
-- **Branch/PR:** `m15-interrupt-leaves-no-work`
+- **Branch/PR:** `m15-interrupt-leaves-no-work` · https://github.com/jmgirard/nestedtune/pull/14
 
 ## Goal
 
@@ -31,28 +31,28 @@ comment needs work. All test-suite diagnosability work → M14.
 
 ## Acceptance criteria
 
-- [ ] AC1 A parallel `nested_tune_grid()` run whose collect at
+- [x] AC1 A parallel `nested_tune_grid()` run whose collect at
       `R/parallel.R:91` is interrupted leaves no outstanding task: a test
       dispatches folds that run measurably long, interrupts during the collect,
       and asserts within a bounded wait that `mirai::status()$mirai` reports
       nothing executing. The test fails against the pre-change code, where the
       same probe reported `executing = 2`.
-- [ ] AC2 The cancellation holds for any non-local exit from `dispatch_folds()`
+- [x] AC2 The cancellation holds for any non-local exit from `dispatch_folds()`
       between the `mirai_map()` at `R/parallel.R:83` and its return, not only a
       console interrupt, and the criterion states which such exits are
       reachable and which are not.
-- [ ] AC3 The roxygen interrupt contract at `R/nested-tune-grid.R:172-181`
+- [x] AC3 The roxygen interrupt contract at `R/nested-tune-grid.R:172-181`
       describes what happens after this change; no sentence there survives that
       the change made false.
-- [ ] AC4 `daemons_load_status()`'s header comment makes no unqualified claim
+- [x] AC4 `daemons_load_status()`'s header comment makes no unqualified claim
       that nothing on its path can hang: it names the mirai version its
       `everywhere()` claim was verified against, and the probe output backing
       that version is recorded in the Review section.
-- [ ] AC5 A `NEWS.md` entry records the user-visible change in user-facing
+- [x] AC5 A `NEWS.md` entry records the user-visible change in user-facing
       words, naming no milestone.
-- [ ] AC6 No exported function's signature changes, and any new control is an R
+- [x] AC6 No exported function's signature changes, and any new control is an R
       option in the `nestedtune.<snake_case>` namespace validated as D-020's is.
-- [ ] AC7 The `verify` slot is clean: `devtools::test()` passes, and
+- [x] AC7 The `verify` slot is clean: `devtools::test()` passes, and
       `devtools::check()` is clean (0 errors, 0 warnings; NOTEs justified).
 
 ## Coverage
@@ -96,6 +96,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: T5 — probe re-run against mirai 2.7.2 / nanonext 1.10.1: pool `executing 2`, `everywhere()` returned in 0.001 s with the probe unresolved and queued (`awaiting 2`). The header comment now anchors the non-blocking-send claim to that version and states what a version whose send blocked would cost, instead of claiming nothing on the path can hang.
 - 2026-07-27: T6 — NEWS entry added at the top of the dev section, in user-facing words and naming no milestone.
 - 2026-07-27: all tasks done; `devtools::check()` clean (0 errors, 0 warnings, 0 notes, 3m38s) with the suite passing under `R CMD check`, where the new test delivers a real SIGINT to the checking process; `cairn_validate` all green. Status → review.
+- 2026-07-27: review — PR #14 opened as draft; three fresh-context lenses, two clean and one returning four findings; F1 (82) and F2 (88) actioned by scoping the cancellation claim to dispatcher-backed pools and to best-effort, F3 (78) fixed despite being sub-threshold, F4 (20) resolved by the Review section itself. All seven criteria verified with fresh evidence.
 
 ## Decisions
 
@@ -143,3 +144,90 @@ Enumerated at T3, each with what it leaves outstanding:
   a choice made here.
 
 ## Review
+
+Verified 2026-07-27 on branch `m15-interrupt-leaves-no-work`, PR #14.
+
+- **AC1** — `testthat::test_file("tests/testthat/test-parallel-interrupt.R")`: 7
+  pass, 0 fail. Fails-first re-demonstrated fresh against pre-change code, in an
+  isolated copy of the tree with only the `on.exit()` line removed: FAIL 1 at
+  `test-parallel-interrupt.R:89`, `executing` 2 against an expected 0, with the
+  other 6 assertions passing — so the interrupt was delivered and both fold
+  markers were present, and the failure is the outstanding work, not a mistimed
+  signal.
+- **AC2** — the cancel is unconditional, so it covers every exit between the
+  `mirai_map()` and the return rather than an anticipated subset; the second
+  test in the new file exercises the normal exit and shows a completed run's
+  results arrive intact (`expect_identical` on both folds' estimates) with the
+  pool idle. Which exits are reachable, which is not, and the one that is not
+  coverable are enumerated in this file's Decisions section. Review F1 bounded
+  the claim by pool type: cancellation reaches dispatcher-backed pools only,
+  now stated in the roxygen, NEWS, and the code comment.
+- **AC3** — the interrupt contract at `R/nested-tune-grid.R` now says the
+  outstanding folds are cancelled on the way out, however the call is left, and
+  after review F1/F2 states both limits (dispatcher required; stopping is a
+  request, not a guarantee). Read against the regenerated
+  `man/nested_tune_grid.Rd`; no surviving sentence there is false under the new
+  behaviour, and the surrounding claims the change does not touch — no per-fold
+  timeout, the `daemons(0)` ambiguity, the interrupt carrying no nestedtune
+  class — were checked and left standing. `devtools::document()` is idempotent
+  (a second run wrote nothing).
+- **AC4** — `daemons_load_status()`'s header no longer claims nothing on its
+  path can hang: the read is still unblockable, and the send is now scoped to
+  the version it was verified against, with what a version whose send blocked
+  would cost stated. Probe output backing that anchor, re-run fresh at review
+  against mirai 2.7.2 / nanonext 1.10.1: with the pool saturated
+  (`awaiting 0 executing 2 completed 0`), `everywhere()` returned in 0.001 s
+  with the probe unresolved, and the pool then read `awaiting 2 executing 2
+  completed 0` — the probe queued rather than blocking the caller.
+- **AC5** — `NEWS.md` gains one entry at the top of the dev section, in
+  user-facing words; a scan of it for `M<NN>` tokens or the word "milestone"
+  returned nothing. It now also carries the two limits review F1/F2 established.
+- **AC6** — `git diff main..HEAD -- NAMESPACE` is empty and no exported
+  signature moved (the suite's own formals assertion in
+  `test-parallel-classify.R` passes in the full run); the R-code diff introduces
+  no `getOption()` or `options()` call, so no new control exists to validate.
+- **AC7** — `devtools::test()` 1216 pass / 0 fail / 0 skip; final
+  `devtools::check()` after the review fixes: 0 errors, 0 warnings, 0 notes
+  (6m14s), the suite passing under `R CMD check` where the new test delivers a
+  real SIGINT to the checking process itself.
+
+**Gates.** `cairn_validate` all checks passed. Toolchain consistency gate
+(`r-package`): `devtools::document()` no-diff, no hand-edited generated files,
+no README.Rmd in this repo, `pkgdown::check_pkgdown()` no problems, NEWS entry
+present, no new top-level files, full `check()` clean.
+
+**Independent review.** Three fresh-context lenses. The [S] blame-history lens
+and the [S] prior-PR-comments lens each returned zero findings — history reports
+the change consistent with M03/M09's never-discard-completed-folds stance, M09's
+errorValue-20 contract, and the standing refusal of a per-fold timeout; the
+prior-review lens found the repo's inline PR-comment surface empty and judged
+against the archived `## Review` sections and RR03's binding criteria, finding
+BC5 intact. The [O] diff-bug lens returned four findings, scored by a fourth
+agent that did not generate them.
+
+- **F1 (82, actioned — fixed).** The cancel is inert on a pool started with
+  `mirai::daemons(n, dispatcher = FALSE)`, which `use_parallel()` admits because
+  it asks only for a connection count — so the roxygen and NEWS promised a
+  cancellation that cannot happen there. Confirmed independently by execution at
+  review: on a non-dispatcher pool `stop_mirai()` returned `FALSE FALSE` and both
+  tasks ran to completion (2 of 2 end-markers written); on the default
+  dispatcher-backed pool it returned `TRUE TRUE` and neither did (0 of 2). Fixed
+  by scoping the claim in the roxygen, NEWS, and the code comment rather than by
+  changing behaviour — cancellation without a dispatcher is not available to ask
+  for.
+- **F2 (88, actioned — fixed).** The contract read as a synchronous guarantee:
+  "the daemons are idle by the time your prompt comes back", and "that holds
+  however the call is left". Cancellation is a request mirai may not honour (a
+  fold inside compiled fitting code), it is asynchronous, and the milestone's own
+  Decisions section records one exit no guard can reach. Reworded to a
+  best-effort, goes-idle-shortly-after claim carrying both limits.
+- **F3 (78, below the action threshold — fixed anyway, recorded).** The test's
+  helper shell fired `kill -INT` unconditionally after its bounded wait, so a
+  run where the folds never started would have sent a stray SIGINT into whatever
+  test was running twenty seconds later, aborting the suite under `R CMD check`.
+  Below 80 and so formally not actioned, but fixed in the same pass: the failure
+  mode is indistinguishable from the intermittent CI hang this repo is currently
+  hunting, and the fix is one shell conditional.
+- **F4 (20, not actioned).** Held that AC4's probe output was missing from the
+  Review section — an artifact of scoring while the review section was still
+  being written. The output is recorded under AC4 above.

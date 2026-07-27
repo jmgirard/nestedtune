@@ -100,6 +100,15 @@ dispatch_folds <- function(payloads, object, grid, metrics,
   # that has fully resolved is a no-op that returns FALSE per element and
   # touches neither the collected values nor the pool (same probe). So there is
   # nothing for a flag to save and one less thing to reason about.
+  #
+  # What this cannot do is reach a pool started with `dispatcher = FALSE`:
+  # cancellation is a dispatcher feature, and use_parallel() admits such a pool
+  # because it asks only how many daemons are connected. Verified against mirai
+  # 2.7.2 -- there stop_mirai() returns FALSE per element and the tasks run to
+  # completion regardless, so this guard is inert and the roxygen says so rather
+  # than promising a cancellation that cannot happen (M15 review F1).
+  # `mirai::daemons(n)` starts a dispatcher by default, so the common pool is
+  # covered.
   on.exit(mirai::stop_mirai(mapped), add = TRUE)
   # A plain blocking collect: results in place, failures as values. mirai's
   # `.stop` would abort the whole run on the first failing fold and discard the

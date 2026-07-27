@@ -57,9 +57,15 @@ test_that("an interrupted run leaves no fold executing", {
   # else. The wait is bounded at 20 s and the folds sleep for 60, so the signal
   # can never arrive after the collect has returned, where it would land
   # outside the handler below and take the suite down with it.
+  #
+  # A wait that times out sends nothing. If the folds never start -- the
+  # pre-flight check aborting is the realistic way -- this test has already
+  # failed on its own error, and a signal fired anyway would land in whichever
+  # test was running twenty seconds later, aborting the run under `R CMD check`
+  # with nothing to connect it to its cause (M15 review F3).
   script <- sprintf(
-    'i=0; while [ $i -lt 200 ]; do [ -f "%s" ] && [ -f "%s" ] && break; sleep 0.1; i=$((i+1)); done; sleep 0.5; kill -INT %d',
-    markers[[1]], markers[[2]], Sys.getpid()
+    'i=0; while [ $i -lt 200 ]; do [ -f "%s" ] && [ -f "%s" ] && break; sleep 0.1; i=$((i+1)); done; if [ -f "%s" ] && [ -f "%s" ]; then sleep 0.5; kill -INT %d; fi',
+    markers[[1]], markers[[2]], markers[[1]], markers[[2]], Sys.getpid()
   )
   system2("sh", c("-c", shQuote(script)), wait = FALSE)
 
