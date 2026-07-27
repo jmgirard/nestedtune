@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M08: Selection instability you can see
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -80,37 +80,45 @@ disagreement section gains the plot.
 
 - AC1 → T1, T3, T5
 - AC2 → T2, T3
-- AC3 → T2, T3
-- AC4 → T4, T5
+- AC3 → T2, T3, T9
+- AC4 → T4, T5, T9
 - AC5 → T6
-- AC6 → T7, T8
+- AC6 → T7, T8, T12
 - AC7 → T1, T8
 
 ## Tasks
 
-- [x] T1: Add `ggplot2` to Imports and `vdiffr` to Suggests in `DESCRIPTION`;
-      `devtools::document()`; confirm the existing suite stays clean with the
-      new hard dependency in place.
-- [x] T2: Failing tests for the parameters view — folds agreeing, folds
-      disagreeing, a failed fold, and a completed fold missing a parameter —
-      asserting on `ggplot_build()$data` and the stated contributing count.
+- [x] T1: `ggplot2` to Imports and `vdiffr` to Suggests; `document()`; existing
+      suite clean with the new hard dependency.
+- [x] T2: Failing tests for the parameters view — folds agreeing, disagreeing, a
+      failed fold, a completed fold missing a parameter — asserting on
+      `ggplot_build()$data` and the stated count.
 - [x] T3: Implement `autoplot.nested_results(type = "parameters")` in a new
-      `R/nested-results-plot.R`. Stack `.selected` with `do.call(rbind, ...)`
-      before reading a parameter out of it (a list column of one-row tibbles
-      answers `$mtry` with `NULL`, which rendered "0 distinct values" in M06),
-      and take fold labels from `fold_ids()` (`R/nested-results.R:263`).
-- [x] T4: Failing tests for the performance view, including that the marked
-      central value is the one `summarize_folds()` produces and that the IP3
-      caveat is present in the plot's labels.
+      `R/nested-results-plot.R`. Stack `.selected` before reading a parameter out
+      of it (a list column of one-row tibbles answers `$mtry` with `NULL`, which
+      rendered "0 distinct values" in M06); fold labels from `fold_ids()`.
+- [x] T4: Failing tests for the performance view, including that the marked value
+      is `summarize_folds()`'s and that IP3's caveat is in the labels.
 - [x] T5: Implement `type = "performance"` over `per_fold_metrics()` and
-      `summarize_folds()`, and the `type` dispatch itself.
-- [x] T6: The three error branches — tests first, then `cli_abort()` calls
-      matching the `check_*()` idiom in `R/checks.R`.
-- [x] T7: `vdiffr` snapshots for both views on a deterministic fixture from
-      `helper-orchestration.R`; roxygen with an `@examplesIf` guard; the
+      `summarize_folds()`, and the `type` dispatch.
+- [x] T6: The three error branches — tests first, then `cli_abort()` calls in the
+      `R/checks.R` idiom.
+- [x] T7: `vdiffr` snapshots for both views; roxygen with `@examplesIf`; the
       `_pkgdown.yml` reference row.
 - [x] T8: `NEWS.md` entry; the vignette section plotting its disagreement;
-      `devtools::check()` clean.
+      `check()` clean.
+- [x] T9 (return 1, F1/F2): subtitle states only a design fact (`design_line()`);
+      contribution moves to the panel, qualified only where it differs, as
+      `print` puts "(from 2 folds)" on the metric's own line.
+- [x] T10 (return 1, F3): `value_scale()` decides per panel via a breaks closure
+      over the drawn values; `axis_labels()` gains a `panel` argument, since
+      reading only panel 1 is what hid this.
+- [x] T11 (return 1, F4): `facet_wrap(drop = FALSE)` — a requested metric keeps
+      its panel as a failed fold keeps its axis slot, and an all-`NA` object
+      draws instead of erroring inside ggplot2.
+- [x] T12 (return 1, F5/F6): `DESIGN.md`'s dependency surface corrected to seven
+      packages; tests read both subtitles and both sets of panel labels, and
+      `ambiguous_metrics()`'s two-estimator path is pinned.
 
 ## Work log
 
@@ -127,6 +135,10 @@ disagreement section gains the plot.
 
 - 2026-07-26: review returned M08 to `in-progress` (first return). AC3 fails as written: both subtitles state a fold count that is false whenever contribution is per-metric or per-parameter rather than per-fold, so the tick was unticked. Four findings actioned — F1 (95) and F2 (95) the false counts, F3 (92) whole-number breaks defeated by a mixed grid, F4 (90) a metric silently dropped and an all-NA object erroring from inside ggplot2. F5 (78) and F6 (78) logged below threshold. All 6 CI jobs green at the reviewed commit.
 - 2026-07-26: T8 — NEWS entry (four bullets); the vignette plots both views beside the numbers it already reported, with `fig.alt` on each. Its real figure shows `mtry` splitting 5/8/5/8/5 while `min_n` is unanimous at 2, so per-parameter instability is legible. `devtools::check()` 0 errors / 0 warnings / 0 notes with the vignette rebuilt from the tarball; `document()` no diff; `pkgdown::check_pkgdown()` clean. Status to `review`.
+
+- 2026-07-26: return 1 — T9-T12 fix the four actioned findings. Both subtitles now state a design fact (requested/completed) and contribution is counted per panel, qualified only where it differs, porting print's own rule. Breaks decide per panel through a closure over the drawn values. `facet_wrap(drop = FALSE)` keeps a requested metric's panel and makes the all-NA figure draw. DESIGN's dependency line corrected to seven packages. 65 assertions; four inversions red — no-op panel qualifier FAIL 4, pooled break decision FAIL 1, no `drop = FALSE` FAIL 2, subtitle asserting per-panel contribution again FAIL 8.
+
+- 2026-07-26: return 1 hygiene — the review commit `31655c0` had swept a stray `Rplots.pdf` into the repo root via `git add -A`; R opens `pdf()` when something needs a device and none is current, and my own review verification scripts left it there. Removed and gitignored, and the drawing-path assertion now runs on a null device. `check()` back to 0/0/0.
 
 ## Decisions
 

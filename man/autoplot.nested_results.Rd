@@ -34,8 +34,15 @@ assessment set, with a rule at the nested estimate: the same value
 \details{
 An outer fold that failed keeps its place on the x axis and draws no point,
 as does a fold that completed without recording a value for a parameter.
-Neither is imputed and neither is dropped from the axis, so the gap says what
-the subtitle's fold count says.
+Neither is imputed and neither is dropped from the axis, so the shortfall is
+visible in the figure itself.
+
+The subtitle states how much of the requested design ran. Contribution is
+counted per panel instead, because it differs between them: a panel says so
+when fewer folds contributed to it than completed — \verb{mtry (2 of 3 chose)},
+\verb{rmse (from 2 folds)} — and an unqualified panel means every completed fold
+contributed. A requested metric that no completed fold could score keeps an
+empty panel rather than disappearing.
 
 The selected-value axis is numeric when every value drawn is a number, and
 discrete otherwise — a single axis cannot be both, and character-valued

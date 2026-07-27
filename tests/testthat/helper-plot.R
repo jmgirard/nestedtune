@@ -41,12 +41,35 @@ layer_with <- function(b, column) {
   b$data[[which(hit)[[1L]]]]
 }
 
-# The axis tick labels. For a discrete scale these are the factor levels the
-# scale kept, so a fold whose level was dropped is missing here too -- which is
-# how a test distinguishes "no point drawn" from "not on the axis at all".
-axis_labels <- function(p, axis = "x") {
+# The axis tick labels of one panel. For a discrete scale these are the factor
+# levels the scale kept, so a fold whose level was dropped is missing here too --
+# which is how a test distinguishes "no point drawn" from "not on the axis at
+# all".
+#
+# `panel` exists because reading only the first one is what hid M08's F3: a
+# continuous parameter in one panel silently reverted every *other* panel's
+# breaks, and a helper that could not look past panel 1 could not see it.
+axis_labels <- function(p, axis = "x", panel = 1L) {
   b <- if (inherits(p, "ggplot_built")) p else ggplot2::ggplot_build(p)
-  as.character(b$layout$panel_params[[1L]][[axis]]$get_labels())
+  as.character(b$layout$panel_params[[panel]][[axis]]$get_labels())
+}
+
+# Evaluate something that needs a graphics device, without acquiring a real one.
+#
+# Anything that measures text -- laying a gtable out, for instance -- opens the
+# default device when none is current, and R's default is `pdf()`, which writes
+# an `Rplots.pdf` beside the tests that `R CMD check` then NOTEs as a
+# non-standard top-level file.
+on_null_device <- function(expr) {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  force(expr)
+}
+
+# The panel strip labels, in panel order -- where a per-panel qualifier lives.
+strip_labels <- function(p) {
+  b <- if (inherits(p, "ggplot_built")) p else ggplot2::ggplot_build(p)
+  panel_labels(b)
 }
 
 panel_labels <- function(b) {

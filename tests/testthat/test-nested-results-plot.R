@@ -81,7 +81,7 @@ test_that("a completed fold with no value for a parameter is not imputed", {
   expect_identical(plot_points(p)$fold, c("Fold1", "Fold3"))
 })
 
-test_that("the parameters view states how many folds contributed", {
+test_that("the parameters view states how much of the design ran", {
   skip_if_no_engines()
   d <- make_reg_data()
 
@@ -95,8 +95,138 @@ test_that("the parameters view states how many folds contributed", {
     grid = det_grid(), metrics = reg_metrics()
   ))
 
-  expect_match(plot_label(autoplot(whole), "subtitle"), "3 of 3 outer folds")
-  expect_match(plot_label(autoplot(partial), "subtitle"), "2 of 3 outer folds")
+  # A design fact, true of the whole figure however its panels differ: the
+  # subtitle claims nothing about per-panel contribution, which is what it got
+  # wrong before (F1/F2).
+  expect_match(
+    plot_label(autoplot(whole), "subtitle"),
+    "3 outer folds requested, 3 completed"
+  )
+  expect_match(
+    plot_label(autoplot(partial), "subtitle"),
+    "3 outer folds requested, 2 completed"
+  )
+})
+
+test_that("a panel says so when fewer folds contributed to it than completed", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # Every completed fold chose, so nothing is qualified: the common plot stays
+  # uncluttered and a bare label means "all of them".
+  expect_identical(strip_labels(autoplot(res)), "num_comp")
+  expect_identical(
+    strip_labels(autoplot(res, type = "performance")),
+    c("rmse", "rsq")
+  )
+
+  # A completed fold that recorded no value for the parameter. Two folds chose,
+  # and they agree -- so the flat row must not be readable as three agreeing.
+  # print says "all 2 folds that chose it agree; 1 recorded no value"; the panel
+  # is where the plot can say the same thing (F2).
+  expect_identical(strip_labels(autoplot(drop_selection(res))),
+                   "num_comp (2 of 3 chose)")
+
+  # A fold that completed but scored NA on one metric only. print puts
+  # "(from 2 folds)" on that metric's own line; so does the panel (F1).
+  one_na <- res
+  rmse_row <- one_na$.metrics[[2L]]$.metric == "rmse"
+  one_na$.metrics[[2L]]$.estimate[rmse_row] <- NA_real_
+  expect_identical(
+    strip_labels(autoplot(one_na, type = "performance")),
+    c("rmse (from 2 folds)", "rsq")
+  )
+})
+
+test_that("each panel decides its own breaks", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+  # A whole-number parameter beside a continuous one, which is what glmnet,
+  # xgboost and svm_rbf all look like. Deciding over the pooled column put the
+  # integer panel back on 2.950/2.975/3.000 -- the defect the single-parameter
+  # fix claimed to have closed (F3).
+  mixed <- res
+  for (i in seq_len(nrow(mixed))) {
+    mixed$.selected[[i]]$penalty <- c(0.001, 0.02, 0.3)[[i]]
+  }
+  p <- autoplot(mixed)
+
+  expect_identical(strip_labels(p), c("num_comp", "penalty"))
+  expect_identical(axis_labels(p, "y", panel = 1L), "3")
+  expect_true(any(grepl(".", axis_labels(p, "y", panel = 2L), fixed = TRUE)))
+})
+
+test_that("a metric no fold could score keeps its panel", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # roc_auc on a one-class assessment set reaches this routinely. The metric was
+  # requested, so it keeps its panel as a failed fold keeps its axis slot --
+  # dropping it left no trace that it had been asked for (F4).
+  none <- res
+  for (i in seq_len(nrow(none))) {
+    rmse_row <- none$.metrics[[i]]$.metric == "rmse"
+    none$.metrics[[i]]$.estimate[rmse_row] <- NA_real_
+  }
+  p <- autoplot(none, type = "performance")
+
+  expect_identical(strip_labels(p), c("rmse (from 0 folds)", "rsq"))
+  expect_identical(plot_points(p)$panel, rep("rsq", 3L))
+
+  # And with nothing scored anywhere, the figure builds AND draws: it used to
+  # return a ggplot that errored from inside ggplot2 when printed, which is
+  # neither our own condition nor near the call that caused it.
+  nothing <- res
+  for (i in seq_len(nrow(nothing))) nothing$.metrics[[i]]$.estimate <- NA_real_
+  empty <- autoplot(nothing, type = "performance")
+  expect_s3_class(empty, "ggplot")
+  # Laying the figure out is where it used to fail, so the assertion has to go
+  # that far -- onto a null device, since letting one open by default writes an
+  # Rplots.pdf at the package root and R CMD check NOTEs it.
+  expect_no_error(on_null_device(ggplot2::ggplot_gtable(ggplot2::ggplot_build(empty))))
+})
+
+test_that("two estimators for one metric get a panel each", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+  # Rare, but a metric reported under two estimators would otherwise share one
+  # panel and be marked with two rules -- one of them wrong for every point
+  # beside it.
+  for (i in seq_len(nrow(res))) {
+    m <- res$.metrics[[i]]
+    extra <- m[m$.metric == "rsq", ]
+    extra$.estimator <- "trad"
+    extra$.estimate <- extra$.estimate / 2
+    res$.metrics[[i]] <- rbind(m, extra)
+  }
+  p <- autoplot(res, type = "performance")
+
+  expect_identical(
+    strip_labels(p),
+    c("rmse", "rsq (standard)", "rsq (trad)")
+  )
+  expect_identical(nrow(plot_rules(p)), 3L)
+  expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
 })
 
 test_that("the parameters view is the default and both views are ggplots", {
@@ -167,7 +297,7 @@ test_that("the performance view says the estimate is not a model's score", {
   # subtitle into the image, so the caveat travels with a figure that has been
   # exported out of the session that produced it.
   subtitle <- plot_label(p, "subtitle")
-  expect_match(subtitle, "3 of 3 outer folds")
+  expect_match(subtitle, "3 outer folds requested, 3 completed")
   expect_match(subtitle, "nested estimate")
   expect_match(subtitle, "not a model you can deploy", fixed = TRUE)
   expect_match(plot_label(p, "y"), "held-out outer fold")
@@ -187,7 +317,7 @@ test_that("a failed fold keeps its slot and contributes no score", {
 
   expect_identical(axis_labels(p), c("Fold1", "Fold2", "Fold3"))
   expect_identical(plot_points(p)$fold, rep(c("Fold1", "Fold3"), each = 2L))
-  expect_match(plot_label(p, "subtitle"), "2 of 3 outer folds")
+  expect_match(plot_label(p, "subtitle"), "3 outer folds requested, 2 completed")
   # The rule averages the folds that ran, which is what the summary reports for
   # the same object -- neither claims the design that was requested (IP4).
   expect_identical(
@@ -214,7 +344,11 @@ test_that("a fold scoring NA on one metric still scores the others", {
   p <- autoplot(res, type = "performance")
   pts <- plot_points(p)
 
-  expect_identical(pts$fold[pts$panel == "rmse"], c("Fold1", "Fold3"))
+  # The rmse panel carries its own count, since two folds contributed to it
+  # where three completed; rsq is unqualified because all three did.
+  expect_identical(
+    pts$fold[pts$panel == "rmse (from 2 folds)"], c("Fold1", "Fold3")
+  )
   expect_identical(pts$fold[pts$panel == "rsq"], c("Fold1", "Fold2", "Fold3"))
   expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
 })
