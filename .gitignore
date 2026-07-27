@@ -21,3 +21,4 @@ tests/testthat/_snaps/**/*.new.*
 # Python bytecode, from running .github/ci-usage.py
 __pycache__/
 *.pyc
+*.tar.gz
