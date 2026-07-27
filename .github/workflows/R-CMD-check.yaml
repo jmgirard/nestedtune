@@ -7,8 +7,9 @@
 # end. `.claude/**` is untracked today and listed for the day it is not.
 #
 # The list is spelled out under both triggers because GitHub Actions does not
-# resolve YAML anchors in workflow files; `.github/ci-usage.py` reads it back
-# and fails loudly if the two copies ever disagree.
+# resolve YAML anchors in workflow files; `.github/ci-usage.py` reads every
+# copy back separately -- both triggers here and both in test-coverage.yaml --
+# and exits non-zero if any two of the four disagree.
 on:
   push:
     branches: [main, master]

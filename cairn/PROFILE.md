@@ -52,7 +52,11 @@ rules in tracking-rules:
   `.github/` workflow dir an `.Rbuildignore` `^\.github$` entry (usethis adds it)
   so it stays out of the built package.
 - Two divergences from that stock shape, both added at M11 and measurable with
-  `.github/ci-usage.py` (baseline: `.github/ci-usage-baseline.md`).
+  `.github/ci-usage.py` over any window (baseline:
+  `.github/ci-usage-baseline.md`). It counts commits from `git log` and
+  reports what cancelling reclaims rather than what a superseded run cost, so
+  it keeps measuring both divergences after they are live and never credits
+  them with more than they save.
   **A `concurrency` block** cancels a run once a later push supersedes it, on
   every ref but the default branch — that branch is a distribution channel, so
   a commit there keeps a completed check rather than a cancelled one.

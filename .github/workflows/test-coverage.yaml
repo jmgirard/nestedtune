@@ -1,7 +1,8 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
-# See the matching block in R-CMD-check.yaml; the two lists must stay identical,
-# which `.github/ci-usage.py` checks when it reads them back.
+# See the matching block in R-CMD-check.yaml; all four copies of this list must
+# stay identical, which `.github/ci-usage.py` enforces by comparing each block
+# it parses against the others and refusing to run when they differ.
 on:
   push:
     branches: [main, master]

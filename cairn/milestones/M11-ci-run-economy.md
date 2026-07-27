@@ -46,19 +46,25 @@ candidate row. Dependency caching → already provided by
       `.claude/**`, and no packaged path (`R/`, `tests/`, `man/`, `vignettes/`,
       `DESCRIPTION`, `NAMESPACE`, `.github/workflows/`) matches any of them.
 - [ ] AC4. The committed script reads the `paths-ignore` list out of the
-      workflow file itself, replays every default-branch commit in the window
-      through it, and classifies each as skipped or run. Over the window
-      `[2026-07-26T00:00Z, 2026-07-27T07:00Z)` it reports 15 of 24
-      default-branch commits skipped, and every one of the remaining 9 changes
-      at least one packaged path. Its classification is committed as evidence.
-- [x] AC5. The same script, over the same window and counting only runs whose
+      workflow files, enumerates every default-branch commit in the window
+      from `git log` — never from the runs those commits fired, so the
+      classification survives the filter going live — and classifies each as
+      skipped or run. Over the window `[2026-07-26T00:00Z, 2026-07-27T07:00Z)`
+      it reports 22 of 32 default-branch commits skipped, and every one of the
+      remaining 10 changes at least one packaged path. Its classification is
+      committed as evidence.
+- [ ] AC5. The same script, over the same window and counting only runs whose
       `status` is `completed`, reports the baseline recorded in this file:
       108 runs, 324 jobs, 2,276 raw machine-minutes (summed per job as
       `completed_at - started_at`); 30 runs / 628 min on skipped commits; 32
       runs / 823 min superseded, where superseded means a later run on the same
       branch and workflow was created before this run's `updated_at`, of which 9
       runs / 248 min are off the default branch. The two categories overlap and
-      are reported separately, not as a partition.
+      are reported separately, not as a partition. It additionally reports the
+      minutes cancellation actually reclaims — the tail of each superseded run
+      after its successor was created, not the run's whole duration — as 442
+      min across all 32 superseded runs and 162 min across the 9 off the
+      default branch.
 - [x] AC6. `cairn/PROFILE.md`'s `test-doctrine` CI bullet names both
       divergences from the stock `usethis::use_github_action("check-standard")`
       shape and why each is there, and contains no clause the path filter
@@ -113,6 +119,12 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: removed a `.github/__pycache__/` bytecode file swept into the T6 commit by the AC3 import check, and gitignored the pattern; `.Rbuildignore`'s `^\.github$` kept it out of the build, so AC7's clean check is unaffected.
 - 2026-07-27: all tasks done, status → review.
 - 2026-07-27: review returned M11 to in-progress (return 1). AC4 fails: the script derives its commit set from runs, so it replays 24 of the 32 commits git counts in the window, and once the filter is live a skipped commit fires no run and vanishes from the set entirely. Three more findings actioned (F4 false comment about drift detection, F5 silent glob corruption, F1 superseded minutes overstated); 9 logged below threshold. AC1, AC2, AC3, AC5, AC6, AC7 verified; consistency gate green.
+- 2026-07-27: AC4 amended at a gate — the commit list now comes from `git log`, not from the runs commits fired, and the counts are corrected to 22 of 32 skipped / 10 run. AC5 extended at the same gate to pin the reclaimed-tail figures (442 min all superseded, 162 min off the default branch), so F1's correction is checkable rather than trusted. AC5's existing figures are unchanged and its tick is cleared pending re-verification.
+- 2026-07-27: F2 fixed — the commit set now comes from `git log`, so the classification survives the filter going live; 22 of 32 skipped, 10 run, each with a packaged path.
+- 2026-07-27: F5 fixed — the glob parser strips quotes and trailing comments correctly and exits non-zero on inline flow style, an unterminated quote, a negation pattern, or any character it does not understand, instead of returning a corrupt glob that matches nothing.
+- 2026-07-27: F4 fixed — every `paths-ignore` block is compared separately, so drift between two triggers of the same file now fails loudly; the workflow comments claiming this are true as of this commit.
+- 2026-07-27: F1 fixed — the table separates what runs cost from what removing them reclaims; cancelling off-branch superseded runs reclaims 162 min of the 248 those runs lasted, so the honest total removed is 790 min, not 877.
+- 2026-07-27: F11 (logged below threshold) surfaced for real while verifying AC4 — `git diff-tree` reports no files for a root commit without `--root`, and this repo's first commit is one, so `a7ef98f` was classified "run" on zero evidence. Fixed with `--root`, and an empty file list is now an error rather than a classification. F13, F8, F10 and the pagination half of F7 fell out of the same rewrite.
 
 ## Decisions
 
