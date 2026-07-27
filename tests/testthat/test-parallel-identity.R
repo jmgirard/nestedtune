@@ -109,7 +109,7 @@ test_that("BC4: an aborted parallel run still restores the caller's RNG state", 
   # The abort is induced by mocking the probe, not by breaking the library path:
   # real daemons with no library cannot load mirai either, so they die at
   # startup and the probe hangs (M07-D6).
-  local_mocked_bindings(daemons_can_load = function(...) FALSE)
+  local_mocked_bindings(daemons_load_status = function(...) preflight_outcome(FALSE))
   on.exit(mirai::daemons(0), add = TRUE)
   start_daemons(2)
 
