@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (audit pass after M06 — all checks green, tree clean, no code or tracking change since; nothing in flight, no planned work, 12 candidates, both RBs ingested and archived, GitHub inboxes empty)_
+_Last hygiene check: 2026-07-26 (M07 merged and archived — `nested_tune_grid()` runs its outer folds on mirai daemons with results identical to serial, verified by execution; D-018 added, M02's row pruned under terminal-row retention, 15 candidates, 3 lessons added)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M02 | Outer-loop orchestration | done | M01 | high | milestones/archive/M02-outer-loop-orchestration.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
-| M07 | Parallel outer folds | review | M02 | high | milestones/M07-parallel-outer-folds.md |
+| M07 | Parallel outer folds | done | M02 | high | milestones/archive/M07-parallel-outer-folds.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
