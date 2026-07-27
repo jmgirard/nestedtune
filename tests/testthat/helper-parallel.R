@@ -7,13 +7,18 @@
 # pkgload closes both holes; under R CMD check the package is installed and the
 # daemons inherit the library through the environment, so priming is a no-op.
 
-# Collect a mirai_map with a deadline, never open-endedly.
+# Collect a mirai, or a whole mirai_map, with a deadline -- never open-endedly.
 #
-# `map[]` blocks until every element resolves, so one wedged daemon hangs the
-# suite -- the failure AC4 exists to make impossible. Polling to a deadline and
-# then reading each element's `$data` (which yields `unresolvedValue` rather
-# than waiting) cannot block at all. Same shape as the production probe in
+# A bare `[` collect blocks until every element resolves, so one wedged daemon
+# hangs the suite -- the failure AC4 exists to make impossible. Polling to a
+# deadline and then reading `$data` (which yields `unresolvedValue` rather than
+# waiting) cannot block at all. Same shape as the production probe in
 # R/parallel.R, for the same reason.
+#
+# It takes both shapes because the suite has both, and one bounded idiom is
+# what `test-suite-hygiene.R` can check for mechanically: a single mirai reads
+# its own `$data`, a map reads one element at a time. `unresolved()` and
+# `stop_mirai()` accept either, so only the read differs (M14 T2).
 collect_bounded <- function(map, seconds = 60) {
   deadline <- Sys.time() + seconds
   while (mirai::unresolved(map) && Sys.time() < deadline) {
@@ -21,6 +26,9 @@ collect_bounded <- function(map, seconds = 60) {
   }
   if (mirai::unresolved(map)) {
     mirai::stop_mirai(map)
+  }
+  if (inherits(map, "mirai")) {
+    return(map$data)
   }
   lapply(seq_along(map), function(i) map[[i]]$data)
 }

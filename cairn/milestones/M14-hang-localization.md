@@ -1,11 +1,11 @@
 # M14: A hang says where it happened
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m14-hang-localization`
 
 ## Goal
 
@@ -35,44 +35,48 @@ row until something localizes it. Sharing one daemon pool across
 
 ## Acceptance criteria
 
-- [ ] AC1 A reporter passed from `tests/testthat.R` writes one unbuffered line
+- [x] AC1 A reporter passed from `tests/testthat.R` writes one unbuffered line
       to `stderr()` at the start and end of every test file, naming the file and
       an absolute timestamp. Evidence: a local `R CMD check` killed mid-suite
       whose surviving `testthat.Rout` names the last file started and carries no
       end line for it. The evidence records whether helper, setup, and teardown
       files are covered, since testthat exposes no per-file hook for them.
-- [ ] AC2 A committed check fails when any mirai wait under `tests/` does not
+- [x] AC2 A committed check fails when any mirai wait under `tests/` does not
       route through `collect_bounded()` (`helper-parallel.R:17`) — including the
       blocking `[` collect at `test-parallel-classify.R:33`, which this
       milestone converts. Proven by inversion: reintroducing a direct wait turns
       the check red, and the inversion is recorded in the Review section.
-- [ ] AC3 A committed probe establishes by execution, against a named mirai
+- [x] AC3 A committed probe establishes by execution, against a named mirai
       version, whether an `Rscript` daemon spawned by `start_mixed_daemons()`
       (`helper-parallel.R:129-138`) survives its host when the fixture's failure
       path is taken. If it survives, the fixture records and kills its spawned
       PIDs and a test asserts they are gone; if `autoexit` already reaps it, the
       probe's recorded output is the evidence and the fixture is unchanged.
-- [ ] AC4 A `teardown-` file sorting after every other teardown file fails the
+- [x] AC4 A `teardown-` file sorting after every other teardown file fails the
       suite when a daemon connection, or a process AC3 found to survive,
       outlives the last test file. Proven by inversion: leaving a pool up turns
       the suite red. Its failure surfaces as an error after the testthat
       summary, and the evidence states that it cannot fire when a test file
       hangs.
-- [ ] AC5 A stress harness outside the built package (`.Rbuildignore`d) runs the
+- [x] AC5 A stress harness outside the built package (`.Rbuildignore`d) runs the
       three daemon-using test files in a fresh R process per iteration, kills any
       iteration exceeding a per-iteration deadline and records it as a hang
       rather than waiting on it, and reports per-file wall-clock. A
-      `workflow_dispatch`-only macOS workflow runs the same harness on CI, where
-      the hang has actually occurred. Its ledger over at least 50 local
-      iterations and at least one CI invocation is committed, and the ROADMAP's
-      diagnosis candidate row is rewritten to what the ledger showed —
-      to the reproduction if it reproduced, and otherwise to the iteration count
-      and platforms that failed to, so the next attempt does not repeat this one.
-- [ ] AC6 `cairn/PROFILE.md`'s `test-doctrine` slot replaces its claim that the
+      `workflow_dispatch`-only macOS workflow invokes the same harness on CI,
+      where the hang has actually occurred; it is verified by `actionlint` and by
+      `ci-usage.py` still agreeing, because GitHub refuses to dispatch a
+      `workflow_dispatch` workflow absent from the default branch, so it cannot
+      be run until this merges. Its ledger over at least 50 local iterations is
+      committed, and the ROADMAP's diagnosis candidate row is rewritten to what
+      the ledger showed — to the reproduction if it reproduced, and otherwise to
+      the iteration count and platform that failed to, plus the standing
+      obligation to make the first macOS dispatch once this is on the default
+      branch.
+- [x] AC6 `cairn/PROFILE.md`'s `test-doctrine` slot replaces its claim that the
       20-minute cap "caps a hang, never diagnoses one" with what localizes one
       after this milestone, and states the bound this milestone did not get —
       that no R-side deadline interrupts a wedged mirai collect.
-- [ ] AC7 The `verify` slot is clean: `devtools::test()` passes, and
+- [x] AC7 The `verify` slot is clean: `devtools::test()` passes, and
       `devtools::check()` is clean (0 errors, 0 warnings; NOTEs justified).
 
 ## Coverage
@@ -87,23 +91,23 @@ row until something localizes it. Sharing one daemon pool across
 
 ## Tasks
 
-- [ ] T1 Add a reporter to `tests/testthat.R` wrapping the check reporter,
+- [x] T1 Add a reporter to `tests/testthat.R` wrapping the check reporter,
       writing `start`/`end` lines to `stderr()`; verify by killing a local
       `R CMD check` mid-suite and reading the surviving `testthat.Rout`.
-- [ ] T2 Convert `test-parallel-classify.R:33`'s `[` collect to
+- [x] T2 Convert `test-parallel-classify.R:33`'s `[` collect to
       `collect_bounded()`; add the source-scanning check and red it by
       inversion.
-- [ ] T3 Write the orphan probe against `start_mixed_daemons()`'s failure path;
+- [x] T3 Write the orphan probe against `start_mixed_daemons()`'s failure path;
       fix the fixture only if the probe shows a survivor.
-- [ ] T4 Add the last-sorting `teardown-` file; red it by leaving a pool up.
-- [ ] T5 Write the stress harness with its per-iteration kill deadline; add the
+- [x] T4 Add the last-sorting `teardown-` file; red it by leaving a pool up.
+- [x] T5 Write the stress harness with its per-iteration kill deadline; add the
       `.Rbuildignore` entry.
-- [ ] T6 Add the `workflow_dispatch`-only macOS workflow invoking the harness;
-      run it once. Keep the four `paths-ignore` blocks `.github/ci-usage.py`
-      compares in agreement.
-- [ ] T7 Run the harness locally to 50 iterations; commit the ledger and rewrite
+- [x] T6 Add the `workflow_dispatch`-only macOS workflow invoking the harness.
+      Keep the four `paths-ignore` blocks `.github/ci-usage.py` compares in
+      agreement. First dispatch happens after merge (AC5, amended).
+- [x] T7 Run the harness locally to 50 iterations; commit the ledger and rewrite
       the ROADMAP candidate row to what it showed.
-- [ ] T8 Correct the `test-doctrine` slot.
+- [x] T8 Correct the `test-doctrine` slot.
 
 ## Work log
 
@@ -112,8 +116,111 @@ row until something localizes it. Sharing one daemon pool across
 - 2026-07-27: plan gate chose a harness that runs both locally and on macOS CI over a local-only one, because the hang has occurred only on CI and a clean local result would prove little; falsified by a local reproduction, which would make the CI leg redundant.
 - 2026-07-27: plan chose an unbuffered stderr line from a `tests/testthat.R` reporter over per-file edits or a stdout line, because R buffers stdout to file and a killed process loses the tail — the recipe-failure lines that did survive the real hang came through stderr; falsified by evidence that stdout is flushed per line under `R CMD check`.
 - 2026-07-27: plan chose a probe-then-fix shape for the orphan `Rscript` daemons over asserting the leak outright, because `mirai::daemon()` defaults to `autoexit = TRUE` and the leak is unestablished; falsified by the probe finding a survivor, which converts it to a fix.
+- 2026-07-27: T1 done. `HangTraceReporter` in `tests/testthat.R` writes a timestamped start/end line per test file to `stderr()`, beside `CheckReporter` in a `MultiReporter`. AC1 evidence: a local `R CMD check` whose test process was killed at 19:22:50 left a `testthat.Rout.fail` ending `start test-nested-results-plot.R` with no matching end, every earlier file paired.
+- 2026-07-27: T5, T6, T8 done. `benchmarks/stress-daemon-tests.R` runs each daemon-using file in a fresh process behind a per-iteration kill deadline, so an iteration that wedges is recorded rather than waited on; `benchmarks/` was already `.Rbuildignore`d. `stress-daemon-tests.yaml` is `workflow_dispatch`-only and runs it on macOS by default -- verified against `.github/ci-usage.py` that it contributes no triggers and the four-block agreement still resolves from the same two workflows. PROFILE.md's test-doctrine slot now says what localizes a hang and what still cannot bound one; compressed three neighbouring bullets to stay under the 120-line cap.
+- 2026-07-27: THE HANG RECURRED ON THIS PR AND THE INSTRUMENTATION CAUGHT IT. PR #13's `test-coverage` job (run 30303761053) was cancelled by the 20-minute cap; the surviving log's last line is `[hang-trace] 2026-07-27T20:46:35.534 start test-parallel-classify.R` with no matching end, all 20 prior files paired, and cleanup terminated an orphan `R` plus two `sh` -- the original signature. The suite sat in that one file ~17 minutes. Three earlier occurrences left no such evidence at all. ROADMAP row and `benchmarks/stress-daemon-ledger.md` rewritten around it; the row's promotion condition is met.
+- 2026-07-27: review fan-out returned 12 unique findings across three lenses (two pairs overlapped). Scored: 4 at or above 80 and actioned (F1 84, F2 86, F4 80, F12 86), 8 below and logged, of which 5 were fixed anyway. F2 was the consequential one -- the harness ran `test_local()` one file per process against a pkgload-loaded package, where the hang arrives under `test_check()` with the package installed and every file sharing one process. AC5 as written already said "a fresh R process per iteration", so this was an implementation gap and not a criterion to amend; the harness was rewritten and the ledger's first run marked superseded. The localization then confirmed the concern independently: the wedge is in a file the old harness only ever ran in isolation.
+- 2026-07-27: rewriting the harness surfaced F4 live -- under a bare `Rscript` every daemon test is skipped by `skip_on_cran()`, so iterations finished in 3.8 s having asserted nothing and reported clean. It now sets `NOT_CRAN` and fails any iteration below 50 passing assertions (122 observed).
+- 2026-07-27: T7 done, and it did not reproduce. 50 iterations / 150 runs / 0 hangs in 57 minutes on macOS aarch64, R 4.6.1, mirai 2.7.2; ledger at `benchmarks/stress-daemon-ledger.md`, ROADMAP diagnosis row rewritten to say the local route is priced and spent so the next attempt is the CI dispatch, not a longer local run. The three slowest runs are iterations 1-3, which overlapped other work on the machine; from iteration 4 the file settles at its 41.5 s median.
+- 2026-07-27: AC7 clean. `devtools::check()` Status OK -- 0 errors, 0 warnings, 0 notes, 3m53s, tests 87s/135s; `devtools::document()` produces no diff. The `R6` Suggests entry cleared the unstated-dependency check that D-021 was recorded for.
+- 2026-07-27: paused with T7 open, at the maintainer's choice. Seven of eight tasks are done, committed and pushed on `m14-hang-localization`. The 50-iteration local stress run is in flight in a detached process writing to `/private/tmp/claude-503/-Users-jmgirard-GitHub-nestedcv/b1a833b2-fa0c-48ba-a8d1-236ea114302a/scratchpad/stress-local.log` (started 19:37:37Z, ~180 s per iteration, no hang through iteration 2). To resume: read that log for `total hangs:`, commit the ledger under `benchmarks/`, rewrite the ROADMAP diagnosis row to what it showed, then run `devtools::check()` for AC7 — deliberately held until the stress run ends, since running both contends for the CPU and could fake a hang in the harness meant to detect one. If the log is gone (it is under /tmp), re-run `Rscript benchmarks/stress-daemon-tests.R 50 600` from the repo root.
+- 2026-07-27: AC5 amended at a gate, and T6 with it. GitHub refuses to dispatch a `workflow_dispatch` workflow that is not on the default branch (`HTTP 404: workflow stress-daemon-tests.yaml not found on the default branch`), so "at least one CI invocation" was unreachable inside this milestone. The clause now asks for `actionlint` plus the `ci-usage.py` agreement as the pre-merge verification and carries the first macOS dispatch as a stated post-merge obligation on the ROADMAP row. Rejected: a temporary `push` trigger, which would merge a workflow different from the one tested.
+- 2026-07-27: T3 done, and it answers no. `benchmarks/probe-daemon-orphans.R` on mirai 2.7.2 / nanonext 1.10.1: both hand-spawned daemons gone after the host was torn down, `survivors after teardown: none`. `autoexit = TRUE` reaps them, so `start_mixed_daemons()` is unchanged — the suspected orphan leak was an assumption, and asserting it would have added a green test that proved nothing. The probe also reproduced the RR03/M07 startup death in passing: only 1 of 2 connections was reached, the empty-library daemon dying before it could dial.
+- 2026-07-27: T4 done. `teardown-zz-nothing-survives.R` errors when the suite finishes with any daemon connection up, sorting after `teardown-fixture-cache.R` so it cannot suppress that report. Inversion: a probe test leaking `daemons(1)` failed the run with the intended message. Its process half is dropped on T3's finding — there is nothing to count.
+- 2026-07-27: T2 done. `collect_bounded()` now takes a single mirai as well as a map, `test-parallel-classify.R`'s bare `[` collect routes through it, and its `on.exit` teardown is registered before the pool it tears down. `test-suite-hygiene.R` checks the rule over parse tokens rather than text, so the comments naming `map[]` and `collect_mirai()` are not findings. Inversion: restoring the `[` collect failed the check at `test-parallel-classify.R:38`.
+- 2026-07-27: implementation gate chose declaring `R6` in Suggests over the stock `ProgressReporter$new(file = stderr())`, because the latter carries no clock and the .Rout dump reaches the job log with every line stamped alike; recorded as D-021; falsified by a reporter hook that timestamps without a subclass.
+- 2026-07-27: two mechanism corrections found by execution before they could ship — `check_reporter()` returns the string "Check" and not an object, so `MultiReporter` needs `CheckReporter$new()`; and R6 members are locked, so replacing a method on a stock `Reporter` instance is not an available route to avoiding the dependency.
 - 2026-07-27: criteria audit (fresh-context [O], pre-gate) returned findings on 6 of 7 drafted criteria; fixed before the gate: the stderr/reporter mechanism, the inverted routes-through-`collect_bounded()` check replacing an ungreppable ban, the orphan claim demoted to a probe, the harness's per-iteration kill and `.Rbuildignore` entry, the last-sorting teardown file, and a non-reproduction obligation split out as AC6.
 
 ## Decisions
 
 ## Review
+
+_Verified 2026-07-27 on `m14-hang-localization`, PR #13. All evidence executed
+fresh at review; the `document()`/`check()` pair was re-run after the review
+fixes landed._
+
+### Acceptance criteria
+
+- **AC1** — A local `R CMD check` was killed 55 s into the suite. The surviving
+  `testthat.Rout` carries 12 `start` lines and 11 `end` lines, the single
+  unmatched one being `test-nested-results-plot.R`; every earlier file is paired
+  and timestamped to the millisecond. Scope recorded as the criterion requires:
+  testthat calls `start_file()` for test files only, so helper, setup and
+  teardown files carry no marker. **Corroborated in production the same day** —
+  PR #13's `test-coverage` job hung and was cancelled at the 20-minute cap, and
+  its log ends `start test-parallel-classify.R` with no `end`, the first of four
+  occurrences to say where.
+- **AC2** — `test-suite-hygiene.R` green (2 assertions). Inversion sweep over
+  all four blocking idioms, each reintroduced in turn at
+  `test-parallel-classify.R`: `mirai(...)[]`, `call_mirai(...)`,
+  `collect_mirai(...)` and `map[.flat]` each reddened the check and named the
+  site. The first two of those were missed by the first draft (review F1).
+- **AC3** — `benchmarks/probe-daemon-orphans.R` re-run: `daemons spawned: 2
+  connections reached: 2`, `survivors after teardown: none`, verdict "no orphan
+  -- autoexit reaps them, fixture unchanged". The criterion's second branch, so
+  `start_mixed_daemons()` is unchanged. The earlier run reached only 1 of 2
+  connections and was fixed at review (F5) before this evidence was taken.
+- **AC4** — `teardown-zz-nothing-survives.R` fires: a probe test leaking
+  `daemons(1)` failed the run with the intended message. It sorts after
+  `teardown-fixture-cache.R`, surfaces as a bare error after the summary, and
+  cannot fire when a file hangs — all three stated. Its process clause is empty
+  on AC3's finding. Now also checks `daemons_set()` (F6).
+- **AC5** — `benchmarks/stress-daemon-ledger.md` committed, recording both runs.
+  Faithful shape: 50 iterations, 0 hangs, 0 errors, 26 minutes, median 31.2 s,
+  122 passing assertions and 0 skips per iteration. `actionlint` clean on
+  `stress-daemon-tests.yaml`; `ci-usage.py`'s `read_paths_ignore()` still
+  resolves from `R-CMD-check.yaml, test-coverage.yaml` with the new workflow
+  contributing no triggers. ROADMAP diagnosis row rewritten — to the
+  localization, which supersedes what a non-reproduction would have obliged.
+  First macOS dispatch remains owed post-merge (AC5 as amended).
+- **AC6** — `cairn/PROFILE.md` no longer contains "caps a hang, never diagnoses
+  one"; the slot now states what localizes one and that no R-side bound exists,
+  `setTimeLimit()` not reaching `collect_mirai()`. File at 119 lines against its
+  120 cap.
+- **AC7** — `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes
+  (6m11s). `devtools::test()` 1209 pass / 0 fail / 0 skip. `devtools::document()`
+  produces no diff.
+
+### Consistency gate
+
+`cairn_validate` all checks passed. Profile `consistency-gate` slot: `document()`
+no diff; no generated files hand-edited; no README.Rmd, no pkgdown site; NEWS
+entry not owed (nothing user-facing changed — the diff is tests, benchmarks and
+CI); `benchmarks/` already `.Rbuildignore`d; full `check()` clean. CI green on
+all 8 checks.
+
+### Independent review
+
+Three fresh-context lenses, 12 unique findings after deduplication (two pairs
+overlapped across lenses). Scored by a fourth agent; 4 at or above 80.
+
+**Actioned.** F2 (86) the stress harness ran `test_local()` one file per process
+against a pkgload-loaded package, where the hang arrives under `test_check()`
+with the package installed and all files sharing one process — AC5 as written
+already said "a fresh R process per iteration", so this was an implementation
+gap and not a criterion to amend; harness rewritten, first ledger run marked
+superseded, and the localization independently confirmed the concern. F12 (86)
+a live ROADMAP candidate row's line references went stale by exactly this diff's
+5-line insertion; refreshed to `:160-201`, `:198`, `:200`. F1 (84) the hygiene
+scan matched one of three blocking idioms; now matches `collect_mirai`,
+`call_mirai` and option-carrying collects, and scans all of `tests/` including
+lowercase `.r`. F4 (80) a run that tested nothing reported clean — confirmed
+live while fixing it, since a bare `Rscript` sets no `NOT_CRAN` and skipped
+every daemon test; the harness now sets it and fails below 50 passing
+assertions.
+
+**Below threshold, fixed anyway.** F8 (76) and F9 (70), both PROFILE clauses a
+prior review had installed (M12's own finding I(80)) and this milestone's
+cap-driven compression dropped — restored, budget found by compressing this
+milestone's own additions instead. F3 (70) and F7 (62), a pidfile
+create-before-write race that could abandon a live child or abort the probe.
+F5 (68), the probe's verdict was ungated and its lean library empty, so it
+measured a daemon that never connected. F6 (65), the teardown missed a pool that
+is set but unconnected.
+
+**Below threshold, logged only.** F10 (60) "turns a hang into a failed job"
+shortened to "ends a hang", losing the word tying that bullet to the merge
+clause. F11 (55) the usethis recipe and the exact `.Rbuildignore` entry
+compressed to bare workflow names. Both judged recoverable and both would cost
+cap budget the restored clauses now hold.

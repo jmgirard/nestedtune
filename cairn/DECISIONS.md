@@ -563,6 +563,39 @@ every user who ignores it. The default is unchanged at 30 s, so no existing
 behaviour moves. Pre-1.0 the option name stays changeable without a deprecation
 cycle (D-003).
 
+### D-021 (2026-07-27): `R6` joins Suggests so a hang names the test file it stopped in — extends the dependency set D-020 last touched, and is the first addition that serves diagnosis rather than a result
+
+**Context:** M14 makes the test suite say where it stopped. Under `R CMD check`
+the suite's output goes to `testthat.Rout` and is dumped to the job log only at
+the end, so every line arrives carrying the same runner timestamp — verified on
+the hung macOS job of 2026-07-27, whose whole surviving dump is stamped
+17:31:48. An in-band clock is therefore the only way a marker says how long the
+suite sat in a file, and testthat's check reporter buffers, so the marker must
+also reach `stderr()`, which is unbuffered. testthat exposes this through one
+mechanism only: a `Reporter` subclass. Its R6 members are locked
+(`cannot change value of locked binding for 'start_file'`, by execution), so
+replacing a method on a stock instance is not available, and
+`tools:::.check_packages_used_in_tests()` reports `'::' or ':::' import not
+declared from: 'R6'` for the subclass.
+
+**Decision:** `R6` joins Suggests, used only by `tests/testthat.R` to define
+`HangTraceReporter`, which writes a timestamped `start`/`end` line per test file
+to `stderr()`. Considered and rejected at the M14 implementation gate:
+`ProgressReporter$new(file = stderr())` in a `MultiReporter`, which needs no
+dependency and does name each file as it starts, but carries no clock — leaving
+the surviving log able to say where the suite stopped and not how long it was
+there — and duplicates testthat's whole progress display and results block into
+the error stream.
+
+**Consequences:** Install weight for users is unchanged in the strictest sense
+available: `R6` is a hard dependency of `testthat`, so every machine that can
+run this suite already has it, and no user who merely installs the package gains
+anything to download. It is the first Suggests entry that supports neither a
+result nor a document but the diagnosis of the suite itself; the hard-dependency
+surface is untouched (rsample, cli, rlang, tune >= 2.0.0, workflows, parsnip,
+ggplot2). D-018's no-knob line is not engaged — nothing here reaches an exported
+signature.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
