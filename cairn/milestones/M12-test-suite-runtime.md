@@ -92,7 +92,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
       `break_fold` outer-fit, 2 unstable, 1 `break_every_fold`.
 - [x] T4 Convert `test-nested-results-print.R` (49.0 s) — 12 identical, 3
       `break_fold`, 2 `break_every_fold`, 2 unstable; leave `:288` alone.
-- [ ] T5 Convert `test-nested-tune-grid-failures.R` (24.3 s). The nested
+- [x] T5 Convert `test-nested-tune-grid-failures.R` (24.3 s). The nested
       `expect_warning()` at `:102`–`:103` and `:122` is what AC4's condition
       replay exists for — verify it fails without replay.
 - [ ] T6 Convert `test-nested-tune-grid-results.R`, `test-nested-final-fit-print.R`,
@@ -118,6 +118,8 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - 2026-07-27: T3 done. `test-nested-results-plot.R` 95.7 s -> 8.7 s, 68 pass / 0 fail; 24 requests over 4 signatures (17 / 4 / 2 / 1), matching the plan's count exactly.
 - 2026-07-27: T4 done. `test-nested-results-print.R` 60.9 s -> 12.3 s, 49 pass / 0 fail; 21 requests over 12 signatures. `:288`'s five-fold unanimity fixture is wrapped, not shrunk.
 - 2026-07-27: report regrouped after T4 found the source-text grouping lying: `test-nested-tune-grid-failures.R` spells seven different designs as `nested_tune_grid(det_workflow(d), nested, ...)`, rebinding `nested` per test, so grouping by call text reported seven correct builds as key instability. Rows now group by the canonical form of what was built, so `builds > 1` means one fit was paid for twice however it was spelled.
+- 2026-07-27: T5 done. `test-nested-tune-grid-failures.R` 35.9 s -> 16.1 s, 56 pass / 0 fail; 18 requests over 12 signatures -- the file genuinely uses many distinct broken designs, so it deduplicates less than the others. The `finalize_workflow` mocked block at `:333` is deliberately left unwrapped: its call is byte-identical to unmocked ones elsewhere, so caching it would cross the mock boundary in both directions.
+- 2026-07-27: T5 verified condition replay is load-bearing. With the replay line disabled, `test-nested-tune-grid-failures.R:102` fails both nested expectations ("Expected `memoised(...)` to throw a warning with class <nestedtune_failed_folds>" and "Expected `expect_warning(...)` to throw a warning"); restored and green.
 - 2026-07-27: implement gate chose a `teardown-` file for AC4's request/build table over a last-alphabetical test file or the profiler alone, and chose wrapping the existing call (`memoised(nested_tune_grid(...))`) over typed per-function wrappers, so the function under test stays visible at every call site and one helper serves both entry points.
 
 ## Decisions

@@ -11,7 +11,7 @@ test_that("a fold that fails at inner tuning does not abort the run", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_s3_class(res, "nested_results")
@@ -26,7 +26,7 @@ test_that("a fold that fails at the outer fit does not abort the run", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_identical(nrow(res), 3L)
@@ -38,10 +38,10 @@ test_that("the failing stage and its cause are recorded, tune's own notes includ
   d <- make_reg_data()
 
   set.seed(2)
-  tuning_failed <- suppressWarnings(nested_tune_grid(
+  tuning_failed <- suppressWarnings(memoised(nested_tune_grid(
     det_workflow(d), break_fold(det_nested(d), 2L, "inner tuning"),
     grid = det_grid(), metrics = reg_metrics()
-  ))
+  )))
   notes <- tuning_failed$.notes[[2L]]
 
   expect_named(notes, c("location", "type", "note", "trace"))
@@ -53,10 +53,10 @@ test_that("the failing stage and its cause are recorded, tune's own notes includ
   expect_true(any(grepl("Not all variables in the recipe", notes$note)))
 
   set.seed(2)
-  fit_failed <- suppressWarnings(nested_tune_grid(
+  fit_failed <- suppressWarnings(memoised(nested_tune_grid(
     det_workflow(d), break_fold(det_nested(d), 3L, "outer fit"),
     grid = det_grid(), metrics = reg_metrics()
-  ))
+  )))
   fit_notes <- fit_failed$.notes[[3L]]
 
   expect_identical(fit_notes$location[[1L]], "outer fit")
@@ -70,7 +70,7 @@ test_that("a completed fold carries an empty note table", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_identical(nrow(res$.notes[[1L]]), 0L)
@@ -84,7 +84,7 @@ test_that("the object records folds attempted and completed", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_identical(attr(res, "folds_attempted"), 3L)
@@ -101,7 +101,7 @@ test_that("the run itself warns when a fold fails, naming it", {
   # expectation catches it so this test asserts both, rather than leaking one.
   expect_warning(
     expect_warning(
-      nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()),
+      memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())),
       "Fold2",
       class = "nestedtune_failed_folds"
     ),
@@ -116,7 +116,7 @@ test_that("collect_metrics() averages the completed folds and warns about the re
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_warning(
@@ -144,7 +144,7 @@ test_that("collect_metrics() aborts when no fold completed", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_identical(attr(res, "folds_completed"), 0L)
@@ -158,9 +158,9 @@ test_that("failure capture leaves a clean run exactly as M02 left it", {
   nested <- det_nested(d)
 
   set.seed(2)
-  res <- nested_tune_grid(
+  res <- memoised(nested_tune_grid(
     det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()
-  )
+  ))
 
   expect_true(all(res$.completed))
   expect_identical(attr(res, "folds_completed"), 3L)
@@ -175,15 +175,15 @@ test_that("a fold's seeds do not move when an earlier fold fails (IP2)", {
   d <- make_reg_data()
 
   set.seed(2)
-  clean <- nested_tune_grid(
+  clean <- memoised(nested_tune_grid(
     det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
-  )
+  ))
 
   set.seed(2)
-  broken <- suppressWarnings(nested_tune_grid(
+  broken <- suppressWarnings(memoised(nested_tune_grid(
     det_workflow(d), break_fold(det_nested(d), 1L, "inner tuning"),
     grid = det_grid(), metrics = reg_metrics()
-  ))
+  )))
 
   expect_identical(clean$.tuning_seed, broken$.tuning_seed)
   expect_identical(clean$.outer_fit_seed, broken$.outer_fit_seed)
@@ -203,7 +203,7 @@ test_that("a fold that completed on a truncated inner design keeps tune's notes"
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_true(res$.completed[[2L]])
@@ -220,7 +220,7 @@ test_that("subsetting keeps the object's record of what ran true", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   # The counts describe the rows in hand, not the run they came from.
@@ -240,7 +240,7 @@ test_that("a subset holding no completed fold refuses to summarize", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   # Before the fix this passed the guard on the parent's stale count and
@@ -253,9 +253,9 @@ test_that("dropping any of the per-fold columns sheds the results class", {
   d <- make_reg_data()
 
   set.seed(2)
-  res <- nested_tune_grid(
+  res <- memoised(nested_tune_grid(
     det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
-  )
+  ))
 
   # Without .completed nothing can answer for the run, so the object stops
   # claiming it can rather than answering from a stale attribute.
@@ -294,7 +294,7 @@ test_that("an error raised by tune_grid() itself is recorded, not propagated", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(wf, det_nested(d), grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(wf, det_nested(d), grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_false(any(res$.completed))
@@ -313,7 +313,7 @@ test_that("an error raised by last_fit() is recorded against the outer fit", {
 
   set.seed(2)
   res <- suppressWarnings(
-    nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics())
+    memoised(nested_tune_grid(det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()))
   )
 
   expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
