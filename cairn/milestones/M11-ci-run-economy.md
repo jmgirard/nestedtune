@@ -89,9 +89,9 @@ candidate row. Dependency caching → already provided by
 - [x] T3. Add `paths-ignore` to the `push` and `pull_request` triggers of both
       workflows. Note `pull_request` filters on the whole PR diff, so it fires
       only for a wholly-tracking PR — the `push` trigger is where the saving is.
-- [ ] T4. Extend the script to parse `paths-ignore` out of the workflow file and
+- [x] T4. Extend the script to parse `paths-ignore` out of the workflow file and
       replay default-branch history through it; commit the classification.
-- [ ] T5. Rewrite the `cairn/PROFILE.md:45` CI bullet for AC6, including the
+- [x] T5. Rewrite the `cairn/PROFILE.md:45` CI bullet for AC6, including the
       pending-check reconciliation.
 - [ ] T6. Push twice in quick succession to capture the AC2 cancellation
       evidence, then run `devtools::check()` for AC7.
@@ -103,6 +103,8 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: T1 — `.github/ci-usage.py` reproduces the AC5 baseline exactly (108 runs / 324 jobs / 2276 min; 30/628 skipped; 32/823 superseded, 9/248 off-branch) and the AC4 classification (15 of 24 commits skipped, all 9 others touching a packaged path).
 - 2026-07-27: minor reorder — T1 also delivered T4's workflow-file parsing, since the script needs one ignore-list source, not two; T4 now only regenerates the committed baseline once T3 gives the workflows a real list to read.
 - 2026-07-27: T2, T3 — both workflows gained the concurrency block and the path filter on both triggers; all four lists verified identical by parsing the YAML, and the script now reads them from the workflow files instead of its fallback.
+- 2026-07-27: T4, T5 — baseline regenerated with the filter read from the workflows (identical to the fallback run, so the declared list matches what was measured) and committed at `.github/ci-usage-baseline.md`; PROFILE.md's CI bullet rewritten, and compressed in one pass after the first draft put the file 1 line over its 120-line cap.
+- 2026-07-27: `devtools::test()` clean on the branch — FAIL 0, WARN 0, SKIP 0, PASS 1175.
 - 2026-07-27: the filter list is spelled out under each of the four triggers rather than shared by a YAML anchor — GitHub Actions does not resolve anchors in workflow files, and an unresolved alias would have silently disabled the filter.
 
 ## Decisions

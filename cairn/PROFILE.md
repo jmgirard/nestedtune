@@ -42,15 +42,32 @@ rules in tracking-rules:
 - Never test print cosmetics beyond meaningful snapshots, trivial pass-throughs,
   dependency behavior, or plots except `vdiffr` when the plot is the product.
 - `covr` is a diagnostic, never a gate.
-- GitHub Actions CI uses the standard usethis pair:
+- GitHub Actions CI starts from the standard usethis pair:
   `usethis::use_github_action("check-standard")` runs `R CMD check` across
-  platforms (a normal CI check — cairn's git model never merges red or pending
-  CI), and `usethis::use_github_action("test-coverage")` runs `covr` and uploads
+  platforms (a normal CI check — see the merge clause below), and
+  `usethis::use_github_action("test-coverage")` runs `covr` and uploads
   to Codecov (`covr::codecov()`). Coverage reporting is diagnostic-only: Codecov
   annotates the PR, but coverage never gates the merge — the `covr` line above
   and tracking-rules' "no coverage-percentage target" both hold. Give the
   `.github/` workflow dir an `.Rbuildignore` `^\.github$` entry (usethis adds it)
   so it stays out of the built package.
+- Two divergences from that stock shape, both added at M11 and measurable with
+  `.github/ci-usage.py` (baseline: `.github/ci-usage-baseline.md`).
+  **A `concurrency` block** cancels a run once a later push supersedes it, on
+  every ref but the default branch — that branch is a distribution channel, so
+  a commit there keeps a completed check rather than a cancelled one.
+  **A `paths-ignore` filter** on both triggers of both workflows skips
+  `cairn/**`, `CLAUDE.md`, and `.claude/**`, which cannot change what
+  `R CMD check` sees. Its effect is on the `push` trigger: GitHub evaluates
+  `paths-ignore` on a `pull_request` against the whole PR diff, so there it
+  fires only for a PR that is tracking-only end to end.
+- **The merge clause, for both:** cairn's git model never merges red or pending
+  CI. A filtered event produces no run, so its check is absent rather than
+  pending and merging past it is correct; what the clause forbids is merging
+  past a check that ran and failed, or one still running. One caveat: with
+  required status checks (this repo has none) GitHub leaves a filtered
+  workflow's check `Pending` forever and blocks the merge, so adding branch
+  protection means reconciling the filtered paths with the required-check list.
 - Change governance renders here as: the dependency surface is DESCRIPTION
   Imports/Suggests; a breaking-change deprecation cycle warns via `lifecycle`
   (`deprecate_warn()`) before removal. The gates themselves — question-gate +
