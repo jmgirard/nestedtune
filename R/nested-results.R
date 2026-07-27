@@ -205,8 +205,11 @@ summarize_folds <- function(per_fold) {
 
 # IP4: nothing is reported for a design that did not run at all. With no fold
 # completed there is no estimate to give, and returning NA would let a caller
-# treat the absence of a result as a result.
-check_any_completed <- function(x, call = rlang::caller_env()) {
+# treat the absence of a result as a result. `action` names what the caller was
+# asking for -- summarizing or plotting -- so both refusals say the same thing
+# about the same object and cannot drift apart.
+check_any_completed <- function(x, action = "summarize",
+                                call = rlang::caller_env()) {
   # Read from the column, never from the stamped count: the column travels with
   # the rows, so the two can never disagree about the object actually in hand.
   if (any(x$.completed)) {
@@ -215,7 +218,7 @@ check_any_completed <- function(x, call = rlang::caller_env()) {
   n <- nrow(x)
   cli::cli_abort(
     c(
-      "There is nothing to summarize: no outer fold completed.",
+      "There is nothing to {action}: no outer fold completed.",
       x = "All {n} outer fold{?s} failed.",
       i = "See {.code x$.notes} for what went wrong."
     ),

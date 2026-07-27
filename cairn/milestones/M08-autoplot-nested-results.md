@@ -91,18 +91,18 @@ disagreement section gains the plot.
 - [x] T1: Add `ggplot2` to Imports and `vdiffr` to Suggests in `DESCRIPTION`;
       `devtools::document()`; confirm the existing suite stays clean with the
       new hard dependency in place.
-- [ ] T2: Failing tests for the parameters view — folds agreeing, folds
+- [x] T2: Failing tests for the parameters view — folds agreeing, folds
       disagreeing, a failed fold, and a completed fold missing a parameter —
       asserting on `ggplot_build()$data` and the stated contributing count.
-- [ ] T3: Implement `autoplot.nested_results(type = "parameters")` in a new
+- [x] T3: Implement `autoplot.nested_results(type = "parameters")` in a new
       `R/nested-results-plot.R`. Stack `.selected` with `do.call(rbind, ...)`
       before reading a parameter out of it (a list column of one-row tibbles
       answers `$mtry` with `NULL`, which rendered "0 distinct values" in M06),
       and take fold labels from `fold_ids()` (`R/nested-results.R:263`).
-- [ ] T4: Failing tests for the performance view, including that the marked
+- [x] T4: Failing tests for the performance view, including that the marked
       central value is the one `summarize_folds()` produces and that the IP3
       caveat is present in the plot's labels.
-- [ ] T5: Implement `type = "performance"` over `per_fold_metrics()` and
+- [x] T5: Implement `type = "performance"` over `per_fold_metrics()` and
       `summarize_folds()`, and the `type` dispatch itself.
 - [ ] T6: The three error branches — tests first, then `cli_abort()` calls
       matching the `check_*()` idiom in `R/checks.R`.
@@ -117,6 +117,9 @@ disagreement section gains the plot.
 - 2026-07-26: created by /milestone-plan, promoting the plotting candidate row split out of M02 (whose parallelism half became M07); gate settled one `autoplot()` with a `type` argument and `ggplot2` to Imports with `vdiffr` in Suggests (D-019), leaving the three other candidate shapes as rows.
 
 - 2026-07-26: T1 — `ggplot2` to Imports, `vdiffr` to Suggests, `autoplot` re-exported beside `collect_metrics` so a bare `autoplot(x)` dispatches; `document()` clean, suite clean at 1028 passing / 0 failures with the new hard dependency in place.
+
+- 2026-07-26: T2/T3 — parameters view. Tests written first and observed red for the right reason (ggplot2's `autoplot.default()` refusing the class), then green at 18 assertions.
+- 2026-07-26: T4/T5 — performance view. Deviation from plan order: `plot_performance()` was authored in T3's file before T4's tests, so tests-first did not hold for this half. Teeth proven by inversion instead — five mutations each turn the suite red: dropping `scale_x_discrete(drop = FALSE)` (FAIL 2), removing the marked-estimate rule (FAIL 6), perturbing that estimate by 1e-7 (FAIL 3, so the equality is exact and not `expect_equal()`'s tolerance), dropping IP3's caveat (FAIL 1), imputing an absent selection as 0 (FAIL 2).
 
 ## Decisions
 

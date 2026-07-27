@@ -25,6 +25,7 @@ reference:
   - nested_tune_grid
   - collect_metrics.nested_results
   - print.nested_results
+  - autoplot.nested_results
 
 - title: The final model
   desc: >

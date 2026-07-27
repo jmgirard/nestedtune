@@ -248,6 +248,33 @@ eval_inside_spec <- function(inside, data, env, call = rlang::caller_env()) {
   out
 }
 
+# Which of the two views `autoplot()` was asked for.
+#
+# The default is the whole vector, as the signature spells it out, and the first
+# element wins -- so this accepts it, accepts either name on its own, and
+# refuses anything else by naming both.
+check_plot_type <- function(type, call = rlang::caller_env()) {
+  allowed <- c("parameters", "performance")
+  if (identical(type, allowed)) {
+    return(allowed[[1L]])
+  }
+  if (is.character(type) && length(type) == 1L && !is.na(type) &&
+      type %in% allowed) {
+    return(type)
+  }
+  cli::cli_abort(
+    c(
+      "{.arg type} must be one of {.val {allowed}}.",
+      x = if (is.character(type) && length(type) == 1L) {
+        "Got {.val {type}}."
+      } else {
+        "Got {.obj_type_friendly {type}}."
+      }
+    ),
+    call = call
+  )
+}
+
 check_metrics <- function(metrics, call = rlang::caller_env()) {
   if (!is.null(metrics) && !inherits(metrics, "metric_set")) {
     cli::cli_abort(
