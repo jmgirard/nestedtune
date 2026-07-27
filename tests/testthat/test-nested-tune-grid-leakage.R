@@ -21,8 +21,12 @@ record_handoffs <- function(wf, folds, grid, metrics) {
     )
   }
   testthat::local_mocked_bindings(nested_fold_fit = stub)
-  invisible(nested_tune_grid(wf, folds, grid = grid, metrics = metrics))
-  seen
+  results <- nested_tune_grid(wf, folds, grid = grid, metrics = metrics)
+  # The assembled object as well as the handoffs. Both are properties of the
+  # driver's bookkeeping rather than of any fit, so the tests that read the
+  # object get it from the stubbed run too -- there is no assertion here that a
+  # real fit could satisfy and this one could not.
+  list(seen = seen, results = results)
 }
 
 test_that("no fold's assessment rows reach its inner tuning or its outer fit", {
@@ -38,7 +42,7 @@ test_that("no fold's assessment rows reach its inner tuning or its outer fit", {
     inside = rsample::vfold_cv(v = 3)
   )
 
-  seen <- record_handoffs(wf, folds, det_grid(), reg_metrics())
+  seen <- record_handoffs(wf, folds, det_grid(), reg_metrics())$seen
   expect_length(seen, nrow(folds))
 
   for (i in seq_along(seen)) {
@@ -74,7 +78,7 @@ test_that("each fold is handed its own inner resamples, in order", {
     inside = rsample::vfold_cv(v = 3)
   )
 
-  seen <- record_handoffs(wf, folds, det_grid(), reg_metrics())
+  seen <- record_handoffs(wf, folds, det_grid(), reg_metrics())$seen
 
   # A shifted pairing would still satisfy every "is this a valid rset" check
   # while training fold i on rows fold i scores. This is the assertion that
@@ -98,8 +102,12 @@ test_that("the results object keeps each fold's own split", {
     inside = rsample::vfold_cv(v = 3)
   )
 
+  # Stubbed rather than fitted: neither assertion below reads a number a fit
+  # produced. What they check is that the driver kept each fold's own split on
+  # the row it assembled for it, which the stub exercises in full -- and thirty
+  # real fits would have bought nothing but the wait.
   set.seed(9)
-  res <- nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics())
+  res <- record_handoffs(wf, folds, det_grid(), reg_metrics())$results
 
   expect_identical(res$id, folds$id)
   for (i in seq_len(nrow(res))) {

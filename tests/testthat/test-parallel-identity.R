@@ -198,20 +198,19 @@ test_that("BC6: a failed fold matches serially in every field but its traces", {
   on.exit(mirai::daemons(0), add = TRUE)
 
   mirai::daemons(0)
-  # expect_warning() returns the *condition*, never the expression's value
-  # (M03 lesson), so the run that produces the object is a separate call.
+  # expect_warning() hands back the *condition*, never the expression's value
+  # (M03 lesson) -- so the object is taken by assigning inside the expectation
+  # rather than by running the fit a second time to fetch it. Muffling a warning
+  # does not abort the expression, so `serial` is bound either way.
   set.seed(2026L)
   # tune raises its own "All models failed" warning alongside ours; catching
   # only the outer one leaves it to surface as an uncaught warning in the run.
   suppressWarnings(
     expect_warning(
-      nested_tune_grid(wf, nested, grid = stoch_grid(), metrics = reg_metrics()),
+      serial <- nested_tune_grid(wf, nested, grid = stoch_grid(),
+                                 metrics = reg_metrics()),
       class = "nestedtune_failed_folds"
     )
-  )
-  set.seed(2026L)
-  serial <- suppressWarnings(
-    nested_tune_grid(wf, nested, grid = stoch_grid(), metrics = reg_metrics())
   )
 
   start_daemons(2)
