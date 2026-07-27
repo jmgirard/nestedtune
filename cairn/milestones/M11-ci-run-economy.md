@@ -1,6 +1,6 @@
 # M11: Every CI run is one somebody is waiting for
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -45,7 +45,7 @@ candidate row. Dependency caching → already provided by
       `pull_request` triggers, listing exactly `cairn/**`, `CLAUDE.md`, and
       `.claude/**`, and no packaged path (`R/`, `tests/`, `man/`, `vignettes/`,
       `DESCRIPTION`, `NAMESPACE`, `.github/workflows/`) matches any of them.
-- [x] AC4. The committed script reads the `paths-ignore` list out of the
+- [ ] AC4. The committed script reads the `paths-ignore` list out of the
       workflow file itself, replays every default-branch commit in the window
       through it, and classifies each as skipped or run. Over the window
       `[2026-07-26T00:00Z, 2026-07-27T07:00Z)` it reports 15 of 24
@@ -64,7 +64,7 @@ candidate row. Dependency caching → already provided by
       shape and why each is there, and contains no clause the path filter
       falsifies — in particular its "never merges red or pending CI" clause is
       reconciled with a filtered event leaving a check pending.
-- [ ] AC7. `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings, no new
+- [x] AC7. `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings, no new
       NOTE), confirming the added script needs no `.Rbuildignore` entry beyond
       the existing `^\.github$`.
 
@@ -112,6 +112,7 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: AC7 — `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes in 5m23s; the two new `.github/` files need no `.Rbuildignore` entry beyond `^\.github$`.
 - 2026-07-27: removed a `.github/__pycache__/` bytecode file swept into the T6 commit by the AC3 import check, and gitignored the pattern; `.Rbuildignore`'s `^\.github$` kept it out of the build, so AC7's clean check is unaffected.
 - 2026-07-27: all tasks done, status → review.
+- 2026-07-27: review returned M11 to in-progress (return 1). AC4 fails: the script derives its commit set from runs, so it replays 24 of the 32 commits git counts in the window, and once the filter is live a skipped commit fires no run and vanishes from the set entirely. Three more findings actioned (F4 false comment about drift detection, F5 silent glob corruption, F1 superseded minutes overstated); 9 logged below threshold. AC1, AC2, AC3, AC5, AC6, AC7 verified; consistency gate green.
 
 ## Decisions
 
@@ -140,16 +141,23 @@ by command, never recalled._
   (`R/`, `tests/`, `man/`, `vignettes/`, `DESCRIPTION`, `NAMESPACE`, `NEWS.md`,
   `README.md`, `_pkgdown.yml`, `.Rbuildignore`, `.github/`) none matches any
   glob, and all 6 tracking paths tested do.
-- **AC4 ✓** The script parses the list out of the workflow files (reported
-  source: `R-CMD-check.yaml, test-coverage.yaml`, not its fallback) and
-  classifies 15 of 24 default-branch commits as skipped. The 9 classified as
-  run each show packaged paths in the committed table — `R/`, `NAMESPACE`,
-  `DESCRIPTION`, `NEWS.md`, and for M01 the workflow files themselves.
+- **AC4 ✗ FAILS.** The script parses the list out of the workflow files
+  (reported source: `R-CMD-check.yaml, test-coverage.yaml`, not its fallback),
+  but it does not "replay every default-branch commit in the window": its
+  commit set is derived from runs, so it sees only commits that fired one.
+  `git log main --since --until` over the same window counts **32** commits;
+  the script reports 24. The criterion's two clauses cannot both hold. Ticked
+  in error earlier in this review — the tick rested on the script's own
+  self-report rather than on an independent count, which is the exact failure
+  AC fencing exists to catch.
 - **AC5 ✓** Re-run at review time and `diff`ed against
   `.github/ci-usage-baseline.md`: byte-identical. 108 runs, 324 jobs, 2276
   machine-minutes; 30 runs / 628 min on skipped commits; 32 runs / 823 min
   superseded, 9 / 248 off the default branch. The two categories are printed
   separately with an explicit note that they overlap and are never summed.
+- **AC7 ✓** `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes in
+  6m56s, re-run fresh at review time. The two new `.github/` files need no
+  `.Rbuildignore` entry beyond the existing `^\.github$`.
 - **AC6 ✓** `cairn/PROFILE.md`'s `test-doctrine` slot names both divergences
   with a reason each, and the merge clause is now stated once and reconciled:
   a filtered event produces no run, so its check is absent rather than pending
@@ -166,4 +174,76 @@ by command, never recalled._
   knit check does not apply · new files are `.github/`-resident, covered by the
   existing `^\.github$` · **no NEWS.md entry**, deliberately: M11 changes no
   packaged behavior, and the slot scopes the changelog to user-visible changes.
+
+### Independent review — three lenses, then scoring
+
+Three fresh-context reviewers with distinct evidence bases, then a separate
+scorer that did not generate the findings.
+
+- **[S] prior-PR-comments lens:** no prior-review evidence. No archived
+  `## Review` section touches these files; it correctly ruled out M09's
+  cancellation work as unrelated (mirai worker cancellation in R, not Actions
+  run cancellation). Zero findings, as expected.
+- **[S] blame-history lens:** no findings. Only two commits ever touched the
+  workflow files (M01's `fafb31f` creation and this branch's `97ef2b3`), so
+  there is no prior fix to undo; the PROFILE.md rewrite elaborates the merge
+  clause rather than dropping it; the `.gitignore` entry follows the file's
+  existing convention of explaining what motivated each rule.
+- **[O] diff-bug lens:** 13 findings, scored below.
+
+**Actioned (score ≥ 80) — all four return to implement:**
+
+- **F2 (95)** `ci-usage.py:214-227` — the commit denominator is derived from
+  runs, not from git, so the script cannot measure its own change. Verified by
+  execution: git 32, script 24. Forward-looking half is worse — once the filter
+  is live a skipped commit fires no run, so it never enters the commit set, and
+  a post-M11 window reports "0 of N skipped", indistinguishable from "nothing
+  to skip". **This is the AC4 failure.**
+- **F4 (93)** `R-CMD-check.yaml:10-11`, `test-coverage.yaml:3-4` — the comment
+  claims the script "fails loudly if the two copies ever disagree"; it does
+  not. `read_paths_ignore()` unions every block within a file before comparing
+  across files, so within-file drift — the exact drift the duplicated list
+  invites — is silently absorbed. Verified: two differing blocks in one file
+  yield `['CLAUDE.md', 'cairn/**']` and no error.
+- **F5 (90)** `ci-usage.py:106-113` — the regex parser silently produces wrong
+  globs instead of failing. Verified: a trailing YAML comment yields the glob
+  `` cairn/**'  # tracking only `` (matches nothing, so every `cairn/` commit
+  reclassifies as "run"); inline flow style matches zero blocks and drops the
+  file out of the agreement check, falling back to the hardcoded list.
+- **F1 (82)** `ci-usage.py:251-253` — superseded runs are charged their entire
+  duration, but cancellation only reclaims the tail after the superseding push.
+  The 248 min and the bolded 877 total are upper bounds presented as
+  measurements, unqualified in `render()` and in the committed baseline.
+
+**Logged below threshold (score < 80), 9 findings — surfaced, not actioned:**
+
+- F13 (72) PROFILE.md's "measurable with `ci-usage.py`" does not hold forward
+  for the path filter; a consequence of F2 and fixable with it.
+- F9 (65) `superseded()` misses a run superseded by one outside the window or
+  still in flight — an undercount at the upper window edge.
+- F8 (62) job fetch is unpaginated and takes the latest attempt only, so a
+  re-run silently drops the first attempt's jobs and minutes.
+- F10 (60) the `removed` union matches on `head_sha` alone, dropping the
+  event/branch guard `skipped_runs` applies. Dormant (30 + 9 = 39 checks out).
+- F7 (58) pagination has no lower bound and a 20-page cap, so a narrow old
+  window on a busy repo prints zeros indistinguishable from an idle week.
+- F3 (55) classification is per-commit but GitHub filters per-push, so a push
+  mixing code and tracking with a tracking-only head sha is misclassified.
+- F11 (52) a true merge commit yields no files from `git show`, classifying it
+  "run" with zero evidence and vacuously satisfying AC4's second clause.
+- F6 (48) `fnmatch`'s `*` crosses `/` where GitHub's does not, and `!` negation
+  patterns are treated as literals. No committed glob exercises either path.
+- F12 (42) if `github.event.repository` were ever absent the concurrency
+  expression degrades to `true`, cancelling on the default branch — the one
+  outcome the milestone forbids. Needs a trigger type neither workflow has.
+
+### Gate outcome
+
+**Returned to `in-progress` — return 1 of this milestone.** AC4 fails as
+written, and the criterion is itself inconsistent: "replays every
+default-branch commit in the window" and "15 of 24" cannot both hold when git
+counts 32. Fixing this needs a gated AC4 amendment at
+`/milestone-implement` step 6 alongside the code fix, then re-review.
+Everything else verified: AC1, AC2, AC3, AC5, AC6, AC7 all hold on fresh
+evidence, and the consistency gate is green.
 
