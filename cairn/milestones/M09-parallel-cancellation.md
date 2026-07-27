@@ -67,7 +67,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 
 ## Tasks
 
-- [ ] T1: Probe by execution what mirai hands back for each cancellation path
+- [x] T1: Probe by execution what mirai hands back for each cancellation path
       above, and for a killed daemon, against the installed mirai. Record the
       table and the version. Do not infer the codes from the candidate row.
 - [ ] T2: Write the failing tests first, in
@@ -90,7 +90,32 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 
 - 2026-07-26: created by /milestone-plan — promotes the M07 review candidate row scored 78; sequencing and the IP4 reading were both settled at the plan gate, with escalation to an RB declined.
 - 2026-07-26: in-progress on `m09-parallel-cancellation`. Gate settled two open choices: abort only on an allowlist of cancellation signals (unrecognized values keep today's failed-fold default, so completed folds are never discarded — M03's reason); and cancellation gets condition class `nestedtune_cancelled` inheriting `nestedtune_interrupted`, so existing handlers are untouched. RB escalation offered on the ip-touching criterion and declined again.
+- 2026-07-26: T1 done — M09-D1 records the probe table; script kept at `benchmarks/probe-mirai-cancellation.R` (build-ignored). Finding contradicts the plan: `daemons(0)` yields errorValue 19, the same value a dying daemon yields, so AC2 and AC3 as written now conflict — amendment gate next.
 
 ## Decisions
+
+### M09-D1 (2026-07-26): mirai's cancellation signals, by execution
+
+Probed on mirai 2.7.2 / nanonext 1.10.1, R 4.6.1. Every wait deadline-bounded;
+`$data` read only once resolved.
+
+| Trigger | Classes | Value | `nng_error` | `is_mirai_error` | `conditionMessage()` |
+|---|---|---|---|---|---|
+| `stop_mirai()`, task in flight | `errorValue/try-error` | 20 | Operation canceled | FALSE | raises |
+| `stop_mirai()`, task queued | `errorValue/try-error` | 20 | Operation canceled | FALSE | raises |
+| `stop_mirai()` on a `mirai_map`, both tasks | `errorValue/try-error` | 20 | Operation canceled | FALSE | raises |
+| `daemons(0)`, task in flight | `errorValue/try-error` | 19 | Connection reset | FALSE | raises |
+| daemon killed mid-task | `errorValue/try-error` | 19 | Connection reset | FALSE | raises |
+| `stop()` raised inside the task | `miraiError/errorValue/try-error` | — | — | TRUE | works |
+
+Two findings the plan did not have. **20 is unambiguous** and is what the real
+code path yields — `collect_mirai()` on a stopped `mirai_map` returns 20 for
+every task, not just the in-flight one. **19 is ambiguous and cannot be split:**
+tearing the pool down with `daemons(0)` and a daemon dying mid-fold produce the
+same value with the same classes. The candidate row's premise that a cancelled
+run is code 20 is right for `stop_mirai()` and wrong for `daemons(0)`.
+
+Nothing here inherits `"condition"` and `conditionMessage()` raises on all six
+`errorValue` rows, confirming M07's lesson for the cancellation shapes too.
 
 ## Review
