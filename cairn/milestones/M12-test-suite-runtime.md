@@ -1,11 +1,11 @@
 # M12: Fitting time only where an assertion needs it
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m12-test-suite-runtime`
 
 ## Goal
 
@@ -81,7 +81,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 
 ## Tasks
 
-- [ ] T1 Write `benchmarks/profile-tests.R` (load once, time each file, report
+- [x] T1 Write `benchmarks/profile-tests.R` (load once, time each file, report
       counts, median of three) and commit `benchmarks/test-timing-baseline.md`
       with every condition AC1 lists. `benchmarks/` is already `.Rbuildignore`d.
 - [ ] T2 Add the memoised fixture helper to `helper-orchestration.R`: value-hash
@@ -112,6 +112,9 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - 2026-07-27: plan gate chose memoisation over committing pre-built fixtures as `.rds` because a frozen fixture stops exercising the code path it is meant to cover, so a package regression would leave the tests green; falsified by evidence that building fixtures dominates runtime even after deduplication.
 - 2026-07-27: plan gate chose leaving `test-parallel-identity.R`'s worker pools alone over sharing one pool across its tests, because leaked worker state would corrupt exactly the IP2 reproducibility guarantee those tests prove; falsified by evidence that a shared pool is observably clean between tests — a probe showing no carried state across a pool reuse.
 - 2026-07-27: plan gate chose folding the CI hang cap into this milestone over a separate milestone, because both changes bound CI wall-clock and review as one PR; falsified by the two proving to need independent review or revert.
+- 2026-07-27: T1 done. Baseline at `d095bae`, median of three: suite total 327.3 s, 1175 pass / 0 fail / 0 skip. The six converted files hold 211.0 s (64.5%); AC2's 60% ceiling is 196.4 s, so the conversions must save at least 130.9 s.
+- 2026-07-27: implement gate chose a canonical-form value hash for the cache key over a caller-declared label or a setup-file fixture, after measuring that `rlang::hash()` differs between two identically-constructed workflows and between two `metric_set()` calls (self-referential quosure and closure environments serialize by unstable reference numbering); the canonical form was stable across all 5 fixture signatures and discriminated all 11 distinguishing pairs probed. Falsified by a signature pair the form fails to separate — which `test-fixture-cache.R` is written to catch.
+- 2026-07-27: implement gate chose a `teardown-` file for AC4's request/build table over a last-alphabetical test file or the profiler alone, and chose wrapping the existing call (`memoised(nested_tune_grid(...))`) over typed per-function wrappers, so the function under test stays visible at every call site and one helper serves both entry points.
 
 ## Decisions
 
