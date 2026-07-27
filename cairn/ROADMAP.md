@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-27 (M11 merged and archived — CI now skips tracki
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M12 | Fitting time only where an assertion needs it | in-progress | — | normal | milestones/M12-test-suite-runtime.md |
+| M12 | Fitting time only where an assertion needs it | review | — | normal | milestones/M12-test-suite-runtime.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |

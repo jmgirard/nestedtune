@@ -1,6 +1,6 @@
 # M12: Fitting time only where an assertion needs it
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -126,6 +126,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - 2026-07-27: T9 done. `timeout-minutes: 20` on the `R-CMD-check` and `test-coverage` jobs; PROFILE.md's divergence list now names three, the third being the cap.
 - 2026-07-27: T8 done. Re-measured at `7bf17e8` under every AC1 condition: suite total 108.0 s against the 327.3 s baseline, **33.0%** (AC2 ceiling 60%). 1199 pass / 0 fail / 0 skip. `devtools::check()` clean: 0 errors, 0 warnings, 0 notes. Fixture cache over a full run: 22 fixtures, 22 builds, 78 requests -- none built twice.
 - 2026-07-27: AC3 amended at a mini gate, from "no `skip_*()` call added" to "no `skip_*()` call added to a test that existed before this milestone". Measured: 0 `test_that()` blocks removed, 12 added, 0 skips removed, 2 added -- both in the new `test-fixture-cache.R` (`:125`, `:193`), guarding the two tests that build real workflow and design objects with the same `skip_if_no_engines()` every other file uses. The criterion exists to stop the speedup being bought by switching existing tests off; new tests guarded by the repo's own convention are not that, and dropping the guards would make `R CMD check` error on a machine without the Suggests.
+- 2026-07-27: all tasks done, status to review. PROFILE.md compressed back under its 120-line cap after the third divergence pushed it to 125. Branch pushed; AC6's second half (a run completing inside the cap) needs the PR, since the `push` trigger fires only on the default branch.
 - 2026-07-27: implement gate chose a `teardown-` file for AC4's request/build table over a last-alphabetical test file or the profiler alone, and chose wrapping the existing call (`memoised(nested_tune_grid(...))`) over typed per-function wrappers, so the function under test stays visible at every call site and one helper serves both entry points.
 
 ## Decisions
