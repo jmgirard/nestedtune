@@ -85,7 +85,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
       `failed_fold()` fallback. Allowlist code 20 only; anything unrecognized
       keeps the `failed_fold()` default. Classify by the shape expected, never
       by asking whether the value is an error (M07 lesson).
-- [ ] T4: End-to-end test in `test-parallel-identity.R`, alongside BC4: cancel
+- [x] T4: End-to-end test in `test-parallel-identity.R`, alongside BC4: cancel
       a real dispatched run, assert the abort, the restored RNG state and kind,
       and that no `nested_results` is returned. Bound it so a failure is an
       error, never a hang.
@@ -102,6 +102,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - 2026-07-26: amendment gate — Scope/In, AC2 and AC3 amended and T2/T3 reworded, on M09-D1's finding that errorValue 19 cannot separate a `daemons(0)` teardown from a dying daemon. Abort is allowlisted to code 20; 19 keeps today's failed-fold behaviour and the limit is documented. Escalation offered and declined.
 - 2026-07-26: T2 done — five tests added to `test-parallel-classify.R`. Two are red by design (code 20 must abort under both class names); three pass already, pinning behaviour T3 must not break: 19 stays a fold failure, a miraiError stays a fold failure, and a real interrupt stays a plain interrupt. Suite is red until T3.
 - 2026-07-26: T3 done — `is_cancelled_value()` allowlists errorValue 20 by positive shape validation (`is.integer()` is what excludes the empty-string interrupt and the character miraiError, rather than branch ordering); `classify_fold_result()` aborts on it with `c("nestedtune_cancelled", "nestedtune_interrupted")`. Full suite green: 1105 pass, 0 fail, 0 skip.
+- 2026-07-26: T4 done — end-to-end test on real daemons. Cancellation needs an actor outside a host that is blocked in `collect_mirai()`, so only that actor is substituted: the map is really dispatched and really stopped, and collect/classify/abort/unwind all run unmocked. Asserts the abort, both condition classes, `result` still NULL, RNG state and kind restored, and bounded elapsed. 50 pass in the file.
 
 ## Decisions
 
