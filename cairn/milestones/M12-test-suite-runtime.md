@@ -84,7 +84,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - [x] T1 Write `benchmarks/profile-tests.R` (load once, time each file, report
       counts, median of three) and commit `benchmarks/test-timing-baseline.md`
       with every condition AC1 lists. `benchmarks/` is already `.Rbuildignore`d.
-- [ ] T2 Add the memoised fixture helper to `helper-orchestration.R`: value-hash
+- [x] T2 Add the memoised fixture helper to `helper-orchestration.R`: value-hash
       key including the seed, condition capture and replay on hit, per-signature
       request/build counters, plus a test that a hit is `identical()` to the
       build and re-signals its conditions.
@@ -114,6 +114,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - 2026-07-27: plan gate chose folding the CI hang cap into this milestone over a separate milestone, because both changes bound CI wall-clock and review as one PR; falsified by the two proving to need independent review or revert.
 - 2026-07-27: T1 done. Baseline at `d095bae`, median of three: suite total 327.3 s, 1175 pass / 0 fail / 0 skip. The six converted files hold 211.0 s (64.5%); AC2's 60% ceiling is 196.4 s, so the conversions must save at least 130.9 s.
 - 2026-07-27: implement gate chose a canonical-form value hash for the cache key over a caller-declared label or a setup-file fixture, after measuring that `rlang::hash()` differs between two identically-constructed workflows and between two `metric_set()` calls (self-referential quosure and closure environments serialize by unstable reference numbering); the canonical form was stable across all 5 fixture signatures and discriminated all 11 distinguishing pairs probed. Falsified by a signature pair the form fails to separate — which `test-fixture-cache.R` is written to catch.
+- 2026-07-27: T2 done. `memoised()`, `canonical_form()`, `fixture_key()` and `fixture_cache_report()` in helper-orchestration.R; `test-fixture-cache.R` (19 assertions) and `teardown-fixture-cache.R`. Suite 1194 pass / 0 fail / 0 skip.
 - 2026-07-27: implement gate chose a `teardown-` file for AC4's request/build table over a last-alphabetical test file or the profiler alone, and chose wrapping the existing call (`memoised(nested_tune_grid(...))`) over typed per-function wrappers, so the function under test stays visible at every call site and one helper serves both entry points.
 
 ## Decisions

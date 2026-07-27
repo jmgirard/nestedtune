@@ -245,3 +245,227 @@ skip_if_no_engines <- function(stochastic = FALSE) {
   testthat::skip_if_not_installed("yardstick")
   if (stochastic) testthat::skip_if_not_installed("ranger")
 }
+
+# The suite-level fixture cache (M12).
+#
+# Most of this suite's runtime went on building the same tuning run over and
+# over -- one file alone asked for a byte-identical `nested_tune_grid()` result
+# seventeen times. `memoised()` wraps such a call so the run is built once per
+# suite run and every later request for the same run is served from the cache.
+# Nothing about what a test asserts changes; only how many times the fit happens.
+#
+# "The same run" means the whole of it. The key is a hash of the canonical form
+# (below) of every argument the call passes, plus the RNG state in force once
+# those arguments have been forced -- which is exactly the state the orchestrator
+# itself will snapshot, because `nested_tune_grid()` and `nested_final_fit()`
+# both force every argument in their `check_*()` calls before they touch the
+# RNG. Change the workflow, the design, the grid, the metrics or the seed and
+# the key changes with it.
+#
+# Do NOT wrap a call made under `local_mocked_bindings()`: the mock is not in
+# the key, so a value built under a mock would then be served to an unmocked
+# request. test-nested-tune-grid-leakage.R calls the orchestrator directly for
+# exactly that reason.
+
+# The canonical form of a value: what it *is*, with environments read for their
+# contents rather than their identity.
+#
+# `rlang::hash()` on its own cannot key this cache. Two identically-constructed
+# workflows serialize to different bytes, and so do two `metric_set()` calls: a
+# recipe's `terms` quosures capture the frame that built the recipe, and that
+# frame holds the recipe itself, while `metric_set()`'s closure environment
+# refers to itself the same way. Serialization resolves those cycles by
+# reference, and the reference numbering does not survive re-construction.
+#
+# So environments are expanded by their contents, sorted so that binding order
+# cannot enter; a named environment -- a namespace, the global environment --
+# stands for its name, since its contents are not what distinguishes one fixture
+# from another; and a cycle is cut the second time it is reached. Everything
+# else keeps its value and its attributes, which is what keeps the form
+# discriminating rather than merely stable. test-fixture-cache.R pins that: it
+# asserts every distinct fixture signature in this suite keys differently.
+canonical_form <- function(x, depth = 0L, seen = list()) {
+  if (depth > 40L) {
+    return("<depth>")
+  }
+  if (is.environment(x)) {
+    for (e in seen) {
+      if (identical(e, x)) return("<cycle>")
+    }
+    nm <- environmentName(x)
+    if (nzchar(nm)) return(list("<env>", nm))
+    seen <- c(seen, list(x))
+    vars <- sort(ls(x, all.names = TRUE))
+    vals <- lapply(vars, function(v) {
+      canonical_form(get(v, envir = x, inherits = FALSE), depth + 1L, seen)
+    })
+    return(list("<env>", vars, vals))
+  }
+  if (is.null(x)) {
+    return("<null>")
+  }
+  # The empty symbol standing for a missing argument default: `lapply()` over
+  # `formals()` would otherwise try to evaluate it and fail.
+  if (is.name(x) && !nzchar(as.character(x))) {
+    return("<missing>")
+  }
+  attrs <- attributes(x)
+  canonical_attrs <- if (is.null(attrs)) {
+    NULL
+  } else {
+    lapply(attrs, canonical_form, depth = depth + 1L, seen = seen)
+  }
+  core <- if (is.function(x)) {
+    if (is.primitive(x)) {
+      list("<primitive>", format(x))
+    } else {
+      list(
+        "<closure>",
+        canonical_form(as.list(formals(x)), depth + 1L, seen),
+        body(x),
+        canonical_form(environment(x), depth + 1L, seen)
+      )
+    }
+  } else {
+    attributes(x) <- NULL
+    if (is.list(x) || is.pairlist(x)) {
+      lapply(x, canonical_form, depth = depth + 1L, seen = seen)
+    } else {
+      x
+    }
+  }
+  if (is.null(canonical_attrs)) core else list(core, canonical_attrs)
+}
+
+fixture_cache <- new.env(parent = emptyenv())
+
+fixture_cache_reset <- function() {
+  rm(list = ls(fixture_cache, all.names = TRUE), envir = fixture_cache)
+  invisible(NULL)
+}
+
+# The RNG state a call is about to run under, as a value. A session that has
+# never drawn has no `.Random.seed` at all, and that absence is itself part of
+# the state -- a run started there draws from a freshly initialized generator.
+fixture_rng_state <- function() {
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    list(RNGkind(), get(".Random.seed", envir = globalenv()))
+  } else {
+    list(RNGkind(), "<unseeded>")
+  }
+}
+
+# Re-signal a captured condition so a cache hit reaches the caller's handlers
+# exactly as the build did. `warning()` and `message()` on a condition object
+# establish the muffle restarts that `suppressWarnings()` and testthat's
+# expectations rely on, which `signalCondition()` alone would not.
+replay_condition <- function(cnd) {
+  if (inherits(cnd, "error")) {
+    stop(cnd)
+  } else if (inherits(cnd, "warning")) {
+    warning(cnd)
+  } else if (inherits(cnd, "message")) {
+    message(cnd)
+  } else {
+    signalCondition(cnd)
+  }
+  invisible(NULL)
+}
+
+# The key for one request: which function, under which arguments, at which RNG
+# state. Arguments are sorted by name so that writing them in a different order
+# is not a different fixture. Exposed on its own so test-fixture-cache.R can
+# check what it separates without building anything.
+fixture_key <- function(fn_name, args) {
+  rlang::hash(list(
+    fn_name,
+    canonical_form(args[order(names(args))]),
+    canonical_form(fixture_rng_state())
+  ))
+}
+
+memoised <- function(expr) {
+  call <- substitute(expr)
+  if (!is.call(call)) {
+    rlang::abort("memoised() takes a call that builds a fixture.")
+  }
+  env <- parent.frame()
+  fn <- eval(call[[1L]], envir = env)
+
+  # Forced here, in written order, so the RNG state captured below is the one
+  # the orchestrator would itself snapshot -- it forces its own arguments in its
+  # `check_*()` calls before drawing.
+  args <- lapply(as.list(call)[-1L], eval, envir = env)
+  args <- as.list(match.call(fn, as.call(c(list(call[[1L]]), args))))[-1L]
+
+  seed_hash <- rlang::hash(canonical_form(fixture_rng_state()))
+  key <- fixture_key(deparse(call[[1L]]), args)
+
+  hit <- fixture_cache[[key]]
+  if (is.null(hit)) {
+    conditions <- list()
+    value <- withCallingHandlers(
+      # `envir` keeps `parent.frame()` inside the orchestrator pointing at the
+      # test, not at this helper: `nested_final_fit()` re-evaluates its design's
+      # stored `inside` call in its caller's environment.
+      do.call(fn, args, quote = TRUE, envir = env),
+      warning = function(w) {
+        conditions[[length(conditions) + 1L]] <<- w
+      },
+      message = function(m) {
+        conditions[[length(conditions) + 1L]] <<- m
+      }
+    )
+    hit <- list(
+      value = value,
+      conditions = conditions,
+      label = paste(deparse(call), collapse = " "),
+      seed = seed_hash,
+      builds = 1L,
+      requests = 0L
+    )
+  } else {
+    for (cnd in hit$conditions) replay_condition(cnd)
+  }
+  hit$requests <- hit$requests + 1L
+  assign(key, hit, envir = fixture_cache)
+  hit$value
+}
+
+# What the cache did over a run: one row per fixture, most requested first.
+#
+# A fixture here is a call *as written* together with the RNG state it was made
+# under, and that pairing is what makes the `builds` column mean something. One
+# entry per key is a tautology -- a miss is what creates an entry, so no key can
+# build twice. Grouping by the source text alone is no better: a test that
+# deliberately runs the same call under two seeds wants two builds and would be
+# reported as a fault. What is left once both are excluded is the real failure:
+# the same call, at the same seed, landing on two keys because the key was
+# unstable, and so paying for one fixture twice. That is the `builds` above 1
+# AC4 reads, and nothing else produces one.
+fixture_cache_report <- function() {
+  keys <- ls(fixture_cache, all.names = TRUE)
+  if (length(keys) == 0L) {
+    return(data.frame(
+      signature = character(0), builds = integer(0), requests = integer(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+  entries <- lapply(keys, function(k) fixture_cache[[k]])
+  labels <- vapply(entries, function(e) e$label, character(1))
+  seeds <- vapply(entries, function(e) e$seed, character(1))
+  requests <- vapply(entries, function(e) e$requests, integer(1))
+
+  group <- paste(labels, seeds, sep = "\r")
+  first <- !duplicated(group)
+  out <- data.frame(
+    signature = labels[first],
+    builds = vapply(group[first], function(g) sum(group == g), integer(1)),
+    requests = vapply(group[first], function(g) sum(requests[group == g]),
+                      integer(1)),
+    stringsAsFactors = FALSE
+  )
+  out <- out[order(-out$requests, out$signature), ]
+  row.names(out) <- NULL
+  out
+}
