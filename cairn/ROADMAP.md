@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M15 merged and archived — an interrupted parallel run now cancels its outstanding folds, and review found by execution that mirai cancellation reaches dispatcher-backed pools only, which the docs now say. 4 findings, 2 actioned, 1 more fixed below threshold; M09's row pruned, 20 candidates, 1 lesson added, the M02 tolerance line pruned at cap)_
+_Last hygiene check: 2026-07-27 (audit pass after M15's: all checks green, nothing in flight, both GitHub inboxes empty, no orphans and no git gap — nothing changed. Standing item: the hang candidate's promotion condition now reads as met, localized to `test-parallel-classify.R`, awaiting a plan)_
 
 ## Milestones
 
