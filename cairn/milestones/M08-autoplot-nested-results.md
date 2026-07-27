@@ -53,7 +53,7 @@ disagreement section gains the plot.
       its fold id; for a fixture where they agree, every completed fold appears
       at the one value. Asserted on `ggplot2::ggplot_build(p)$data`, never on
       pixels.
-- [ ] AC3: A failed outer fold, and a completed fold carrying no value for a
+- [x] AC3: A failed outer fold, and a completed fold carrying no value for a
       parameter, contribute no point to that parameter's panel and are never
       imputed; the plot states how many of the requested folds contributed —
       derived from the columns in hand as `print.nested_results` does, never
@@ -139,6 +139,8 @@ disagreement section gains the plot.
 - 2026-07-26: return 1 — T9-T12 fix the four actioned findings. Both subtitles now state a design fact (requested/completed) and contribution is counted per panel, qualified only where it differs, porting print's own rule. Breaks decide per panel through a closure over the drawn values. `facet_wrap(drop = FALSE)` keeps a requested metric's panel and makes the all-NA figure draw. DESIGN's dependency line corrected to seven packages. 65 assertions; four inversions red — no-op panel qualifier FAIL 4, pooled break decision FAIL 1, no `drop = FALSE` FAIL 2, subtitle asserting per-panel contribution again FAIL 8.
 
 - 2026-07-26: return 1 hygiene — the review commit `31655c0` had swept a stray `Rplots.pdf` into the repo root via `git add -A`; R opens `pdf()` when something needs a device and none is current, and my own review verification scripts left it there. Removed and gitignored, and the drawing-path assertion now runs on a null device. `check()` back to 0/0/0.
+
+- 2026-07-26: re-review — all 7 criteria met on fresh evidence, `check()` 0/0/0, 6/6 CI green. Two lenses on the fixes: blame found nothing; the diff lens confirmed F1/F2, F4, F5/F6 correct and complete and raised F7 (88), that `panel_breaks()` identified a panel by which pooled values fell in its limits rather than by which parameter owned it. Fixed at review with `panel_owner()`, plus the comment that had asserted the two were equivalent. 68 assertions; the inversion restoring the membership test fails 1.
 
 ## Decisions
 
@@ -363,3 +365,90 @@ in play, and no criterion has failed twice.
 CI on PR #8: all 6 jobs green (ubuntu release/devel/oldrel-1, macOS, Windows,
 test-coverage) at the reviewed commit — the vdiffr snapshots did not prove
 platform-fragile, which retires that pre-review concern.
+
+### Re-review, 2026-07-26 (after return 1, at `86c78e5`)
+
+Fresh `testthat::test_local()` on the plot file: **21 blocks, 65 assertions, 0
+failures, 0 warnings, 0 skips** (was 17 / 51).
+
+**AC3 — re-verified, now met.** The two cases that failed, checked
+independently of the suite:
+
+| Case | Subtitle | Panel |
+|---|---|---|
+| Completed fold, no value (F2) | "3 outer folds requested, 3 completed." | `num_comp (2 of 3 chose)` |
+| Fold `NA` on `rmse` (F1) | same | `rmse (from 2 folds)`, where `print` says `rmse (standard): 1.52 (from 2 folds)` |
+| A failed fold | "3 outer folds requested, 2 completed." | unqualified, correctly — both survivors contributed to everything |
+| `res[1, ]` | "1 outer fold requested, 1 completed." | singular handled |
+| `pf[2:3, ]` | "2 outer folds requested, 1 completed." | unqualified — the one completed fold chose |
+
+Every count is derived from the columns in hand, so a row subset describes
+itself (IP4). The figure-level sentence now claims only what holds of the whole
+figure, and per-panel contribution is stated where it differs — the same
+division `print_estimate()` makes, in the same words. Pinned by "a panel says so
+when fewer folds contributed to it than completed" (4) and "the parameters view
+states how much of the design ran" (2); four inversions red — a no-op
+`qualify_panels()` fails 4, restoring the old subtitle fails 8.
+
+**AC4 — re-verified.** The exactness clause is untouched by the fix; the caveat
+survives the rewording, pinned by "the performance view says the estimate is not
+a model's score" (4), which now also asserts the design-fact sentence.
+
+**AC6 — re-verified.** All four vdiffr snapshots re-recorded against the new
+labels and stable across consecutive runs; the figures were inspected before
+re-recording. `NEWS.md` rewritten to describe the per-panel count rather than
+the count it used to claim.
+
+**AC7 — re-verified.** Fresh `devtools::check(document = TRUE)`: **0 errors, 0
+warnings, 0 notes**. An intermediate run had raised one NOTE for a stray
+top-level `Rplots.pdf` — R opens `pdf()` when something needs a device and none
+is current, and the *first review's own* verification scripts left it there, from
+where a `git add -A` committed it at `31655c0`. Removed, gitignored, and the
+drawing-path assertion now runs on a null device.
+
+Also fixed beyond the findings: two review-time defects of my own — the
+committed `Rplots.pdf` above, and `axis_labels()`'s inability to read any panel
+but the first, which is what let F3 hide.
+
+Advisory not actioned: `cairn_validate`'s sizing tripwire WARNs at 12 tasks
+against 10. T9–T12 are review-mandated fixes to code this milestone already
+wrote; splitting would put a fix in a different PR from the defect it fixes.
+
+**Independent review of the fixes — two lenses, one new finding.**
+
+**[S] blame-history — no findings.** Confirmed the `DESIGN.md` edit follows the
+italicized dated-parenthetical convention M02/M05 used for corrections there,
+touches no IP/GP text, and matches `DESCRIPTION`. On the print port it found a
+stronger guarantee than claimed: both `print_estimate()` and `plot_performance()`
+call the *same* `summarize_folds(per_fold_metrics(x))`, so the counts cannot
+structurally drift, not merely by convention. `axis_labels()`'s new trailing
+`panel` argument breaks no caller.
+
+**[O] diff-bug — F1/F2, F4 and F5/F6 correct and complete; one new finding on
+F3.** Its verification covered ground no test does: a repeated design carrying
+`id`/`id2`, a fold selecting `NA`, three two-estimator variants (including
+disjoint estimators per fold), a failed fold *and* a value-less fold together,
+and three row subsets — every per-panel count equalled the points in that panel
+and matched `print` on the same object. It also established that an unqualified
+panel is truthfully "all completed folds contributed" *by construction*, since
+`failed_fold()` sets `selected = NULL` and a zero-row `empty_metrics()` on every
+failure path, making contribution a subset of completed.
+
+- **F7 (88) — actioned, fixed at review.** `panel_breaks()` asked which *pooled*
+  values fall inside a panel's limits, which is not the same question as which
+  parameter owns the panel — and a comment here asserted the two were equivalent.
+  Reproduced independently: `num_comp` valued 2/3/4 beside a parameter valued
+  2.5/2.7/3.5 put `2.0 2.5 3.0 3.5 4.0` on an axis whose only values are 2, 3
+  and 4. The disjoint fixture in the T10 test could not see it. Fixed by
+  `panel_owner()`, which identifies the panel as the parameter whose own range
+  sits inside the limits and fills most of them; the overlapping case now gives
+  `2 3 4` and restoring the membership test fails the new assertion. The false
+  comment is replaced by one stating the actual residual limit — two parameters
+  with the same range are ambiguous and the first wins, which is a tick label
+  and not a claim about any fold. 68 assertions.
+
+The finding's own scope claim was checked rather than taken on trust: an integer
+parameter spanning 1–15 beside a continuous 1–2 was *already* fine, because
+`pretty()` lands on integers at that span. The defect needs a narrow integer
+range overlapped by continuous values — `svm_poly(degree, cost)` shape — so its
+blast radius was smaller than F3's, as the reviewer said.

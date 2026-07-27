@@ -108,7 +108,7 @@ plot_selection <- function(x, call = rlang::caller_env()) {
   ggplot2::ggplot(frame, ggplot2::aes(x = .data$fold, y = .data$value)) +
     ggplot2::geom_point(size = 2.5) +
     ggplot2::scale_x_discrete(drop = FALSE) +
-    value_scale(frame$value) +
+    value_scale(frame$value, frame$parameter) +
     ggplot2::facet_wrap(ggplot2::vars(.data$parameter), scales = "free_y") +
     ggplot2::labs(
       title = "Inner-loop selections across outer folds",
@@ -137,25 +137,27 @@ plot_selection <- function(x, call = rlang::caller_env()) {
 # calling it with each panel's own limits -- so one continuous parameter judged
 # globally put every *other* panel back on fractional breaks, which is how the
 # defect this exists to fix came back for any grid mixing an integer parameter
-# with a continuous one (M08 review F3). Judging by panel needs no panel identity:
-# a panel's limits are trained on its own parameter's values, so the drawn values
-# that fall inside them are the ones that panel is about.
-value_scale <- function(values) {
+# with a continuous one (M08 review F3).
+value_scale <- function(values, parameter) {
   if (!is.numeric(values)) {
     return(NULL)
   }
-  whole <- !is.na(values) & values == trunc(values)
+  by_param <- split(values, parameter)
+  whole <- vapply(
+    by_param,
+    function(v) length(v) > 0L && all(v == trunc(v)),
+    logical(1)
+  )
   if (!any(whole)) {
     return(NULL)
   }
-  ggplot2::scale_y_continuous(breaks = panel_breaks(values))
+  ggplot2::scale_y_continuous(breaks = panel_breaks(by_param))
 }
 
-panel_breaks <- function(values) {
+panel_breaks <- function(by_param) {
   function(limits) {
-    inside <- values[!is.na(values) &
-                       values >= limits[[1L]] & values <= limits[[2L]]]
-    if (length(inside) == 0L || !all(inside == trunc(inside))) {
+    owner <- panel_owner(by_param, limits)
+    if (is.null(owner) || !all(owner == trunc(owner))) {
       # `pretty()` rather than ggplot2's own default, which lives in `scales` and
       # would be an undeclared namespace to reach for. The two agree closely, and
       # this branch is only reached by a continuous parameter sharing a figure
@@ -164,6 +166,43 @@ panel_breaks <- function(values) {
     }
     whole_number_breaks(limits)
   }
+}
+
+# Which parameter's panel this is, recovered from the limits alone.
+#
+# A shared breaks function is told the limits and nothing else, so it has to work
+# out whose panel it is -- and the limits are the answer, because `free_y` trains
+# them on one parameter's values. The owner is the parameter whose own range sits
+# inside the limits and fills most of them.
+#
+# Asking instead which *pooled* values fall inside the limits is not the same
+# question, and answering it that way is what let a continuous parameter
+# overlapping an integer one put fractional ticks back on the integer panel: a
+# comment here once claimed the two were equivalent, and the M08 re-review
+# disproved it with `num_comp` 2/3/4 beside a parameter valued 2.5/2.7/3.5.
+#
+# Two parameters with the same range are genuinely ambiguous and the first wins.
+# That is a tick label on one axis, not a claim about any fold, so it is left as
+# the known limit of a cheap identification rather than engineered away.
+panel_owner <- function(by_param, limits) {
+  span <- diff(limits)
+  best <- NULL
+  best_fill <- -Inf
+  for (values in by_param) {
+    if (length(values) == 0L) {
+      next
+    }
+    own <- range(values)
+    if (own[[1L]] < limits[[1L]] || own[[2L]] > limits[[2L]]) {
+      next
+    }
+    fill <- if (span == 0) 1 else diff(own) / span
+    if (fill > best_fill) {
+      best_fill <- fill
+      best <- values
+    }
+  }
+  best
 }
 
 whole_number_breaks <- function(limits) {

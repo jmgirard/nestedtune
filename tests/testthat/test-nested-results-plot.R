@@ -164,6 +164,22 @@ test_that("each panel decides its own breaks", {
   expect_identical(strip_labels(p), c("num_comp", "penalty"))
   expect_identical(axis_labels(p, "y", panel = 1L), "3")
   expect_true(any(grepl(".", axis_labels(p, "y", panel = 2L), fixed = TRUE)))
+
+  # The harder case, and the one the disjoint fixture above cannot see: the
+  # continuous parameter's values fall *inside* the integer parameter's range, so
+  # "which pooled values are in these limits" no longer identifies the panel.
+  # Asking that question rather than which parameter owns the panel put
+  # 2.0/2.5/3.0/3.5/4.0 back on an axis whose only values are 2, 3 and 4.
+  overlapping <- res
+  for (i in seq_len(nrow(overlapping))) {
+    overlapping$.selected[[i]]$num_comp <- c(2L, 3L, 4L)[[i]]
+    overlapping$.selected[[i]]$degree <- c(2.5, 2.7, 3.5)[[i]]
+  }
+  q <- autoplot(overlapping)
+
+  expect_identical(strip_labels(q), c("num_comp", "degree"))
+  expect_identical(axis_labels(q, "y", panel = 1L), c("2", "3", "4"))
+  expect_true(any(grepl(".", axis_labels(q, "y", panel = 2L), fixed = TRUE)))
 })
 
 test_that("a metric no fold could score keeps its panel", {
