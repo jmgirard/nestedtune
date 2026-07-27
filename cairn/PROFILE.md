@@ -42,34 +42,35 @@ rules in tracking-rules:
 - Never test print cosmetics beyond meaningful snapshots, trivial pass-throughs,
   dependency behavior, or plots except `vdiffr` when the plot is the product.
 - `covr` is a diagnostic, never a gate.
-- GitHub Actions CI starts from the standard usethis pair:
-  `use_github_action("check-standard")` runs `R CMD check` across platforms (a
-  normal CI check — see the merge clause below); `use_github_action("test-coverage")`
-  runs `covr` and uploads to Codecov, which annotates the PR but never gates the
-  merge. `.github/` carries the `^\.github$` `.Rbuildignore` entry usethis adds.
-- Three divergences from that stock shape, two from M11 and one from M12. **A
-  `concurrency` block** cancels a run once a later push supersedes it, on every
-  ref but the default branch — a distribution channel, so a commit there keeps a
-  completed check rather than a cancelled one. **A `paths-ignore` filter** on
-  both triggers of both workflows skips `cairn/**`, `CLAUDE.md` and `.claude/**`,
-  which cannot change what `R CMD check` sees; it bites on `push` only, since
-  GitHub evaluates it on a `pull_request` against the whole PR diff. **A `timeout-minutes: 20`** on each workflow's job turns a
-  hang into a failed job with a timestamp: both have hung inside
+- CI starts from the usethis pair: `check-standard` runs `R CMD check` across
+  platforms (a normal CI check — see the merge clause below), `test-coverage`
+  runs `covr` to Codecov, annotating a PR but never gating it; `.github/` is `.Rbuildignore`d.
+- Four divergences from that stock shape (M11 ×2, M12, M14). **A `concurrency`
+  block** cancels a superseded run on every ref but the default branch, a
+  distribution channel that keeps a completed check instead. **A `paths-ignore`
+  filter** on both triggers of both gating workflows skips `cairn/**`,
+  `CLAUDE.md`, `.claude/**`; it bites on `push` only, GitHub evaluating it on a
+  `pull_request` against the whole PR diff. **A `timeout-minutes: 20`** on each
+  gating job ends a hang with a timestamp — both have hung inside
   `test_check("nestedtune")` for 52 and 40 minutes on a tree that passed an hour
-  earlier. It is not free headroom — an ordinary windows leg has reached 11m54s
-  and one job in 394 has passed 20 minutes and still finished, so the cap would
-  have failed that one. It caps a hang, never diagnoses one.
-- `.github/ci-usage.py` measures the first two over any window inside GitHub's
-  90-day retention (baseline: `.github/ci-usage-baseline.md`); it counts commits
-  from `git log`, not the runs they fired, and reports what cancelling reclaims
-  rather than what a superseded run cost — never crediting a cancelled run with
-  its whole would-be duration.
+  earlier — and is not free headroom: a windows leg has reached 11m54s, and 1 of
+  394 jobs passed 20 minutes and still finished. **A `workflow_dispatch`-only
+  stress workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand,
+  invisible to `ci-usage.py`'s agreement check for carrying neither trigger.
+- Locating a hang, since the cap only ends one: `HangTraceReporter`
+  (`tests/testthat.R`) writes a timestamped start/end line per test file to
+  unbuffered `stderr()`, naming the file a killed job stopped in. No bound
+  exists — `setTimeLimit()` cannot interrupt `collect_mirai()` (M14).
+- `.github/ci-usage.py` measures the first two over any window in GitHub's
+  90-day retention (baseline: `.github/ci-usage-baseline.md`), counting commits
+  from `git log` rather than the runs they fired and reporting what cancelling
+  reclaims, never crediting a cancelled run with its whole would-be duration.
 - **The merge clause, for the filters:** cairn never merges red or pending CI. A
   filtered event produces no run, so its check is absent rather than pending and
   merging past it is correct; what it forbids is merging past a check that ran
   and failed, or one still running. With required status checks (none here)
-  GitHub leaves a filtered check `Pending` forever, so branch protection would
-  mean reconciling filtered paths with that list.
+  GitHub leaves a filtered check `Pending` forever, so branch protection means
+  reconciling filtered paths with that list.
 - Change governance: the dependency surface is DESCRIPTION Imports/Suggests, and
   a breaking change warns via `lifecycle::deprecate_warn()` before removal. The
   gates themselves are universal (tracking-rules "Universal tracking rules").

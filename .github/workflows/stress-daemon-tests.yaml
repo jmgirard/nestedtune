@@ -1,0 +1,76 @@
+# Run the daemon-test stress harness on the machine type where the hang has
+# actually happened.
+#
+# The intermittent wedge inside test_check("nestedtune") has been seen three
+# times, every one of them on CI and never on a maintainer's machine, so a
+# harness that only ever runs locally is testing the platform that has never
+# failed. This runs the same script on a macOS runner.
+#
+# Triggered by hand only. There is no `push` or `pull_request` here on purpose:
+# this is a deliberate hunt costing tens of minutes, not something every commit
+# should pay for. That also keeps it out of `.github/ci-usage.py`, which reads
+# the `paths-ignore` block of every push/pull_request trigger and refuses to run
+# when they disagree -- a workflow with neither trigger declares no block to
+# disagree.
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Iterations of the three daemon-using test files'
+        required: false
+        default: '20'
+      deadline:
+        description: 'Per-file kill deadline in seconds'
+        required: false
+        default: '900'
+      os:
+        description: 'Runner to hunt on'
+        required: false
+        default: 'macos-latest'
+        type: choice
+        options:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+
+name: stress-daemon-tests.yaml
+
+permissions: read-all
+
+jobs:
+  stress:
+    runs-on: ${{ inputs.os }}
+    # Deliberately far above R-CMD-check's 20: this job is meant to sit through
+    # hangs and record them, where that one is meant to be killed by them.
+    timeout-minutes: 180
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::pkgload
+          needs: check
+
+      - name: Stress the daemon tests
+        run: |
+          Rscript benchmarks/stress-daemon-tests.R \
+            "${{ inputs.iterations }}" "${{ inputs.deadline }}" \
+            2>&1 | tee stress-daemon-tests.log
+        shell: bash
+
+      - name: Upload the ledger
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stress-daemon-tests-${{ inputs.os }}
+          path: stress-daemon-tests.log
+          if-no-files-found: warn
