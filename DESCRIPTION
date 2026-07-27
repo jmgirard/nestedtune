@@ -30,6 +30,7 @@ Suggests:
     mirai (>= 2.4.0),
     mlbench,
     pkgload,
+    R6,
     ranger,
     recipes,
     rmarkdown,

@@ -87,7 +87,7 @@ row until something localizes it. Sharing one daemon pool across
 
 ## Tasks
 
-- [ ] T1 Add a reporter to `tests/testthat.R` wrapping the check reporter,
+- [x] T1 Add a reporter to `tests/testthat.R` wrapping the check reporter,
       writing `start`/`end` lines to `stderr()`; verify by killing a local
       `R CMD check` mid-suite and reading the surviving `testthat.Rout`.
 - [ ] T2 Convert `test-parallel-classify.R:33`'s `[` collect to
@@ -112,6 +112,9 @@ row until something localizes it. Sharing one daemon pool across
 - 2026-07-27: plan gate chose a harness that runs both locally and on macOS CI over a local-only one, because the hang has occurred only on CI and a clean local result would prove little; falsified by a local reproduction, which would make the CI leg redundant.
 - 2026-07-27: plan chose an unbuffered stderr line from a `tests/testthat.R` reporter over per-file edits or a stdout line, because R buffers stdout to file and a killed process loses the tail — the recipe-failure lines that did survive the real hang came through stderr; falsified by evidence that stdout is flushed per line under `R CMD check`.
 - 2026-07-27: plan chose a probe-then-fix shape for the orphan `Rscript` daemons over asserting the leak outright, because `mirai::daemon()` defaults to `autoexit = TRUE` and the leak is unestablished; falsified by the probe finding a survivor, which converts it to a fix.
+- 2026-07-27: T1 done. `HangTraceReporter` in `tests/testthat.R` writes a timestamped start/end line per test file to `stderr()`, beside `CheckReporter` in a `MultiReporter`. AC1 evidence: a local `R CMD check` whose test process was killed at 19:22:50 left a `testthat.Rout.fail` ending `start test-nested-results-plot.R` with no matching end, every earlier file paired.
+- 2026-07-27: implementation gate chose declaring `R6` in Suggests over the stock `ProgressReporter$new(file = stderr())`, because the latter carries no clock and the .Rout dump reaches the job log with every line stamped alike; recorded as D-021; falsified by a reporter hook that timestamps without a subclass.
+- 2026-07-27: two mechanism corrections found by execution before they could ship — `check_reporter()` returns the string "Check" and not an object, so `MultiReporter` needs `CheckReporter$new()`; and R6 members are locked, so replacing a method on a stock `Reporter` instance is not an available route to avoiding the dependency.
 - 2026-07-27: criteria audit (fresh-context [O], pre-gate) returned findings on 6 of 7 drafted criteria; fixed before the gate: the stderr/reporter mechanism, the inverted routes-through-`collect_bounded()` check replacing an ungreppable ban, the orphan claim demoted to a probe, the harness's per-iteration kill and `.Rbuildignore` entry, the last-sorting teardown file, and a non-reproduction obligation split out as AC6.
 
 ## Decisions
