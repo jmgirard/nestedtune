@@ -96,12 +96,60 @@
 #' reporting how many those were. It refuses outright when no fold completed:
 #' an estimate is never reported for a design that did not execute.
 #'
+#' @section Parallel execution:
+#'
+#' The outer folds run in parallel when you have started mirai daemons, and
+#' serially otherwise. There is no argument for this — start daemons before the
+#' call and the loop uses them:
+#'
+#' ```
+#' mirai::daemons(4)
+#' res <- nested_tune_grid(wf, folds, grid = grid)
+#' mirai::daemons(0)
+#' ```
+#'
+#' Two or more daemons are needed before the loop dispatches; below that it
+#' stays serial, the same threshold `tune` applies. Inner tuning always runs
+#' serially whatever you set, because nested parallelism oversubscribes cores.
+#'
+#' **Results do not depend on how the loop ran.** The same seed gives the same
+#' result serially and in parallel, at any number of daemons — each fold's seeds
+#' are drawn up front and assigned by position, so a fold's outcome depends on
+#' where it sits in the design and never on which worker took it or in what
+#' order. One exception, and it carries no numbers: the backtraces stored in
+#' `.notes` record where a fold executed, so a fold that failed on a daemon
+#' carries that daemon's call stack rather than yours. The note text, its
+#' location, and its type are the same either way, though a daemon wraps long
+#' message lines to its own console width rather than your terminal's.
+#'
+#' Daemons are **separate R processes**, which has consequences worth knowing:
+#'
+#' - They do not inherit your session's options, your `.libPaths()` changes, or
+#'   environment variables you set after launching them. Set what a fold needs
+#'   with [mirai::everywhere()], or start the daemons after setting it.
+#' - They load nestedtune from an installed library. Running under
+#'   `devtools::load_all()` is not enough — the daemons cannot see it, and the
+#'   call stops rather than failing every fold with the same opaque note. During
+#'   development, prime them with
+#'   `mirai::everywhere(pkgload::load_all("<path>"))`.
+#' - Before dispatching, the call checks that the daemons can actually load the
+#'   package, and stops if they cannot or do not answer within 30 seconds. That
+#'   check is bounded; the folds themselves are not. If every daemon dies *after*
+#'   folds are dispatched, the call blocks waiting for results that will never
+#'   arrive, and you interrupt it. No per-fold timeout is imposed, because no
+#'   time limit is defensible for an arbitrary model fit — a slow fold and a
+#'   dead one would be indistinguishable.
+#'
+#' A fold whose worker dies is recorded as a failed fold, exactly like any other
+#' failure: the run finishes, the other folds keep their results, and `.notes`
+#' names the worker as the stage. Interrupting a run is not a fold failure — the
+#' call aborts and returns nothing.
+#'
 #' @section Differences from calling tune directly:
 #'
-#' Inner tuning always runs with `control_grid(allow_par = FALSE)`. Nested
-#' parallelism oversubscribes cores, so parallelism belongs over the outer folds
-#' rather than inside them; the setting is forced rather than left to chance,
-#' and there is deliberately no `control` argument to override it.
+#' Inner tuning always runs with `control_grid(allow_par = FALSE)`, forced
+#' rather than left to chance, and there is deliberately no `control` argument
+#' to override it. Parallelism belongs over the outer folds, as above.
 #'
 #' @examples
 #' \donttest{
@@ -154,16 +202,23 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
 
   seeds <- sample.int(.Machine$integer.max, 2L * n)
 
-  folds <- lapply(seq_len(n), function(i) {
-    nested_fold_fit(
+  # One self-contained payload per fold. Each carries only what that fold needs,
+  # so a worker is never sent the rest of the design.
+  payloads <- lapply(seq_len(n), function(i) {
+    list(
       split = resamples$splits[[i]],
       inner = resamples$inner_resamples[[i]],
-      seeds = seeds[c(2L * i - 1L, 2L * i)],
-      object = object,
-      grid = grid,
-      metrics = metrics
+      seeds = seeds[c(2L * i - 1L, 2L * i)]
     )
   })
+
+  folds <- dispatch_folds(
+    payloads,
+    object = object,
+    grid = grid,
+    metrics = metrics,
+    call = rlang::current_env()
+  )
 
   out <- new_nested_results(resamples, folds, seeds, grid, metrics)
   warn_failed_folds(out, call = rlang::current_env())
@@ -247,11 +302,16 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
 # A fold that did not finish. `result` is whatever tune handed back before
 # giving up, which is where the actual cause lives -- our own note names the
 # stage, tune's notes say what happened (GP1).
-failed_fold <- function(stage, cnd, result) {
-  message <- if (is.null(cnd)) {
-    "The outer fit produced no metrics."
-  } else {
-    conditionMessage(cnd)
+failed_fold <- function(stage, cnd, result, message = NULL) {
+  # `message` is supplied only by the worker-failure path, where there is no
+  # condition to read: mirai's failure values are not conditions and one of them
+  # raises on conditionMessage() (M07-D2).
+  if (is.null(message)) {
+    message <- if (is.null(cnd)) {
+      "The outer fit produced no metrics."
+    } else {
+      conditionMessage(cnd)
+    }
   }
   list(
     completed = FALSE,

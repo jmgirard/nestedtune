@@ -26,7 +26,9 @@ Imports:
 Suggests:
     knitr,
     lobstr,
+    mirai (>= 2.4.0),
     mlbench,
+    pkgload,
     ranger,
     recipes,
     rmarkdown,
