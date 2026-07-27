@@ -1,11 +1,11 @@
 # M14: A hang says where it happened
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m14-hang-localization`
 
 ## Goal
 

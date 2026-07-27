@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-27 (M14 and M15 planned off the hang candidate, whi
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M12 | Fitting time only where an assertion needs it | done | — | normal | milestones/archive/M12-test-suite-runtime.md |
-| M14 | A hang says where it happened | planned | — | high | milestones/M14-hang-localization.md |
+| M14 | A hang says where it happened | in-progress | — | high | milestones/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | planned | — | normal | milestones/M15-interrupt-leaves-no-work.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
