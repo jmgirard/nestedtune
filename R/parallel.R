@@ -107,38 +107,180 @@ dispatch_folds <- function(payloads, object, grid, metrics,
 # rejected: a model fit has no defensible time limit, but a round-trip that only
 # calls requireNamespace() does, and bounding it converts an unbreakable hang
 # into an error naming the cause (M07-D6).
-preflight_timeout_ms <- 30000L
+#
+# The bound is an option rather than an argument (D-020): it tunes
+# infrastructure and never anything statistical, so no result depends on it and
+# nested_tune_grid()'s signature stays what it was. Non-finite is refused along
+# with non-positive and non-numeric (M10-D2) -- an `Inf` bound is not a bound,
+# and would hand back the unbreakable hang this exists to convert into an error.
+default_preflight_timeout_ms <- 30000L
 
-daemons_can_load <- function(timeout = preflight_timeout_ms) {
-  isTRUE(tryCatch(
-    mirai::mirai(
-      requireNamespace("nestedtune", quietly = TRUE),
-      .timeout = timeout
-    )[],
-    error = function(cnd) FALSE
-  ))
+preflight_timeout <- function(call = rlang::caller_env()) {
+  value <- getOption("nestedtune.preflight_timeout", default_preflight_timeout_ms)
+  usable <- is.numeric(value) && length(value) == 1L &&
+    !is.na(value) && is.finite(value) && value > 0
+  if (!usable) {
+    cli::cli_abort(
+      c(
+        "{.code options(nestedtune.preflight_timeout)} must be a single
+         positive, finite number of milliseconds.",
+        x = if (is.numeric(value) && length(value) == 1L) {
+          "It is {.val {value}}."
+        } else {
+          "It is {.obj_type_friendly {value}}."
+        }
+      ),
+      class = "nestedtune_bad_preflight_timeout",
+      call = call
+    )
+  }
+  as.numeric(value)
 }
 
-# `ok` is an argument so the failure branch is reachable in a test without
-# breaking a library path. Doing that for real also stops the daemon loading
-# *mirai*, which kills it at startup and hangs the very probe under test --
-# found the hard way when it hung `R CMD check` for 39 minutes.
-check_daemons_can_load <- function(ok = daemons_can_load(),
+# Ask every connected daemon, not whichever one is free.
+#
+# The M07 defect: a single mirai() task is taken by ONE daemon, so a pool that
+# is heterogeneous -- a respawned daemon, differing library paths -- had one
+# loadable daemon answer for all of them, and every fold that landed elsewhere
+# came back as an opaque worker failure. everywhere() is the mechanism that
+# reaches all of them: verified to return one element per connected daemon
+# (distinct pids), and to queue behind a daemon that is busy rather than skip it.
+#
+# It carries no `.timeout` of its own, so the bound is a poll on unresolved()
+# to a deadline followed by stop_mirai(), which resolves every outstanding
+# element to errorValue 20 and leaves the pool usable (both verified by
+# execution, M10 T1).
+#
+# Answers are then read one element at a time from `$data`, which yields
+# `unresolvedValue` for anything still outstanding, rather than through the
+# map's own `[` -- that collects, and collecting BLOCKS until every element
+# resolves. Reading per element cannot block at all, so the bound holds even if
+# stop_mirai() leaves something behind, and nothing here can hang however mirai
+# behaves.
+daemons_load_status <- function(package = "nestedtune",
+                                timeout = preflight_timeout(call = call),
+                                call = rlang::caller_env()) {
+  # Forced before anything is dispatched. Left lazy, the bound is not read until
+  # after everywhere() has already sent the probe, so a typo in the option costs
+  # a full cold load on every daemon before the user is told the option is bad.
+  force(timeout)
+
+  probe <- mirai::everywhere(
+    requireNamespace(package, quietly = TRUE),
+    .args = list(package = package)
+  )
+  deadline <- Sys.time() + timeout / 1000
+  while (mirai::unresolved(probe) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  if (mirai::unresolved(probe)) {
+    mirai::stop_mirai(probe)
+  }
+  answers <- lapply(seq_along(probe), function(i) probe[[i]]$data)
+  preflight_outcome(answers, timeout = timeout, package = package)
+}
+
+# One daemon's answer, validated positively.
+#
+# Same discipline as classify_fold_result(): recognise the expected shape and
+# treat everything else as a non-answer, rather than trying to enumerate the
+# ways mirai can hand back something that is not a logical. A stopped probe
+# yields errorValue 20; a daemon that died mid-probe yields something else
+# again. Neither is a report that the package is missing, so neither may be
+# reported as one.
+loaded_answer <- function(x) {
+  if (is.logical(x) && length(x) == 1L && !is.na(x)) as.logical(x) else NA
+}
+
+# The three-way outcome, kept separate from both the probing and the message so
+# every branch is reachable in a test without a daemon pool.
+#
+# A pool can fail both ways at once, so the record carries counts rather than a
+# bare verdict: the load failure takes the class, because installing is the
+# actionable fix, and the message still names the non-answers (M10-D1).
+preflight_outcome <- function(answers, timeout = NA_real_,
+                              package = "nestedtune") {
+  answers <- vapply(as.list(answers), loaded_answer, logical(1))
+  total <- length(answers)
+  cannot_load <- sum(!answers, na.rm = TRUE)
+  no_answer <- sum(is.na(answers))
+  outcome <- if (cannot_load > 0L) {
+    "cannot_load"
+  } else if (no_answer > 0L || total == 0L) {
+    "no_response"
+  } else {
+    "ok"
+  }
+  list(
+    outcome = outcome,
+    total = total,
+    cannot_load = cannot_load,
+    no_answer = no_answer,
+    timeout = timeout,
+    package = package
+  )
+}
+
+# `status` is an argument so both failure branches are reachable in a test
+# without breaking a library path. Doing that for real also stops the daemon
+# loading *mirai*, which kills it at startup and hangs the very probe under test
+# -- found the hard way when it hung `R CMD check` for 39 minutes. The
+# heterogeneous pool AC1 asks for is built in test-parallel-detection.R, where
+# the scratch library keeps mirai and drops only the probed package.
+check_daemons_can_load <- function(status = daemons_load_status(call = call),
                                    call = rlang::caller_env()) {
-  if (ok) {
+  if (identical(status$outcome, "ok")) {
     return(invisible(TRUE))
   }
-  cli::cli_abort(
-    c(
-      "The mirai daemons cannot load {.pkg nestedtune}, or did not respond.",
+
+  n_total <- status$total
+  n_cannot <- status$cannot_load
+  n_silent <- status$no_answer
+  package <- status$package
+  # Spelled out rather than interpolated raw: cli renders a numeric through
+  # as.character(), which gives "3e+05" for a 300000 ms bound -- scientific
+  # notation in the very bullet telling the user to raise that number.
+  timeout <- format(status$timeout, scientific = FALSE, trim = TRUE)
+
+  if (identical(status$outcome, "cannot_load")) {
+    bullets <- c(
+      "{n_cannot} of {n_total} mirai daemon{?s} cannot load {.pkg {package}}.",
       i = "Daemons are separate R processes and load the package from an
            installed library; {.fn devtools::load_all} does not reach them.",
       i = "Install the package, or prime the daemons with
-           {.code mirai::everywhere(pkgload::load_all('<path>'))}.",
+           {.code mirai::everywhere(pkgload::load_all('<path>'))}."
+    )
+    if (n_silent > 0L) {
+      bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
+                                 within {timeout} ms.")
+    }
+    cli::cli_abort(
+      c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
+                      serially -- results are identical either way."),
+      class = c("nestedtune_daemons_cannot_load", "nestedtune_daemons_unusable"),
+      call = call
+    )
+  }
+
+  # No daemon reported the package missing -- they did not reply at all, so the
+  # remedies above would tell a user to install what they already have.
+  bullets <- "The mirai daemons did not answer the startup check within
+              {timeout} ms."
+  if (n_total > 0L) {
+    bullets <- c(bullets, i = "{n_silent} of {n_total} daemon{?s} did not reply.")
+  }
+  cli::cli_abort(
+    c(
+      bullets,
+      i = "A daemon that died during startup is still counted as a connection
+           and never replies.",
+      i = "If the daemons are merely slow -- a loaded machine, a scanned
+           library -- raise the bound with
+           {.code options(nestedtune.preflight_timeout = <ms>)}.",
       i = "Alternatively call {.code mirai::daemons(0)} to run serially --
            results are identical either way."
     ),
-    class = "nestedtune_daemons_cannot_load",
+    class = c("nestedtune_daemons_no_response", "nestedtune_daemons_unusable"),
     call = call
   )
 }

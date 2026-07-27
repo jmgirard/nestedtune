@@ -1,5 +1,33 @@
 # nestedtune 0.0.0.9000
 
+* The check that runs before parallel dispatch now asks every connected daemon
+  whether it can load the package, instead of asking one and believing it for
+  all of them. In a pool whose daemons differ — one respawned, or started
+  against a different library — a single loadable daemon used to pass the check
+  for the whole pool, and every fold that ran elsewhere came back as an opaque
+  worker failure. The check now names how many daemons are affected and stops.
+
+* A daemon that does not answer that check is now reported as a non-response
+  rather than as one that cannot load the package, so a merely slow daemon is no
+  longer met with advice to install what you already have. The two failures
+  raise `nestedtune_daemons_cannot_load` and `nestedtune_daemons_no_response`;
+  both also carry `nestedtune_daemons_unusable`, so a handler that only cares
+  that the check failed can catch either, and code already handling the former
+  keeps working unchanged.
+
+* The wait for that check, previously fixed at 30 seconds, is now settable with
+  `options(nestedtune.preflight_timeout = <milliseconds>)`. The default is
+  unchanged, and no statistical result depends on it. It must be a single
+  positive, finite number — an unbounded wait would restore the hang the bound
+  exists to turn into an error.
+
+* One consequence worth knowing: because the check now waits for every daemon
+  rather than whichever answers first, the first parallel call after starting a
+  cold pool is the slow one — it is what makes each daemon load the package,
+  and on a loaded machine that can exceed the default 30 seconds. Raise the
+  option if you meet a non-response you do not believe. Later calls in the same
+  session reuse what the daemons already loaded.
+
 * Cancelling a parallel run now stops it, instead of returning an estimate over
   whatever had finished. Previously the tasks that were stopped before they ran
   came back looking like folds that had been attempted and failed, so the run
