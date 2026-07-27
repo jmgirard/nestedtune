@@ -83,10 +83,10 @@ candidate row. Dependency caching → already provided by
 - [x] T1. Write `.github/ci-usage.py`: fetch runs + jobs from the Actions REST
       API, bound a window on `created_at` and `status == completed`, and report
       run/job counts and per-job raw minutes. Record the AC5 baseline.
-- [ ] T2. Add the `concurrency` block to both workflows
+- [x] T2. Add the `concurrency` block to both workflows
       (`.github/workflows/R-CMD-check.yaml:2`, `test-coverage.yaml:2`), keyed on
       workflow + ref, cancelling on every ref but the default branch.
-- [ ] T3. Add `paths-ignore` to the `push` and `pull_request` triggers of both
+- [x] T3. Add `paths-ignore` to the `push` and `pull_request` triggers of both
       workflows. Note `pull_request` filters on the whole PR diff, so it fires
       only for a wholly-tracking PR — the `push` trigger is where the saving is.
 - [ ] T4. Extend the script to parse `paths-ignore` out of the workflow file and
@@ -102,6 +102,8 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: started; branch `m11-ci-run-economy` cut from `main` at c248bcd.
 - 2026-07-27: T1 — `.github/ci-usage.py` reproduces the AC5 baseline exactly (108 runs / 324 jobs / 2276 min; 30/628 skipped; 32/823 superseded, 9/248 off-branch) and the AC4 classification (15 of 24 commits skipped, all 9 others touching a packaged path).
 - 2026-07-27: minor reorder — T1 also delivered T4's workflow-file parsing, since the script needs one ignore-list source, not two; T4 now only regenerates the committed baseline once T3 gives the workflows a real list to read.
+- 2026-07-27: T2, T3 — both workflows gained the concurrency block and the path filter on both triggers; all four lists verified identical by parsing the YAML, and the script now reads them from the workflow files instead of its fallback.
+- 2026-07-27: the filter list is spelled out under each of the four triggers rather than shared by a YAML anchor — GitHub Actions does not resolve anchors in workflow files, and an unresolved alias would have silently disabled the filter.
 
 ## Decisions
 

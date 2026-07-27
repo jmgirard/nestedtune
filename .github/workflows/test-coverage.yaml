@@ -1,13 +1,29 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# See the matching block in R-CMD-check.yaml; the two lists must stay identical,
+# which `.github/ci-usage.py` checks when it reads them back.
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - 'cairn/**'
+      - 'CLAUDE.md'
+      - '.claude/**'
   pull_request:
+    paths-ignore:
+      - 'cairn/**'
+      - 'CLAUDE.md'
+      - '.claude/**'
 
 name: test-coverage.yaml
 
 permissions: read-all
+
+# See the matching block in R-CMD-check.yaml. Keyed on the workflow as well as
+# the ref, so cancelling a superseded check never touches a coverage run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
 jobs:
   test-coverage:
