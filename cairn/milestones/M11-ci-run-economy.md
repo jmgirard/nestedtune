@@ -110,6 +110,7 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: AC2 evidence — pushes at 07:53:04Z and 07:53:43Z on PR #11. Superseded runs 30247760551 (R-CMD-check) and 30247760779 (test-coverage) both ended `cancelled` within 46s; replacements 30247801003 and 30247800950 both ended `success`.
 - 2026-07-27: AC3 second clause checked mechanically against the workflows' own list — no packaged path (`R/`, `tests/`, `man/`, `vignettes/`, `DESCRIPTION`, `NAMESPACE`, `.github/`, `_pkgdown.yml`) matches any glob, and every tracking path does.
 - 2026-07-27: AC7 — `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes in 5m23s; the two new `.github/` files need no `.Rbuildignore` entry beyond `^\.github$`.
+- 2026-07-27: removed a `.github/__pycache__/` bytecode file swept into the T6 commit by the AC3 import check, and gitignored the pattern; `.Rbuildignore`'s `^\.github$` kept it out of the build, so AC7's clean check is unaffected.
 - 2026-07-27: all tasks done, status → review.
 
 ## Decisions
