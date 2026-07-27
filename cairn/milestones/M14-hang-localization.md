@@ -1,6 +1,6 @@
 # M14: A hang says where it happened
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -105,7 +105,7 @@ row until something localizes it. Sharing one daemon pool across
 - [x] T6 Add the `workflow_dispatch`-only macOS workflow invoking the harness.
       Keep the four `paths-ignore` blocks `.github/ci-usage.py` compares in
       agreement. First dispatch happens after merge (AC5, amended).
-- [ ] T7 Run the harness locally to 50 iterations; commit the ledger and rewrite
+- [x] T7 Run the harness locally to 50 iterations; commit the ledger and rewrite
       the ROADMAP candidate row to what it showed.
 - [x] T8 Correct the `test-doctrine` slot.
 
@@ -118,6 +118,8 @@ row until something localizes it. Sharing one daemon pool across
 - 2026-07-27: plan chose a probe-then-fix shape for the orphan `Rscript` daemons over asserting the leak outright, because `mirai::daemon()` defaults to `autoexit = TRUE` and the leak is unestablished; falsified by the probe finding a survivor, which converts it to a fix.
 - 2026-07-27: T1 done. `HangTraceReporter` in `tests/testthat.R` writes a timestamped start/end line per test file to `stderr()`, beside `CheckReporter` in a `MultiReporter`. AC1 evidence: a local `R CMD check` whose test process was killed at 19:22:50 left a `testthat.Rout.fail` ending `start test-nested-results-plot.R` with no matching end, every earlier file paired.
 - 2026-07-27: T5, T6, T8 done. `benchmarks/stress-daemon-tests.R` runs each daemon-using file in a fresh process behind a per-iteration kill deadline, so an iteration that wedges is recorded rather than waited on; `benchmarks/` was already `.Rbuildignore`d. `stress-daemon-tests.yaml` is `workflow_dispatch`-only and runs it on macOS by default -- verified against `.github/ci-usage.py` that it contributes no triggers and the four-block agreement still resolves from the same two workflows. PROFILE.md's test-doctrine slot now says what localizes a hang and what still cannot bound one; compressed three neighbouring bullets to stay under the 120-line cap.
+- 2026-07-27: T7 done, and it did not reproduce. 50 iterations / 150 runs / 0 hangs in 57 minutes on macOS aarch64, R 4.6.1, mirai 2.7.2; ledger at `benchmarks/stress-daemon-ledger.md`, ROADMAP diagnosis row rewritten to say the local route is priced and spent so the next attempt is the CI dispatch, not a longer local run. The three slowest runs are iterations 1-3, which overlapped other work on the machine; from iteration 4 the file settles at its 41.5 s median.
+- 2026-07-27: AC7 clean. `devtools::check()` Status OK -- 0 errors, 0 warnings, 0 notes, 3m53s, tests 87s/135s; `devtools::document()` produces no diff. The `R6` Suggests entry cleared the unstated-dependency check that D-021 was recorded for.
 - 2026-07-27: paused with T7 open, at the maintainer's choice. Seven of eight tasks are done, committed and pushed on `m14-hang-localization`. The 50-iteration local stress run is in flight in a detached process writing to `/private/tmp/claude-503/-Users-jmgirard-GitHub-nestedcv/b1a833b2-fa0c-48ba-a8d1-236ea114302a/scratchpad/stress-local.log` (started 19:37:37Z, ~180 s per iteration, no hang through iteration 2). To resume: read that log for `total hangs:`, commit the ledger under `benchmarks/`, rewrite the ROADMAP diagnosis row to what it showed, then run `devtools::check()` for AC7 — deliberately held until the stress run ends, since running both contends for the CPU and could fake a hang in the harness meant to detect one. If the log is gone (it is under /tmp), re-run `Rscript benchmarks/stress-daemon-tests.R 50 600` from the repo root.
 - 2026-07-27: AC5 amended at a gate, and T6 with it. GitHub refuses to dispatch a `workflow_dispatch` workflow that is not on the default branch (`HTTP 404: workflow stress-daemon-tests.yaml not found on the default branch`), so "at least one CI invocation" was unreachable inside this milestone. The clause now asks for `actionlint` plus the `ci-usage.py` agreement as the pre-merge verification and carries the first macOS dispatch as a stated post-merge obligation on the ROADMAP row. Rejected: a temporary `push` trigger, which would merge a workflow different from the one tested.
 - 2026-07-27: T3 done, and it answers no. `benchmarks/probe-daemon-orphans.R` on mirai 2.7.2 / nanonext 1.10.1: both hand-spawned daemons gone after the host was torn down, `survivors after teardown: none`. `autoexit = TRUE` reaps them, so `start_mixed_daemons()` is unchanged — the suspected orphan leak was an assumption, and asserting it would have added a green test that proved nothing. The probe also reproduced the RR03/M07 startup death in passing: only 1 of 2 connections was reached, the empty-library daemon dying before it could dial.
