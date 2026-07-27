@@ -163,9 +163,11 @@ test_that("a connected daemon that cannot answer in time is bounded", {
   # answer inside the bound -- which is what a loaded machine looks like.
   #
   # M07's version of this test pointed the pool at a URL nothing would dial
-  # into. That reports ZERO connections, so the probe now returns empty
-  # immediately and never reaches the deadline at all; the degenerate case is
-  # covered separately below.
+  # into, which reports zero connections. That case is real and covered
+  # separately below -- but everywhere() queues a task for the daemon that never
+  # arrives rather than returning empty, so it exercises the deadline against an
+  # empty pool. This test is the one that exercises it against a daemon that is
+  # genuinely there and genuinely cannot answer, which is the case users hit.
   mirai::daemons(0)
   mirai::daemons(1)
   on.exit(mirai::daemons(0), add = TRUE)
@@ -282,6 +284,16 @@ test_that("the timeout message points at the option that raises the bound", {
   expect_match(conditionMessage(err), "nestedtune.preflight_timeout")
 })
 
+test_that("a raised bound is reported as a number, not in scientific notation", {
+  # cli renders an interpolated numeric through as.character(), which turns
+  # 300000 into "3e+05" -- in the very bullet telling the user to raise that
+  # number. Every bound the earlier tests use is small enough to miss this.
+  err <- expect_error(check_daemons_can_load(preflight_outcome(NA, timeout = 300000)))
+  msg <- conditionMessage(err)
+  expect_match(msg, "300000")
+  expect_false(grepl("e+0", msg, fixed = TRUE))
+})
+
 test_that("a pool failing both ways names both facts", {
   # M10-D1: installing is the actionable fix, so the load failure carries the
   # class -- but staying silent on the non-answer would only make the user
@@ -353,6 +365,68 @@ test_that("an infinite bound is refused, because it is not a bound", {
   old <- options(nestedtune.preflight_timeout = Inf)
   on.exit(options(old), add = TRUE)
   expect_error(preflight_timeout(), class = "nestedtune_bad_preflight_timeout")
+})
+
+test_that("the probe reads its bound from the option, not from the constant", {
+  # Without this the option is tested only at the accessor: every other probe
+  # test passes an explicit `timeout`, so wiring daemons_load_status() to
+  # `default_preflight_timeout_ms` instead of `preflight_timeout()` would leave
+  # the whole suite green while the option did nothing.
+  skip_if_not_installed("mirai")
+  skip_on_cran()
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(1)
+
+  old <- options(nestedtune.preflight_timeout = 45678)
+  on.exit(options(old), add = TRUE)
+
+  setTimeLimit(elapsed = 120, transient = TRUE)
+  on.exit(setTimeLimit(), add = TRUE, after = FALSE)
+
+  status <- daemons_load_status()
+  expect_identical(status$outcome, "ok")
+  expect_identical(status$timeout, 45678)
+})
+
+test_that("a bad bound is refused before any daemon is asked", {
+  # Ordering, not just validation. Left as a lazy default the bound is not read
+  # until after everywhere() has already dispatched, so a typo'd option costs a
+  # full cold load on every daemon before the user is told the option is bad.
+  skip_if_not_installed("mirai")
+  skip_on_cran()
+
+  mirai::daemons(0)
+  old <- options(nestedtune.preflight_timeout = "soon")
+  on.exit(options(old), add = TRUE)
+
+  expect_error(
+    daemons_load_status(),
+    class = "nestedtune_bad_preflight_timeout"
+  )
+})
+
+test_that("a probe that reached no daemon at all is not a pass", {
+  # The degenerate shape, at the seam: zero answers means nothing was verified,
+  # so it must not classify as "ok" and let dispatch proceed. Unreachable in
+  # production today -- everywhere() queues a task even at zero connections --
+  # which is exactly why it needs a test of its own rather than trust.
+  status <- preflight_outcome(list())
+  expect_identical(status$total, 0L)
+  expect_identical(status$outcome, "no_response")
+  expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_no_response"
+  )
+})
+
+test_that("the abort names the package actually probed", {
+  # The probe takes a `package` argument, so a message hard-coding nestedtune
+  # is false whenever it is used -- as the real mixed-pool test does, probing
+  # for ranger.
+  status <- preflight_outcome(c(TRUE, FALSE), package = "ranger")
+  err <- expect_error(check_daemons_can_load(status))
+  expect_match(conditionMessage(err), "ranger")
 })
 
 test_that("the option, not an argument, is what carries the bound", {

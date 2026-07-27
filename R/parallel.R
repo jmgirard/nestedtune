@@ -158,7 +158,13 @@ preflight_timeout <- function(call = rlang::caller_env()) {
 # stop_mirai() leaves something behind, and nothing here can hang however mirai
 # behaves.
 daemons_load_status <- function(package = "nestedtune",
-                                timeout = preflight_timeout()) {
+                                timeout = preflight_timeout(call = call),
+                                call = rlang::caller_env()) {
+  # Forced before anything is dispatched. Left lazy, the bound is not read until
+  # after everywhere() has already sent the probe, so a typo in the option costs
+  # a full cold load on every daemon before the user is told the option is bad.
+  force(timeout)
+
   probe <- mirai::everywhere(
     requireNamespace(package, quietly = TRUE),
     .args = list(package = package)
@@ -171,7 +177,7 @@ daemons_load_status <- function(package = "nestedtune",
     mirai::stop_mirai(probe)
   }
   answers <- lapply(seq_along(probe), function(i) probe[[i]]$data)
-  preflight_outcome(answers, timeout = timeout)
+  preflight_outcome(answers, timeout = timeout, package = package)
 }
 
 # One daemon's answer, validated positively.
@@ -192,7 +198,8 @@ loaded_answer <- function(x) {
 # A pool can fail both ways at once, so the record carries counts rather than a
 # bare verdict: the load failure takes the class, because installing is the
 # actionable fix, and the message still names the non-answers (M10-D1).
-preflight_outcome <- function(answers, timeout = NA_real_) {
+preflight_outcome <- function(answers, timeout = NA_real_,
+                              package = "nestedtune") {
   answers <- vapply(as.list(answers), loaded_answer, logical(1))
   total <- length(answers)
   cannot_load <- sum(!answers, na.rm = TRUE)
@@ -209,7 +216,8 @@ preflight_outcome <- function(answers, timeout = NA_real_) {
     total = total,
     cannot_load = cannot_load,
     no_answer = no_answer,
-    timeout = timeout
+    timeout = timeout,
+    package = package
   )
 }
 
@@ -219,7 +227,7 @@ preflight_outcome <- function(answers, timeout = NA_real_) {
 # -- found the hard way when it hung `R CMD check` for 39 minutes. The
 # heterogeneous pool AC1 asks for is built in test-parallel-detection.R, where
 # the scratch library keeps mirai and drops only the probed package.
-check_daemons_can_load <- function(status = daemons_load_status(),
+check_daemons_can_load <- function(status = daemons_load_status(call = call),
                                    call = rlang::caller_env()) {
   if (identical(status$outcome, "ok")) {
     return(invisible(TRUE))
@@ -228,11 +236,15 @@ check_daemons_can_load <- function(status = daemons_load_status(),
   n_total <- status$total
   n_cannot <- status$cannot_load
   n_silent <- status$no_answer
-  timeout <- status$timeout
+  package <- status$package
+  # Spelled out rather than interpolated raw: cli renders a numeric through
+  # as.character(), which gives "3e+05" for a 300000 ms bound -- scientific
+  # notation in the very bullet telling the user to raise that number.
+  timeout <- format(status$timeout, scientific = FALSE, trim = TRUE)
 
   if (identical(status$outcome, "cannot_load")) {
     bullets <- c(
-      "{n_cannot} of {n_total} mirai daemon{?s} cannot load {.pkg nestedtune}.",
+      "{n_cannot} of {n_total} mirai daemon{?s} cannot load {.pkg {package}}.",
       i = "Daemons are separate R processes and load the package from an
            installed library; {.fn devtools::load_all} does not reach them.",
       i = "Install the package, or prime the daemons with
