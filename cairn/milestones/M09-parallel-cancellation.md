@@ -34,31 +34,31 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 
 ## Acceptance criteria
 
-- [ ] AC1: An execution-verified table records what mirai returns for a task
+- [x] AC1: An execution-verified table records what mirai returns for a task
       cancelled by `stop_mirai()` (in-flight and queued), for `daemons(0)` with
       tasks outstanding, and for a killed daemon — on the mirai version in the
       test library, named. Committed in this file's Decisions section.
-- [ ] AC2: `classify_fold_result()` aborts with class `nestedtune_cancelled`,
+- [x] AC2: `classify_fold_result()` aborts with class `nestedtune_cancelled`,
       inheriting `nestedtune_interrupted`, on `errorValue` 20 — the one
       cancellation signal M09-D1 found to be distinguishable — and the caller's
       `.Random.seed` and `RNGkind()` are restored afterwards. Both fired by
       test. *(RB tripwire: ip-touching — IP4; reading settled at the M09 plan
       gate.)*
-- [ ] AC3: `errorValue` 19 still becomes a recorded worker failure — the
+- [x] AC3: `errorValue` 19 still becomes a recorded worker failure — the
       existing BC3 test (`tests/testthat/test-parallel-identity.R:232`) passes
       unmodified — and the roxygen states the limit M09-D1 found: `daemons(0)`
       mid-run is indistinguishable from a daemon dying mid-fold, so a pool torn
       down that way is recorded as fold failures, not an abort. Classification
       stays positive-by-shape: no `inherits(x, "condition")`, no
       `conditionMessage()` on a bare `errorValue`.
-- [ ] AC4: No partial `nested_results` object is constructed on the abort path
+- [x] AC4: No partial `nested_results` object is constructed on the abort path
       — the cancelled run returns nothing at all, tested.
-- [ ] AC5: Each new guard proven by inversion: deleting the cancellation branch
+- [x] AC5: Each new guard proven by inversion: deleting the cancellation branch
       reddens the AC2 tests, recorded in the work log.
-- [ ] AC6: The "Parallel execution" roxygen section
+- [x] AC6: The "Parallel execution" roxygen section
       (`R/nested-tune-grid.R:99`) says what a cancelled run does, distinguished
       from a fold whose worker died; `NEWS.md` entry added.
-- [ ] AC7: Profile `verify` slot clean — `devtools::document()` no diff,
+- [x] AC7: Profile `verify` slot clean — `devtools::document()` no diff,
       `devtools::test()` and `devtools::check()` clean.
 
 ## Coverage
@@ -106,6 +106,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - 2026-07-26: T5 done — two inversions, both red. Deleting the abort branch reddens 2 tests in `test-parallel-classify.R` and 2 in `test-parallel-identity.R`; dropping `is.integer()` from the shape check reddens 2. The second inversion found a real defect and earned a test: R coerces in `==`, so a miraiError whose message is the string "20" equals the cancel code, and without the type check one unlucky error message would abort the run and discard every completed fold. Suite green: 1115 pass, 0 fail, 0 skip.
 - 2026-07-26: T6 done — roxygen "Parallel execution" rewritten (the old line calling an interrupt the only non-failure was wrong once cancellation joined it) plus the documented `daemons(0)` limit; two NEWS entries. `devtools::document()` idempotent; `devtools::check()` 0 errors / 0 warnings / 0 notes in 5m5s.
 - 2026-07-26: all tasks done, status `review`. Suite 1115 pass / 0 fail / 0 skip; `devtools::check()` clean.
+- 2026-07-26: review — three lenses (two clean), four scored findings, three fixed on the branch (F2 82, F3 87, F1 78-actioned-anyway), F4 33 rejected with reason. Review also found two T2 tests that only passed because an earlier test loaded mirai as a side effect; fixed. Re-verified: 1110 pass / 0 fail / 0 skip, check 0/0/0, cairn_validate clean.
 
 ## Decisions
 
@@ -134,3 +135,75 @@ Nothing here inherits `"condition"` and `conditionMessage()` raises on all six
 `errorValue` rows, confirming M07's lesson for the cancellation shapes too.
 
 ## Review
+
+Verified 2026-07-26 on PR #9. Every line below is fresh execution, not recall.
+
+- **AC1** — M09-D1 in this file holds the probe table: six triggers, on mirai
+  2.7.2 / nanonext 1.10.1, R 4.6.1, script at
+  `benchmarks/probe-mirai-cancellation.R`. The diff-bug reviewer independently
+  re-probed two cases it did not cover (`daemons(0)` against a `mirai_map` with
+  queued tasks; both triggers under `dispatcher = FALSE`) and got 19/19/20/20,
+  matching the documented split.
+- **AC2** — executed: code 20 yields
+  `nestedtune_cancelled/nestedtune_interrupted/rlang_error/error/condition`.
+  End-to-end on two real daemons, `.Random.seed` and `RNGkind()` both restored.
+- **AC3** — code 19 returns `completed = FALSE`, `location = "worker"`; the BC3
+  test is unmodified (the diff of `test-parallel-identity.R` is purely
+  additive, confirmed by the prior-review lens). No `inherits(x, "condition")`
+  and no `conditionMessage()` on a bare `errorValue` anywhere in the new path.
+  The roxygen states the `daemons(0)` limit.
+- **AC4** — `expect_null(result)` proven to discriminate: with the abort branch
+  removed the assertion reddens. It did not before review — see F2.
+- **AC5** — three inversions, all red. Removing the abort branch reddens 2 in
+  `test-parallel-classify.R` and 3 in `test-parallel-identity.R`; dropping
+  `is.integer()` from the shape check reddens 1.
+- **AC6** — "Parallel execution" section rewritten, `NEWS.md` carries two
+  entries. Corrected during review — see F1.
+- **AC7** — `devtools::document()` idempotent; `devtools::test()` 1110 pass /
+  0 fail / 0 skip; `devtools::check()` 0 errors / 0 warnings / 0 notes (4m48s).
+  `cairn_validate` all checks pass.
+
+### Consistency gate
+
+`cairn_validate` exit 0, every check PASS or OK. Profile `consistency-gate`
+slot: `document()` no-diff verified; no generated file hand-edited. No
+DESIGN.md principle changed, so `cairn_impact` does not apply.
+
+### Independent review
+
+Three fresh-context lenses. **Blame-history [S]** and **prior-PR-comments [S]**
+both reported no findings — the latter confirmed the diff regresses none of
+RR03's binding criteria BC3/BC4/BC5 and that the GitHub comment probe returned
+empty. **Diff-bug [O]** reported four, scored by a fresh [S] scorer:
+
+- **F2 (82) — fixed.** `expect_null(result)`, the assertion carrying AC4, passed
+  against pre-milestone code and pinned nothing: `tryCatch(condition = identity)`
+  caught the failed-folds *warning* the old path emits, unwinding before the
+  assignment completed and leaving `result` NULL either way. Narrowed to
+  `error = identity`; inversion now reddens it.
+- **F3 (87) — fixed.** The end-to-end test was not bounded, contrary to T4:
+  `system.time()` reports elapsed time only after the call returns, so it could
+  flag a slow run but never prevent a hang — the M07-D6 failure mode. Replaced
+  with `setTimeLimit(elapsed = 60, transient = TRUE)`.
+- **F1 (78) — fixed despite scoring below the threshold.** The new roxygen said
+  "interrupting the call raises a `nestedtune_interrupted` condition", which is
+  false: mirai's own documentation states that class arises when an ongoing
+  *task* is interrupted, while interrupting the host call unwinds the blocking
+  wait before any worker value is classified. Actioned below threshold because
+  the claim was verified wrong against mirai's docs during review, and it was
+  prose this milestone introduced. Reworded to describe both routes accurately.
+- **F4 (33) — rejected.** Claimed an unmodified bullet about a whole-pool death
+  is contradicted by M09-D1. It is not: RR03 Q4 verified that tasks still
+  *queued* when every daemon dies remain unresolved indefinitely, which is what
+  the bullet describes; M09-D1 probed a single in-flight task, a different case.
+
+### Found during review, outside the lenses
+
+`conditionMessage.miraiError` is registered by **mirai's** namespace, so two
+tests added at T2 that fabricated a `miraiError` and routed it through
+`classify_fold_result()` passed only because an earlier test in the same file
+loads mirai as a side effect of `skip_if_not_installed()`. Where mirai is absent
+— CRAN's `noSuggests` flavor, which this repo has been bitten by once — they
+would error rather than skip. One was redundant with the existing real-miraiError
+test and was deleted; the other now asserts on `is_cancelled_value()` directly,
+which needs no mirai and still reddens under inversion.

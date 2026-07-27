@@ -158,16 +158,26 @@ test_that("a cancelled parallel run returns nothing and restores the RNG state",
   before_seed <- .Random.seed
   before_kind <- RNGkind()
 
+  # A real bound, not a measurement after the fact: a stopped map resolves at
+  # once, so if this call ever blocks, the run must end as an error rather than
+  # wedge `R CMD check` the way M07-D6 records. It rests on the collect being
+  # interruptible, which is the same property a user's Ctrl-C rests on.
+  setTimeLimit(elapsed = 60, transient = TRUE)
+  on.exit(setTimeLimit(cpu = Inf, elapsed = Inf, transient = FALSE), add = TRUE)
+
   result <- NULL
-  elapsed <- system.time(
-    cnd <- tryCatch(
-      without_pkgload_warning(
-        result <- nested_tune_grid(wf, nested, grid = det_grid(),
-                                   metrics = reg_metrics())
-      ),
-      condition = identity
-    )
-  )[["elapsed"]]
+  # `error =`, deliberately not `condition =`: the pre-milestone code returns
+  # normally here while signalling a failed-folds *warning*, and a condition
+  # handler would catch that warning, unwind before the assignment completed,
+  # and leave `result` NULL either way -- making the AC4 assertion below pass
+  # against the very behaviour this test exists to reject.
+  cnd <- tryCatch(
+    without_pkgload_warning(
+      result <- nested_tune_grid(wf, nested, grid = det_grid(),
+                                 metrics = reg_metrics())
+    ),
+    error = identity
+  )
 
   expect_s3_class(cnd, "nestedtune_cancelled")
   expect_s3_class(cnd, "nestedtune_interrupted")
@@ -176,9 +186,6 @@ test_that("a cancelled parallel run returns nothing and restores the RNG state",
   expect_null(result)
   expect_identical(.Random.seed, before_seed)
   expect_identical(RNGkind(), before_kind)
-  # A stopped map resolves at once; anything slow here means the abort is not
-  # the path that ran.
-  expect_lt(elapsed, 60)
 })
 
 test_that("BC6: a failed fold matches serially in every field but its traces", {

@@ -163,11 +163,17 @@ names the worker as the stage.
 
 Stopping a run is not a fold failure. A fold that was never given a chance to
 run has not been attempted, so recording it as one would describe a design
-that did not execute. Both routes therefore abort and return nothing, leaving
-the caller's RNG state restored: interrupting the call raises a
-\code{nestedtune_interrupted} condition, and cancelling the dispatched tasks
-raises \code{nestedtune_cancelled}, which inherits from it — so a handler for
-either catches both, and one that cares can tell them apart.
+that did not execute. Stopping the dispatched tasks therefore aborts the call
+and returns nothing, raising a \code{nestedtune_cancelled} condition. That class
+inherits from \code{nestedtune_interrupted}, which is what a task interrupted on
+its own daemon raises, so a handler for the general case catches both and one
+that cares can tell them apart. Either way the caller's RNG state is restored
+on the way out.
+
+Interrupting the call at your own console is not one of these. It unwinds the
+blocking wait before any worker's return value is classified, so an ordinary
+interrupt propagates and no nestedtune condition class is attached — the RNG
+state is still restored, but do not write a handler expecting one.
 
 One case cannot be told apart, and is documented rather than guessed at:
 calling \code{mirai::daemons(0)} while folds are outstanding produces exactly the

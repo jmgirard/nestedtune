@@ -119,28 +119,22 @@ test_that("the ambiguous teardown value stays a recorded fold failure", {
   expect_identical(out$notes$location, "worker")
 })
 
-test_that("a task error is a fold failure even though it is also an errorValue", {
-  # A miraiError carries errorValue among its classes but is a character, not
-  # an integer -- the shape check is what keeps it out of the cancel branch.
-  err <- structure("boom", class = c("miraiError", "errorValue", "try-error"))
-  out <- classify_fold_result(err)
-  expect_false(out$completed)
-  expect_identical(out$notes$location, "worker")
-})
-
-test_that("a worker whose message is the cancel code is still a fold failure", {
+test_that("a worker whose message is the cancel code is not a cancellation", {
   # Why the cancel check validates the type and does not just compare values:
   # R coerces across types in `==`, so a miraiError carrying the message "20"
   # equals the cancel code exactly (verified: `"20" == 20L` is TRUE). Without
   # is.integer(), one unlucky error message would abort the run and discard
   # every fold that had already completed.
+  #
+  # Asserted on the predicate rather than through classify_fold_result(),
+  # deliberately: the fold-failure branch reaches conditionMessage(), whose
+  # miraiError method is registered by MIRAI's namespace, so a fabricated
+  # miraiError raises "no applicable method" wherever mirai is not loaded --
+  # CRAN's noSuggests flavor among them. The end-to-end miraiError path is
+  # already covered above, against a real one, behind the mirai skip.
   err <- structure("20", class = c("miraiError", "errorValue", "try-error"))
   expect_true(err == cancel_error_value)      # the coercion this guards against
   expect_false(is_cancelled_value(err))
-
-  out <- classify_fold_result(err)
-  expect_false(out$completed)
-  expect_identical(out$notes$location, "worker")
 })
 
 test_that("dispatch refuses daemons that cannot load the package", {
