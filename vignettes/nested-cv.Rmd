@@ -183,6 +183,13 @@ Across `r nrow(res)` outer folds, `mtry` took `r n_mtry` distinct selected
 values and `min_n` took `r n_min_n`. Most tools throw this away; nestedtune
 keeps it, because it is information about the procedure rather than noise in it.
 
+`autoplot()` draws the same thing, one panel per tuned parameter and one point
+per outer fold. A flat row means the folds agreed; scatter means they did not.
+
+```{r autoplot-parameters, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per tuned parameter, with one point per outer fold at the value that fold's inner tuning selected."}
+autoplot(res)
+```
+
 Read it as a statement about how well-determined each tuning choice is at this
 sample size. A parameter the folds agree on is one the data picks clearly. A
 parameter they split over is one whose value is largely arbitrary — meaning
@@ -208,6 +215,14 @@ from each other, and `r round(sd(fold_rmse) / sqrt(length(fold_rmse)), 2)` is
 the `std_err` `collect_metrics()` reports — the precision of their *mean*.
 Quoting the second as though it described the folds understates their
 disagreement.
+
+The other view of `autoplot()` shows that spread, with the dashed line at the
+nested estimate — the same number `collect_metrics()` reports, so the figure and
+the summary cannot drift apart:
+
+```{r autoplot-performance, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per metric, with one point per outer fold's score and a dashed line at the mean across folds."}
+autoplot(res, type = "performance")
+```
 
 ## The model you deploy
 

@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M08: Selection instability you can see
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -109,7 +109,7 @@ disagreement section gains the plot.
 - [x] T7: `vdiffr` snapshots for both views on a deterministic fixture from
       `helper-orchestration.R`; roxygen with an `@examplesIf` guard; the
       `_pkgdown.yml` reference row.
-- [ ] T8: `NEWS.md` entry; the vignette section plotting its disagreement;
+- [x] T8: `NEWS.md` entry; the vignette section plotting its disagreement;
       `devtools::check()` clean.
 
 ## Work log
@@ -124,6 +124,8 @@ disagreement section gains the plot.
 - 2026-07-26: T6 — three error branches, all in the `R/checks.R` idiom; `check_any_completed()` gained an `action` argument so plotting and summarizing refuse the same object in their own words rather than in a shared one. 45 assertions; four more inversions red (borrowing summarize's wording FAIL 1, no completed-fold check FAIL 1, `check_plot_type()` accepting anything FAIL 5, empty plot instead of a refusal FAIL 2).
 
 - 2026-07-26: T7 — four vdiffr snapshots (agreement, disagreement, a failed fold's gap, the performance view). Rendering them found two defects no built-data assertion could see: the parameters subtitle was clipped at 7 inches (now two lines), and a unanimous integer parameter was given fractional breaks, labelling a flat row of identical choices 2.950/2.975/3.000 — a plot about disagreement inventing some. Whole-number breaks when every drawn value is one, default breaks otherwise; pinned by test and by inversion (FAIL 4).
+
+- 2026-07-26: T8 — NEWS entry (four bullets); the vignette plots both views beside the numbers it already reported, with `fig.alt` on each. Its real figure shows `mtry` splitting 5/8/5/8/5 while `min_n` is unanimous at 2, so per-parameter instability is legible. `devtools::check()` 0 errors / 0 warnings / 0 notes with the vignette rebuilt from the tarball; `document()` no diff; `pkgdown::check_pkgdown()` clean. Status to `review`.
 
 ## Decisions
 
