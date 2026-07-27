@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4, IP2
-- **Branch/PR:** `m09-parallel-cancellation`
+- **Branch/PR:** `m09-parallel-cancellation` · https://github.com/jmgirard/nestedtune/pull/9
 
 ## Goal
 
