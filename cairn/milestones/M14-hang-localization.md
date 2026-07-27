@@ -35,30 +35,30 @@ row until something localizes it. Sharing one daemon pool across
 
 ## Acceptance criteria
 
-- [ ] AC1 A reporter passed from `tests/testthat.R` writes one unbuffered line
+- [x] AC1 A reporter passed from `tests/testthat.R` writes one unbuffered line
       to `stderr()` at the start and end of every test file, naming the file and
       an absolute timestamp. Evidence: a local `R CMD check` killed mid-suite
       whose surviving `testthat.Rout` names the last file started and carries no
       end line for it. The evidence records whether helper, setup, and teardown
       files are covered, since testthat exposes no per-file hook for them.
-- [ ] AC2 A committed check fails when any mirai wait under `tests/` does not
+- [x] AC2 A committed check fails when any mirai wait under `tests/` does not
       route through `collect_bounded()` (`helper-parallel.R:17`) — including the
       blocking `[` collect at `test-parallel-classify.R:33`, which this
       milestone converts. Proven by inversion: reintroducing a direct wait turns
       the check red, and the inversion is recorded in the Review section.
-- [ ] AC3 A committed probe establishes by execution, against a named mirai
+- [x] AC3 A committed probe establishes by execution, against a named mirai
       version, whether an `Rscript` daemon spawned by `start_mixed_daemons()`
       (`helper-parallel.R:129-138`) survives its host when the fixture's failure
       path is taken. If it survives, the fixture records and kills its spawned
       PIDs and a test asserts they are gone; if `autoexit` already reaps it, the
       probe's recorded output is the evidence and the fixture is unchanged.
-- [ ] AC4 A `teardown-` file sorting after every other teardown file fails the
+- [x] AC4 A `teardown-` file sorting after every other teardown file fails the
       suite when a daemon connection, or a process AC3 found to survive,
       outlives the last test file. Proven by inversion: leaving a pool up turns
       the suite red. Its failure surfaces as an error after the testthat
       summary, and the evidence states that it cannot fire when a test file
       hangs.
-- [ ] AC5 A stress harness outside the built package (`.Rbuildignore`d) runs the
+- [x] AC5 A stress harness outside the built package (`.Rbuildignore`d) runs the
       three daemon-using test files in a fresh R process per iteration, kills any
       iteration exceeding a per-iteration deadline and records it as a hang
       rather than waiting on it, and reports per-file wall-clock. A
@@ -72,11 +72,11 @@ row until something localizes it. Sharing one daemon pool across
       the iteration count and platform that failed to, plus the standing
       obligation to make the first macOS dispatch once this is on the default
       branch.
-- [ ] AC6 `cairn/PROFILE.md`'s `test-doctrine` slot replaces its claim that the
+- [x] AC6 `cairn/PROFILE.md`'s `test-doctrine` slot replaces its claim that the
       20-minute cap "caps a hang, never diagnoses one" with what localizes one
       after this milestone, and states the bound this milestone did not get —
       that no R-side deadline interrupts a wedged mirai collect.
-- [ ] AC7 The `verify` slot is clean: `devtools::test()` passes, and
+- [x] AC7 The `verify` slot is clean: `devtools::test()` passes, and
       `devtools::check()` is clean (0 errors, 0 warnings; NOTEs justified).
 
 ## Coverage
@@ -135,3 +135,92 @@ row until something localizes it. Sharing one daemon pool across
 ## Decisions
 
 ## Review
+
+_Verified 2026-07-27 on `m14-hang-localization`, PR #13. All evidence executed
+fresh at review; the `document()`/`check()` pair was re-run after the review
+fixes landed._
+
+### Acceptance criteria
+
+- **AC1** — A local `R CMD check` was killed 55 s into the suite. The surviving
+  `testthat.Rout` carries 12 `start` lines and 11 `end` lines, the single
+  unmatched one being `test-nested-results-plot.R`; every earlier file is paired
+  and timestamped to the millisecond. Scope recorded as the criterion requires:
+  testthat calls `start_file()` for test files only, so helper, setup and
+  teardown files carry no marker. **Corroborated in production the same day** —
+  PR #13's `test-coverage` job hung and was cancelled at the 20-minute cap, and
+  its log ends `start test-parallel-classify.R` with no `end`, the first of four
+  occurrences to say where.
+- **AC2** — `test-suite-hygiene.R` green (2 assertions). Inversion sweep over
+  all four blocking idioms, each reintroduced in turn at
+  `test-parallel-classify.R`: `mirai(...)[]`, `call_mirai(...)`,
+  `collect_mirai(...)` and `map[.flat]` each reddened the check and named the
+  site. The first two of those were missed by the first draft (review F1).
+- **AC3** — `benchmarks/probe-daemon-orphans.R` re-run: `daemons spawned: 2
+  connections reached: 2`, `survivors after teardown: none`, verdict "no orphan
+  -- autoexit reaps them, fixture unchanged". The criterion's second branch, so
+  `start_mixed_daemons()` is unchanged. The earlier run reached only 1 of 2
+  connections and was fixed at review (F5) before this evidence was taken.
+- **AC4** — `teardown-zz-nothing-survives.R` fires: a probe test leaking
+  `daemons(1)` failed the run with the intended message. It sorts after
+  `teardown-fixture-cache.R`, surfaces as a bare error after the summary, and
+  cannot fire when a file hangs — all three stated. Its process clause is empty
+  on AC3's finding. Now also checks `daemons_set()` (F6).
+- **AC5** — `benchmarks/stress-daemon-ledger.md` committed, recording both runs.
+  Faithful shape: 50 iterations, 0 hangs, 0 errors, 26 minutes, median 31.2 s,
+  122 passing assertions and 0 skips per iteration. `actionlint` clean on
+  `stress-daemon-tests.yaml`; `ci-usage.py`'s `read_paths_ignore()` still
+  resolves from `R-CMD-check.yaml, test-coverage.yaml` with the new workflow
+  contributing no triggers. ROADMAP diagnosis row rewritten — to the
+  localization, which supersedes what a non-reproduction would have obliged.
+  First macOS dispatch remains owed post-merge (AC5 as amended).
+- **AC6** — `cairn/PROFILE.md` no longer contains "caps a hang, never diagnoses
+  one"; the slot now states what localizes one and that no R-side bound exists,
+  `setTimeLimit()` not reaching `collect_mirai()`. File at 119 lines against its
+  120 cap.
+- **AC7** — `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes
+  (6m11s). `devtools::test()` 1209 pass / 0 fail / 0 skip. `devtools::document()`
+  produces no diff.
+
+### Consistency gate
+
+`cairn_validate` all checks passed. Profile `consistency-gate` slot: `document()`
+no diff; no generated files hand-edited; no README.Rmd, no pkgdown site; NEWS
+entry not owed (nothing user-facing changed — the diff is tests, benchmarks and
+CI); `benchmarks/` already `.Rbuildignore`d; full `check()` clean. CI green on
+all 8 checks.
+
+### Independent review
+
+Three fresh-context lenses, 12 unique findings after deduplication (two pairs
+overlapped across lenses). Scored by a fourth agent; 4 at or above 80.
+
+**Actioned.** F2 (86) the stress harness ran `test_local()` one file per process
+against a pkgload-loaded package, where the hang arrives under `test_check()`
+with the package installed and all files sharing one process — AC5 as written
+already said "a fresh R process per iteration", so this was an implementation
+gap and not a criterion to amend; harness rewritten, first ledger run marked
+superseded, and the localization independently confirmed the concern. F12 (86)
+a live ROADMAP candidate row's line references went stale by exactly this diff's
+5-line insertion; refreshed to `:160-201`, `:198`, `:200`. F1 (84) the hygiene
+scan matched one of three blocking idioms; now matches `collect_mirai`,
+`call_mirai` and option-carrying collects, and scans all of `tests/` including
+lowercase `.r`. F4 (80) a run that tested nothing reported clean — confirmed
+live while fixing it, since a bare `Rscript` sets no `NOT_CRAN` and skipped
+every daemon test; the harness now sets it and fails below 50 passing
+assertions.
+
+**Below threshold, fixed anyway.** F8 (76) and F9 (70), both PROFILE clauses a
+prior review had installed (M12's own finding I(80)) and this milestone's
+cap-driven compression dropped — restored, budget found by compressing this
+milestone's own additions instead. F3 (70) and F7 (62), a pidfile
+create-before-write race that could abandon a live child or abort the probe.
+F5 (68), the probe's verdict was ungated and its lean library empty, so it
+measured a daemon that never connected. F6 (65), the teardown missed a pool that
+is set but unconnected.
+
+**Below threshold, logged only.** F10 (60) "turns a hang into a failed job"
+shortened to "ends a hang", losing the word tying that bullet to the merge
+clause. F11 (55) the usethis recipe and the exact `.Rbuildignore` entry
+compressed to bare workflow names. Both judged recoverable and both would cost
+cap budget the restored clauses now hold.

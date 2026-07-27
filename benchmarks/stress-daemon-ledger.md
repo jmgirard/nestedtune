@@ -55,10 +55,20 @@ confirms the concern was the right one: the wedge is in a file this harness ran
 in isolation.
 
 **Second attempt.** All three daemon files together in one process per
-iteration, against an installed copy — what `test_check()` does. 50 iterations,
-600 s kill deadline, macOS `aarch64-apple-darwin25.4.0`, R 4.6.1, mirai 2.7.2 /
-nanonext 1.10.1. Median 22.6 s per iteration, 122 passing assertions each, 0
-skipped. Result recorded below.
+iteration, against an installed copy — what `test_check()` does. 2026-07-27,
+21:13:27Z to 21:39:41Z (26 minutes), 600 s kill deadline, macOS
+`aarch64-apple-darwin25.4.0`, R 4.6.1, mirai 2.7.2 / nanonext 1.10.1.
+
+**50 iterations, 0 hangs, 0 errors.** Median 31.2 s, min 21.5 s, max 52.2 s;
+122 passing assertions and 0 skips every iteration. The spread tracks machine
+load over the run, not anything in the suite.
+
+The assertion count is load-bearing and not decoration. The first version of
+this harness reported clean 3.8 s iterations because a bare `Rscript` sets no
+`NOT_CRAN`, so `skip_on_cran()` skipped every daemon test and each iteration
+finished having asserted nothing (M14 review F4, found by running the fix). The
+harness now sets `NOT_CRAN` and fails any iteration below 50 passing
+assertions.
 
 A note on why the second shape is also faster: with the package installed,
 `prime_daemons()` stops loading it into every daemon by hand. That the faithful
