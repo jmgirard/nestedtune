@@ -71,18 +71,19 @@ Per-fold timeouts stay rejected (RR03 Q4). No argument is added to
       `mirai::everywhere()` returns per-daemon results and honours a timeout,
       versus submitting one probe task per connected daemon. Bound every probe
       used, including the exploratory ones. Record the finding.
-- [ ] T2: Failing tests first, in `tests/testthat/test-parallel-classify.R`:
+- [x] T2: Failing tests first, in `tests/testthat/test-parallel-classify.R`:
       all-good answers pass; one bad answer aborts naming how many daemons
       could not load; no answer in time aborts with the distinct message.
-- [ ] T3: Rewrite `daemons_can_load()` to return a three-way outcome (all
+- [x] T3: Rewrite `daemons_can_load()` to return a three-way outcome (all
       loaded / some cannot load / no answer in time) and branch
       `check_daemons_can_load()`'s `cli_abort()` on it. Keep the outcome
       injectable as an argument, as `ok` is today, so both failure branches stay
-      reachable without breaking a library path.
-- [ ] T4: Read the bound from `getOption("nestedtune.preflight_timeout",
+      reachable without breaking a library path. (Renamed to
+      `daemons_load_status()`: it returns a record, not a yes/no.)
+- [x] T4: Read the bound from `getOption("nestedtune.preflight_timeout",
       30000L)`, validate it, and test unset/raised/lowered/invalid. Add the
       formals-unchanged assertion.
-- [ ] T5: The real mixed-pool test in `test-parallel-detection.R`: two daemons,
+- [x] T5: The real mixed-pool test in `test-parallel-detection.R`: two daemons,
       differing `R_LIBS`, `skip_on_cran()`, bounded so a failure errors rather
       than hangs.
 - [ ] T6: Inversion pass on each guard; roxygen bullet + `NEWS.md`;
@@ -95,6 +96,10 @@ Per-fold timeouts stay rejected (RR03 Q4). No argument is added to
 - 2026-07-26: T1 — `mirai::everywhere()` returns a `mirai_map` with one element per connected daemon (distinct pids at n=3, verified), queues behind a busy daemon rather than skipping it, and answers plain `FALSE` where the package is absent; it carries no `.timeout`, so the bound is a poll on `unresolved()` to a deadline then `stop_mirai()`, after which every element collects as `errorValue` 20 (M09's allowlisted ECANCELED) and the pool stays usable — all verified by execution under a shell-level timeout.
 - 2026-07-26: T1 — AC1 names RR03 Q5's `R_LIBS` mechanism for the mixed pool; verified insufficient where packages live in the *site* library (both daemons still loaded the target). `R_LIBS_SITE` **and** `R_LIBS_USER` pointed at a scratch library holding only symlinked mirai+nanonext gives a daemon that starts yet cannot load the target. Differing library paths — AC1's substance — is unchanged; the env var is corrected.
 - 2026-07-26: implement question gate — condition-class structure, mixed-pool reporting, and `Inf` refusal settled; recorded as M10-D1 and M10-D2.
+- 2026-07-26: T2, T3 — `daemons_can_load()` replaced by `daemons_load_status()` + `preflight_outcome()` + `loaded_answer()`, reaching every daemon through `everywhere()` and classifying each answer TRUE / FALSE / no-answer; `check_daemons_can_load()` branches on that record with M10-D1's two class pairs. Renamed because it now returns a record rather than a yes/no. Answers are read per element from `$data` rather than by collecting the map, since collecting blocks until every element resolves — so the bound holds however mirai behaves.
+- 2026-07-26: T4 — bound read from `getOption("nestedtune.preflight_timeout", 30000L)` and validated; unset, raised, lowered, invalid, and `Inf` all tested, plus a literal `formals(nested_tune_grid)` assertion (D-018).
+- 2026-07-26: T5 — the real heterogeneous pool lands in `test-parallel-detection.R` via `lean_library()` + `start_mixed_daemons()`; passes with two daemons on differing library paths, `setTimeLimit()`-bounded and asserting its own 150 s bound. Whole parallel suite: 103 assertions, 0 failures, 0 skips with `NOT_CRAN` set.
+- 2026-07-26: two test defects found while landing the above — M07's unresponsive-pool test pointed at a URL reporting *zero* connections, so it never reached the deadline path at all (replaced by a connected-but-busy daemon, which does), and an `options()["name"]` restore names its element `NA` when the option is unset, leaking the last bad value into every later test in the file.
 
 ## Decisions
 

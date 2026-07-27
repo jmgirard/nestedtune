@@ -152,26 +152,71 @@ test_that("dispatch refuses daemons that cannot load the package", {
   )
 })
 
-test_that("an unresponsive daemon pool fails fast instead of hanging", {
+test_that("a connected daemon that cannot answer in time is bounded", {
   skip_if_not_installed("mirai")
   skip_on_cran()
 
-  # A pool configured against a URL nothing will ever dial into: connections are
-  # reported, no daemon answers. Unbounded, this is the documented hang.
+  # The only test that drives the deadline path for real: poll to the deadline,
+  # stop_mirai(), and read the resulting errorValue as a non-answer rather than
+  # as a package that is missing. The daemon is connected but busy, so
+  # everywhere() queues behind the task occupying it and genuinely cannot
+  # answer inside the bound -- which is what a loaded machine looks like.
+  #
+  # M07's version of this test pointed the pool at a URL nothing would dial
+  # into. That reports ZERO connections, so the probe now returns empty
+  # immediately and never reaches the deadline at all; the degenerate case is
+  # covered separately below.
   mirai::daemons(0)
-  mirai::daemons(url = "tcp://127.0.0.1:45997")
+  mirai::daemons(1)
   on.exit(mirai::daemons(0), add = TRUE)
 
   # setTimeLimit, not system.time: the latter measures only after the call
   # returns, so it flags a slow probe and can never fail on a hung one -- which
   # is the only failure this test exists to catch (M09's lesson).
-  setTimeLimit(elapsed = 30, transient = TRUE)
+  setTimeLimit(elapsed = 60, transient = TRUE)
   on.exit(setTimeLimit(), add = TRUE, after = FALSE)
-  status <- daemons_load_status(timeout = 2000L)
+
+  busy <- mirai::mirai(Sys.sleep(20))
+  Sys.sleep(0.2)
+
+  started <- Sys.time()
+  status <- daemons_load_status(timeout = 1000L)
+  elapsed <- as.numeric(Sys.time() - started, units = "secs")
 
   expect_identical(status$outcome, "no_response")
   expect_identical(status$cannot_load, 0L)
+  expect_identical(status$no_answer, 1L)
+  # The bound held: it returned on its own deadline rather than waiting out the
+  # 20-second task.
+  expect_lt(elapsed, 15)
+
+  mirai::stop_mirai(busy)
+})
+
+test_that("a pool with no daemon at all is a non-response, not a load failure", {
+  skip_if_not_installed("mirai")
+  skip_on_cran()
+
+  # A pool configured against a URL nothing will ever dial into: connections
+  # are 0, and everywhere() queues a task for the daemon that never arrives
+  # rather than returning empty. Nothing reported the package missing, so this
+  # must not be dressed up as a library problem -- there is no daemon to have a
+  # library.
+  mirai::daemons(0)
+  mirai::daemons(url = "tcp://127.0.0.1:45997")
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  setTimeLimit(elapsed = 30, transient = TRUE)
+  on.exit(setTimeLimit(), add = TRUE, after = FALSE)
+
+  status <- daemons_load_status(timeout = 2000L)
+  expect_identical(status$outcome, "no_response")
+  expect_identical(status$cannot_load, 0L)
   expect_gt(status$no_answer, 0L)
+  expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_no_response"
+  )
 })
 
 # --- Per-daemon coverage and the two failure causes (M10) --------------------
@@ -264,6 +309,62 @@ test_that("both causes answer to one shared class", {
       class = "nestedtune_daemons_unusable"
     )
   }
+})
+
+# --- The bound is an option, not an argument (D-020, M10-D2) ----------------
+
+test_that("an unset option yields the documented 30 seconds", {
+  old <- options(nestedtune.preflight_timeout = NULL)
+  on.exit(options(old), add = TRUE)
+  expect_identical(preflight_timeout(), 30000)
+})
+
+test_that("the option raises and lowers the bound", {
+  old <- options(nestedtune.preflight_timeout = 90000L)
+  on.exit(options(old), add = TRUE)
+  expect_identical(preflight_timeout(), 90000)
+
+  options(nestedtune.preflight_timeout = 500)
+  expect_identical(preflight_timeout(), 500)
+})
+
+test_that("a bound that is not a single positive finite number is refused", {
+  # NULL is deliberately absent: unsetting the option is the *valid* default
+  # case, covered above.
+  #
+  # The restore is built by hand rather than with options()["name"], which
+  # names its element NA when the option is unset -- restoring that leaves the
+  # last bad value in place and every later test in this file inherits it.
+  old <- list(
+    nestedtune.preflight_timeout = getOption("nestedtune.preflight_timeout")
+  )
+  on.exit(options(old), add = TRUE)
+  for (bad in list("soon", -1, 0, NA_real_, c(1000, 2000), TRUE)) {
+    options(nestedtune.preflight_timeout = bad)
+    expect_error(preflight_timeout(), class = "nestedtune_bad_preflight_timeout")
+  }
+})
+
+test_that("an infinite bound is refused, because it is not a bound", {
+  # M10-D2: Inf is numeric and positive, so it slips past every check above --
+  # and honouring it would hand back the unbreakable hang the bound exists to
+  # convert into an error (M07's 39-minute `R CMD check`). A user who needs
+  # longer sets a large finite value.
+  old <- options(nestedtune.preflight_timeout = Inf)
+  on.exit(options(old), add = TRUE)
+  expect_error(preflight_timeout(), class = "nestedtune_bad_preflight_timeout")
+})
+
+test_that("the option, not an argument, is what carries the bound", {
+  # D-018 settled that parallelism is enabled solely by mirai::daemons(n) and
+  # that nested_tune_grid() gains no argument for it; D-020 narrowed that to
+  # signature knobs specifically, which is why the timeout became an option.
+  # Recorded literally so growing the signature fails here rather than in
+  # review.
+  expect_identical(
+    names(formals(nested_tune_grid)),
+    c("object", "resamples", "grid", "metrics")
+  )
 })
 
 test_that("a daemon answering something other than TRUE or FALSE counts as silent", {

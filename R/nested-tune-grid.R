@@ -132,12 +132,21 @@
 #'   call stops rather than failing every fold with the same opaque note. During
 #'   development, prime them with
 #'   `mirai::everywhere(pkgload::load_all("<path>"))`.
-#' - Before dispatching, the call checks that the daemons can actually load the
-#'   package, and stops if they cannot or do not answer within 30 seconds. That
-#'   check is bounded; the folds themselves are not. If every daemon dies *after*
-#'   folds are dispatched, the call blocks waiting for results that will never
-#'   arrive, and you interrupt it. No per-fold timeout is imposed, because no
-#'   time limit is defensible for an arbitrary model fit — a slow fold and a
+#' - Before dispatching, the call asks **every** connected daemon whether it can
+#'   load the package, and stops if any of them cannot. A pool whose daemons
+#'   differ — one respawned, or started against a different library — therefore
+#'   fails here, naming how many are affected, rather than as a run in which
+#'   some folds come back as opaque worker failures.
+#' - A daemon that does not answer at all is reported as a non-response, not as
+#'   a missing package, so a merely slow daemon is never met with advice to
+#'   install what you already have. The check waits 30 seconds by default; set
+#'   `options(nestedtune.preflight_timeout = )` to a single positive, finite
+#'   number of milliseconds to raise or lower that. Nothing statistical depends
+#'   on it.
+#' - That check is bounded; the folds themselves are not. If every daemon dies
+#'   *after* folds are dispatched, the call blocks waiting for results that will
+#'   never arrive, and you interrupt it. No per-fold timeout is imposed, because
+#'   no time limit is defensible for an arbitrary model fit — a slow fold and a
 #'   dead one would be indistinguishable.
 #'
 #' A fold whose worker dies is recorded as a failed fold, exactly like any other
