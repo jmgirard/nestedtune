@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m11-ci-run-economy`
+- **Branch/PR:** `m11-ci-run-economy` · https://github.com/jmgirard/nestedtune/pull/11
 
 ## Goal
 
@@ -33,25 +33,25 @@ candidate row. Dependency caching → already provided by
 
 ## Acceptance criteria
 
-- [ ] AC1. Both workflow files carry a top-level `concurrency` block whose
+- [x] AC1. Both workflow files carry a top-level `concurrency` block whose
       `group` distinguishes workflow and ref, and whose `cancel-in-progress`
       expression evaluates to `false` for a run on the repository's default
       branch and `true` for every other ref these workflows trigger on.
-- [ ] AC2. Two pushes to this milestone's own branch, the second made while the
+- [x] AC2. Two pushes to this milestone's own branch, the second made while the
       first run is still in progress, leave the first run of each workflow with
       conclusion `cancelled` and the second reaching `success` or `failure`;
       the `gh run list` output showing both is recorded in the Review section.
-- [ ] AC3. Both workflows carry `paths-ignore` on both their `push` and
+- [x] AC3. Both workflows carry `paths-ignore` on both their `push` and
       `pull_request` triggers, listing exactly `cairn/**`, `CLAUDE.md`, and
       `.claude/**`, and no packaged path (`R/`, `tests/`, `man/`, `vignettes/`,
       `DESCRIPTION`, `NAMESPACE`, `.github/workflows/`) matches any of them.
-- [ ] AC4. The committed script reads the `paths-ignore` list out of the
+- [x] AC4. The committed script reads the `paths-ignore` list out of the
       workflow file itself, replays every default-branch commit in the window
       through it, and classifies each as skipped or run. Over the window
       `[2026-07-26T00:00Z, 2026-07-27T07:00Z)` it reports 15 of 24
       default-branch commits skipped, and every one of the remaining 9 changes
       at least one packaged path. Its classification is committed as evidence.
-- [ ] AC5. The same script, over the same window and counting only runs whose
+- [x] AC5. The same script, over the same window and counting only runs whose
       `status` is `completed`, reports the baseline recorded in this file:
       108 runs, 324 jobs, 2,276 raw machine-minutes (summed per job as
       `completed_at - started_at`); 30 runs / 628 min on skipped commits; 32
@@ -59,7 +59,7 @@ candidate row. Dependency caching → already provided by
       branch and workflow was created before this run's `updated_at`, of which 9
       runs / 248 min are off the default branch. The two categories overlap and
       are reported separately, not as a partition.
-- [ ] AC6. `cairn/PROFILE.md`'s `test-doctrine` CI bullet names both
+- [x] AC6. `cairn/PROFILE.md`'s `test-doctrine` CI bullet names both
       divergences from the stock `usethis::use_github_action("check-standard")`
       shape and why each is there, and contains no clause the path filter
       falsifies — in particular its "never merges red or pending CI" clause is
@@ -116,3 +116,54 @@ candidate row. Dependency caching → already provided by
 ## Decisions
 
 ## Review
+
+_Reviewed 2026-07-27 on `m11-ci-run-economy` at PR #11; evidence gathered fresh
+by command, never recalled._
+
+### Acceptance criteria
+
+- **AC1 ✓** Both workflows carry an identical top-level `concurrency` block:
+  `group: ${{ github.workflow }}-${{ github.ref }}`, `cancel-in-progress:
+  ${{ github.ref_name != github.event.repository.default_branch }}`. On a
+  default-branch push `ref_name` equals `default_branch`, so the expression is
+  `false`; on a pull request `ref_name` is `<n>/merge` and on a `master` push it
+  is `master`, so both are `true` — every ref these workflows trigger on is
+  covered.
+- **AC2 ✓** Observed twice, not once. Pushes at 07:53:04Z/07:53:43Z and
+  08:07:18Z/08:07:39Z each left both superseded runs `cancelled` (30247760551,
+  30247760779, 30248652805, 30248651870) and both replacements `success`
+  (30247801003, 30247800950, 30248674159, 30248674036). Cancellation landed
+  within 46s of the superseding push in every case.
+- **AC3 ✓** All four triggers (both workflows × `push`/`pull_request`) carry the
+  identical list `cairn/**`, `CLAUDE.md`, `.claude/**`. Second clause checked
+  mechanically against the workflows' own parsed list: of 13 packaged paths
+  (`R/`, `tests/`, `man/`, `vignettes/`, `DESCRIPTION`, `NAMESPACE`, `NEWS.md`,
+  `README.md`, `_pkgdown.yml`, `.Rbuildignore`, `.github/`) none matches any
+  glob, and all 6 tracking paths tested do.
+- **AC4 ✓** The script parses the list out of the workflow files (reported
+  source: `R-CMD-check.yaml, test-coverage.yaml`, not its fallback) and
+  classifies 15 of 24 default-branch commits as skipped. The 9 classified as
+  run each show packaged paths in the committed table — `R/`, `NAMESPACE`,
+  `DESCRIPTION`, `NEWS.md`, and for M01 the workflow files themselves.
+- **AC5 ✓** Re-run at review time and `diff`ed against
+  `.github/ci-usage-baseline.md`: byte-identical. 108 runs, 324 jobs, 2276
+  machine-minutes; 30 runs / 628 min on skipped commits; 32 runs / 823 min
+  superseded, 9 / 248 off the default branch. The two categories are printed
+  separately with an explicit note that they overlap and are never summed.
+- **AC6 ✓** `cairn/PROFILE.md`'s `test-doctrine` slot names both divergences
+  with a reason each, and the merge clause is now stated once and reconciled:
+  a filtered event produces no run, so its check is absent rather than pending
+  and merging past it is correct; the clause forbids merging past a check that
+  ran and failed or is still running. The required-status-checks caveat is
+  recorded against the day branch protection is added.
+
+### Consistency gate
+
+- `cairn_validate`: all checks passed (16 PASS, 7 advisory OK).
+- `cairn_impact`: not run — `Principles touched: —`, no principle changed.
+- Profile `consistency-gate` slot: `devtools::document()` no diff ·
+  `pkgdown::check_pkgdown()` no problems · no `README.Rmd` in this repo, so the
+  knit check does not apply · new files are `.github/`-resident, covered by the
+  existing `^\.github$` · **no NEWS.md entry**, deliberately: M11 changes no
+  packaged behavior, and the slot scopes the changelog to user-visible changes.
+
