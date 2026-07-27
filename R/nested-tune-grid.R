@@ -143,6 +143,13 @@
 #'   `options(nestedtune.preflight_timeout = <milliseconds>)` to raise or lower
 #'   that, to a single positive, finite number. Nothing statistical depends on
 #'   it.
+#' - The first parallel call after starting daemons is the slow one: the check
+#'   is what makes every daemon load the package, and the whole tidymodels
+#'   stack is not cheap to load. Because the check now waits for *all* of them
+#'   rather than whichever answers first, a cold pool on a loaded machine can
+#'   need more than the default 30 seconds — raise the option if you see a
+#'   non-response you do not believe. Later calls in the same session reuse
+#'   what the daemons already loaded.
 #' - That check is bounded; the folds themselves are not. If every daemon dies
 #'   *after* folds are dispatched, the call blocks waiting for results that will
 #'   never arrive, and you interrupt it. No per-fold timeout is imposed, because

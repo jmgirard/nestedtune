@@ -21,6 +21,13 @@
   positive, finite number — an unbounded wait would restore the hang the bound
   exists to turn into an error.
 
+* One consequence worth knowing: because the check now waits for every daemon
+  rather than whichever answers first, the first parallel call after starting a
+  cold pool is the slow one — it is what makes each daemon load the package,
+  and on a loaded machine that can exceed the default 30 seconds. Raise the
+  option if you meet a non-response you do not believe. Later calls in the same
+  session reuse what the daemons already loaded.
+
 * Cancelling a parallel run now stops it, instead of returning an estimate over
   whatever had finished. Previously the tasks that were stopped before they ran
   came back looking like folds that had been attempted and failed, so the run

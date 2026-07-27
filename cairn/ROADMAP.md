@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-26 (M09 merged and archived — a cancelled paralle
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
-| M10 | The startup check inspects every worker and says what went wrong | in-progress | — | normal | milestones/M10-preflight-probe-coverage.md |
+| M10 | The startup check inspects every worker and says what went wrong | review | — | normal | milestones/M10-preflight-probe-coverage.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 | M07 | Parallel outer folds | done | M02 | high | milestones/archive/M07-parallel-outer-folds.md |

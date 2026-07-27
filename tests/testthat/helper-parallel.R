@@ -45,6 +45,33 @@ prime_daemons <- function() {
   invisible(TRUE)
 }
 
+# Take the cold load out of the measurement.
+#
+# Under `R CMD check` the package is installed rather than primed, so the first
+# pre-flight probe is what pays to load nestedtune and its whole dependency
+# stack on every daemon at once -- tune alone measured 6.5 s cold (RR03). M07's
+# probe never saw that bill because a single task went to whichever daemon was
+# free; asking every daemon means the slowest cold load sets the time, and on a
+# loaded check machine that exceeded the 30 s default.
+#
+# That is a real property of the fix, documented in the roxygen and settable
+# through the option. Warming here keeps tests about dispatch from failing over
+# it, and the bound below covers the case where warming itself is slow.
+warm_daemons <- function() {
+  collect_bounded(
+    mirai::everywhere(requireNamespace("nestedtune", quietly = TRUE)),
+    seconds = 180
+  )
+  invisible(TRUE)
+}
+
+# The suite runs on machines under load, where `R CMD check` is doing everything
+# else at the same time. The pre-flight bound is infrastructure, never anything
+# statistical, so the tests that merely need dispatch to get going are given
+# room. The tests that exercise the bound itself pass an explicit `timeout` or
+# set the option locally, so none of them reads this value.
+options(nestedtune.preflight_timeout = 300000L)
+
 # Start `n` primed daemons from a clean pool. Callers pair this with
 # `on.exit(mirai::daemons(0), add = TRUE)`; cleanup is left to the caller rather
 # than deferred here so the helpers need no dependency beyond mirai itself.
@@ -56,6 +83,7 @@ start_daemons <- function(n) {
   mirai::daemons(0)
   mirai::daemons(n)
   prime_daemons()
+  warm_daemons()
   invisible(n)
 }
 

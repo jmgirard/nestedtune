@@ -1,6 +1,6 @@
 # M10: The startup check inspects every worker and says what went wrong
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -86,7 +86,7 @@ Per-fold timeouts stay rejected (RR03 Q4). No argument is added to
 - [x] T5: The real mixed-pool test in `test-parallel-detection.R`: two daemons,
       differing `R_LIBS`, `skip_on_cran()`, bounded so a failure errors rather
       than hangs.
-- [ ] T6: Inversion pass on each guard; roxygen bullet + `NEWS.md`;
+- [x] T6: Inversion pass on each guard; roxygen bullet + `NEWS.md`;
       `devtools::document()`, then `devtools::test()` and `devtools::check()`
       clean.
 
@@ -99,9 +99,27 @@ Per-fold timeouts stay rejected (RR03 Q4). No argument is added to
 - 2026-07-26: T2, T3 — `daemons_can_load()` replaced by `daemons_load_status()` + `preflight_outcome()` + `loaded_answer()`, reaching every daemon through `everywhere()` and classifying each answer TRUE / FALSE / no-answer; `check_daemons_can_load()` branches on that record with M10-D1's two class pairs. Renamed because it now returns a record rather than a yes/no. Answers are read per element from `$data` rather than by collecting the map, since collecting blocks until every element resolves — so the bound holds however mirai behaves.
 - 2026-07-26: T4 — bound read from `getOption("nestedtune.preflight_timeout", 30000L)` and validated; unset, raised, lowered, invalid, and `Inf` all tested, plus a literal `formals(nested_tune_grid)` assertion (D-018).
 - 2026-07-26: T5 — the real heterogeneous pool lands in `test-parallel-detection.R` via `lean_library()` + `start_mixed_daemons()`; passes with two daemons on differing library paths, `setTimeLimit()`-bounded and asserting its own 150 s bound. Whole parallel suite: 103 assertions, 0 failures, 0 skips with `NOT_CRAN` set.
+- 2026-07-27: T6 — inversion pass: nine guards mutated one at a time, each reddening the test that claims it (per-daemon coverage, the two class pairs, the shared parent class, the mixed-pool extra bullet, finiteness, positivity, the documented default, answer-shape validation, and the `formals()` pin); harness in the session scratchpad, working tree verified identical to HEAD afterwards.
+- 2026-07-27: T6 — roxygen "Parallel execution" bullets rewritten for per-daemon coverage, the two causes, the option, and the cold-load cost; `NEWS.md` entries added; `devtools::document()` regenerated `man/nested_tune_grid.Rd`.
+- 2026-07-27: `R CMD check` surfaced the fix's real cost — six dispatch tests failed because the probe now waits for every daemon to cold-load the package rather than for whichever was free, exceeding 30 s on a loaded machine. Default held at 30 s per D-020 (M10-D3); documented for users, and the fixtures now warm the daemons and set a generous bound.
+- 2026-07-27: verify slot clean on the final tree — `devtools::test()` 1164 passing / 0 failures / 0 skips; `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes); `cairn_validate` all checks passed.
 - 2026-07-26: two test defects found while landing the above — M07's unresponsive-pool test pointed at a URL reporting *zero* connections, so it never reached the deadline path at all (replaced by a connected-but-busy daemon, which does), and an `options()["name"]` restore names its element `NA` when the option is unset, leaking the last bad value into every later test in the file.
 
 ## Decisions
+
+### M10-D3 (2026-07-27): The 30 s default stands, and the cold-load cost is documented rather than absorbed
+
+Asking every daemon changed what the bound has to cover. The probe is what
+makes each daemon load the package, so the first call against a cold pool now
+waits for the slowest cold load rather than for whichever daemon happened to be
+free — under `R CMD check` on a loaded machine that exceeded 30 s and failed six
+dispatch tests. Considered and rejected: raising the default. D-020 fixed it at
+30 s and AC3 pins it; the option exists precisely for environments needing more;
+and a default chosen to survive a saturated CI machine would be a poor default
+everywhere else. Instead the cost is documented where a user meets it (roxygen
+and `NEWS.md`: the first call is the slow one, later calls in the session reuse
+what the daemons already loaded), and the fixtures warm the daemons so suite
+timing measures dispatch rather than package loading.
 
 ### M10-D1 (2026-07-26): Two named causes under one shared class, and a mixed pool names both
 
