@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-26 (M07 merged and archived — `nested_tune_grid()
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M08 | Selection instability you can see | planned | — | normal | milestones/M08-autoplot-nested-results.md |
+| M08 | Selection instability you can see | in-progress | — | normal | milestones/M08-autoplot-nested-results.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |

@@ -18,6 +18,7 @@ Depends:
     R (>= 4.1)
 Imports:
     cli,
+    ggplot2,
     parsnip,
     rlang,
     rsample,
@@ -33,6 +34,7 @@ Suggests:
     recipes,
     rmarkdown,
     testthat (>= 3.0.0),
+    vdiffr,
     yardstick
 VignetteBuilder: knitr
 Config/testthat/edition: 3

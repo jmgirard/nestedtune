@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M08: Selection instability you can see
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4, GP1, GP3, GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m08-autoplot-nested-results`
 
 ## Goal
 
@@ -88,7 +88,7 @@ disagreement section gains the plot.
 
 ## Tasks
 
-- [ ] T1: Add `ggplot2` to Imports and `vdiffr` to Suggests in `DESCRIPTION`;
+- [x] T1: Add `ggplot2` to Imports and `vdiffr` to Suggests in `DESCRIPTION`;
       `devtools::document()`; confirm the existing suite stays clean with the
       new hard dependency in place.
 - [ ] T2: Failing tests for the parameters view — folds agreeing, folds
@@ -116,6 +116,31 @@ disagreement section gains the plot.
 
 - 2026-07-26: created by /milestone-plan, promoting the plotting candidate row split out of M02 (whose parallelism half became M07); gate settled one `autoplot()` with a `type` argument and `ggplot2` to Imports with `vdiffr` in Suggests (D-019), leaving the three other candidate shapes as rows.
 
+- 2026-07-26: T1 — `ggplot2` to Imports, `vdiffr` to Suggests, `autoplot` re-exported beside `collect_metrics` so a bare `autoplot(x)` dispatches; `document()` clean, suite clean at 1028 passing / 0 failures with the new hard dependency in place.
+
 ## Decisions
+
+- 2026-07-26 (T1 gate): Both views share a fold-on-x layout — one point per
+  outer fold, folds in design order, the selected value or score on y, one
+  panel per parameter or metric. Agreement reads as a flat row and
+  disagreement as scatter, no two points can overlap, and it matches the order
+  `print.nested_results()` lists choices in. Rejected: a count-per-value
+  distribution (discards fold identity, so a fold that is an outlier on every
+  parameter is invisible); the transpose (a numeric parameter reads
+  left-to-right where a value is expected on y).
+- 2026-07-26 (T1 gate): Every *attempted* fold keeps its slot on the x axis and
+  a failed one draws no point, so the shortfall is visible in the figure and
+  not only in the stated count, which is the part a crop removes (IP4).
+  Rejected: dropping failed folds from the axis (a cropped figure then looks
+  like a complete design).
+- 2026-07-26 (T1 gate): IP3's obligation is discharged in the performance view
+  by a precise y-axis label naming the quantity plus a subtitle carrying the
+  caveat, because ggplot2 renders a subtitle into the image itself and it
+  therefore survives being exported into a slide or a paper, detached from the
+  console and the help page. Rejected: a caption (the part readers skip and a
+  tight crop loses first); the title (strongest placement, but spends the title
+  on a disclaimer and reads as scolding on every plot). The RB tripwire on AC4
+  is discharged here rather than escalated, at the maintainer's choice at the
+  gate.
 
 ## Review

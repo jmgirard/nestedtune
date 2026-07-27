@@ -5,3 +5,7 @@ tune::collect_metrics
 #' @importFrom tune extract_workflow
 #' @export
 tune::extract_workflow
+
+#' @importFrom ggplot2 autoplot
+#' @export
+ggplot2::autoplot
