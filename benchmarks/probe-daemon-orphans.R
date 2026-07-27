@@ -34,8 +34,14 @@ alive <- function(pid) {
   identical(system2("ps", c("-p", pid), stdout = FALSE, stderr = FALSE), 0L)
 }
 
+# Only files that have actually been written. `cat(x, file = f)` creates f
+# before writing it, so a bare readLines() over every file can hit an empty one
+# -- and since this is a `while` condition, a vapply length error there kills
+# the probe outright rather than retrying (M14 review F7).
 recorded_pids <- function() {
   files <- list.files(ledger, full.names = TRUE)
+  files <- files[file.size(files) > 0L]
+  if (!length(files)) return(integer(0))
   as.integer(vapply(files, readLines, character(1), n = 1L, USE.NAMES = FALSE))
 }
 
@@ -58,21 +64,37 @@ url <- mirai::status()$daemons
 cat("host url:", url, "\n")
 
 # One daemon with the full library, one with a library so lean it cannot load
-# much -- the pair the fixture builds. The lean one here is deliberately given
-# a directory with nothing in it at all, which is the shape RR03 warned about
-# and the one most likely to die or wedge at startup.
-lean <- tempfile("empty-lib-")
+# much -- the pair the fixture builds.
+#
+# The lean one must be the fixture's lean, not an empty directory. `lean_library()`
+# (tests/testthat/helper-parallel.R) deliberately keeps `mirai` and `nanonext`,
+# for the reason RR03 named and M07 paid 39 minutes of `R CMD check` for: strip
+# a daemon's library outright and it cannot load *mirai* either, so it dies
+# before it dials and never joins the pool. A daemon that never connected is
+# not evidence about whether a connected one is reaped, and the first draft of
+# this probe measured exactly that (M14 review F5).
+lean <- tempfile("lean-lib-")
 dir.create(lean)
+for (pkg in c("mirai", "nanonext")) {
+  src <- system.file(package = pkg)
+  if (nzchar(src)) file.symlink(src, file.path(lean, pkg))
+}
 spawn("full", character(0))
 spawn("lean", sprintf(c("R_LIBS=%s", "R_LIBS_SITE=%s", "R_LIBS_USER=%s"), lean))
 
-# Let them boot far enough to have written their pids, then read the pool the
-# way the fixture does.
-deadline <- Sys.time() + 20
-while (length(recorded_pids()) < 2L && Sys.time() < deadline) Sys.sleep(0.1)
+# Let them boot far enough to have written their pids AND dialled in. The
+# fixture's own gate is two connections (test-parallel-detection.R skips below
+# it), so that is the state this probe has to reach before its answer means
+# anything.
+deadline <- Sys.time() + 30
+while ((length(recorded_pids()) < 2L ||
+        mirai::status()$connections < 2L) && Sys.time() < deadline) {
+  Sys.sleep(0.1)
+}
 pids <- recorded_pids()
+connections <- mirai::status()$connections
 cat("spawned pids:", paste(pids, collapse = ", "), "\n")
-cat("connections reached:", mirai::status()$connections, "\n")
+cat("connections reached:", connections, "\n")
 
 # The failure path: the caller gives up and tears down the host listener. This
 # is all the fixture's caller does.
@@ -81,14 +103,33 @@ cat("host torn down\n")
 
 # Give autoexit its chance before judging.
 deadline <- Sys.time() + 15
-while (any(vapply(pids, alive, logical(1))) && Sys.time() < deadline) Sys.sleep(0.25)
+still_alive <- function() pids[vapply(pids, alive, logical(1))]
+while (length(still_alive()) && Sys.time() < deadline) Sys.sleep(0.25)
 
-survivors <- pids[vapply(pids, alive, logical(1))]
+survivors <- still_alive()
 cat("\n--- result ---\n")
 cat("mirai:", as.character(packageVersion("mirai")), "\n")
 cat("nanonext:", as.character(packageVersion("nanonext")), "\n")
-cat("survivors after teardown:", if (length(survivors)) paste(survivors, collapse = ", ") else "none", "\n")
-cat("verdict:", if (length(survivors)) "ORPHANS -- the fixture must record and kill its pids" else "no orphan -- autoexit reaps them, fixture unchanged", "\n")
+cat("daemons spawned:", length(pids), " connections reached:", connections, "\n")
+cat("survivors after teardown:",
+    if (length(survivors)) paste(survivors, collapse = ", ") else "none", "\n")
+
+# The verdict is gated on having actually measured what it claims to measure.
+# `any(logical(0))` is FALSE, so an unguarded version prints "no orphan" just as
+# confidently when both spawns failed and there was nothing to reap at all
+# (M14 review F5).
+cat("verdict: ", sep = "")
+if (length(pids) < 2L || connections < 2L) {
+  cat("INCONCLUSIVE -- needed 2 spawned daemons and 2 connections, got ",
+      length(pids), " and ", connections,
+      ". A daemon that never joined the pool says nothing about whether a ",
+      "connected one is reaped; re-run, and check the lean library really ",
+      "carries mirai and nanonext.\n", sep = "")
+} else if (length(survivors)) {
+  cat("ORPHANS -- the fixture must record and kill its pids\n")
+} else {
+  cat("no orphan -- autoexit reaps them, fixture unchanged\n")
+}
 
 for (pid in survivors) tools::pskill(pid)
 unlink(c(ledger, lean), recursive = TRUE)

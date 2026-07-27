@@ -24,11 +24,18 @@
 
 if (requireNamespace("mirai", quietly = TRUE)) {
   connections <- mirai::status()$connections
-  if (!is.null(connections) && connections > 0L) {
+  # `connections` alone misses a pool that is set but has nothing dialled into
+  # it: after `daemons(n = 0, url = ...)` -- exactly what `start_mixed_daemons()`
+  # raises before its daemons connect -- connections is 0 while a dispatcher and
+  # host listener are live. `daemons_set()` is what sees that one, and a test
+  # erroring inside that window is a real way to reach it (M14 review F6).
+  set <- isTRUE(mirai::daemons_set())
+  if ((!is.null(connections) && connections > 0L) || set) {
     mirai::daemons(0)
     stop(
-      "the suite finished with ", connections,
-      " mirai daemon connection(s) still up: a test left its pool behind, ",
+      "the suite finished with a mirai pool still up (",
+      "connections: ", if (is.null(connections)) "unknown" else connections,
+      ", daemons_set: ", set, "): a test left its pool behind, ",
       "and the pool has now been torn down so later runs are not affected. ",
       "Find the test that did not pair its pool with ",
       "on.exit(mirai::daemons(0), add = TRUE), or whose assertion failed ",
