@@ -28,9 +28,14 @@ test_that("a miraiError becomes a recorded worker failure, not an abort", {
   skip_if_not_installed("mirai")
   skip_on_cran()
 
-  mirai::daemons(1)
   on.exit(mirai::daemons(0), add = TRUE)
-  err <- mirai::mirai(stop("boom"))[]
+  mirai::daemons(1)
+  # This pool is deliberately raw -- unprimed and unwarmed, because the shape
+  # under test needs no package in the daemon at all. That also made it the one
+  # unbounded wait left in the suite: a bare `[` collect on a daemon that never
+  # comes up waits forever, and it is the first daemon test to run in this file,
+  # so it inherits whatever pool state the files before it left (M14 T2).
+  err <- collect_bounded(mirai::mirai(stop("boom")))
 
   # The precondition that makes this test worth having: the idiom used
   # elsewhere in the package does NOT catch this shape.
