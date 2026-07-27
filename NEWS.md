@@ -1,5 +1,12 @@
 # nestedtune 0.0.0.9000
 
+* Interrupting a parallel run now stops the folds it had already sent to the
+  workers. Before, the interrupt gave you your prompt back but left those folds
+  computing — work whose results nobody would ever read, on the very pool you
+  were about to reuse, until it finished on its own. However the call is left
+  before it returns, the outstanding folds are now cancelled on the way out, so
+  the workers are idle again by the time you are.
+
 * The check that runs before parallel dispatch now asks every connected daemon
   whether it can load the package, instead of asking one and believing it for
   all of them. In a pool whose daemons differ — one respawned, or started

@@ -79,7 +79,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - [x] T5 Re-run the saturated-pool `everywhere()` probe against the installed
       mirai, record its output, and rewrite the header comment to its verified
       scope.
-- [ ] T6 Add the NEWS entry.
+- [x] T6 Add the NEWS entry.
 
 ## Work log
 
@@ -94,6 +94,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: T3 — exits enumerated in this file's Decisions section; one is uncoverable (an error inside `mirai_map()` binds no handle to cancel), and the partial-collect exit AC2 was first drafted around does not exist.
 - 2026-07-27: T4 — the interrupt contract now says the folds are cancelled on the way out, and that this holds for any exit once they are dispatched; no sentence there was made false by the change, so the paragraph gained rather than lost. `devtools::document()` clean; full suite and `check()` run at completion.
 - 2026-07-27: T5 — probe re-run against mirai 2.7.2 / nanonext 1.10.1: pool `executing 2`, `everywhere()` returned in 0.001 s with the probe unresolved and queued (`awaiting 2`). The header comment now anchors the non-blocking-send claim to that version and states what a version whose send blocked would cost, instead of claiming nothing on the path can hang.
+- 2026-07-27: T6 — NEWS entry added at the top of the dev section, in user-facing words and naming no milestone.
 
 ## Decisions
 
