@@ -94,9 +94,9 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
 - [x] T2 Author `benchmarks/test-time-budget.R`: enumerate each bound with its
       `file:line` and payer, print per-file totals, and record the pre-milestone
       figures before anything is cut.
-- [ ] T3 Add the parse-token guard in `test-suite-hygiene.R` tying every wait call
+- [x] T3 Add the parse-token guard in `test-suite-hygiene.R` tying every wait call
       in the four daemon files and `helper-parallel.R` to a ledger row.
-- [ ] T4 Cut the bounds: the option at `helper-parallel.R:81` from 300 s to 120 s,
+- [x] T4 Cut the bounds: the option at `helper-parallel.R:81` from 300 s to 120 s,
       `prime_daemons()`'s and `warm_daemons()`'s `collect_bounded()` seconds, and
       the unbounded `check_daemons_can_load()` at `test-parallel-classify.R:467`;
       restore the option by hand, never via `options()["name"]` (M10's trap);
@@ -117,6 +117,7 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
 - 2026-07-27: plan gate chose trimming the hang candidate row to its pre-M14 remainder over absorbing it whole, because the 52- and 40-minute occurrences predate `collect_bounded()` and may be a genuinely unbounded second phenomenon; falsified by evidence those stalls shared the bounded-slow cause.
 - 2026-07-27: T1 done — `HangTraceReporter` moved to `tests/testthat/helper-hang-trace.R` (a test cannot see what the runner defines) and extended with `start_test`/`end_test`; 3 tests, 11 assertions, including a subclassed reporter that suppresses `end_test` to show the unmatched-start shape a killed job leaves. PROFILE's hang-locating line repointed. Suite clean, 1227 pass.
 - 2026-07-27: T2 done — bound ledger in `tests/testthat/helper-time-budget.R`, thin reporter in `benchmarks/test-time-budget.R`; `helper-parallel.R`'s four bounds named as constants both files read, so they cannot drift. Pre-M16 measured: classify 1008.7 s (confirming the plan-gate arithmetic), identity 3000.0 s, interrupt 615.0 s, detection 120.0 s — ~79 minutes across four files against a 20-minute cap.
+- 2026-07-27: T3 and T4 done, committed together because T3's ceiling assertions are red until T4 cuts the bounds and a checkpoint is never committed red. The guard checks both directions (no unbudgeted call, no stale row) and found three sites the hand census missed: `test-parallel-identity.R:166` and the two `collect_bounded()` calls inside `start_daemons()`. Cuts: prime 120->60 s, warm 180->60 s, the suite-wide option 300->120 s, and an explicit 60 s bound at the file's largest wait, which was 300 s inherited invisibly from the option. Classify 1008.7 -> 408.7 s, under the 480 s ceiling and under half. Suite clean, 1233 pass.
 - 2026-07-27: implement gate chose keeping the bound table in `tests/testthat/helper-time-budget.R` over a benchmarks-only ledger, because `benchmarks/` is `.Rbuildignore`d so AC3's guard would skip under `R CMD check` — where an unbudgeted wait costs a 20-minute job; falsified by the guard proving unrunnable from a test file.
 - 2026-07-27: implement gate chose 60 s + 60 s for `prime_daemons()` and `warm_daemons()` over 90/45 and over leaving 180 s, landing the file near 428 s against AC4's 480 s ceiling; falsified by a warmup overrun that the 120 s probe budget does not absorb.
 - 2026-07-27: criteria audit ([O], fresh context) returned three defective criteria — AC4's unsatisfiable "at least half", AC3's token list omitting `start_daemons(`, AC6's teardown-silence holding pre-fix — plus AC1 unbuildable where M14 left the reporter and a fourth daemon file omitted; all fixed before the gate.

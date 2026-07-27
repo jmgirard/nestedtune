@@ -464,5 +464,12 @@ test_that("dispatch accepts daemons primed with the package", {
 
   on.exit(mirai::daemons(0), add = TRUE)
   start_daemons(2)
-  expect_true(check_daemons_can_load())
+
+  # An explicit bound rather than the suite-wide option. Left implicit this was
+  # the single largest wait in the file -- 300 s of legal waiting before M16,
+  # invisible at the call site because the number lived in a helper. The daemons
+  # here are already primed and warmed, so 60 s is generous for a probe that
+  # normally answers in well under one (M16 T4).
+  status <- daemons_load_status(timeout = 60000)
+  expect_true(check_daemons_can_load(status))
 })

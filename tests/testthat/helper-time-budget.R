@@ -43,8 +43,11 @@ tb_row <- function(file, line, call, seconds, payer, times = 1L, note = "") {
 # test-parallel-classify.R's old worst case invisible to a reader of that file.
 START_DAEMONS_BOUND_S <- function() PRIME_DAEMONS_BOUND_S + WARM_DAEMONS_BOUND_S
 
-# The bound a probe reads from the option, in seconds, when nothing overrides it.
-PREFLIGHT_OPTION_BOUND_S <- function() PREFLIGHT_TEST_TIMEOUT_MS / 1000
+# The suite-wide option (PREFLIGHT_TEST_TIMEOUT_MS) is charged to no file below,
+# because after M16 every probe in these files passes an explicit `timeout` or
+# sets the option itself. It remains as the backstop a future call would inherit
+# -- which is precisely how the largest wait in test-parallel-classify.R came to
+# be invisible, so a new call relying on it should be charged here.
 
 time_budget_ledger <- function() {
   rbind(
@@ -120,10 +123,12 @@ time_budget_ledger <- function() {
     tb_row("test-parallel-classify.R", 466L, "start_daemons",
            START_DAEMONS_BOUND_S(),
            "dispatch accepts daemons primed with the package"),
-    tb_row("test-parallel-classify.R", 467L, "check_daemons_can_load",
-           PREFLIGHT_OPTION_BOUND_S(),
+    tb_row("test-parallel-classify.R", 473L, "daemons_load_status", 60,
            "dispatch accepts daemons primed with the package",
-           note = "no argument, so it dispatches and reads the option"),
+           note = "explicit timeout = 60000; was the option's 300 s before M16"),
+    tb_row("test-parallel-classify.R", 474L, "check_daemons_can_load", 0,
+           "dispatch accepts daemons primed with the package",
+           note = "status already in hand"),
 
     # --- test-parallel-detection.R ------------------------------------------
     tb_row("test-parallel-detection.R", 70L, "setTimeLimit", 0,
@@ -163,6 +168,8 @@ time_budget_ledger <- function() {
     tb_row("test-parallel-identity.R", 165L, "setTimeLimit", 0,
            "the caller's RNG state is left untouched",
            note = "not a bound on a blocked mirai wait (M14)"),
+    tb_row("test-parallel-identity.R", 166L, "setTimeLimit", 0,
+           "the caller's RNG state is left untouched", note = "restore"),
     tb_row("test-parallel-identity.R", 216L, "start_daemons",
            START_DAEMONS_BOUND_S(), "seeds are assigned per fold, not per worker"),
     tb_row("test-parallel-identity.R", 262L, "start_daemons",
@@ -180,7 +187,20 @@ time_budget_ledger <- function() {
            note = "while (executing() > 0L && Sys.time() < deadline)"),
     tb_row("test-parallel-interrupt.R", 108L, "start_daemons",
            START_DAEMONS_BOUND_S(),
-           "a completed run is not disturbed by the unconditional cancel")
+           "a completed run is not disturbed by the unconditional cancel"),
+
+    # --- helper-parallel.R --------------------------------------------------
+    # The two waits inside start_daemons(), carried at 0 here because they are
+    # already counted at every start_daemons() CALL SITE above -- charging them
+    # again here would double-count. They get rows anyway so the guard sees them
+    # classified rather than absent, which is the whole discipline: a wait is
+    # either budgeted somewhere or it is a finding.
+    tb_row("helper-parallel.R", 60L, "collect_bounded", 0,
+           "prime_daemons()",
+           note = "PRIME_DAEMONS_BOUND_S, counted at each start_daemons() site"),
+    tb_row("helper-parallel.R", 80L, "collect_bounded", 0,
+           "warm_daemons()",
+           note = "WARM_DAEMONS_BOUND_S, counted at each start_daemons() site")
   )
 }
 

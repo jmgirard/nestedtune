@@ -48,6 +48,97 @@ blocking_collect_sites <- function(path) {
   sort(unique(c(data$line1[named], data$line1[blocking])))
 }
 
+# The second rule (M16 T3, AC3): every wait-shaped call in the daemon files is
+# accounted for in the time budget. `collect_bounded()` made the waits bounded;
+# this makes the SUM of those bounds visible, which is the part that killed a CI
+# job -- 1008.7 s of legal waiting in a file that normally takes 12.0 s, against
+# a 20-minute cap.
+#
+# Accounted for is not the same as small. A call that waits for nothing carries a
+# 0-second row saying why, and that is the point: adding a new call forces a
+# conscious classification instead of letting it hide among the harmless ones.
+BUDGETED_WAIT_CALLS <- c(
+  "collect_bounded", "daemons_load_status", "setTimeLimit",
+  "check_daemons_can_load", "start_daemons", "start_mixed_daemons"
+)
+
+BUDGETED_FILES <- c(
+  "test-parallel-classify.R", "test-parallel-detection.R",
+  "test-parallel-identity.R", "test-parallel-interrupt.R",
+  "helper-parallel.R"
+)
+
+wait_call_sites <- function(path) {
+  data <- utils::getParseData(parse(path, keep.source = TRUE))
+  data <- data[data$token == "SYMBOL_FUNCTION_CALL" &
+                 data$text %in% BUDGETED_WAIT_CALLS, , drop = FALSE]
+  if (!nrow(data)) return(character(0))
+  paste0(basename(path), ":", data$line1)
+}
+
+test_that("every wait-shaped call in the daemon files carries a budget row", {
+  ledger <- time_budget_ledger()
+  budgeted <- paste0(ledger$file, ":", ledger$line)
+
+  found <- unlist(lapply(BUDGETED_FILES, function(f) {
+    wait_call_sites(test_path(f))
+  }), use.names = FALSE)
+
+  # The check is only as good as its reaching the files at all -- a typo in a
+  # name would otherwise pass by finding nothing (M14's "a run that tested
+  # nothing reported clean").
+  expect_gt(length(found), 20L)
+
+  unbudgeted <- setdiff(found, budgeted)
+  expect_identical(
+    unbudgeted, character(0),
+    info = paste0(
+      "wait-shaped call with no row in helper-time-budget.R at: ",
+      paste(unbudgeted, collapse = ", "),
+      " -- add a row giving its worst-case seconds, or 0 with a note saying ",
+      "why it waits for nothing."
+    )
+  )
+})
+
+test_that("the budget ledger has no rows for calls that are gone", {
+  # The other direction, which keeps the ledger honest as lines move: a row
+  # pointing at a `file:line` that no longer holds a wait call is stale, and a
+  # stale row silently excuses the live call that took its place.
+  ledger <- time_budget_ledger()
+  # Scoped to rows describing an actual call. The ledger may also carry a wait
+  # that is not a function call at all -- the `while (... && Sys.time() <
+  # deadline)` poll in test-parallel-interrupt.R -- which is real budget but has
+  # no token to match, so it is exempt from this direction only.
+  ledger <- ledger[ledger$call %in% BUDGETED_WAIT_CALLS, , drop = FALSE]
+  budgeted <- paste0(ledger$file, ":", ledger$line)
+
+  found <- unlist(lapply(BUDGETED_FILES, function(f) {
+    wait_call_sites(test_path(f))
+  }), use.names = FALSE)
+
+  stale <- setdiff(budgeted, found)
+  expect_identical(
+    stale, character(0),
+    info = paste0(
+      "budget row pointing at no wait call (line moved or call removed?): ",
+      paste(stale, collapse = ", ")
+    )
+  )
+})
+
+test_that("the localized file's declared worst case fits the CI budget", {
+  # AC4. The number this milestone exists to move: what test-parallel-classify.R
+  # is ALLOWED to wait for, which on 2026-07-27 was 1008.7 s against a 1200 s
+  # job cap, in a file that typically runs 12.0 s.
+  totals <- time_budget_totals()
+  classify <- totals$seconds[totals$file == "test-parallel-classify.R"]
+
+  expect_length(classify, 1L)
+  expect_lt(classify, CLASSIFY_BUDGET_CEILING_S)
+  expect_lte(classify, CLASSIFY_BUDGET_PRE_M16_S / 2)
+})
+
 test_that("no test waits on a mirai result outside collect_bounded()", {
   # Everything under tests/, not just this directory -- AC2 says "under
   # `tests/`", and `tests/testthat.R` is R code that could acquire a wait too.

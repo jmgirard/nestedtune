@@ -14,9 +14,9 @@
 # Every one of them is a worst case, not an expectation: the daemon files
 # typically finish in seconds and only a degraded runner approaches these.
 COLLECT_BOUNDED_DEFAULT_S <- 60
-PRIME_DAEMONS_BOUND_S <- 120
-WARM_DAEMONS_BOUND_S <- 180
-PREFLIGHT_TEST_TIMEOUT_MS <- 300000L
+PRIME_DAEMONS_BOUND_S <- 60
+WARM_DAEMONS_BOUND_S <- 60
+PREFLIGHT_TEST_TIMEOUT_MS <- 120000L
 
 # Collect a mirai, or a whole mirai_map, with a deadline -- never open-endedly.
 #
