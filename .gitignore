@@ -4,6 +4,10 @@ cairn/.merge-approved
 cairn/.merge-approved.pending
 
 # R
+# testthat writes `*.new.*` beside a snapshot whose candidate did not match, and
+# removes it on the next clean run. Transient by construction, so it is never
+# committed -- a committed one reads as a second approved snapshot.
+tests/testthat/_snaps/**/*.new.*
 .Rproj.user
 .Rhistory
 .RData

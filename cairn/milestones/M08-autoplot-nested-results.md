@@ -106,7 +106,7 @@ disagreement section gains the plot.
       `summarize_folds()`, and the `type` dispatch itself.
 - [x] T6: The three error branches — tests first, then `cli_abort()` calls
       matching the `check_*()` idiom in `R/checks.R`.
-- [ ] T7: `vdiffr` snapshots for both views on a deterministic fixture from
+- [x] T7: `vdiffr` snapshots for both views on a deterministic fixture from
       `helper-orchestration.R`; roxygen with an `@examplesIf` guard; the
       `_pkgdown.yml` reference row.
 - [ ] T8: `NEWS.md` entry; the vignette section plotting its disagreement;
@@ -122,6 +122,8 @@ disagreement section gains the plot.
 - 2026-07-26: T4/T5 — performance view. Deviation from plan order: `plot_performance()` was authored in T3's file before T4's tests, so tests-first did not hold for this half. Teeth proven by inversion instead — five mutations each turn the suite red: dropping `scale_x_discrete(drop = FALSE)` (FAIL 2), removing the marked-estimate rule (FAIL 6), perturbing that estimate by 1e-7 (FAIL 3, so the equality is exact and not `expect_equal()`'s tolerance), dropping IP3's caveat (FAIL 1), imputing an absent selection as 0 (FAIL 2).
 
 - 2026-07-26: T6 — three error branches, all in the `R/checks.R` idiom; `check_any_completed()` gained an `action` argument so plotting and summarizing refuse the same object in their own words rather than in a shared one. 45 assertions; four more inversions red (borrowing summarize's wording FAIL 1, no completed-fold check FAIL 1, `check_plot_type()` accepting anything FAIL 5, empty plot instead of a refusal FAIL 2).
+
+- 2026-07-26: T7 — four vdiffr snapshots (agreement, disagreement, a failed fold's gap, the performance view). Rendering them found two defects no built-data assertion could see: the parameters subtitle was clipped at 7 inches (now two lines), and a unanimous integer parameter was given fractional breaks, labelling a flat row of identical choices 2.950/2.975/3.000 — a plot about disagreement inventing some. Whole-number breaks when every drawn value is one, default breaks otherwise; pinned by test and by inversion (FAIL 4).
 
 ## Decisions
 

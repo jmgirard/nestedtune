@@ -272,6 +272,69 @@ test_that("an unrecognized type is refused by name", {
   expect_error(autoplot(res, type = NA_character_), "must be one of")
 })
 
+test_that("a whole-number parameter is not given fractional breaks", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  # This fixture's folds are unanimous, which collapses the value range to
+  # nothing. The default breaks then label a flat row of identical integer
+  # choices 2.950, 2.975, 3.000 -- a plot about disagreement inventing some.
+  expect_identical(axis_labels(autoplot(res), "y"), "3")
+
+  # A genuinely continuous parameter keeps the default breaks, because rounding
+  # one would collapse every candidate of, say, `penalty` onto zero.
+  continuous <- res
+  for (i in seq_len(nrow(continuous))) {
+    continuous$.selected[[i]]$num_comp <- continuous$.selected[[i]]$num_comp / 8
+  }
+  labels <- axis_labels(autoplot(continuous), "y")
+  expect_true(any(grepl(".", labels, fixed = TRUE)))
+})
+
+# The pictures.
+#
+# Everything above asserts on the built plot, which is blind to the part a
+# reader actually meets: where the labels sit, whether the caveat fits, what a
+# gap looks like. These pin that, on the same deterministic fixtures. vdiffr
+# skips itself on CRAN and wherever its rendering stack differs, so a failure
+# here is a change in the figure and never a change in the machine.
+test_that("both views look the way they read", {
+  skip_if_not_installed("vdiffr")
+  skip_if_no_engines()
+  d <- make_reg_data()
+  u <- unstable_data()
+
+  set.seed(2)
+  agreed <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+  set.seed(2)
+  split <- nested_tune_grid(
+    unstable_workflow(u), det_nested(u, v = 4),
+    grid = unstable_grid(), metrics = reg_metrics()
+  )
+  set.seed(2)
+  partial <- suppressWarnings(nested_tune_grid(
+    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(), metrics = reg_metrics()
+  ))
+
+  vdiffr::expect_doppelganger("parameters, folds agree", autoplot(agreed))
+  vdiffr::expect_doppelganger("parameters, folds disagree", autoplot(split))
+  # The gap where Fold2 sits is the whole point of keeping it on the axis, and
+  # it is the one thing no assertion on the built data can see.
+  vdiffr::expect_doppelganger("parameters, a fold failed", autoplot(partial))
+  vdiffr::expect_doppelganger(
+    "performance, folds agree",
+    autoplot(agreed, type = "performance")
+  )
+})
+
 test_that("a non-numeric selection is drawn on a discrete axis", {
   skip_if_no_engines()
   d <- make_reg_data()

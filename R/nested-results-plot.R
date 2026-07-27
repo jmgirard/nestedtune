@@ -101,16 +101,41 @@ plot_selection <- function(x, call = rlang::caller_env()) {
   ggplot2::ggplot(frame, ggplot2::aes(x = .data$fold, y = .data$value)) +
     ggplot2::geom_point(size = 2.5) +
     ggplot2::scale_x_discrete(drop = FALSE) +
+    value_scale(frame$value) +
     ggplot2::facet_wrap(ggplot2::vars(.data$parameter), scales = "free_y") +
     ggplot2::labs(
       title = "Inner-loop selections across outer folds",
+      # Two lines, because one does not fit a 7-inch device: a subtitle is not
+      # wrapped for you, and a clipped caveat is worse than a short one.
       subtitle = paste0(
         contributed(x, "a selection"),
-        " Points at different heights in a panel mean the folds disagreed."
+        "\nPoints at different heights in a panel mean the folds disagreed."
       ),
       x = "Outer fold",
       y = "Selected value"
     )
+}
+
+# The selected-value scale.
+#
+# A tuning parameter that only takes whole numbers -- `mtry`, `num_comp`,
+# `min_n`, `trees`, most of the grid a user tunes over -- must not be given
+# fractional breaks: unanimity collapses the range to nothing, and the default
+# breaks then label a flat row of identical choices 2.950, 2.975, 3.000, which
+# reads as disagreement at the third decimal place. Whole-number breaks label it
+# 3, which is what happened. A genuinely continuous parameter keeps the default,
+# since rounding `penalty` would collapse every candidate onto zero.
+value_scale <- function(values) {
+  if (!is.numeric(values) || !all(values == trunc(values))) {
+    return(NULL)
+  }
+  ggplot2::scale_y_continuous(breaks = whole_number_breaks)
+}
+
+whole_number_breaks <- function(limits) {
+  candidates <- unique(round(pretty(limits)))
+  candidates[candidates >= floor(limits[[1L]]) &
+               candidates <= ceiling(limits[[2L]])]
 }
 
 plot_performance <- function(x) {
