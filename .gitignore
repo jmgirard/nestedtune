@@ -17,3 +17,7 @@ tests/testthat/_snaps/**/*.new.*
 .Rhistory
 .RData
 .Ruserdata
+
+# Python bytecode, from running .github/ci-usage.py
+__pycache__/
+*.pyc

@@ -1,13 +1,40 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# A commit touching only these changes nothing the package can notice, so the
+# run it would fire has nothing to learn. `paths-ignore` on `push` is where the
+# saving is -- on `pull_request` GitHub evaluates it against the whole PR diff,
+# not the pushed commit, so it fires only for a PR that is tracking-only end to
+# end. `.claude/**` is untracked today and listed for the day it is not.
+#
+# The list is spelled out under both triggers because GitHub Actions does not
+# resolve YAML anchors in workflow files; `.github/ci-usage.py` reads every
+# copy back separately -- both triggers here and both in test-coverage.yaml --
+# and exits non-zero if any two of the four disagree.
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - 'cairn/**'
+      - 'CLAUDE.md'
+      - '.claude/**'
   pull_request:
+    paths-ignore:
+      - 'cairn/**'
+      - 'CLAUDE.md'
+      - '.claude/**'
 
 name: R-CMD-check.yaml
 
 permissions: read-all
+
+# A push supersedes the run before it, whose answer is now about a commit
+# nobody is waiting on. Cancel it -- except on the default branch, which is a
+# distribution channel: every commit there keeps a completed check rather than
+# a cancelled one. `github.ref` is `refs/pull/<n>/merge` on a pull request, so
+# each PR gets its own group and pushes to the same PR cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
 jobs:
   R-CMD-check:

@@ -42,15 +42,33 @@ rules in tracking-rules:
 - Never test print cosmetics beyond meaningful snapshots, trivial pass-throughs,
   dependency behavior, or plots except `vdiffr` when the plot is the product.
 - `covr` is a diagnostic, never a gate.
-- GitHub Actions CI uses the standard usethis pair:
+- GitHub Actions CI starts from the standard usethis pair:
   `usethis::use_github_action("check-standard")` runs `R CMD check` across
-  platforms (a normal CI check — cairn's git model never merges red or pending
-  CI), and `usethis::use_github_action("test-coverage")` runs `covr` and uploads
+  platforms (a normal CI check — see the merge clause below), and
+  `usethis::use_github_action("test-coverage")` runs `covr` and uploads
   to Codecov (`covr::codecov()`). Coverage reporting is diagnostic-only: Codecov
   annotates the PR, but coverage never gates the merge — the `covr` line above
   and tracking-rules' "no coverage-percentage target" both hold. Give the
   `.github/` workflow dir an `.Rbuildignore` `^\.github$` entry (usethis adds it)
   so it stays out of the built package.
+- Two divergences from that stock shape, added at M11. **A `concurrency`
+  block** cancels a run once a later push supersedes it, on every ref but the
+  default branch — that branch is a distribution channel, so a commit there
+  keeps a completed check rather than a cancelled one. **A `paths-ignore`
+  filter** on both triggers of both workflows skips `cairn/**`, `CLAUDE.md`,
+  and `.claude/**`, which cannot change what `R CMD check` sees; its effect is
+  on the `push` trigger, since GitHub evaluates `paths-ignore` on a
+  `pull_request` against the whole PR diff.
+- `.github/ci-usage.py` measures both over any window inside GitHub's 90-day
+  run retention (baseline: `.github/ci-usage-baseline.md`). It counts commits
+  from `git log`, not the runs they fired, and reports what cancelling
+  reclaims rather than what a superseded run cost — so it works once live.
+- **The merge clause, for both:** cairn's git model never merges red or pending
+  CI. A filtered event produces no run, so its check is absent rather than
+  pending and merging past it is correct; what it forbids is merging past a
+  check that ran and failed, or one still running. Caveat: with required status
+  checks (this repo has none) GitHub leaves a filtered check `Pending` forever,
+  so adding branch protection means reconciling filtered paths with that list.
 - Change governance renders here as: the dependency surface is DESCRIPTION
   Imports/Suggests; a breaking-change deprecation cycle warns via `lifecycle`
   (`deprecate_warn()`) before removal. The gates themselves — question-gate +
