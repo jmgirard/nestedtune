@@ -1,15 +1,14 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M09 and M10 planned from M07's parallel-path review remainders — three candidate rows absorbed, D-020 records the pre-flight timeout as an R option narrowing D-018's no-argument line, 11 candidates, 5 terminal rows retained)_
+_Last hygiene check: 2026-07-26 (M09 merged and archived — a cancelled parallel run now aborts instead of reporting an estimate over folds that never ran; review fixed three defects including an AC4 assertion that pinned nothing, M04's row pruned under terminal-row retention, 12 candidates, 3 lessons added and 2 retired)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M09 | A stopped run reports nothing, not a partial estimate | review | — | high | milestones/M09-parallel-cancellation.md |
+| M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
 | M10 | The startup check inspects every worker and says what went wrong | planned | — | normal | milestones/M10-preflight-probe-coverage.md |
-| M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 | M07 | Parallel outer folds | done | M02 | high | milestones/archive/M07-parallel-outer-folds.md |
