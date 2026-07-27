@@ -128,6 +128,21 @@ test_that("a task error is a fold failure even though it is also an errorValue",
   expect_identical(out$notes$location, "worker")
 })
 
+test_that("a worker whose message is the cancel code is still a fold failure", {
+  # Why the cancel check validates the type and does not just compare values:
+  # R coerces across types in `==`, so a miraiError carrying the message "20"
+  # equals the cancel code exactly (verified: `"20" == 20L` is TRUE). Without
+  # is.integer(), one unlucky error message would abort the run and discard
+  # every fold that had already completed.
+  err <- structure("20", class = c("miraiError", "errorValue", "try-error"))
+  expect_true(err == cancel_error_value)      # the coercion this guards against
+  expect_false(is_cancelled_value(err))
+
+  out <- classify_fold_result(err)
+  expect_false(out$completed)
+  expect_identical(out$notes$location, "worker")
+})
+
 test_that("dispatch refuses daemons that cannot load the package", {
   # The probe result is injected rather than engineered. Producing it for real
   # means pointing the daemons' library path somewhere empty, which also stops

@@ -89,7 +89,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
       a real dispatched run, assert the abort, the restored RNG state and kind,
       and that no `nested_results` is returned. Bound it so a failure is an
       error, never a hang.
-- [ ] T5: Inversion pass — remove the branch, confirm T2/T4 redden, restore and
+- [x] T5: Inversion pass — remove the branch, confirm T2/T4 redden, restore and
       diff. Log the result.
 - [ ] T6: Roxygen section + `NEWS.md`; `devtools::document()`, then
       `devtools::test()` and `devtools::check()` clean.
@@ -103,6 +103,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - 2026-07-26: T2 done — five tests added to `test-parallel-classify.R`. Two are red by design (code 20 must abort under both class names); three pass already, pinning behaviour T3 must not break: 19 stays a fold failure, a miraiError stays a fold failure, and a real interrupt stays a plain interrupt. Suite is red until T3.
 - 2026-07-26: T3 done — `is_cancelled_value()` allowlists errorValue 20 by positive shape validation (`is.integer()` is what excludes the empty-string interrupt and the character miraiError, rather than branch ordering); `classify_fold_result()` aborts on it with `c("nestedtune_cancelled", "nestedtune_interrupted")`. Full suite green: 1105 pass, 0 fail, 0 skip.
 - 2026-07-26: T4 done — end-to-end test on real daemons. Cancellation needs an actor outside a host that is blocked in `collect_mirai()`, so only that actor is substituted: the map is really dispatched and really stopped, and collect/classify/abort/unwind all run unmocked. Asserts the abort, both condition classes, `result` still NULL, RNG state and kind restored, and bounded elapsed. 50 pass in the file.
+- 2026-07-26: T5 done — two inversions, both red. Deleting the abort branch reddens 2 tests in `test-parallel-classify.R` and 2 in `test-parallel-identity.R`; dropping `is.integer()` from the shape check reddens 2. The second inversion found a real defect and earned a test: R coerces in `==`, so a miraiError whose message is the string "20" equals the cancel code, and without the type check one unlucky error message would abort the run and discard every completed fold. Suite green: 1115 pass, 0 fail, 0 skip.
 
 ## Decisions
 
