@@ -60,11 +60,9 @@ rules in tracking-rules:
   `workflow_dispatch`-only stress workflow** (`stress-daemon-tests.yaml`) hunts the
   hang on demand, invisible to `ci-usage.py` for carrying neither trigger.
 - Locating a hang, since the cap only ends one: `HangTraceReporter`
-  (`tests/testthat/helper-hang-trace.R`, sourced by the runner) writes a
-  timestamped start/end line per test file *and per `test_that()` block* to
-  unbuffered `stderr()`, so a killed job's last unmatched `start` names the
-  block it died in; no R-side bound exists, `setTimeLimit()` not reaching
-  `collect_mirai()` (M14, per-test granularity M16).
+  (`tests/testthat/helper-hang-trace.R`) writes a timestamped start/end line per
+  test file and per `test_that()` block to unbuffered `stderr()`, so a killed
+  job's last unmatched `start` names the block it died in (M14, per-test M16).
 - `.github/ci-usage.py` measures the first two over any window in GitHub's
   90-day retention (baseline: `.github/ci-usage-baseline.md`), counting commits
   from `git log` and never crediting a cancelled run its whole would-be duration.

@@ -10,7 +10,7 @@ _Last hygiene check: 2026-07-27 (audit pass after M15's: all checks green, nothi
 | M12 | Fitting time only where an assertion needs it | done | — | normal | milestones/archive/M12-test-suite-runtime.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
-| M16 | The suite's worst case fits inside the CI budget | in-progress | — | high | milestones/M16-suite-worst-case-budget.md |
+| M16 | The suite's worst case fits inside the CI budget | review | — | high | milestones/M16-suite-worst-case-budget.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
 | M10 | The startup check inspects every worker and says what went wrong | done | — | normal | milestones/archive/M10-preflight-probe-coverage.md |
