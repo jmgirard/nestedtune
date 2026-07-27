@@ -1,11 +1,11 @@
 # M10: The startup check inspects every worker and says what went wrong
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m10-preflight-probe-coverage`
 
 ## Goal
 
@@ -67,7 +67,7 @@ Per-fold timeouts stay rejected (RR03 Q4). No argument is added to
 
 ## Tasks
 
-- [ ] T1: Establish by execution how to reach every daemon — whether
+- [x] T1: Establish by execution how to reach every daemon — whether
       `mirai::everywhere()` returns per-daemon results and honours a timeout,
       versus submitting one probe task per connected daemon. Bound every probe
       used, including the exploratory ones. Record the finding.
@@ -92,7 +92,36 @@ Per-fold timeouts stay rejected (RR03 Q4). No argument is added to
 ## Work log
 
 - 2026-07-26: created by /milestone-plan — promotes the M07 review candidate rows scored 68 and 60; the option-not-argument choice was settled at the plan gate and recorded as D-020.
+- 2026-07-26: T1 — `mirai::everywhere()` returns a `mirai_map` with one element per connected daemon (distinct pids at n=3, verified), queues behind a busy daemon rather than skipping it, and answers plain `FALSE` where the package is absent; it carries no `.timeout`, so the bound is a poll on `unresolved()` to a deadline then `stop_mirai()`, after which every element collects as `errorValue` 20 (M09's allowlisted ECANCELED) and the pool stays usable — all verified by execution under a shell-level timeout.
+- 2026-07-26: T1 — AC1 names RR03 Q5's `R_LIBS` mechanism for the mixed pool; verified insufficient where packages live in the *site* library (both daemons still loaded the target). `R_LIBS_SITE` **and** `R_LIBS_USER` pointed at a scratch library holding only symlinked mirai+nanonext gives a daemon that starts yet cannot load the target. Differing library paths — AC1's substance — is unchanged; the env var is corrected.
+- 2026-07-26: implement question gate — condition-class structure, mixed-pool reporting, and `Inf` refusal settled; recorded as M10-D1 and M10-D2.
 
 ## Decisions
+
+### M10-D1 (2026-07-26): Two named causes under one shared class, and a mixed pool names both
+
+The pre-flight outcome is now per-daemon, so a pool can fail two ways at once.
+Settled at the implement gate: a genuine load failure aborts with class
+`c("nestedtune_daemons_cannot_load", "nestedtune_daemons_unusable")`, a
+non-answer with `c("nestedtune_daemons_no_response",
+"nestedtune_daemons_unusable")`, and a pool showing both aborts on the
+load-failure class with one message naming both counts — installing is the
+actionable fix, and staying silent on the non-answer would only make the user
+rediscover it after fixing the install. Rejected: two sibling classes with no
+shared parent (nothing left to catch for "the check failed"); subclassing the
+timeout under `nestedtune_daemons_cannot_load` on M09's cancelled/interrupted
+precedent (a timeout would then answer to a name asserting it could not load —
+the exact confusion this milestone exists to fix). The existing class name keeps
+its meaning, so a handler written against M07 still works.
+
+### M10-D2 (2026-07-26): The pre-flight timeout must be finite
+
+`getOption("nestedtune.preflight_timeout")` refuses `Inf` alongside non-positive
+and non-numeric values. AC3 names only the latter two, and `Inf` is both numeric
+and positive — but honouring it would let a user switch the bound off entirely,
+reinstating the unbreakable hang the bound exists to convert into an error
+(M07's 39-minute `R CMD check`). A user needing longer sets a large finite
+value, which serves the same need without giving up AC4. This adds a guard to
+AC3 rather than changing what it demands.
 
 ## Review
