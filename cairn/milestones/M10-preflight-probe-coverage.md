@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1, GP3
-- **Branch/PR:** `m10-preflight-probe-coverage`
+- **Branch/PR:** `m10-preflight-probe-coverage` · https://github.com/jmgirard/nestedtune/pull/10
 
 ## Goal
 
