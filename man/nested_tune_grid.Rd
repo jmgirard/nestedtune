@@ -159,8 +159,22 @@ dead one would be indistinguishable.
 
 A fold whose worker dies is recorded as a failed fold, exactly like any other
 failure: the run finishes, the other folds keep their results, and \code{.notes}
-names the worker as the stage. Interrupting a run is not a fold failure — the
-call aborts and returns nothing.
+names the worker as the stage.
+
+Stopping a run is not a fold failure. A fold that was never given a chance to
+run has not been attempted, so recording it as one would describe a design
+that did not execute. Both routes therefore abort and return nothing, leaving
+the caller's RNG state restored: interrupting the call raises a
+\code{nestedtune_interrupted} condition, and cancelling the dispatched tasks
+raises \code{nestedtune_cancelled}, which inherits from it — so a handler for
+either catches both, and one that cares can tell them apart.
+
+One case cannot be told apart, and is documented rather than guessed at:
+calling \code{mirai::daemons(0)} while folds are outstanding produces exactly the
+value a daemon dying mid-fold produces — same code, same classes, nothing to
+separate them. Tearing the pool down that way is therefore recorded as fold
+failures rather than treated as a cancellation, because the alternative would
+discard every completed fold whenever a single worker died.
 }
 
 \section{Differences from calling tune directly}{

@@ -91,7 +91,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
       error, never a hang.
 - [x] T5: Inversion pass — remove the branch, confirm T2/T4 redden, restore and
       diff. Log the result.
-- [ ] T6: Roxygen section + `NEWS.md`; `devtools::document()`, then
+- [x] T6: Roxygen section + `NEWS.md`; `devtools::document()`, then
       `devtools::test()` and `devtools::check()` clean.
 
 ## Work log
@@ -104,6 +104,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - 2026-07-26: T3 done — `is_cancelled_value()` allowlists errorValue 20 by positive shape validation (`is.integer()` is what excludes the empty-string interrupt and the character miraiError, rather than branch ordering); `classify_fold_result()` aborts on it with `c("nestedtune_cancelled", "nestedtune_interrupted")`. Full suite green: 1105 pass, 0 fail, 0 skip.
 - 2026-07-26: T4 done — end-to-end test on real daemons. Cancellation needs an actor outside a host that is blocked in `collect_mirai()`, so only that actor is substituted: the map is really dispatched and really stopped, and collect/classify/abort/unwind all run unmocked. Asserts the abort, both condition classes, `result` still NULL, RNG state and kind restored, and bounded elapsed. 50 pass in the file.
 - 2026-07-26: T5 done — two inversions, both red. Deleting the abort branch reddens 2 tests in `test-parallel-classify.R` and 2 in `test-parallel-identity.R`; dropping `is.integer()` from the shape check reddens 2. The second inversion found a real defect and earned a test: R coerces in `==`, so a miraiError whose message is the string "20" equals the cancel code, and without the type check one unlucky error message would abort the run and discard every completed fold. Suite green: 1115 pass, 0 fail, 0 skip.
+- 2026-07-26: T6 done — roxygen "Parallel execution" rewritten (the old line calling an interrupt the only non-failure was wrong once cancellation joined it) plus the documented `daemons(0)` limit; two NEWS entries. `devtools::document()` idempotent; `devtools::check()` 0 errors / 0 warnings / 0 notes in 5m5s.
 
 ## Decisions
 
