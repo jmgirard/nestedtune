@@ -85,6 +85,31 @@ dispatch_folds <- function(payloads, object, grid, metrics,
     .f = task,
     .args = list(object = object, grid = grid, metrics = metrics)
   )
+  # Leaving this function without returning must not leave folds running.
+  #
+  # The collect below blocks, and interrupting it unwinds the host while saying
+  # nothing to the daemons: the folds keep computing results nobody will read,
+  # on the very pool the user reuses next (verified by execution against mirai
+  # 2.7.2 -- the pool reported `executing = 2` after the interrupt).
+  #
+  # Unconditional rather than gated on a "did we finish" flag, so it covers
+  # every way out between here and the return rather than the ones anticipated:
+  # the interrupt above, an error raised by the collect itself, and an abort
+  # from classification. The last two leave nothing outstanding -- collect_mirai()
+  # returns only once every element has resolved -- and stop_mirai() on a map
+  # that has fully resolved is a no-op that returns FALSE per element and
+  # touches neither the collected values nor the pool (same probe). So there is
+  # nothing for a flag to save and one less thing to reason about.
+  #
+  # What this cannot do is reach a pool started with `dispatcher = FALSE`:
+  # cancellation is a dispatcher feature, and use_parallel() admits such a pool
+  # because it asks only how many daemons are connected. Verified against mirai
+  # 2.7.2 -- there stop_mirai() returns FALSE per element and the tasks run to
+  # completion regardless, so this guard is inert and the roxygen says so rather
+  # than promising a cancellation that cannot happen (M15 review F1).
+  # `mirai::daemons(n)` starts a dispatcher by default, so the common pool is
+  # covered.
+  on.exit(mirai::stop_mirai(mapped), add = TRUE)
   # A plain blocking collect: results in place, failures as values. mirai's
   # `.stop` would abort the whole run on the first failing fold and discard the
   # completed ones -- exactly what M03 exists to prevent.
@@ -155,8 +180,17 @@ preflight_timeout <- function(call = rlang::caller_env()) {
 # `unresolvedValue` for anything still outstanding, rather than through the
 # map's own `[` -- that collects, and collecting BLOCKS until every element
 # resolves. Reading per element cannot block at all, so the bound holds even if
-# stop_mirai() leaves something behind, and nothing here can hang however mirai
-# behaves.
+# stop_mirai() leaves something behind.
+#
+# That covers the read. The send is the other half, and it is a claim about
+# mirai rather than about this code: everywhere() must return without waiting
+# for a daemon to be free, or the bound below would never start counting.
+# Verified by execution against mirai 2.7.2 / nanonext 1.10.1 -- on a pool whose
+# every daemon was already occupied it returned in 0.001 s with the probe
+# unresolved and queued (M15 T5). It is deliberately NOT claimed of mirai in
+# general: a version whose send blocked on a saturated pool would hang here, and
+# no R-side bound could break it, setTimeLimit() not reaching a blocked mirai
+# call (M14).
 daemons_load_status <- function(package = "nestedtune",
                                 timeout = preflight_timeout(call = call),
                                 call = rlang::caller_env()) {

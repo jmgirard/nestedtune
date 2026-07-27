@@ -174,6 +174,17 @@
 #' interrupt propagates and no nestedtune condition class is attached — the RNG
 #' state is still restored, but do not write a handler expecting one.
 #'
+#' An interrupt also asks the folds it leaves behind to stop. However the call
+#' is left once its folds are dispatched — an interrupt, or an error — the
+#' outstanding ones are cancelled on the way out, so the pool goes idle shortly
+#' after rather than computing folds whose results nobody will read. Two limits
+#' are worth knowing. Cancelling needs mirai's dispatcher, which
+#' `mirai::daemons(n)` starts by default; on a pool started with
+#' `dispatcher = FALSE` the request cannot reach the workers at all and the
+#' folds run to completion. And stopping is a request rather than a guarantee:
+#' a fold already inside a compiled fitting routine may not be interruptible,
+#' and one that has nearly finished may simply finish.
+#'
 #' One case cannot be told apart, and is documented rather than guessed at:
 #' calling `mirai::daemons(0)` while folds are outstanding produces exactly the
 #' value a daemon dying mid-fold produces — same code, same classes, nothing to

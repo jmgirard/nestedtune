@@ -1,5 +1,16 @@
 # nestedtune 0.0.0.9000
 
+* Interrupting a parallel run now asks the folds it had already sent to the
+  workers to stop. Before, the interrupt gave you your prompt back but left
+  those folds computing — work whose results nobody would ever read, on the
+  very pool you were about to reuse, until it finished on its own. However the
+  call is left once its folds are dispatched, the outstanding ones are now
+  cancelled on the way out and the pool goes idle shortly after. Two limits:
+  cancelling needs mirai's dispatcher, which `mirai::daemons(n)` starts by
+  default and `mirai::daemons(n, dispatcher = FALSE)` does not, so on such a
+  pool the folds still run to completion; and a fold already inside a compiled
+  fitting routine may not be interruptible.
+
 * The check that runs before parallel dispatch now asks every connected daemon
   whether it can load the package, instead of asking one and believing it for
   all of them. In a pool whose daemons differ — one respawned, or started
