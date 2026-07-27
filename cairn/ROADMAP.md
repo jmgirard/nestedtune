@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-27 (M10 merged and archived — the parallel startu
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M11 | Every CI run is one somebody is waiting for | planned | — | normal | milestones/M11-ci-run-economy.md |
+| M11 | Every CI run is one somebody is waiting for | in-progress | — | normal | milestones/M11-ci-run-economy.md |
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
 | M10 | The startup check inspects every worker and says what went wrong | done | — | normal | milestones/archive/M10-preflight-probe-coverage.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |

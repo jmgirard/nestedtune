@@ -1,11 +1,11 @@
 # M11: Every CI run is one somebody is waiting for
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m11-ci-run-economy`
 
 ## Goal
 
@@ -99,6 +99,7 @@ candidate row. Dependency caching → already provided by
 ## Work log
 
 - 2026-07-27: created by /milestone-plan.
+- 2026-07-27: started; branch `m11-ci-run-economy` cut from `main` at c248bcd.
 
 ## Decisions
 
