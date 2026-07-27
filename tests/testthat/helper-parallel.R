@@ -7,6 +7,17 @@
 # pkgload closes both holes; under R CMD check the package is installed and the
 # daemons inherit the library through the environment, so priming is a no-op.
 
+# The suite's wait bounds, named rather than scattered as literals.
+#
+# `helper-time-budget.R` reads these to total each file's declared worst case,
+# so a bound cut here moves the ledger with it and the two cannot drift (M16 T2).
+# Every one of them is a worst case, not an expectation: the daemon files
+# typically finish in seconds and only a degraded runner approaches these.
+COLLECT_BOUNDED_DEFAULT_S <- 60
+PRIME_DAEMONS_BOUND_S <- 120
+WARM_DAEMONS_BOUND_S <- 180
+PREFLIGHT_TEST_TIMEOUT_MS <- 300000L
+
 # Collect a mirai, or a whole mirai_map, with a deadline -- never open-endedly.
 #
 # A bare `[` collect blocks until every element resolves, so one wedged daemon
@@ -19,7 +30,7 @@
 # what `test-suite-hygiene.R` can check for mechanically: a single mirai reads
 # its own `$data`, a map reads one element at a time. `unresolved()` and
 # `stop_mirai()` accept either, so only the read differs (M14 T2).
-collect_bounded <- function(map, seconds = 60) {
+collect_bounded <- function(map, seconds = COLLECT_BOUNDED_DEFAULT_S) {
   deadline <- Sys.time() + seconds
   while (mirai::unresolved(map) && Sys.time() < deadline) {
     Sys.sleep(0.05)
@@ -49,7 +60,7 @@ prime_daemons <- function() {
   collect_bounded(mirai::everywhere(
     pkgload::load_all(path, quiet = TRUE),
     .args = list(path = path)
-  ), seconds = 120)
+  ), seconds = PRIME_DAEMONS_BOUND_S)
   invisible(TRUE)
 }
 
@@ -68,7 +79,7 @@ prime_daemons <- function() {
 warm_daemons <- function() {
   collect_bounded(
     mirai::everywhere(requireNamespace("nestedtune", quietly = TRUE)),
-    seconds = 180
+    seconds = WARM_DAEMONS_BOUND_S
   )
   invisible(TRUE)
 }
@@ -78,7 +89,7 @@ warm_daemons <- function() {
 # statistical, so the tests that merely need dispatch to get going are given
 # room. The tests that exercise the bound itself pass an explicit `timeout` or
 # set the option locally, so none of them reads this value.
-options(nestedtune.preflight_timeout = 300000L)
+options(nestedtune.preflight_timeout = PREFLIGHT_TEST_TIMEOUT_MS)
 
 # Start `n` primed daemons from a clean pool. Callers pair this with
 # `on.exit(mirai::daemons(0), add = TRUE)`; cleanup is left to the caller rather

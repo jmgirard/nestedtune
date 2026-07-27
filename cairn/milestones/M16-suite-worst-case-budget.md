@@ -91,7 +91,7 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
       test file can see it, sourcing it from `tests/testthat.R`; extend it with
       `start_test`/`end_test`; add the two-block fixture test asserting paired,
       named lines. R6 is already in Suggests for it (D-021).
-- [ ] T2 Author `benchmarks/test-time-budget.R`: enumerate each bound with its
+- [x] T2 Author `benchmarks/test-time-budget.R`: enumerate each bound with its
       `file:line` and payer, print per-file totals, and record the pre-milestone
       figures before anything is cut.
 - [ ] T3 Add the parse-token guard in `test-suite-hygiene.R` tying every wait call
@@ -116,6 +116,7 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
 - 2026-07-27: plan gate chose 120 s for the helper's pre-flight option over 90 s and 60 s, because it is 4x the 30 s the helper records as having been exceeded on a loaded check machine and still clears the 480 s ceiling; falsified by a run exceeding a 120 s probe budget on a loaded runner.
 - 2026-07-27: plan gate chose trimming the hang candidate row to its pre-M14 remainder over absorbing it whole, because the 52- and 40-minute occurrences predate `collect_bounded()` and may be a genuinely unbounded second phenomenon; falsified by evidence those stalls shared the bounded-slow cause.
 - 2026-07-27: T1 done — `HangTraceReporter` moved to `tests/testthat/helper-hang-trace.R` (a test cannot see what the runner defines) and extended with `start_test`/`end_test`; 3 tests, 11 assertions, including a subclassed reporter that suppresses `end_test` to show the unmatched-start shape a killed job leaves. PROFILE's hang-locating line repointed. Suite clean, 1227 pass.
+- 2026-07-27: T2 done — bound ledger in `tests/testthat/helper-time-budget.R`, thin reporter in `benchmarks/test-time-budget.R`; `helper-parallel.R`'s four bounds named as constants both files read, so they cannot drift. Pre-M16 measured: classify 1008.7 s (confirming the plan-gate arithmetic), identity 3000.0 s, interrupt 615.0 s, detection 120.0 s — ~79 minutes across four files against a 20-minute cap.
 - 2026-07-27: implement gate chose keeping the bound table in `tests/testthat/helper-time-budget.R` over a benchmarks-only ledger, because `benchmarks/` is `.Rbuildignore`d so AC3's guard would skip under `R CMD check` — where an unbudgeted wait costs a 20-minute job; falsified by the guard proving unrunnable from a test file.
 - 2026-07-27: implement gate chose 60 s + 60 s for `prime_daemons()` and `warm_daemons()` over 90/45 and over leaving 180 s, landing the file near 428 s against AC4's 480 s ceiling; falsified by a warmup overrun that the 120 s probe budget does not absorb.
 - 2026-07-27: criteria audit ([O], fresh context) returned three defective criteria — AC4's unsatisfiable "at least half", AC3's token list omitting `start_daemons(`, AC6's teardown-silence holding pre-fix — plus AC1 unbuildable where M14 left the reporter and a fourth daemon file omitted; all fixed before the gate.
