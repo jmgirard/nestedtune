@@ -76,7 +76,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - [x] T1: Probe by execution what mirai hands back for each cancellation path
       above, and for a killed daemon, against the installed mirai. Record the
       table and the version. Do not infer the codes from the candidate row.
-- [ ] T2: Write the failing tests first, in
+- [x] T2: Write the failing tests first, in
       `tests/testthat/test-parallel-classify.R`: `errorValue` 20 →
       `nestedtune_cancelled`, and caught by a `nestedtune_interrupted` handler;
       `errorValue` 19 → recorded worker failure.
@@ -100,6 +100,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - 2026-07-26: in-progress on `m09-parallel-cancellation`. Gate settled two open choices: abort only on an allowlist of cancellation signals (unrecognized values keep today's failed-fold default, so completed folds are never discarded — M03's reason); and cancellation gets condition class `nestedtune_cancelled` inheriting `nestedtune_interrupted`, so existing handlers are untouched. RB escalation offered on the ip-touching criterion and declined again.
 - 2026-07-26: T1 done — M09-D1 records the probe table; script kept at `benchmarks/probe-mirai-cancellation.R` (build-ignored). Finding contradicts the plan: `daemons(0)` yields errorValue 19, the same value a dying daemon yields, so AC2 and AC3 as written now conflict — amendment gate next.
 - 2026-07-26: amendment gate — Scope/In, AC2 and AC3 amended and T2/T3 reworded, on M09-D1's finding that errorValue 19 cannot separate a `daemons(0)` teardown from a dying daemon. Abort is allowlisted to code 20; 19 keeps today's failed-fold behaviour and the limit is documented. Escalation offered and declined.
+- 2026-07-26: T2 done — five tests added to `test-parallel-classify.R`. Two are red by design (code 20 must abort under both class names); three pass already, pinning behaviour T3 must not break: 19 stays a fold failure, a miraiError stays a fold failure, and a real interrupt stays a plain interrupt. Suite is red until T3.
 
 ## Decisions
 

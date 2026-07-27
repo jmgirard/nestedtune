@@ -77,6 +77,57 @@ test_that("a miraiInterrupt aborts instead of being recorded as a failed fold", 
   expect_error(classify_fold_result(interrupt), class = "nestedtune_interrupted")
 })
 
+test_that("a cancelled task aborts instead of being recorded as a failed fold", {
+  # M09-D1: stop_mirai() resolves every task in the map to errorValue 20 --
+  # the one in flight and the ones still queued alike -- and carries no
+  # miraiInterrupt class, so the branch above never sees it. Recording these as
+  # failed folds reports an estimate over folds that were never given a chance
+  # to run, which is the same IP4 inversion BC4 exists to prevent, on a path
+  # BC4 does not reach.
+  cancelled <- structure(20L, class = c("errorValue", "try-error"))
+  expect_false(inherits(cancelled, "miraiInterrupt"))
+  expect_error(classify_fold_result(cancelled), class = "nestedtune_cancelled")
+})
+
+test_that("a cancelled run is caught by a handler for any stopped run", {
+  # nestedtune_cancelled inherits nestedtune_interrupted, so code that already
+  # handled a stopped run keeps working and code that cares can still tell a
+  # torn-down pool from someone pressing Ctrl-C.
+  cancelled <- structure(20L, class = c("errorValue", "try-error"))
+  expect_error(classify_fold_result(cancelled), class = "nestedtune_interrupted")
+})
+
+test_that("a real interrupt is an interrupt, not a cancellation", {
+  # The interrupt fixture is an empty STRING (see the BC4 test above), so
+  # as.integer() on it is NA. A cancellation check that reached for the integer
+  # before validating the shape would misfire right here.
+  interrupt <- structure("", class = c("miraiInterrupt", "errorValue", "try-error"))
+  cnd <- tryCatch(classify_fold_result(interrupt), condition = identity)
+  expect_s3_class(cnd, "nestedtune_interrupted")
+  expect_false(inherits(cnd, "nestedtune_cancelled"))
+})
+
+test_that("the ambiguous teardown value stays a recorded fold failure", {
+  # M09-D1 found errorValue 19 under BOTH a daemons(0) teardown and a daemon
+  # dying mid-fold, with identical classes -- nothing in the value separates
+  # them. Aborting on it would throw away every completed fold whenever one
+  # worker died, which is what M03 exists to prevent. So 19 keeps this
+  # behaviour and the roxygen states the limit rather than guessing at it.
+  ev <- structure(19L, class = c("errorValue", "try-error"))
+  out <- classify_fold_result(ev)
+  expect_false(out$completed)
+  expect_identical(out$notes$location, "worker")
+})
+
+test_that("a task error is a fold failure even though it is also an errorValue", {
+  # A miraiError carries errorValue among its classes but is a character, not
+  # an integer -- the shape check is what keeps it out of the cancel branch.
+  err <- structure("boom", class = c("miraiError", "errorValue", "try-error"))
+  out <- classify_fold_result(err)
+  expect_false(out$completed)
+  expect_identical(out$notes$location, "worker")
+})
+
 test_that("dispatch refuses daemons that cannot load the package", {
   # The probe result is injected rather than engineered. Producing it for real
   # means pointing the daemons' library path somewhere empty, which also stops
