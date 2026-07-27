@@ -156,9 +156,9 @@ some folds come back as opaque worker failures.
 \item A daemon that does not answer at all is reported as a non-response, not as
 a missing package, so a merely slow daemon is never met with advice to
 install what you already have. The check waits 30 seconds by default; set
-\code{options(nestedtune.preflight_timeout = )} to a single positive, finite
-number of milliseconds to raise or lower that. Nothing statistical depends
-on it.
+\verb{options(nestedtune.preflight_timeout = <milliseconds>)} to raise or lower
+that, to a single positive, finite number. Nothing statistical depends on
+it.
 \item That check is bounded; the folds themselves are not. If every daemon dies
 \emph{after} folds are dispatched, the call blocks waiting for results that will
 never arrive, and you interrupt it. No per-fold timeout is imposed, because
