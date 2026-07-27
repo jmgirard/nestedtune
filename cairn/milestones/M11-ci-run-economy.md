@@ -106,6 +106,7 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: T4, T5 — baseline regenerated with the filter read from the workflows (identical to the fallback run, so the declared list matches what was measured) and committed at `.github/ci-usage-baseline.md`; PROFILE.md's CI bullet rewritten, and compressed in one pass after the first draft put the file 1 line over its 120-line cap.
 - 2026-07-27: `devtools::test()` clean on the branch — FAIL 0, WARN 0, SKIP 0, PASS 1175.
 - 2026-07-27: the filter list is spelled out under each of the four triggers rather than shared by a YAML anchor — GitHub Actions does not resolve anchors in workflow files, and an unresolved alias would have silently disabled the filter.
+- 2026-07-27: T6 — PR #11 opened at the user's direction so AC2's cancellation could be observed here; a branch gets no runs without one, since the `push` trigger is limited to `main`/`master`. Review records the URL in the header slot as usual.
 
 ## Decisions
 
