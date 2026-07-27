@@ -1,11 +1,11 @@
 # M09: A stopped run reports nothing, not a partial estimate
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4, IP2
-- **Branch/PR:** —
+- **Branch/PR:** `m09-parallel-cancellation`
 
 ## Goal
 
@@ -89,6 +89,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 ## Work log
 
 - 2026-07-26: created by /milestone-plan — promotes the M07 review candidate row scored 78; sequencing and the IP4 reading were both settled at the plan gate, with escalation to an RB declined.
+- 2026-07-26: in-progress on `m09-parallel-cancellation`. Gate settled two open choices: abort only on an allowlist of cancellation signals (unrecognized values keep today's failed-fold default, so completed folds are never discarded — M03's reason); and cancellation gets condition class `nestedtune_cancelled` inheriting `nestedtune_interrupted`, so existing handlers are untouched. RB escalation offered on the ip-touching criterion and declined again.
 
 ## Decisions
 
