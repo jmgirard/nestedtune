@@ -93,9 +93,9 @@ row until something localizes it. Sharing one daemon pool across
 - [x] T2 Convert `test-parallel-classify.R:33`'s `[` collect to
       `collect_bounded()`; add the source-scanning check and red it by
       inversion.
-- [ ] T3 Write the orphan probe against `start_mixed_daemons()`'s failure path;
+- [x] T3 Write the orphan probe against `start_mixed_daemons()`'s failure path;
       fix the fixture only if the probe shows a survivor.
-- [ ] T4 Add the last-sorting `teardown-` file; red it by leaving a pool up.
+- [x] T4 Add the last-sorting `teardown-` file; red it by leaving a pool up.
 - [ ] T5 Write the stress harness with its per-iteration kill deadline; add the
       `.Rbuildignore` entry.
 - [ ] T6 Add the `workflow_dispatch`-only macOS workflow invoking the harness;
@@ -113,6 +113,8 @@ row until something localizes it. Sharing one daemon pool across
 - 2026-07-27: plan chose an unbuffered stderr line from a `tests/testthat.R` reporter over per-file edits or a stdout line, because R buffers stdout to file and a killed process loses the tail — the recipe-failure lines that did survive the real hang came through stderr; falsified by evidence that stdout is flushed per line under `R CMD check`.
 - 2026-07-27: plan chose a probe-then-fix shape for the orphan `Rscript` daemons over asserting the leak outright, because `mirai::daemon()` defaults to `autoexit = TRUE` and the leak is unestablished; falsified by the probe finding a survivor, which converts it to a fix.
 - 2026-07-27: T1 done. `HangTraceReporter` in `tests/testthat.R` writes a timestamped start/end line per test file to `stderr()`, beside `CheckReporter` in a `MultiReporter`. AC1 evidence: a local `R CMD check` whose test process was killed at 19:22:50 left a `testthat.Rout.fail` ending `start test-nested-results-plot.R` with no matching end, every earlier file paired.
+- 2026-07-27: T3 done, and it answers no. `benchmarks/probe-daemon-orphans.R` on mirai 2.7.2 / nanonext 1.10.1: both hand-spawned daemons gone after the host was torn down, `survivors after teardown: none`. `autoexit = TRUE` reaps them, so `start_mixed_daemons()` is unchanged — the suspected orphan leak was an assumption, and asserting it would have added a green test that proved nothing. The probe also reproduced the RR03/M07 startup death in passing: only 1 of 2 connections was reached, the empty-library daemon dying before it could dial.
+- 2026-07-27: T4 done. `teardown-zz-nothing-survives.R` errors when the suite finishes with any daemon connection up, sorting after `teardown-fixture-cache.R` so it cannot suppress that report. Inversion: a probe test leaking `daemons(1)` failed the run with the intended message. Its process half is dropped on T3's finding — there is nothing to count.
 - 2026-07-27: T2 done. `collect_bounded()` now takes a single mirai as well as a map, `test-parallel-classify.R`'s bare `[` collect routes through it, and its `on.exit` teardown is registered before the pool it tears down. `test-suite-hygiene.R` checks the rule over parse tokens rather than text, so the comments naming `map[]` and `collect_mirai()` are not findings. Inversion: restoring the `[` collect failed the check at `test-parallel-classify.R:38`.
 - 2026-07-27: implementation gate chose declaring `R6` in Suggests over the stock `ProgressReporter$new(file = stderr())`, because the latter carries no clock and the .Rout dump reaches the job log with every line stamped alike; recorded as D-021; falsified by a reporter hook that timestamps without a subclass.
 - 2026-07-27: two mechanism corrections found by execution before they could ship — `check_reporter()` returns the string "Check" and not an object, so `MultiReporter` needs `CheckReporter$new()`; and R6 members are locked, so replacing a method on a stock `Reporter` instance is not an available route to avoiding the dependency.
