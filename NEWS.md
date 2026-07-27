@@ -1,5 +1,19 @@
 # nestedtune 0.0.0.9000
 
+* Cancelling a parallel run now stops it, instead of returning an estimate over
+  whatever had finished. Previously the tasks that were stopped before they ran
+  came back looking like folds that had been attempted and failed, so the run
+  completed and reported a number for a design that never executed. It now
+  raises a `nestedtune_cancelled` condition and returns nothing, with your RNG
+  state restored. That condition inherits from `nestedtune_interrupted`, so code
+  already handling a stopped run keeps working unchanged.
+
+* One case is deliberately left as it was, and is now documented: calling
+  `mirai::daemons(0)` while folds are still outstanding produces exactly what a
+  worker dying mid-fold produces, with nothing to tell the two apart. It stays
+  recorded as fold failures, because treating it as a cancellation would throw
+  away every completed fold whenever a single worker died.
+
 * `autoplot()` now draws a nested cross-validation result. Its default view puts
   one point per outer fold at the value that fold's inner tuning selected, one
   panel per tuned parameter: a flat row means the folds agreed, and scatter means

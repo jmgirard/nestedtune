@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-26 (M09 and M10 planned from M07's parallel-path re
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M09 | A stopped run reports nothing, not a partial estimate | planned | — | high | milestones/M09-parallel-cancellation.md |
+| M09 | A stopped run reports nothing, not a partial estimate | review | — | high | milestones/M09-parallel-cancellation.md |
 | M10 | The startup check inspects every worker and says what went wrong | planned | — | normal | milestones/M10-preflight-probe-coverage.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |

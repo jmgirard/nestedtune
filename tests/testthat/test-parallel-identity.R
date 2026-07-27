@@ -128,6 +128,66 @@ test_that("BC4: an aborted parallel run still restores the caller's RNG state", 
   expect_identical(RNGkind(), before_kind)
 })
 
+test_that("a cancelled parallel run returns nothing and restores the RNG state", {
+  skip_if_no_daemons()
+
+  # Cancellation needs an actor outside the host, because the host is blocked
+  # in collect_mirai() for the whole window in which it can happen. What is
+  # substituted here is only that actor: the map is really dispatched to real
+  # daemons and really stopped, and everything the milestone is about --
+  # collect_mirai() resolving to errorValue 20, classify_fold_result() seeing
+  # it, the abort, the on.exit() unwind -- is the production path, unmocked.
+  # Hand-rolling the collect instead would pin nothing (M07).
+  real_map <- mirai::mirai_map
+  local_mocked_bindings(
+    mirai_map = function(...) {
+      map <- real_map(...)
+      mirai::stop_mirai(map)
+      map
+    },
+    .package = "mirai"
+  )
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+
+  data <- make_reg_data()
+  nested <- det_nested(data)
+  wf <- det_workflow(data)
+
+  set.seed(5L)
+  before_seed <- .Random.seed
+  before_kind <- RNGkind()
+
+  # A real bound, not a measurement after the fact: a stopped map resolves at
+  # once, so if this call ever blocks, the run must end as an error rather than
+  # wedge `R CMD check` the way M07-D6 records. It rests on the collect being
+  # interruptible, which is the same property a user's Ctrl-C rests on.
+  setTimeLimit(elapsed = 60, transient = TRUE)
+  on.exit(setTimeLimit(cpu = Inf, elapsed = Inf, transient = FALSE), add = TRUE)
+
+  result <- NULL
+  # `error =`, deliberately not `condition =`: the pre-milestone code returns
+  # normally here while signalling a failed-folds *warning*, and a condition
+  # handler would catch that warning, unwind before the assignment completed,
+  # and leave `result` NULL either way -- making the AC4 assertion below pass
+  # against the very behaviour this test exists to reject.
+  cnd <- tryCatch(
+    without_pkgload_warning(
+      result <- nested_tune_grid(wf, nested, grid = det_grid(),
+                                 metrics = reg_metrics())
+    ),
+    error = identity
+  )
+
+  expect_s3_class(cnd, "nestedtune_cancelled")
+  expect_s3_class(cnd, "nestedtune_interrupted")
+  # AC4: nothing partial escapes -- no results object is built from the folds
+  # that happened to finish before the stop landed.
+  expect_null(result)
+  expect_identical(.Random.seed, before_seed)
+  expect_identical(RNGkind(), before_kind)
+})
+
 test_that("BC6: a failed fold matches serially in every field but its traces", {
   skip_if_no_daemons()
   skip_if_not_installed("ranger")

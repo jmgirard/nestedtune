@@ -168,7 +168,46 @@ classify_fold_result <- function(x, call = rlang::caller_env()) {
       call = call
     )
   }
+  if (is_cancelled_value(x)) {
+    # Same inversion as the interrupt above, reached by a different route and
+    # carrying none of its classes -- which is why M07 shipped with this path
+    # open. The subclass keeps a handler for the general case working.
+    cli::cli_abort(
+      c(
+        "Run cancelled while waiting on outer folds.",
+        i = "The tasks were stopped before every outer fold had run, so the
+             folds that did finish do not describe the requested design.",
+        i = "No results are returned; the caller's RNG state is restored."
+      ),
+      class = c("nestedtune_cancelled", "nestedtune_interrupted"),
+      call = call
+    )
+  }
   failed_fold("worker", NULL, NULL, message = worker_failure_message(x))
+}
+
+# nanonext's ECANCELED, which is what `mirai::stop_mirai()` leaves behind.
+#
+# Allowlisted to this one value on M09-D1's probe: 20 appears only under
+# cancellation -- in flight and still queued alike, and for every task in a
+# stopped `mirai_map()`, not just the one running. Deliberately NOT extended to
+# 19 (ECONNRESET), which the same probe found under a `daemons(0)` teardown AND
+# a daemon dying mid-fold, with identical classes and nothing to separate them;
+# aborting on it would discard every completed fold whenever one worker died,
+# which is what M03 exists to prevent. Anything unrecognised keeps the
+# failed_fold() default for the same reason.
+cancel_error_value <- 20L
+
+is_cancelled_value <- function(x) {
+  # Positive validation of the shape, per the same reasoning is_fold_record()
+  # rests on: a real interrupt is an empty *string* carrying `errorValue`, and
+  # a miraiError is the task's message, so `is.integer()` is what keeps both
+  # out of this branch rather than an ordering accident.
+  inherits(x, "errorValue") &&
+    is.integer(x) &&
+    length(x) == 1L &&
+    !is.na(x) &&
+    x == cancel_error_value
 }
 
 is_fold_record <- function(x) {
