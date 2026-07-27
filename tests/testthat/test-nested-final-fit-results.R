@@ -8,7 +8,7 @@ test_that("the final fit returns a trained workflow inside its own object", {
   wf <- det_workflow(d)
 
   set.seed(3)
-  final <- nested_final_fit(wf, folds, grid = det_grid(), metrics = reg_metrics())
+  final <- memoised(nested_final_fit(wf, folds, grid = det_grid(), metrics = reg_metrics()))
 
   expect_s3_class(final, "nested_final_fit")
   expect_named(
@@ -43,7 +43,7 @@ test_that("the fitted workflow predicts on new data", {
   wf <- det_workflow(d)
 
   set.seed(3)
-  final <- nested_final_fit(wf, folds, grid = det_grid())
+  final <- memoised(nested_final_fit(wf, folds, grid = det_grid()))
 
   preds <- predict(extract_workflow(final), new_data = d[1:5, ])
   expect_identical(nrow(preds), 5L)
@@ -58,7 +58,7 @@ test_that("the final fit trains on every row, not on an outer analysis set", {
   wf <- det_workflow(d)
 
   set.seed(3)
-  final <- nested_final_fit(wf, folds, grid = det_grid())
+  final <- memoised(nested_final_fit(wf, folds, grid = det_grid()))
 
   # The mould records how many rows the workflow was fitted on. Any outer
   # analysis set would be smaller, so this is what separates a final fit from

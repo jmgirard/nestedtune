@@ -43,43 +43,42 @@ rules in tracking-rules:
   dependency behavior, or plots except `vdiffr` when the plot is the product.
 - `covr` is a diagnostic, never a gate.
 - GitHub Actions CI starts from the standard usethis pair:
-  `usethis::use_github_action("check-standard")` runs `R CMD check` across
-  platforms (a normal CI check — see the merge clause below), and
-  `usethis::use_github_action("test-coverage")` runs `covr` and uploads
-  to Codecov (`covr::codecov()`). Coverage reporting is diagnostic-only: Codecov
-  annotates the PR, but coverage never gates the merge — the `covr` line above
-  and tracking-rules' "no coverage-percentage target" both hold. Give the
-  `.github/` workflow dir an `.Rbuildignore` `^\.github$` entry (usethis adds it)
-  so it stays out of the built package.
-- Two divergences from that stock shape, added at M11. **A `concurrency`
-  block** cancels a run once a later push supersedes it, on every ref but the
-  default branch — that branch is a distribution channel, so a commit there
-  keeps a completed check rather than a cancelled one. **A `paths-ignore`
-  filter** on both triggers of both workflows skips `cairn/**`, `CLAUDE.md`,
-  and `.claude/**`, which cannot change what `R CMD check` sees; its effect is
-  on the `push` trigger, since GitHub evaluates `paths-ignore` on a
-  `pull_request` against the whole PR diff.
-- `.github/ci-usage.py` measures both over any window inside GitHub's 90-day
-  run retention (baseline: `.github/ci-usage-baseline.md`). It counts commits
-  from `git log`, not the runs they fired, and reports what cancelling
-  reclaims rather than what a superseded run cost — so it works once live.
-- **The merge clause, for both:** cairn's git model never merges red or pending
-  CI. A filtered event produces no run, so its check is absent rather than
-  pending and merging past it is correct; what it forbids is merging past a
-  check that ran and failed, or one still running. Caveat: with required status
-  checks (this repo has none) GitHub leaves a filtered check `Pending` forever,
-  so adding branch protection means reconciling filtered paths with that list.
-- Change governance renders here as: the dependency surface is DESCRIPTION
-  Imports/Suggests; a breaking-change deprecation cycle warns via `lifecycle`
-  (`deprecate_warn()`) before removal. The gates themselves — question-gate +
-  D-entry for dependencies, pre-1.0 waiver rule — are universal
-  (tracking-rules "Universal tracking rules").
+  `use_github_action("check-standard")` runs `R CMD check` across platforms (a
+  normal CI check — see the merge clause below); `use_github_action("test-coverage")`
+  runs `covr` and uploads to Codecov, which annotates the PR but never gates the
+  merge. `.github/` carries the `^\.github$` `.Rbuildignore` entry usethis adds.
+- Three divergences from that stock shape, two from M11 and one from M12. **A
+  `concurrency` block** cancels a run once a later push supersedes it, on every
+  ref but the default branch — a distribution channel, so a commit there keeps a
+  completed check rather than a cancelled one. **A `paths-ignore` filter** on
+  both triggers of both workflows skips `cairn/**`, `CLAUDE.md` and `.claude/**`,
+  which cannot change what `R CMD check` sees; it bites on `push` only, since
+  GitHub evaluates it on a `pull_request` against the whole PR diff. **A `timeout-minutes: 20`** on each workflow's job turns a
+  hang into a failed job with a timestamp: both have hung inside
+  `test_check("nestedtune")` for 52 and 40 minutes on a tree that passed an hour
+  earlier. It is not free headroom — an ordinary windows leg has reached 11m54s
+  and one job in 394 has passed 20 minutes and still finished, so the cap would
+  have failed that one. It caps a hang, never diagnoses one.
+- `.github/ci-usage.py` measures the first two over any window inside GitHub's
+  90-day retention (baseline: `.github/ci-usage-baseline.md`); it counts commits
+  from `git log`, not the runs they fired, and reports what cancelling reclaims
+  rather than what a superseded run cost — never crediting a cancelled run with
+  its whole would-be duration.
+- **The merge clause, for the filters:** cairn never merges red or pending CI. A
+  filtered event produces no run, so its check is absent rather than pending and
+  merging past it is correct; what it forbids is merging past a check that ran
+  and failed, or one still running. With required status checks (none here)
+  GitHub leaves a filtered check `Pending` forever, so branch protection would
+  mean reconciling filtered paths with that list.
+- Change governance: the dependency surface is DESCRIPTION Imports/Suggests, and
+  a breaking change warns via `lifecycle::deprecate_warn()` before removal. The
+  gates themselves are universal (tracking-rules "Universal tracking rules").
 - Every newly exported object gets a `_pkgdown.yml` reference-index row in the same commit.
-- Every committed test fixture carries reproducible provenance: its source and
-  the committed generator (a `data-raw/` script) that regenerates it from scratch, plus any seed —
-  the R-mechanical form of the universal Reproducibility hard-stop. The required
-  content is fixed; the shape is the repo's choice — a `provenance` attribute,
-  embedded `.rds`/`.rda` fields, or a header comment naming source + generator + seed.
+- Every committed test fixture carries reproducible provenance: its source, the
+  committed `data-raw/` generator that rebuilds it from scratch, and any seed —
+  the R-mechanical form of the universal Reproducibility hard-stop. That content
+  is required; its shape is the repo's choice (a `provenance` attribute, embedded
+  `.rds`/`.rda` fields, or a header comment naming source + generator + seed).
 
 ## release-walk
 Followed by `/cairn-release` — a CRAN release walk (never self-submits):

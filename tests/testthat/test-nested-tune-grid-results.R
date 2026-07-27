@@ -8,7 +8,7 @@ example_results <- function(v = 3, metrics = reg_metrics(), seed = 55) {
     inside = rsample::vfold_cv(v = 3)
   )
   set.seed(seed)
-  nested_tune_grid(wf, folds, grid = det_grid(), metrics = metrics)
+  memoised(nested_tune_grid(wf, folds, grid = det_grid(), metrics = metrics))
 }
 
 test_that("the results object retains one row per outer fold with its selection", {
