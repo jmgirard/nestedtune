@@ -51,27 +51,24 @@ rules in tracking-rules:
   and tracking-rules' "no coverage-percentage target" both hold. Give the
   `.github/` workflow dir an `.Rbuildignore` `^\.github$` entry (usethis adds it)
   so it stays out of the built package.
-- Two divergences from that stock shape, both added at M11 and measurable with
-  `.github/ci-usage.py` over any window (baseline:
-  `.github/ci-usage-baseline.md`). It counts commits from `git log` and
-  reports what cancelling reclaims rather than what a superseded run cost, so
-  it keeps measuring both divergences after they are live and never credits
-  them with more than they save.
-  **A `concurrency` block** cancels a run once a later push supersedes it, on
-  every ref but the default branch — that branch is a distribution channel, so
-  a commit there keeps a completed check rather than a cancelled one.
-  **A `paths-ignore` filter** on both triggers of both workflows skips
-  `cairn/**`, `CLAUDE.md`, and `.claude/**`, which cannot change what
-  `R CMD check` sees. Its effect is on the `push` trigger: GitHub evaluates
-  `paths-ignore` on a `pull_request` against the whole PR diff, so there it
-  fires only for a PR that is tracking-only end to end.
+- Two divergences from that stock shape, added at M11. **A `concurrency`
+  block** cancels a run once a later push supersedes it, on every ref but the
+  default branch — that branch is a distribution channel, so a commit there
+  keeps a completed check rather than a cancelled one. **A `paths-ignore`
+  filter** on both triggers of both workflows skips `cairn/**`, `CLAUDE.md`,
+  and `.claude/**`, which cannot change what `R CMD check` sees; its effect is
+  on the `push` trigger, since GitHub evaluates `paths-ignore` on a
+  `pull_request` against the whole PR diff.
+- `.github/ci-usage.py` measures both over any window (baseline:
+  `.github/ci-usage-baseline.md`). It counts commits from `git log`, not the
+  runs they fired, and reports what cancelling reclaims rather than what a
+  superseded run cost — so it still works once the filter is live.
 - **The merge clause, for both:** cairn's git model never merges red or pending
   CI. A filtered event produces no run, so its check is absent rather than
-  pending and merging past it is correct; what the clause forbids is merging
-  past a check that ran and failed, or one still running. One caveat: with
-  required status checks (this repo has none) GitHub leaves a filtered
-  workflow's check `Pending` forever and blocks the merge, so adding branch
-  protection means reconciling the filtered paths with the required-check list.
+  pending and merging past it is correct; what it forbids is merging past a
+  check that ran and failed, or one still running. Caveat: with required status
+  checks (this repo has none) GitHub leaves a filtered check `Pending` forever,
+  so adding branch protection means reconciling filtered paths with that list.
 - Change governance renders here as: the dependency surface is DESCRIPTION
   Imports/Suggests; a breaking-change deprecation cycle warns via `lifecycle`
   (`deprecate_warn()`) before removal. The gates themselves — question-gate +

@@ -1,6 +1,6 @@
 # M11: Every CI run is one somebody is waiting for
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -125,6 +125,8 @@ candidate row. Dependency caching → already provided by
 - 2026-07-27: F4 fixed — every `paths-ignore` block is compared separately, so drift between two triggers of the same file now fails loudly; the workflow comments claiming this are true as of this commit.
 - 2026-07-27: F1 fixed — the table separates what runs cost from what removing them reclaims; cancelling off-branch superseded runs reclaims 162 min of the 248 those runs lasted, so the honest total removed is 790 min, not 877.
 - 2026-07-27: F11 (logged below threshold) surfaced for real while verifying AC4 — `git diff-tree` reports no files for a root commit without `--root`, and this repo's first commit is one, so `a7ef98f` was classified "run" on zero evidence. Fixed with `--root`, and an empty file list is now an error rather than a classification. F13, F8, F10 and the pagination half of F7 fell out of the same rewrite.
+- 2026-07-27: PROFILE.md's measurability claim corrected for F13 and the bullet block compressed twice — the first rewrite went 2 over the 120-line cap, the second landed at 119.
+- 2026-07-27: `devtools::test()` clean after the fixes — FAIL 0, WARN 0, SKIP 0, PASS 1175. All four actioned findings fixed; back to review.
 
 ## Decisions
 
