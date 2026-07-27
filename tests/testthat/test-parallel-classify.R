@@ -184,11 +184,27 @@ test_that("a connected daemon that cannot answer in time is bounded", {
   on.exit(setTimeLimit(), add = TRUE, after = FALSE)
 
   busy <- mirai::mirai(Sys.sleep(20))
+  # The backstop, registered before anything can abort (M16 T6). testthat 3e
+  # unwinds the block on a failed expectation, so a stop_mirai() written only at
+  # the end is skipped exactly when a racy timing assertion fails -- leaving a
+  # live 20-second task while the on.exit stack tears the pool down around it,
+  # which is how this file leaked the orphan R process a CI cleanup reported.
+  # Firing unconditionally is safe: on a task that has already resolved
+  # stop_mirai() is inert, verified by execution at M15.
+  #
+  # after = FALSE puts it ahead of the daemons(0) registered above, so the task
+  # is cancelled before the pool it runs on is taken away.
+  on.exit(mirai::stop_mirai(busy), add = TRUE, after = FALSE)
   Sys.sleep(0.2)
 
   started <- Sys.time()
   status <- daemons_load_status(timeout = 1000L)
   elapsed <- as.numeric(Sys.time() - started, units = "secs")
+
+  # Cancelled here, before the first assertion rather than after the last: the
+  # measurement is complete, so nothing below needs the task alive, and no
+  # assertion added later can get in front of the cleanup.
+  mirai::stop_mirai(busy)
 
   expect_identical(status$outcome, "no_response")
   expect_identical(status$cannot_load, 0L)
@@ -196,8 +212,6 @@ test_that("a connected daemon that cannot answer in time is bounded", {
   # The bound held: it returned on its own deadline rather than waiting out the
   # 20-second task.
   expect_lt(elapsed, 15)
-
-  mirai::stop_mirai(busy)
 })
 
 test_that("a pool with no daemon at all is a non-response, not a load failure", {
@@ -209,8 +223,17 @@ test_that("a pool with no daemon at all is a non-response, not a load failure", 
   # rather than returning empty. Nothing reported the package missing, so this
   # must not be dressed up as a library problem -- there is no daemon to have a
   # library.
+  #
+  # Port 0, not a hardcoded 45997 (M16 T5). What the test needs is a port nothing
+  # dials into, and asking the OS for a free one gives that without competing for
+  # a fixed number with a concurrent job or a socket still in TIME_WAIT on a
+  # reused runner. That collision was a suspect for the 2026-07-27 stall until
+  # execution ruled it out -- an occupied port makes daemons() raise
+  # "10 | Address in use" in 0.03 s, so it fails loudly rather than hanging. Not
+  # the hang, then, but a real way for this test to fail for a reason that has
+  # nothing to do with what it asserts.
   mirai::daemons(0)
-  mirai::daemons(url = "tcp://127.0.0.1:45997")
+  mirai::daemons(url = "tcp://127.0.0.1:0")
   on.exit(mirai::daemons(0), add = TRUE)
 
   setTimeLimit(elapsed = 30, transient = TRUE)
