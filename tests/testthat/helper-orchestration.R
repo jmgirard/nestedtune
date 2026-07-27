@@ -419,7 +419,9 @@ memoised <- function(expr) {
     hit <- list(
       value = value,
       conditions = conditions,
-      label = paste(deparse(call), collapse = " "),
+      # Deparsing a multi-line call keeps its indentation; the report reads it
+      # as one line, so the runs of whitespace go.
+      label = gsub("\\s+", " ", paste(deparse(call), collapse = " ")),
       seed = seed_hash,
       builds = 1L,
       requests = 0L

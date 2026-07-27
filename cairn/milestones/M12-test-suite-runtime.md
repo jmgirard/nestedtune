@@ -88,7 +88,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
       key including the seed, condition capture and replay on hit, per-signature
       request/build counters, plus a test that a hit is `identical()` to the
       build and re-signals its conditions.
-- [ ] T3 Convert `test-nested-results-plot.R` (56.8 s) — 17 identical runs, 4
+- [x] T3 Convert `test-nested-results-plot.R` (56.8 s) — 17 identical runs, 4
       `break_fold` outer-fit, 2 unstable, 1 `break_every_fold`.
 - [ ] T4 Convert `test-nested-results-print.R` (49.0 s) — 12 identical, 3
       `break_fold`, 2 `break_every_fold`, 2 unstable; leave `:288` alone.
@@ -115,6 +115,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - 2026-07-27: T1 done. Baseline at `d095bae`, median of three: suite total 327.3 s, 1175 pass / 0 fail / 0 skip. The six converted files hold 211.0 s (64.5%); AC2's 60% ceiling is 196.4 s, so the conversions must save at least 130.9 s.
 - 2026-07-27: implement gate chose a canonical-form value hash for the cache key over a caller-declared label or a setup-file fixture, after measuring that `rlang::hash()` differs between two identically-constructed workflows and between two `metric_set()` calls (self-referential quosure and closure environments serialize by unstable reference numbering); the canonical form was stable across all 5 fixture signatures and discriminated all 11 distinguishing pairs probed. Falsified by a signature pair the form fails to separate — which `test-fixture-cache.R` is written to catch.
 - 2026-07-27: T2 done. `memoised()`, `canonical_form()`, `fixture_key()` and `fixture_cache_report()` in helper-orchestration.R; `test-fixture-cache.R` (19 assertions) and `teardown-fixture-cache.R`. Suite 1194 pass / 0 fail / 0 skip.
+- 2026-07-27: T3 done. `test-nested-results-plot.R` 95.7 s -> 8.7 s, 68 pass / 0 fail; 24 requests over 4 signatures (17 / 4 / 2 / 1), matching the plan's count exactly.
 - 2026-07-27: implement gate chose a `teardown-` file for AC4's request/build table over a last-alphabetical test file or the profiler alone, and chose wrapping the existing call (`memoised(nested_tune_grid(...))`) over typed per-function wrappers, so the function under test stays visible at every call site and one helper serves both entry points.
 
 ## Decisions
