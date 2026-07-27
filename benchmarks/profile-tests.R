@@ -59,9 +59,13 @@ for (i in seq_len(runs)) {
 files <- sort(unique(unlist(lapply(passes, function(p) names(p$per_file)))))
 med <- function(f) {
   stats::median(vapply(passes, function(p) {
-    v <- p$per_file[[f]]
-    if (is.null(v)) NA_real_ else v
-  }, numeric(1)))
+    # Single-bracket, deliberately: `per_file` is a tapply result, and `[[` on a
+    # name it does not carry raises "subscript out of bounds" rather than
+    # returning NULL -- so a run whose file set differs from the union above (a
+    # file that failed to source, a file added between runs) would kill the
+    # profiler after it had already paid for every run.
+    unname(p$per_file[f])
+  }, numeric(1)), na.rm = TRUE)
 }
 elapsed <- vapply(files, med, numeric(1))
 ord <- order(elapsed, decreasing = TRUE)

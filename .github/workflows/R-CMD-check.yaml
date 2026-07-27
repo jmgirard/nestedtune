@@ -40,9 +40,12 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    # A run that hangs is a run nobody gets an answer from. The suite's slowest
-    # honest leg has been well under 12 minutes; 20 leaves headroom for a cold
-    # cache while still killing a hang rather than letting it burn six hours.
+    # A run that hangs is a run nobody gets an answer from. The cap is set
+    # against the measured record, not above it: an ordinary windows leg has
+    # reached 11m54s, and exactly one job in 394 has ever passed 20 minutes and
+    # still finished. So 20 is not free headroom -- it would have failed that
+    # one job -- and it is chosen anyway, because a hang costing 52 minutes is
+    # the failure worth pricing against a rerun that costs one job in 394.
     timeout-minutes: 20
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})

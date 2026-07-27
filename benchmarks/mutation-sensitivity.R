@@ -11,7 +11,11 @@
 # mutation broke something" from "the mutation broke everything" -- a change
 # that reddened the whole suite would prove nothing about the target file.
 #
-# Every mutation is reverted whether or not the run succeeded. Usage:
+# Each mutation is written, tested, and reverted before the next one starts, so
+# an ordinary run always leaves `R/` as it found it. A run killed mid-mutation
+# (an interrupt, a crash) does not: `on.exit()` cannot help at script top level,
+# where there is no function to exit. If a run is interrupted, check `git status`
+# and revert `R/` by hand. Usage:
 #
 #   Rscript benchmarks/mutation-sensitivity.R
 
@@ -97,7 +101,6 @@ results <- list()
 for (m in mutations) {
   original <- readLines(m$source)
   stopifnot(sum(original == m$old) == 1L)
-  on.exit(writeLines(original, m$source), add = TRUE)
   writeLines(replace(original, original == m$old, m$new), m$source)
   got <- tryCatch(run_files(c(m$target, m$control)), error = function(e) NULL)
   writeLines(original, m$source)

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP4
-- **Branch/PR:** `m12-test-suite-runtime`
+- **Branch/PR:** `m12-test-suite-runtime` / https://github.com/jmgirard/nestedtune/pull/12
 
 ## Goal
 

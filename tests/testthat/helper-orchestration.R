@@ -373,11 +373,14 @@ fixture_rng_state <- function() {
 # Re-signal a captured condition so a cache hit reaches the caller's handlers
 # exactly as the build did. `warning()` and `message()` on a condition object
 # establish the muffle restarts that `suppressWarnings()` and testthat's
-# expectations rely on, which `signalCondition()` alone would not.
+# expectations rely on, which `signalCondition()` alone would not; anything else
+# -- an `rlang::signal()` diagnostic, say -- is signalled as itself, and reaches
+# a calling handler exactly as it did on the build.
+#
+# An error is never replayed because an error is never cached: a build that
+# raises one propagates out of `memoised()` before it stores anything.
 replay_condition <- function(cnd) {
-  if (inherits(cnd, "error")) {
-    stop(cnd)
-  } else if (inherits(cnd, "warning")) {
+  if (inherits(cnd, "warning")) {
     warning(cnd)
   } else if (inherits(cnd, "message")) {
     message(cnd)
@@ -387,14 +390,48 @@ replay_condition <- function(cnd) {
   invisible(NULL)
 }
 
-# The key for one request: which function, under which arguments, at which RNG
-# state. Arguments are sorted by name so that writing them in a different order
-# is not a different fixture. Exposed on its own so test-fixture-cache.R can
-# check what it separates without building anything.
-fixture_key <- function(fn_name, args) {
+# Every free variable the design's stored inner specification would resolve
+# against the caller's frame, paired with what it resolves to there.
+#
+# `nested_final_fit()` re-evaluates that specification in `rlang::caller_env()`
+# (R/checks.R's `eval_inside_spec()`), so two byte-identical requests made from
+# frames that bind those names differently are two different runs. The frame
+# itself cannot go in the key -- every `test_that()` block is a distinct frame
+# holding distinct locals, so hashing it would give every request its own key
+# and the cache would never hit. What the result actually depends on is this
+# much smaller thing: the values behind the names that specification names.
+#
+# A name bound nowhere is recorded as unbound rather than skipped, so a request
+# from a frame that supplies it never shares a key with one that does not.
+inside_spec_bindings <- function(args, env) {
+  design <- args$resamples
+  inside <- if (is.null(design)) NULL else attr(design, "inside")
+  if (!is.call(inside)) {
+    return("<no inside spec>")
+  }
+  names <- setdiff(all.vars(inside), c("data", ".nestedtune_data"))
+  stats::setNames(lapply(names, function(nm) {
+    if (exists(nm, envir = env)) canonical_form(get(nm, envir = env)) else "<unbound>"
+  }), names)
+}
+
+# The key for one request: which function, under which arguments, resolving
+# which caller-scoped names, at which RNG state.
+#
+# The function goes in as a value, not as the text that named it: the cache is
+# shared across every file in one `test_dir()` run, so keying on the source text
+# alone would let two files that memoise same-named local builders collide, and
+# the second would silently receive the first one's result.
+#
+# Arguments are sorted by name so that writing them in a different order is not
+# a different fixture. Exposed on its own so test-fixture-cache.R can check what
+# it separates without building anything.
+fixture_key <- function(fn, args, env = parent.frame()) {
+  ordered <- if (is.null(names(args))) args else args[order(names(args))]
   rlang::hash(list(
-    fn_name,
-    canonical_form(args[order(names(args))]),
+    canonical_form(fn),
+    canonical_form(ordered),
+    canonical_form(inside_spec_bindings(args, env)),
     canonical_form(fixture_rng_state())
   ))
 }
@@ -414,7 +451,7 @@ memoised <- function(expr) {
   args <- as.list(match.call(fn, as.call(c(list(call[[1L]]), args))))[-1L]
 
   seed_hash <- rlang::hash(canonical_form(fixture_rng_state()))
-  key <- fixture_key(deparse(call[[1L]]), args)
+  key <- fixture_key(fn, args, env)
 
   hit <- fixture_cache[[key]]
   if (is.null(hit)) {
@@ -424,11 +461,12 @@ memoised <- function(expr) {
       # test, not at this helper: `nested_final_fit()` re-evaluates its design's
       # stored `inside` call in its caller's environment.
       do.call(fn, args, quote = TRUE, envir = env),
-      warning = function(w) {
-        conditions[[length(conditions) + 1L]] <<- w
-      },
-      message = function(m) {
-        conditions[[length(conditions) + 1L]] <<- m
+      # Every condition, not only warnings and messages: a hit has to reach the
+      # caller's handlers exactly as the build did, and an `rlang::signal()`
+      # diagnostic observed by one test would otherwise be seen or missed
+      # depending on which file happened to pay for the build.
+      condition = function(cnd) {
+        conditions[[length(conditions) + 1L]] <<- cnd
       }
     )
     hit <- list(

@@ -14,11 +14,21 @@
 # A stand-in for the orchestrator: cheap, and net-zero on the RNG exactly as
 # `nested_tune_grid()` and `nested_final_fit()` are (D-011). Nothing here fits a
 # model -- what is under test is the cache, not the loop.
-fake_builds <- new.env(parent = emptyenv())
-fake_builds$n <- 0L
+#
+# The build counter lives in the global environment rather than in this file's,
+# and that is not fastidiousness. `memoised()` keys on the canonical form of the
+# builder itself, which expands the builder's lexical environment; a counter
+# sitting in `fake_fit()`'s own scope would therefore change the key every time
+# it ticked, and the cache would never hit. Named environments -- a namespace,
+# the global environment -- are taken by their name instead of expanded, so a
+# counter kept there is invisible to the key. The real builders are package
+# functions whose environment is the nestedtune namespace, which is why they are
+# stable for exactly the same reason.
+assign(".fixture_fake_builds", 0L, envir = globalenv())
+fake_build_count <- function() get(".fixture_fake_builds", envir = globalenv())
 
 fake_fit <- function(object, resamples, grid = 10, metrics = NULL) {
-  fake_builds$n <- fake_builds$n + 1L
+  assign(".fixture_fake_builds", fake_build_count() + 1L, envir = globalenv())
   had <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
   old <- if (had) get(".Random.seed", envir = globalenv())
   on.exit(if (had) assign(".Random.seed", old, envir = globalenv()), add = TRUE)
@@ -32,7 +42,7 @@ fake_fit <- function(object, resamples, grid = 10, metrics = NULL) {
 quiet <- function(expr) suppressMessages(suppressWarnings(expr))
 
 test_that("a cache hit is identical to the build it replaces", {
-  before <- fake_builds$n
+  before <- fake_build_count()
 
   set.seed(101)
   first <- quiet(memoised(fake_fit("wf", "design", grid = 1:3)))
@@ -41,7 +51,7 @@ test_that("a cache hit is identical to the build it replaces", {
 
   expect_identical(second, first)
   # One build for two requests: the second call never reached fake_fit().
-  expect_identical(fake_builds$n - before, 1L)
+  expect_identical(fake_build_count() - before, 1L)
 })
 
 test_that("a cache hit re-signals the conditions the build emitted", {
@@ -99,25 +109,110 @@ test_that("the wrapped call sees the test as its caller, not this helper", {
 
 test_that("the key separates the seed, and argument order does not", {
   set.seed(104)
-  a <- fixture_key("f", list(object = "wf", resamples = "d"))
+  a <- fixture_key(fake_fit, list(object = "wf", resamples = "d"))
   set.seed(104)
-  b <- fixture_key("f", list(resamples = "d", object = "wf"))
+  b <- fixture_key(fake_fit, list(resamples = "d", object = "wf"))
   set.seed(105)
-  c <- fixture_key("f", list(object = "wf", resamples = "d"))
+  c <- fixture_key(fake_fit, list(object = "wf", resamples = "d"))
 
   expect_identical(b, a)
   expect_false(identical(c, a))
 })
 
+test_that("the key separates the function, not just the name it was called by", {
+  one <- function(object, resamples, grid = 10, metrics = NULL) "ONE"
+  two <- function(object, resamples, grid = 10, metrics = NULL) "TWO"
+
+  # The cache outlives the file that filled it, so two files that memoise
+  # same-named local builders meet in it. Keyed on the callee's source text
+  # alone, the second would silently be served the first one's value.
+  set.seed(120)
+  a <- fixture_key(one, list(object = "wf", resamples = "d"))
+  set.seed(120)
+  b <- fixture_key(two, list(object = "wf", resamples = "d"))
+
+  expect_false(identical(b, a))
+
+  g <- one
+  set.seed(121)
+  first <- memoised(g("wf", "collide"))
+  g <- two
+  set.seed(121)
+  second <- memoised(g("wf", "collide"))
+
+  expect_identical(first, "ONE")
+  expect_identical(second, "TWO")
+})
+
+test_that("the key separates what the design's inner spec resolves in the caller", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  # `nested_final_fit()` re-evaluates this specification in its caller's frame,
+  # so the same request from a frame that binds `v` and one that does not are
+  # two different runs -- and the second aborts rather than returning anything.
+  parameterised <- local({
+    v <- 3
+    set.seed(11)
+    nested_resamples(d, outside = rsample::vfold_cv(v = 2),
+                     inside = rsample::vfold_cv(v = v))
+  })
+
+  with_v <- local({
+    v <- 3
+    set.seed(2)
+    fixture_key(nested_final_fit, list(object = det_workflow(d),
+                                       resamples = parameterised),
+                env = environment())
+  })
+  without_v <- local({
+    set.seed(2)
+    fixture_key(nested_final_fit, list(object = det_workflow(d),
+                                       resamples = parameterised),
+                env = environment())
+  })
+
+  expect_false(identical(without_v, with_v))
+})
+
+test_that("a call with no named arguments keys rather than erroring", {
+  no_args <- function() "nothing"
+
+  set.seed(122)
+  expect_identical(memoised(no_args()), "nothing")
+  set.seed(122)
+  expect_identical(memoised(no_args()), "nothing")
+})
+
+test_that("a hit re-signals conditions that are neither warning nor message", {
+  signaller <- function(object, resamples, grid = 10, metrics = NULL) {
+    rlang::signal("custom diagnostic", class = "fixture_probe")
+    "value"
+  }
+  seen <- function(expr) {
+    n <- 0L
+    withCallingHandlers(expr, fixture_probe = function(cnd) n <<- n + 1L)
+    n
+  }
+
+  set.seed(123)
+  built <- seen(memoised(signaller("wf", "signal")))
+  set.seed(123)
+  replayed <- seen(memoised(signaller("wf", "signal")))
+
+  expect_identical(built, 1L)
+  expect_identical(replayed, 1L)
+})
+
 test_that("a different seed rebuilds rather than serving the first result", {
-  before <- fake_builds$n
+  before <- fake_build_count()
 
   set.seed(106)
   first <- quiet(memoised(fake_fit("wf", "seeded")))
   set.seed(107)
   second <- quiet(memoised(fake_fit("wf", "seeded")))
 
-  expect_identical(fake_builds$n - before, 2L)
+  expect_identical(fake_build_count() - before, 2L)
   expect_false(identical(second$draw, first$draw))
 })
 
@@ -183,7 +278,7 @@ test_that("the key separates every fixture signature this suite asks for", {
 
   keys <- vapply(signatures, function(build) {
     set.seed(2)
-    fixture_key("nested_tune_grid", build())
+    fixture_key(nested_tune_grid, build())
   }, character(1))
 
   expect_identical(anyDuplicated(keys), 0L)
@@ -195,7 +290,7 @@ test_that("the same signature keys the same way twice, so it is built once", {
   d <- make_reg_data()
   twice <- vapply(1:2, function(i) {
     set.seed(2)
-    fixture_key("nested_tune_grid", list(
+    fixture_key(nested_tune_grid, list(
       object = det_workflow(d), resamples = det_nested(d),
       grid = det_grid(), metrics = reg_metrics()
     ))
@@ -268,9 +363,9 @@ test_that("the scaffolding above leaves the shared cache as it found it", {
   # including -- deliberately -- one fixture built twice. Left there, the
   # run-wide report would carry a finding that is really this file's test data.
   # The assertions above have already read these entries; nothing needs them now.
-  removed <- fixture_cache_forget("^(fake_fit|caller_probe)\\(")
+  removed <- fixture_cache_forget("^(fake_fit|caller_probe|g|no_args|signaller)\\(")
   expect_gt(removed, 0L)
 
   remaining <- fixture_cache_report()$signature
-  expect_false(any(grepl("^(fake_fit|caller_probe)\\(", remaining)))
+  expect_false(any(grepl("^(fake_fit|caller_probe|g|no_args|signaller)\\(", remaining)))
 })
