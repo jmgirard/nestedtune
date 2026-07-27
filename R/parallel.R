@@ -171,8 +171,17 @@ preflight_timeout <- function(call = rlang::caller_env()) {
 # `unresolvedValue` for anything still outstanding, rather than through the
 # map's own `[` -- that collects, and collecting BLOCKS until every element
 # resolves. Reading per element cannot block at all, so the bound holds even if
-# stop_mirai() leaves something behind, and nothing here can hang however mirai
-# behaves.
+# stop_mirai() leaves something behind.
+#
+# That covers the read. The send is the other half, and it is a claim about
+# mirai rather than about this code: everywhere() must return without waiting
+# for a daemon to be free, or the bound below would never start counting.
+# Verified by execution against mirai 2.7.2 / nanonext 1.10.1 -- on a pool whose
+# every daemon was already occupied it returned in 0.001 s with the probe
+# unresolved and queued (M15 T5). It is deliberately NOT claimed of mirai in
+# general: a version whose send blocked on a saturated pool would hang here, and
+# no R-side bound could break it, setTimeLimit() not reaching a blocked mirai
+# call (M14).
 daemons_load_status <- function(package = "nestedtune",
                                 timeout = preflight_timeout(call = call),
                                 call = rlang::caller_env()) {

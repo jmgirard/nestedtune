@@ -76,7 +76,7 @@ comment needs work. All test-suite diagnosability work → M14.
       `collect_mirai()` returns only when every element has resolved, so
       classification cannot be one — and record which AC2 covers.
 - [x] T4 Update the roxygen interrupt contract.
-- [ ] T5 Re-run the saturated-pool `everywhere()` probe against the installed
+- [x] T5 Re-run the saturated-pool `everywhere()` probe against the installed
       mirai, record its output, and rewrite the header comment to its verified
       scope.
 - [ ] T6 Add the NEWS entry.
@@ -93,6 +93,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: T2 — unconditional `on.exit(mirai::stop_mirai(mapped))` in `dispatch_folds()`; the new test goes green and the full suite is clean (1216 pass, 0 fail, 0 skip), which includes the formals assertion at `test-parallel-classify.R:439`.
 - 2026-07-27: T3 — exits enumerated in this file's Decisions section; one is uncoverable (an error inside `mirai_map()` binds no handle to cancel), and the partial-collect exit AC2 was first drafted around does not exist.
 - 2026-07-27: T4 — the interrupt contract now says the folds are cancelled on the way out, and that this holds for any exit once they are dispatched; no sentence there was made false by the change, so the paragraph gained rather than lost. `devtools::document()` clean; full suite and `check()` run at completion.
+- 2026-07-27: T5 — probe re-run against mirai 2.7.2 / nanonext 1.10.1: pool `executing 2`, `everywhere()` returned in 0.001 s with the probe unresolved and queued (`awaiting 2`). The header comment now anchors the non-blocking-send claim to that version and states what a version whose send blocked would cost, instead of claiming nothing on the path can hang.
 
 ## Decisions
 
