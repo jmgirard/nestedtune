@@ -75,7 +75,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - [x] T3 Enumerate the non-local exits reachable between dispatch and return —
       `collect_mirai()` returns only when every element has resolved, so
       classification cannot be one — and record which AC2 covers.
-- [ ] T4 Update the roxygen interrupt contract.
+- [x] T4 Update the roxygen interrupt contract.
 - [ ] T5 Re-run the saturated-pool `everywhere()` probe against the installed
       mirai, record its output, and rewrite the header comment to its verified
       scope.
@@ -92,6 +92,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: T1 — `tests/testthat/test-parallel-interrupt.R` delivers a real SIGINT once both stand-in folds have marked themselves started, so the signal cannot race the pre-flight probe; confirmed red against unchanged code (`executing` was 2, expected 0) with both markers present, so the pass is not vacuous.
 - 2026-07-27: T2 — unconditional `on.exit(mirai::stop_mirai(mapped))` in `dispatch_folds()`; the new test goes green and the full suite is clean (1216 pass, 0 fail, 0 skip), which includes the formals assertion at `test-parallel-classify.R:439`.
 - 2026-07-27: T3 — exits enumerated in this file's Decisions section; one is uncoverable (an error inside `mirai_map()` binds no handle to cancel), and the partial-collect exit AC2 was first drafted around does not exist.
+- 2026-07-27: T4 — the interrupt contract now says the folds are cancelled on the way out, and that this holds for any exit once they are dispatched; no sentence there was made false by the change, so the paragraph gained rather than lost. `devtools::document()` clean; full suite and `check()` run at completion.
 
 ## Decisions
 
