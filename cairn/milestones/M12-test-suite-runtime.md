@@ -39,35 +39,35 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 
 ## Acceptance criteria
 
-- [ ] AC1 `benchmarks/profile-tests.R` is committed and prints elapsed seconds
+- [x] AC1 `benchmarks/profile-tests.R` is committed and prints elapsed seconds
       per test file, a suite total, and testthat's pass/fail/skip counts;
       `benchmarks/test-timing-baseline.md` records its output on the pre-change
       tree together with the commit measured, R version, OS, the `NOT_CRAN`
       setting, which of `lobstr`/`mlbench`/`ranger`/`vdiffr` are installed,
       whether the package is loaded once for all files or per file, and the
       median of three runs.
-- [ ] AC2 Re-running `benchmarks/profile-tests.R` on the finished branch, on the
+- [x] AC2 Re-running `benchmarks/profile-tests.R` on the finished branch, on the
       same machine and R version and under every condition AC1 records, gives a
       median suite total at most 60% of the baseline median; both medians appear
       in the Review section.
-- [ ] AC3 `devtools::test()` reports 0 failures, and `git diff <default>..HEAD --
+- [x] AC3 `devtools::test()` reports 0 failures, and `git diff <default>..HEAD --
       tests/` shows no `test_that()` block removed and no `skip_*()` call added
       **to a test that existed before this milestone**; the diff summary appears
       in the Review section.
-- [ ] AC4 The memoised helper keys on a value hash of the workflow, design, grid,
+- [x] AC4 The memoised helper keys on a value hash of the workflow, design, grid,
       metrics **and the RNG seed in force at the request**; a cache hit is
       `identical()` to the first build and re-signals the conditions that build
       emitted. A full `devtools::test()` run reports no signature built more than
       once, and the request/build table appears in the Review section.
-- [ ] AC5 For each of the six converted files named in Scope, a single named
+- [x] AC5 For each of the six converted files named in Scope, a single named
       mutation to a function that file's own assertions target makes that file
       fail **while leaving at least one other converted file passing**; each
       file, its mutation, and the failing test appear in the Review section.
-- [ ] AC6 Both workflow jobs declare `timeout-minutes: 20`, visible in both
+- [x] AC6 Both workflow jobs declare `timeout-minutes: 20`, visible in both
       committed workflow files at the branch head; a run on the branch completes
       both jobs within it; `cairn/PROFILE.md`'s divergence list names this third
       divergence from the stock shape.
-- [ ] AC7 `devtools::test()` and `devtools::check()` clean (0 errors, 0 warnings;
+- [x] AC7 `devtools::test()` and `devtools::check()` clean (0 errors, 0 warnings;
       NOTEs justified), per the profile's `verify` and `consistency-gate` slots.
 
 ## Coverage
@@ -132,3 +132,121 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 ## Decisions
 
 ## Review
+
+Verified 2026-07-27 at `06c3867` on the branch, PR #12. Every figure below was
+produced by command in this session, not carried from implementation.
+
+- **AC1** — `benchmarks/profile-tests.R` and `benchmarks/test-timing-baseline.md`
+  are both committed (`git ls-tree HEAD benchmarks/`). The script prints seconds
+  per test file, a suite total, and testthat's pass/fail/skip counts. The
+  baseline records commit `d095bae`, R 4.6.1, macOS Tahoe 26.5.2, testthat 3.3.2,
+  `NOT_CRAN=true`, `lobstr`/`mlbench`/`ranger`/`vdiffr` all installed, the package
+  loaded once for all files via `pkgload::load_all()`, and the median of three runs.
+- **AC2** — re-run at `06c3867` under every AC1 condition, same machine and R
+  version: **median suite total 125.6 s against the baseline's 327.3 s = 38.4%**,
+  inside the 60% ceiling. (Two earlier re-measures taken while review subagents
+  competed for CPU read 134.5 s and 137.8 s, 41.1% and 42.1% — inside the ceiling
+  either way; 125.6 s is the quiet-machine figure at the reviewed commit.)
+- **AC3** — `devtools::test()`: 1207 pass, 0 fail, 0 skip. `git diff main..HEAD --
+  tests/` over 11 files: **0 `test_that()` blocks removed**, 16 added, **0
+  `skip_*()` calls removed**, 6 added — every added skip in the new
+  `test-fixture-cache.R`, none in a file that existed before this milestone, per
+  the criterion as amended at the 2026-07-27 gate.
+- **AC4** — the key is a hash of the canonical form of the callee, every matched
+  argument, the caller-scoped names the design's inner specification resolves,
+  and the RNG state in force (`fixture_key()`). `test-fixture-cache.R` asserts a
+  hit is `identical()` to the build, re-signals its conditions, and leaves the
+  RNG where a build would. A full `devtools::test()` run reports **22 fixtures,
+  22 builds, 78 requests — none built more than once**; the table is below.
+- **AC5** — `Rscript benchmarks/mutation-sensitivity.R`: *ALL SENSITIVE*. Each
+  converted file fails a single named mutation to a function its own assertions
+  target, while its control file passes. plot / `from_folds()` k+1 → 3 failures,
+  first "a panel says so when fewer folds contributed to it than completed";
+  print / `selection_values()` value←NA → 8, "unanimous selection is distinguished
+  from disagreement"; failures / `own_note()` `"error"`→`"failure"` → 1, "the
+  failing stage and its cause are recorded"; tune-grid-results /
+  `collect_metrics.nested_results()` summarize TRUE→FALSE → 21, "collect_metrics()
+  summarizes across outer folds"; final-fit-print / `selected_label()` `" = "`→`": "`
+  → 2, "printing names the selection and where the estimate lives";
+  final-fit-results / `new_nested_final_fit()` fit_seed seeds[[2]]→seeds[[1]] → 1,
+  "the final fit returns a trained workflow inside its own object".
+- **AC6** — `timeout-minutes: 20` is present in both committed workflow files at
+  the branch head (`git show HEAD:.github/workflows/R-CMD-check.yaml`, likewise
+  test-coverage.yaml); `PROFILE.md` names three divergences, the third being the
+  cap. Run 30292076043 completed every job inside it: macOS 4m43s, windows 8m1s,
+  ubuntu 6–7 min, test-coverage 4m41s. **The earlier run 30288158779 did not** —
+  its macOS job hung inside `test_check("nestedtune")` (`* checking tests ...` at
+  17:14:53, silence to cancellation at 17:31:47, everything before the suite
+  passing) and the cap killed it at 20 minutes. That is the intermittent hang the
+  ROADMAP candidate describes, recurring: same signature, same platform, on a tree
+  whose four other jobs passed in 6–8 minutes and whose macOS job passed in 4m43s
+  on re-run. The cap turned a 52-minute hang into a 20-minute one, which is what
+  it was installed to do; it did not diagnose it, and the candidate row's stated
+  promotion condition — any recurrence — is now met.
+- **AC7** — `devtools::test()` 0 failures; `devtools::check()` **0 errors, 0
+  warnings, 0 notes** (Status: OK, 3m 19s).
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all checks passed (`weight caps` needed two
+compression passes over `PROFILE.md`, which the third divergence and then the
+restored M11 clause pushed over its 120-line cap; final 118). No DESIGN.md
+principle changed, so `cairn_impact` was not run. Profile `consistency-gate`
+slot: `devtools::check()` clean including `document()` no-diff and
+`.Rbuildignore` NOTEs (0 notes); `benchmarks/` is `.Rbuildignore`d; no new
+exports, so no `_pkgdown.yml` row and no NEWS entry is owed — the change is
+entirely test-side and user-invisible.
+
+### Independent review
+
+Three fresh-context reviewers (diff-bug [O], blame-history [S], prior-review [S])
+returned 10 findings; a separate [S] scorer rated each. Six scored ≥80 and were
+actioned, all fixed on the branch in `06c3867`:
+
+- **A (90)** the key identified the callee by deparsed name, so two files
+  memoising same-named local builders collided and the second was silently served
+  the first's value → the key now hashes the function's canonical form.
+- **B (93)** the caller environment was absent from the key while
+  `nested_final_fit()` re-evaluates its design's inner specification there, so a
+  request from a frame lacking a name the specification uses could be served a
+  hit where a real call aborts → the key now includes what those names resolve to.
+- **C (92)** only warnings and messages were replayed, so an `rlang::signal()`
+  diagnostic was observed on a build and missed on a hit → all conditions are
+  captured and replayed; `replay_condition()`'s unreachable error branch removed.
+- **E (82)** `order(names(args))` errored on a call whose matched arguments were
+  all unnamed → guarded.
+- **H (82)** the `PROFILE.md` line-cap compression dropped the clause recording
+  M11's actioned finding F1 (cancellation reclaims the tail, not the whole run) →
+  restored.
+- **I (80)** the new CI-cap comment claimed the slowest honest leg was "well under
+  12 minutes" when the record shows an ordinary windows leg at 11m54s and one job
+  in 394 over 20 minutes that still finished → both the workflow comment and
+  `PROFILE.md` now state the cost the cap actually carries.
+
+Four scored below 80 and were logged rather than actioned: **F (78)** the
+profiler's missing-file guard was unreachable and would abort instead of
+reporting NA; **D (75)** the mutation harness's `on.exit()` never fires at script
+top level and would have mis-reverted if it had; **J (60)** the AC3 amendment
+loosens rather than tightens, flagged for the gate to ratify explicitly; **G (45)**
+the "no `memoised()` under a mock" rule is enforced by comment only, speculative
+about a future mock. D and F were fixed anyway — both are two-line false-safety
+claims in scripts this milestone authored, the same class as I. G is rejected as
+speculative; today's single mocked site is self-protecting because its call is
+byte-identical to a fixture twenty sites share, so wrapping it would fail loudly.
+J goes to the approval gate.
+
+Fixing A also surfaced a constraint worth naming: hashing the builder by value
+expands its lexical environment, so a builder closing over mutable state re-keys
+every time that state changes. Package functions live in a namespace, which the
+canonical form takes by name, so the real call sites are unaffected — but the
+cache test's own double had to move its counter out of file scope, and the
+helper's header says so.
+
+### Fixture cache over a full run
+
+22 fixtures, 22 builds, 78 requests. Heaviest rows: the canonical `det` fixture
+31 requests / 1 build; `break_fold(..., 2L, "outer fit")` 7/1; the
+`test-nested-tune-grid-results.R` helper 6/1; `nested_final_fit` with metrics 4/1;
+the unstable design 4/1; `break_every_fold` 3/1. The remainder are single-request
+fixtures, most of them the distinct broken designs
+`test-nested-tune-grid-failures.R` needs.
