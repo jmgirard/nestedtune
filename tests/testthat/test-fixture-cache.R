@@ -229,6 +229,24 @@ test_that("the report counts one build per signature and every request", {
   expect_identical(row$requests, 3L)
 })
 
+test_that("one call written two ways is one fixture, reported as built twice", {
+  # The failure the report exists to name. These two requests key differently,
+  # so both build -- and both build the same thing. Grouping the table by the
+  # call's source text would show two innocent rows; grouping by what was built
+  # shows one fixture paid for twice, which is the fact worth acting on.
+  set.seed(112)
+  quiet(memoised(fake_fit("wf", "same-value", grid = 10)))
+  set.seed(112)
+  quiet(memoised(fake_fit(object = "wf", resamples = "same-value")))
+
+  report <- fixture_cache_report()
+  rows <- report[grepl("same-value", report$signature, fixed = TRUE), ]
+
+  expect_identical(nrow(rows), 1L)
+  expect_identical(rows$builds, 2L)
+  expect_identical(rows$requests, 2L)
+})
+
 test_that("the same call under two seeds is two fixtures, not one rebuilt", {
   set.seed(109)
   quiet(memoised(fake_fit("wf", "two-seeds")))
@@ -243,4 +261,16 @@ test_that("the same call under two seeds is two fixtures, not one rebuilt", {
   # `builds` column cry wolf at exactly the tests that check seed sensitivity.
   expect_identical(nrow(rows), 2L)
   expect_identical(rows$builds, c(1L, 1L))
+})
+
+test_that("the scaffolding above leaves the shared cache as it found it", {
+  # Everything this file built went into the cache the rest of the suite uses,
+  # including -- deliberately -- one fixture built twice. Left there, the
+  # run-wide report would carry a finding that is really this file's test data.
+  # The assertions above have already read these entries; nothing needs them now.
+  removed <- fixture_cache_forget("^(fake_fit|caller_probe)\\(")
+  expect_gt(removed, 0L)
+
+  remaining <- fixture_cache_report()$signature
+  expect_false(any(grepl("^(fake_fit|caller_probe)\\(", remaining)))
 })

@@ -7,8 +7,10 @@
 # `test_dir()`; they are merely no longer the recommended place for cleanup, and
 # nothing here cleans anything up.
 #
-# A `builds` above 1 is the finding to act on: it means one call, written one
-# way, landed on two cache keys and so paid for the same fixture twice.
+# A `builds` above 1 is the finding to act on: two cache entries produced the
+# same result, so the suite paid for one fit twice. Either the key separated
+# requests that were the same run, or two call sites are asking for one fixture
+# in two spellings.
 
 report <- fixture_cache_report()
 
@@ -28,7 +30,7 @@ if (nrow(report) > 0L) {
   rebuilt <- report[report$builds > 1L, , drop = FALSE]
   if (nrow(rebuilt) > 0L) {
     cat(sprintf(
-      "WARNING: %d signature(s) built more than once -- the cache key is unstable\n",
+      "WARNING: %d fixture(s) built more than once -- the same fit was paid for twice\n",
       nrow(rebuilt)
     ))
   }

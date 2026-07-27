@@ -344,6 +344,21 @@ fixture_cache_reset <- function() {
   invisible(NULL)
 }
 
+# Drop every entry whose call matches `pattern`, returning how many went.
+#
+# The cache outlives the file that filled it, which is the whole point, and it
+# is also why test-fixture-cache.R has to tidy up: its stand-in builders are not
+# fixtures anyone else wants, and one of them is a fixture built twice on
+# purpose. Left in place they would surface in the run-wide report as findings.
+fixture_cache_forget <- function(pattern) {
+  keys <- ls(fixture_cache, all.names = TRUE)
+  drop <- keys[vapply(keys, function(k) {
+    grepl(pattern, fixture_cache[[k]]$label)
+  }, logical(1))]
+  rm(list = drop, envir = fixture_cache)
+  length(drop)
+}
+
 # The RNG state a call is about to run under, as a value. A session that has
 # never drawn has no `.Random.seed` at all, and that absence is itself part of
 # the state -- a run started there draws from a freshly initialized generator.
@@ -434,17 +449,22 @@ memoised <- function(expr) {
   hit$value
 }
 
-# What the cache did over a run: one row per fixture, most requested first.
+# What the cache did over a run: one row per distinct fixture, most requested
+# first.
 #
-# A fixture here is a call *as written* together with the RNG state it was made
-# under, and that pairing is what makes the `builds` column mean something. One
-# entry per key is a tautology -- a miss is what creates an entry, so no key can
-# build twice. Grouping by the source text alone is no better: a test that
-# deliberately runs the same call under two seeds wants two builds and would be
-# reported as a fault. What is left once both are excluded is the real failure:
-# the same call, at the same seed, landing on two keys because the key was
-# unstable, and so paying for one fixture twice. That is the `builds` above 1
-# AC4 reads, and nothing else produces one.
+# Rows are grouped by what was *built*, not by the call that asked for it, and
+# every cheaper grouping was tried first and found to lie. Grouping by key makes
+# `builds` a tautology -- a miss is what creates an entry, so no key can build
+# twice. Grouping by the call's source text is worse than useless here:
+# test-nested-tune-grid-failures.R writes seven different designs as
+# `nested_tune_grid(det_workflow(d), nested, ...)`, rebinding `nested` per test,
+# so that grouping reports seven correct builds as a fault. Adding the seed to
+# the source text fixes the seed-sensitivity tests and none of that.
+#
+# What survives is the question actually worth asking: did the suite pay for the
+# same fit twice? Two entries whose values share a canonical form are two fits
+# that produced the same thing, whatever they were called or how they were
+# spelled, and that is a `builds` above 1 -- the number AC4 reads.
 fixture_cache_report <- function() {
   keys <- ls(fixture_cache, all.names = TRUE)
   if (length(keys) == 0L) {
@@ -455,15 +475,16 @@ fixture_cache_report <- function() {
   }
   entries <- lapply(keys, function(k) fixture_cache[[k]])
   labels <- vapply(entries, function(e) e$label, character(1))
-  seeds <- vapply(entries, function(e) e$seed, character(1))
   requests <- vapply(entries, function(e) e$requests, integer(1))
+  built <- vapply(entries, function(e) {
+    rlang::hash(canonical_form(e$value))
+  }, character(1))
 
-  group <- paste(labels, seeds, sep = "\r")
-  first <- !duplicated(group)
+  first <- !duplicated(built)
   out <- data.frame(
     signature = labels[first],
-    builds = vapply(group[first], function(g) sum(group == g), integer(1)),
-    requests = vapply(group[first], function(g) sum(requests[group == g]),
+    builds = vapply(built[first], function(b) sum(built == b), integer(1)),
+    requests = vapply(built[first], function(b) sum(requests[built == b]),
                       integer(1)),
     stringsAsFactors = FALSE
   )
