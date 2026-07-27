@@ -1,6 +1,6 @@
 # M09: A stopped run reports nothing, not a partial estimate
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -105,6 +105,7 @@ worker must serialize → candidate row. Remote-pool behaviour → candidate row
 - 2026-07-26: T4 done — end-to-end test on real daemons. Cancellation needs an actor outside a host that is blocked in `collect_mirai()`, so only that actor is substituted: the map is really dispatched and really stopped, and collect/classify/abort/unwind all run unmocked. Asserts the abort, both condition classes, `result` still NULL, RNG state and kind restored, and bounded elapsed. 50 pass in the file.
 - 2026-07-26: T5 done — two inversions, both red. Deleting the abort branch reddens 2 tests in `test-parallel-classify.R` and 2 in `test-parallel-identity.R`; dropping `is.integer()` from the shape check reddens 2. The second inversion found a real defect and earned a test: R coerces in `==`, so a miraiError whose message is the string "20" equals the cancel code, and without the type check one unlucky error message would abort the run and discard every completed fold. Suite green: 1115 pass, 0 fail, 0 skip.
 - 2026-07-26: T6 done — roxygen "Parallel execution" rewritten (the old line calling an interrupt the only non-failure was wrong once cancellation joined it) plus the documented `daemons(0)` limit; two NEWS entries. `devtools::document()` idempotent; `devtools::check()` 0 errors / 0 warnings / 0 notes in 5m5s.
+- 2026-07-26: all tasks done, status `review`. Suite 1115 pass / 0 fail / 0 skip; `devtools::check()` clean.
 
 ## Decisions
 
