@@ -102,7 +102,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
       each, each leaving another converted file green; record and revert.
 - [ ] T8 Re-measure (median of three), record both medians and the `tests/` diff
       summary; `devtools::test()` and `devtools::check()` clean.
-- [ ] T9 Add `timeout-minutes: 20` to both workflow jobs; amend `PROFILE.md`'s
+- [x] T9 Add `timeout-minutes: 20` to both workflow jobs; amend `PROFILE.md`'s
       "Two divergences" line to three.
 
 ## Work log
@@ -122,6 +122,7 @@ including `test-nested-results-print.R:288`'s five-fold unanimity snapshot.
 - 2026-07-27: T5 verified condition replay is load-bearing. With the replay line disabled, `test-nested-tune-grid-failures.R:102` fails both nested expectations ("Expected `memoised(...)` to throw a warning with class <nestedtune_failed_folds>" and "Expected `expect_warning(...)` to throw a warning"); restored and green.
 - 2026-07-27: T6 done, single-file timings: tune-grid-results 13.1 -> 4.1 s (38 pass), final-fit-print 3.0 -> 0.7 s (58), final-fit-results 2.4 -> 0.9 s (14), leakage 1.8 -> 0.2 s (57), parallel-identity 63.1 -> 34.0 s (49). `record_handoffs()` now returns the assembled object beside the handoffs, so the leakage test that read `res$id`/`res$splits` uses the stub instead of thirty real fits; `test-parallel-identity.R` takes its object by assigning inside `expect_warning()` rather than re-running the fit.
 - 2026-07-27: T7 done, and committed as `benchmarks/mutation-sensitivity.R` so review re-derives it rather than reading a transcript. All six converted files fail their own named mutation while their control passes: plot / `from_folds()` k+1 (3 failures); print / `selection_values()` value<-NA (8); failures / `own_note()` type "error"->"failure" (1); tune-grid-results / `collect_metrics.nested_results()` summarize default TRUE->FALSE (21); final-fit-print / `selected_label()` " = "->": " (2); final-fit-results / `new_nested_final_fit()` fit_seed seeds[[2]]->seeds[[1]] (1). Every mutation reverted; tree clean.
+- 2026-07-27: T9 done. `timeout-minutes: 20` on the `R-CMD-check` and `test-coverage` jobs; PROFILE.md's divergence list now names three, the third being the cap.
 - 2026-07-27: implement gate chose a `teardown-` file for AC4's request/build table over a last-alphabetical test file or the profiler alone, and chose wrapping the existing call (`memoised(nested_tune_grid(...))`) over typed per-function wrappers, so the function under test stays visible at every call site and one helper serves both entry points.
 
 ## Decisions

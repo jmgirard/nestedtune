@@ -51,14 +51,20 @@ rules in tracking-rules:
   and tracking-rules' "no coverage-percentage target" both hold. Give the
   `.github/` workflow dir an `.Rbuildignore` `^\.github$` entry (usethis adds it)
   so it stays out of the built package.
-- Two divergences from that stock shape, added at M11. **A `concurrency`
+- Three divergences from that stock shape, two added at M11 and one at M12.
+  **A `concurrency`
   block** cancels a run once a later push supersedes it, on every ref but the
   default branch — that branch is a distribution channel, so a commit there
   keeps a completed check rather than a cancelled one. **A `paths-ignore`
   filter** on both triggers of both workflows skips `cairn/**`, `CLAUDE.md`,
   and `.claude/**`, which cannot change what `R CMD check` sees; its effect is
   on the `push` trigger, since GitHub evaluates `paths-ignore` on a
-  `pull_request` against the whole PR diff.
+  `pull_request` against the whole PR diff. **A `timeout-minutes: 20`** on the
+  job in each workflow caps a hang: both jobs have hung inside
+  `test_check("nestedtune")` on a tree that passed an hour earlier, for 52 and
+  40 minutes, against a normal leg of well under 12. The cap turns a hang into
+  a failed job with a timestamp instead of an answer nobody gets; it does not
+  diagnose one, which is a live ROADMAP candidate.
 - `.github/ci-usage.py` measures both over any window inside GitHub's 90-day
   run retention (baseline: `.github/ci-usage-baseline.md`). It counts commits
   from `git log`, not the runs they fired, and reports what cancelling

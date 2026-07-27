@@ -40,6 +40,11 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
+    # A run that hangs is a run nobody gets an answer from. The suite's slowest
+    # honest leg has been well under 12 minutes; 20 leaves headroom for a cold
+    # cache while still killing a hang rather than letting it burn six hours.
+    timeout-minutes: 20
+
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     strategy:

@@ -29,6 +29,9 @@ concurrency:
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
+    # Same cap as R-CMD-check, and for the same reason: covr has hung inside
+    # test_check() here before, and a hung job is worse than a failed one.
+    timeout-minutes: 20
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
