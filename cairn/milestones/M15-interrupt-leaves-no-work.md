@@ -72,7 +72,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - [x] T2 Add the cancelling `on.exit()` around the dispatched map in
       `dispatch_folds()` (`R/parallel.R:83-93`); confirm no exported signature
       moved.
-- [ ] T3 Enumerate the non-local exits reachable between dispatch and return —
+- [x] T3 Enumerate the non-local exits reachable between dispatch and return —
       `collect_mirai()` returns only when every element has resolved, so
       classification cannot be one — and record which AC2 covers.
 - [ ] T4 Update the roxygen interrupt contract.
@@ -91,6 +91,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: question gate settled both open choices — unconditional cancel on every exit, and a real-SIGINT test over stand-in folds rather than a simulated unwind.
 - 2026-07-27: T1 — `tests/testthat/test-parallel-interrupt.R` delivers a real SIGINT once both stand-in folds have marked themselves started, so the signal cannot race the pre-flight probe; confirmed red against unchanged code (`executing` was 2, expected 0) with both markers present, so the pass is not vacuous.
 - 2026-07-27: T2 — unconditional `on.exit(mirai::stop_mirai(mapped))` in `dispatch_folds()`; the new test goes green and the full suite is clean (1216 pass, 0 fail, 0 skip), which includes the formals assertion at `test-parallel-classify.R:439`.
+- 2026-07-27: T3 — exits enumerated in this file's Decisions section; one is uncoverable (an error inside `mirai_map()` binds no handle to cancel), and the partial-collect exit AC2 was first drafted around does not exist.
 
 ## Decisions
 
@@ -111,5 +112,30 @@ what is *covered*.
 
 Falsified by a mirai version where `stop_mirai()` on a resolved map is not inert:
 a collected value damaged or a pool disturbed by it would make the flag necessary.
+
+### 2026-07-27: Which non-local exits between the dispatch and the return are reachable (AC2)
+
+Enumerated at T3, each with what it leaves outstanding:
+
+- **An interrupt during `collect_mirai()`** — reachable, and the folds are still
+  executing. This is the defect the milestone exists for; covered by the
+  real-SIGINT test.
+- **An interrupt during `lapply(collected, classify_fold_result)`** — reachable;
+  nothing outstanding, because `collect_mirai()` returns only once every element
+  has resolved (probe: `executing 0` on its return). The guard fires and is inert.
+- **`classify_fold_result()` aborting** — reachable, and already tested on both
+  routes (`nestedtune_interrupted`, `nestedtune_cancelled`); nothing outstanding,
+  for the same reason.
+- **An error raised by `collect_mirai()` itself** — reachable in principle, not
+  producible on demand. Cancelling unconditionally is what covers it without a
+  test to name it.
+- **Not reachable: any exit past the collect with folds still executing.**
+  `collect_mirai()` has no partial return — the finding the pre-gate criteria
+  audit made when it retired the drafted AC2.
+- **Not covered, and not coverable here: an error raised inside `mirai_map()`
+  itself** (`options(warn = 2)` turning the per-fold serialization warning into
+  an error would do it). It raises before `mapped` is bound, so no handle to the
+  partially dispatched map exists for anyone to cancel. A limit of the API, not
+  a choice made here.
 
 ## Review
