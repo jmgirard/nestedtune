@@ -212,7 +212,13 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
     )
   })
 
-  folds <- dispatch_folds(payloads, object = object, grid = grid, metrics = metrics)
+  folds <- dispatch_folds(
+    payloads,
+    object = object,
+    grid = grid,
+    metrics = metrics,
+    call = rlang::current_env()
+  )
 
   out <- new_nested_results(resamples, folds, seeds, grid, metrics)
   warn_failed_folds(out, call = rlang::current_env())

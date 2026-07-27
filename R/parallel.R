@@ -61,13 +61,14 @@ reset_dispatch_record <- function() {
 # The seeds are already drawn and assigned by position before this is called
 # (D-011), so nothing here draws, and a fold's result cannot depend on where or
 # when it runs. That is the whole reason the loop is safe to parallelize.
-dispatch_folds <- function(payloads, object, grid, metrics) {
+dispatch_folds <- function(payloads, object, grid, metrics,
+                           call = rlang::caller_env()) {
   if (!use_parallel()) {
     record_dispatch("serial")
     return(lapply(payloads, fold_task, object = object, grid = grid, metrics = metrics))
   }
 
-  check_daemons_can_load()
+  check_daemons_can_load(call = call)
 
   record_dispatch("parallel")
   # The task is sent with its environment stripped to the global one. Left
@@ -88,7 +89,7 @@ dispatch_folds <- function(payloads, object, grid, metrics) {
   # `.stop` would abort the whole run on the first failing fold and discard the
   # completed ones -- exactly what M03 exists to prevent.
   collected <- mirai::collect_mirai(mapped)
-  lapply(collected, classify_fold_result)
+  lapply(collected, classify_fold_result, call = call)
 }
 
 # One round-trip before any fold is dispatched, to fail on the setup error users
@@ -151,7 +152,7 @@ check_daemons_can_load <- function(ok = daemons_can_load(),
 # the latter rather than describing it (RR03 Q4, verified). Asking "is this an
 # error?" therefore mistakes both for successes; asking "is this a fold record?"
 # cannot.
-classify_fold_result <- function(x) {
+classify_fold_result <- function(x, call = rlang::caller_env()) {
   if (is_fold_record(x)) {
     return(x)
   }
@@ -163,7 +164,8 @@ classify_fold_result <- function(x) {
         "Run interrupted while waiting on outer folds.",
         i = "No results are returned; the caller's RNG state is restored."
       ),
-      class = "nestedtune_interrupted"
+      class = "nestedtune_interrupted",
+      call = call
     )
   }
   failed_fold("worker", NULL, NULL, message = worker_failure_message(x))

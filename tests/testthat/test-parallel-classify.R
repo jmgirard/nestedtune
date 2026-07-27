@@ -69,7 +69,11 @@ test_that("a miraiInterrupt aborts instead of being recorded as a failed fold", 
   # BC4: a cancelled run is not a run that had failures. Recording an interrupt
   # as a failed fold would let a run the user stopped masquerade as a completed
   # design with some folds missing -- an IP4 inversion.
-  interrupt <- structure(20L, class = c("miraiInterrupt", "errorValue"))
+  # mirai resolves a real interrupt to an EMPTY CHARACTER STRING carrying these
+  # classes -- not an integer. An earlier fixture used 20L; classification is
+  # inherits()-based so it passed either way, but a fixture that does not match
+  # what production sees is not evidence.
+  interrupt <- structure("", class = c("miraiInterrupt", "errorValue", "try-error"))
   expect_error(classify_fold_result(interrupt), class = "nestedtune_interrupted")
 })
 

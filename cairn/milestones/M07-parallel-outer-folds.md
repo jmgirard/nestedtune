@@ -32,18 +32,18 @@ candidate rows.
 
 ## Acceptance criteria
 
-- [ ] AC1 (BC1): With daemons active, `nested_tune_grid()` returns a result
+- [x] AC1 (BC1): With daemons active, `nested_tune_grid()` returns a result
       `identical()` to the serial (daemons-off) result from the same entry
       seed, using the ranger stochastic workflow, at two daemon counts both
       at or above the implementation's parallel-dispatch threshold; each such
       test also asserts that the parallel branch was selected for the run, so
       the identity is never serial-vs-serial.
-- [ ] AC2 (BC2): The non-default-`RNGkind()` identity test (AC3) sets a caller
+- [x] AC2 (BC2): The non-default-`RNGkind()` identity test (AC3) sets a caller
       generator kind that is neither `"Mersenne-Twister"` nor
       `"L'Ecuyer-CMRG"` (e.g. `"Wichmann-Hill"`), and a comment records why:
       a pin-less implementation reproduces serial results exactly under a
       caller on L'Ecuyer-CMRG because mirai daemons sit on that same kind.
-- [ ] AC3 (BC3): The dispatcher classifies each collected element by positive
+- [x] AC3 (BC3): The dispatcher classifies each collected element by positive
       validation of the fold-record shape; any element failing validation —
       including a `miraiError` and an `errorValue` from a daemon that died
       mid-task, neither of which inherits `"condition"` — is recorded via
@@ -52,21 +52,21 @@ candidate rows.
       test kills a daemon mid-run and asserts: the affected fold has
       `.completed` FALSE, every other fold's record is `identical()` to its
       serial counterpart, and no fold executed more than once.
-- [ ] AC4 (BC4): A `miraiInterrupt` collected from a worker is not recorded as
+- [x] AC4 (BC4): A `miraiInterrupt` collected from a worker is not recorded as
       a failed fold: the call aborts, and the caller's `.Random.seed` and
       `RNGkind()` triple are restored per the existing exit contract.
-- [ ] AC5 (BC5): The dispatcher's collection does not use mirai's `.stop`
+- [x] AC5 (BC5): The dispatcher's collection does not use mirai's `.stop`
       option or any mechanism that discards completed folds on first failure.
-- [ ] AC6 (BC6): Serial-vs-parallel comparisons of any fold whose `.notes` is
+- [x] AC6 (BC6): Serial-vs-parallel comparisons of any fold whose `.notes` is
       non-empty exclude the `trace` column and assert `identical()` on all
       other fold-record fields, including the notes' `location`, `type`, and
       `note` text; the exported documentation states that backtraces inside
       `.notes` reflect where the fold executed and are outside the
       reproducibility identity.
-- [ ] AC7 (BC7): The contract-derived reference-loop oracle tests
+- [x] AC7 (BC7): The contract-derived reference-loop oracle tests
       (`reference_nested_loop()` and its assertions) remain present and
       passing, unmodified in their derivation-from-documentation structure.
-- [ ] AC8 (BC8): The documentation added by T6 states all of: parallelism is
+- [x] AC8 (BC8): The documentation added by T6 states all of: parallelism is
       enabled solely by `mirai::daemons(n)` with no argument on
       `nested_tune_grid()`; inner tuning remains serial; results are
       identical to a serial run regardless of daemon count; daemons are
@@ -75,28 +75,29 @@ candidate rows.
       package must be installed in a library the daemons can load, which
       `devtools::load_all()` alone does not provide; and a run whose daemons
       have all died blocks until interrupted.
-- [ ] AC9 (BC9): A pollution-immunity test executes a fold on a daemon on
+- [x] AC9 (BC9): A pollution-immunity test executes a fold on a daemon on
       which prior tasks have changed the RNG kind triple (including
       `sample.kind = "Rounding"`), consumed draws, run a prior fold, and
       written to the daemon's global environment, and asserts the fold record
       is `identical()` to the same fold on a freshly started daemon.
-- [ ] AC10: With `mirai` absent or below the dispatch threshold, the loop runs
+- [x] AC10: With `mirai` absent or below the dispatch threshold, the loop runs
       serially and every existing test in `tests/testthat/` passes unchanged.
-- [ ] AC11: A wall-clock benchmark comparing serial to parallel on a
+- [x] AC11: A wall-clock benchmark comparing serial to parallel on a
       multi-fold design is recorded in this file's Review section with the
       machine, daemon count, and design that produced it. Evidence, not a
       threshold — no test asserts a speedup.
-- [ ] AC12: `devtools::check()` clean — no ERRORs, WARNINGs, or new NOTEs —
+- [x] AC12: `devtools::check()` clean — no ERRORs, WARNINGs, or new NOTEs —
       with `mirai` installed and again with the mirai-dependent tests skipped.
 
 ### Deviations from RR03
 
-All nine are ingested verbatim; two are *satisfied* differently than their wording assumes, both found by execution in T5 (work log has the detail).
+All nine are ingested verbatim; one is *satisfied* differently than its wording assumes.
 
 | BC | Departure | Why |
 |---|---|---|
 | BC6 | note text compared whitespace-normalized, not `identical()` | cli wraps to the formatting process's console width, so a daemon wraps at its own; words, location, type identical |
-| BC3 | daemon killed at the dispatch layer, not inside a real fold | no injection point in production code, and mocking cannot reach another process; the real collect → classify path still runs |
+
+A withdrawn second row claimed BC3's kill had to bypass the dispatcher for want of an injection point; review disproved it by execution (a mocked `fold_task` does reach the daemon), the test now drives the real path, and BC3 no longer deviates.
 
 ## Coverage
 
@@ -175,6 +176,11 @@ All nine are ingested verbatim; two are *satisfied* differently than their wordi
 - 2026-07-26: T8 — NEWS entry added; `devtools::check()` OK, 0 errors / 0 warnings / 0 notes, 5m 36s.
 - 2026-07-26: the second check (`_R_CHECK_DEPENDS_ONLY_=true`, CRAN's noSuggests flavor) failed first time and found a real bug: `worker_failure_message()` reached for `mirai::is_error_value()`, so with mirai absent an `errorValue` fell through to the generic note. Now dispatched on class (`miraiError` before `errorValue`, since the former inherits the latter), needing nothing loaded. Both checks OK, 0/0/0, 33 skips in the depends-only run.
 - 2026-07-26: all 8 tasks done, status review. Full check re-run after the final code change: OK 0/0/0.
+- 2026-07-26: review fan-out — blame-history and prior-review lenses clean; diff-bug lens returned 6 findings scored 82/92/68/60/78/55.
+- 2026-07-26: F2 (92) actioned — the BC3 test hand-rolled the dispatch path, so `dispatch_folds()` was covered by no test and a `.stop = TRUE` collect (which AC5 forbids) left the suite green. The scorer reproduced both that mutation and the disproof of my recorded deviation: a mocked `fold_task` does reach the daemon. Test rewritten to drive real `nested_tune_grid()`; both mutations now redden; the false Deviations row withdrawn.
+- 2026-07-26: F1 (82) actioned — `call` threaded from `nested_tune_grid()` through `dispatch_folds()` into the pre-flight and interrupt aborts, which previously named internal frames.
+- 2026-07-26: F3/F4/F5 logged below threshold with candidate rows; F5's test fixture corrected anyway (mirai produces an empty string, not an integer). F6 left as noted.
+- 2026-07-26: post-fix verification — suite 1028 pass / 0 fail / 0 warn; `document()` no diff.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
@@ -190,3 +196,153 @@ _All five decided 2026-07-26 on RR03's evidence (archived), cross-referenced not
 
 ## Review
 <!-- owner: review · exclusive -->
+
+Verified 2026-07-26 at `ebe0cdd` (+ PR-URL commit). PR
+https://github.com/jmgirard/nestedtune/pull/7. Evidence gathered by command at
+review time, never recalled.
+
+**Driving RR projections.** RR03 states "Every equality is exact
+(`identical()`), same machine, same package versions; no numeric tolerance is
+granted or needed" — its binding criteria carry no numeric projections, so the
+measured-vs-projected juxtaposition is a clean no-op here. Nothing was softened:
+`cairn_validate`'s `binding criteria` check string-compares AC1–AC9 against
+RR03 and passes.
+
+### Evidence per criterion
+
+- **AC1 (BC1)** — `test-parallel-identity.R` "BC1: parallel matches serial at
+  two above-threshold daemon counts": 2 and 3 daemons, each asserting
+  `identical(parallel, serial)` **and** `last_dispatch() == "parallel"`, so no
+  run is serial-vs-serial. Passing. Independently reproduced from an installed
+  copy and in the benchmark at 2, 4, and 6 daemons — identical every time.
+- **AC2 (BC2)** — "BC2: identity holds under a caller kind that is neither MT
+  nor L'Ecuyer": caller set to `Wichmann-Hill`, identity holds. The required
+  explanatory comment is in the test, recording that L'Ecuyer-CMRG has zero
+  detection power because mirai daemons sit on that kind.
+- **AC3 (BC3)** — "BC3: a daemon killed mid-run yields a recorded failure":
+  a real `tools::pskill()` on a live daemon, 4 tasks across 2 daemons. The
+  affected fold has `.completed` FALSE with note location `worker`; folds 1, 3,
+  4 carry the values they computed; one ledger file per task proves each ran
+  exactly once. Departure recorded in Deviations (kill injected at the dispatch
+  layer). `test-parallel-classify.R` additionally pins that neither mirai
+  failure shape inherits `"condition"` and that `conditionMessage()` raises on
+  an `errorValue`.
+- **AC4 (BC4)** — `test-parallel-classify.R` "a miraiInterrupt aborts instead
+  of being recorded as a failed fold" (class `nestedtune_interrupted`), plus
+  `test-parallel-identity.R` "BC4: an aborted parallel run still restores the
+  caller's RNG state": `.Random.seed` and the `RNGkind()` triple identical
+  across the abort.
+- **AC5 (BC5)** — code inspection, `R/parallel.R:90`: collection is a bare
+  `mirai::collect_mirai(mapped)`. `.stop` appears nowhere but the comment
+  explaining why it is not used.
+- **AC6 (BC6)** — "BC6: a failed fold matches serially in every field but its
+  traces": `.completed`, `.metrics`, `.selected`, both seed columns, and each
+  note's `location`/`type`/`note` all match. Departure recorded in Deviations
+  (note text compared whitespace-normalized). The trace caveat is in the
+  exported docs.
+- **AC7 (BC7)** — `git diff --stat main...HEAD` on
+  `helper-orchestration.R` and `test-nested-tune-grid-oracles.R` is empty: the
+  contract-derived oracles are untouched, and their 23 assertions pass.
+- **AC8 (BC8)** — `man/nested_tune_grid.Rd` "Parallel execution" section
+  carries all six required clauses: enablement by `mirai::daemons(n)` with no
+  argument; inner tuning serial; same seed gives the same result at any daemon
+  count; daemons inherit neither session options, nor later environment
+  variables, nor `.libPaths()` changes; the package must be installed where
+  daemons can load it and `load_all()` is not enough; an all-dead pool blocks
+  until interrupted.
+- **AC9 (BC9)** — "BC9: a fold is immune to whatever a daemon ran before it":
+  daemons polluted with `Knuth-TAOCP-2002`/`Box-Muller`/`Rounding`, 10,000
+  consumed draws, and globals shadowing the worker's own argument names; result
+  identical to the fresh-daemon run.
+- **AC10** — `devtools::check()` under `_R_CHECK_DEPENDS_ONLY_=true` (CRAN's
+  noSuggests flavour): OK, 0/0/0, 33 skips, serial path unaffected.
+  `test-parallel-detection.R` covers absent, below-threshold, and active.
+- **AC11** — benchmark recorded below; no test asserts a speedup, as the
+  criterion requires.
+- **AC12** — `devtools::check()` OK 0 errors / 0 warnings / 0 notes (5m 32s at
+  review time), and again under `_R_CHECK_DEPENDS_ONLY_=true` OK 0/0/0.
+
+### Benchmark (AC11)
+
+R 4.6.1, aarch64-apple-darwin25.4.0, 8 cores; tune 2.1.0, mirai 2.7.2, ranger
+0.18.0. Design: 6 outer x 5 inner, grid of 5, ranger 1000 trees, n = 600.
+Reproduce with `benchmarks/parallel-speedup.R`.
+
+| Run | Wall clock | Speedup |
+|---|---|---|
+| serial | 52.6 s | — |
+| 2 daemons (warm) | 27.0 s | 1.95x |
+| 4 daemons (warm) | 23.1 s | 2.27x |
+| 6 daemons (warm) | 18.6 s | 2.83x |
+
+Cold first runs on fresh daemons: 33.4 / 27.6 / 27.5 s. Every run `identical()`
+to serial. Scaling is near-linear at 2 daemons and falls off after — a fresh
+daemon loads the tidymodels stack inside its first timed run, and this machine's
+efficiency cores are not full cores. Recorded as evidence, not a threshold.
+
+### Consistency gate
+
+`cairn_validate` exit 0, all 16 checks pass; one advisory (M07 at 12 acceptance
+criteria against the >7 tripwire) carried to the merge gate as a judgment for
+the maintainer. `devtools::document()` produces no diff. `pkgdown::check_pkgdown()`
+reports no problems. NEWS.md carries the user-visible entry. `benchmarks/` has
+its `.Rbuildignore` entry. DESIGN.md unchanged on this branch, so `cairn_impact`
+does not apply. CI on PR #7: all six jobs pass, Windows included (11m 28s).
+
+### Independent review (three lenses + scorer)
+
+Three fresh-context reviewers, distinct evidence bases; findings scored by a
+fourth agent that did not generate them.
+
+- **[S] blame-history** — no findings. Verified `nested_fold_fit()`'s body is
+  byte-for-byte unchanged, the D-011 seed contract intact, `failed_fold()`'s new
+  argument additive, `allow_par = FALSE` still forced, and M03's
+  record-don't-abort discipline preserved.
+- **[S] prior-review regression** — no findings. Checked RR01, RR03, archived
+  M02/M03/M05 Review sections, and every LESSONS trap bearing on this area
+  (vacuous RNG tests, `expect_warning` return value, `expect_equal` tolerance).
+  GitHub inline-comment probe returned empty, so that surface was skipped.
+- **[O] diff-bug** — six findings, scored 82 / 92 / 68 / 60 / 78 / 55.
+
+**Actioned (>= 80):**
+
+- **F2 (92) — the BC3 test re-implemented the dispatcher instead of driving it,
+  leaving AC5 unpinned.** `dispatch_folds()` was invoked by no test. The scorer
+  reproduced the consequence: switching collection to
+  `collect_mirai(mapped, options = list(.stop = TRUE))` — precisely what AC5
+  forbids — left all 42 parallel tests green. It also disproved the milestone's
+  own justification for the BC3 deviation by execution: a mocked `fold_task`
+  *does* reach the daemon, because dispatch looks it up by name and serializes
+  it. **Fixed:** the test now drives real `nested_tune_grid()` with a mocked
+  worker that kills its daemon, communicating through environment variables
+  (dispatch strips the task's environment, so captured locals would be lost).
+  Both mutations now redden — `.stop = TRUE` and dropping the classify pass each
+  fail the suite. The false deviation row is withdrawn.
+- **F1 (82) — the pre-flight abort named the internal `dispatch_folds()`.**
+  Every other user-facing abort in the package resolves to the user's frame;
+  this one and the interrupt abort did not (the latter reported
+  `Error in FUN(X[[i]], ...)`). **Fixed:** `call` is threaded from
+  `nested_tune_grid()` through `dispatch_folds()` into both aborts; verified
+  `conditionCall()` now reads `nested_tune_grid(...)`.
+
+**Below threshold — logged, not actioned (4):**
+
+- F3 (68) the 30 s pre-flight bound is hard-coded and a timeout is reported as
+  "cannot load" → candidate row.
+- F4 (60) the pre-flight probes one daemon, so a heterogeneous pool can pass
+  with broken members → candidate row.
+- F5 (78) `mirai::stop_mirai()` yields `errorValue` 20, not `miraiInterrupt`, so
+  an externally cancelled run records fold failures → candidate row. Its test
+  fixture used an integer where mirai produces an empty string; **the fixture
+  was corrected** even though the finding scored below threshold, since a
+  fixture that does not match production is not evidence.
+- F6 (55) hard-coded TCP port 45997 in the fail-fast test → left; the test is
+  `skip_on_cran()` and collision needs concurrent checks on one host.
+
+Re-verified after the fixes: suite 1028 passing, 0 failures, 0 warnings.
+
+### Test suite
+
+1028 passing, 0 failures, 0 warnings, 0 skips locally. New files:
+`test-parallel-identity.R` 44, `test-parallel-classify.R` 27,
+`test-parallel-detection.R` 14.
