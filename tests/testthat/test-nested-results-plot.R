@@ -219,6 +219,59 @@ test_that("a fold scoring NA on one metric still scores the others", {
   expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
 })
 
+test_that("a run where no fold completed is refused, in plotting's own words", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- suppressWarnings(nested_tune_grid(
+    det_workflow(d), break_every_fold(det_nested(d)),
+    grid = det_grid(), metrics = reg_metrics()
+  ))
+
+  # Printing describes such an object without complaint (M04); plotting is a
+  # request for a figure of a design that did not run, so it refuses as
+  # collect_metrics() does -- and says "plot", not "summarize", about the same
+  # object.
+  expect_error(autoplot(res), "nothing to plot")
+  expect_error(autoplot(res, type = "performance"), "nothing to plot")
+  expect_error(collect_metrics(res), "nothing to summarize")
+})
+
+test_that("a design with no tuned parameters points at the other view", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+  for (i in seq_len(nrow(res))) {
+    res$.selected[[i]] <- res$.selected[[i]][, ".config", drop = FALSE]
+  }
+
+  expect_error(autoplot(res), "no tuned parameters")
+  expect_error(autoplot(res), "type = \"performance\"", fixed = TRUE)
+  # The scores are still there, so the view it points at must actually work.
+  expect_s3_class(autoplot(res, type = "performance"), "ggplot")
+})
+
+test_that("an unrecognized type is refused by name", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+  )
+
+  expect_error(autoplot(res, type = "parameter"), "must be one of")
+  expect_error(autoplot(res, type = "parameter"), "performance")
+  expect_error(autoplot(res, type = c("performance", "parameters")), "one of")
+  expect_error(autoplot(res, type = 1), "must be one of")
+  expect_error(autoplot(res, type = NA_character_), "must be one of")
+})
+
 test_that("a non-numeric selection is drawn on a discrete axis", {
   skip_if_no_engines()
   d <- make_reg_data()
