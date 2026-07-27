@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M07 merged and archived — `nested_tune_grid()` runs its outer folds on mirai daemons with results identical to serial, verified by execution; D-018 added, M02's row pruned under terminal-row retention, 15 candidates, 3 lessons added)_
+_Last hygiene check: 2026-07-26 (M08 merged and archived — `autoplot()` draws each outer fold's selection and score, counting contribution per panel after review caught a per-figure count that was false; D-019 added, DESIGN's dependency line corrected to seven packages, M03's row pruned under terminal-row retention, 14 candidates, 4 lessons added)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M08 | Selection instability you can see | review | — | normal | milestones/M08-autoplot-nested-results.md |
-| M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 | M07 | Parallel outer folds | done | M02 | high | milestones/archive/M07-parallel-outer-folds.md |
+| M08 | Selection instability you can see | done | — | normal | milestones/archive/M08-autoplot-nested-results.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
