@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M11 merged and archived — CI now skips tracking-only commits and cancels superseded runs off the default branch, removing 39 of 108 runs and 790 machine-minutes; two review passes, 22 findings, 8 actioned, AC4/AC5 amended at a gate; M08's row pruned under terminal-row retention, 15 candidates, 1 lesson added)_
+_Last hygiene check: 2026-07-27 (M11 merged and archived — CI now skips tracking-only commits and cancels superseded runs off the default branch, removing 39 of 108 runs and 790 machine-minutes; two review passes, 22 findings, 8 actioned, AC4/AC5 amended at a gate; M08's row pruned under terminal-row retention, 16 candidates, 1 lesson added)_
 
 ## Milestones
 
@@ -17,6 +17,7 @@ _Last hygiene check: 2026-07-27 (M11 merged and archived — CI now skips tracki
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
+- Keep the test suite's runtime in hand — CI wall-clock roughly doubled across every matrix configuration between M01 and M11 (macOS 3.8→7.1 min mean, windows 6.6→12.3), and step-level timing puts all of it in `R CMD check` while `setup-r-dependencies` stayed flat at 0.5 min, so caching is fine and the growth is the suite itself: 1175 tests that fit real models through `tune_grid()`, nested resampling and ranger, 182s of a 6-min local check — added 2026-07-27 — measured from the jobs API while answering why macOS looked slow; start by profiling which test files dominate, since a handful of fits likely account for most of it, and only then decide whether anything is worth making cheaper. GP4 is the standing reason not to let this drift
 - Cut the CI matrix on pull requests to ubuntu+windows, and cancel superseded runs on the default branch too — the two halves of the M11 candidate row's agreed shape that M11 dropped at its gate — added 2026-07-27 — M11 Out. The row's premise was wrong: this repo is public, so standard-runner minutes are free and the ×10 macOS multiplier does not apply (`billable: 0` on every run). Measured against dropping it: the PR cut saves a median of 0.0 min wall-clock because windows is the critical path in 43 of 55 full runs, while losing pre-merge R-devel and oldrel-1 coverage; cancelling on `main` reclaims 17 runs / 372 min but can leave a default-branch commit carrying no completed check. Promote on evidence that either premise has failed — the repo goes private, or windows stops being the wall-clock critical path
 - Actions cache pressure: 5.82 GB across 61 active entries against GitHub's 10 GB per-repo limit, past which the oldest entries are evicted and every job pays a dependency-setup miss — added 2026-07-27 — M11 Out, surfaced while measuring for it; whether eviction is actually occurring is unmeasured, so measure hit rates across recent runs before designing a key scheme
 - Deploy the pkgdown site, so the URLs DESCRIPTION and README already advertise resolve — the site root 404s today, with no `gh-pages` branch and no deploy workflow (`usethis::use_pkgdown_github_pages()` is the standard route) — added 2026-07-26 — M06 review finding F6, scored 45; the dead URL predates M06, which only added a second link depending on it
