@@ -533,6 +533,36 @@ and `select_best()` stay unregistered, so D-010's refusal is narrowed to those
 two rather than overturned. Pre-1.0 the `type` values stay changeable without a
 deprecation cycle (D-003).
 
+### D-020 (2026-07-26): The parallel pre-flight timeout is an R option, `nestedtune.preflight_timeout` — narrows D-018's no-knob line to function arguments, and opens the package's option namespace
+
+**Context:** M07's pre-flight probe bounds its round-trip at a hard-coded
+`preflight_timeout_ms <- 30000L`, so a daemon that is merely slow — a loaded CI
+runner, an antivirus-scanned Windows library — is reported as one that cannot
+load the package (M07 review finding F3; loading `tune` alone in a cold daemon
+measured 6.5 s). D-018 settled the parallel surface with a line this bumps
+against: "Parallelism is enabled solely by the user calling `mirai::daemons(n)`;
+`nested_tune_grid()` gains no argument", having rejected a user-supplied mapper
+as "a knob where GP3 asks for one obvious path".
+
+**Decision:** the bound is read from `getOption("nestedtune.preflight_timeout",
+30000L)` and validated; `nested_tune_grid()` gains no argument, and M10 asserts
+its formals are unchanged. This is the package's first user-facing option, so it
+also fixes the namespace: `nestedtune.<snake_case>`, the R convention. Considered
+and rejected at the M10 plan gate: a `nested_tune_grid()` argument (most
+discoverable, but it contradicts D-018 outright and puts an infrastructural
+control on a statistical signature); no knob at all, fixing only the message
+(truest to D-018's "documented rather than engineered away", but it leaves a user
+whose environment genuinely needs 60 s with no route at all).
+
+**Consequences:** D-018 is narrowed, not superseded — its rejection was of a
+*signature* knob, and that holds; what this permits is an out-of-band default
+that the obvious path never requires a user to touch. GP3 is traded off
+deliberately and narrowly: the option tunes infrastructure, never anything
+statistical, so no result depends on it and the one obvious path is unchanged for
+every user who ignores it. The default is unchanged at 30 s, so no existing
+behaviour moves. Pre-1.0 the option name stays changeable without a deprecation
+cycle (D-003).
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
