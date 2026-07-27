@@ -1,20 +1,19 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M14 and M15 planned off the hang candidate, which is trimmed to the cause alone; planning established by execution that `setTimeLimit()` cannot interrupt a blocked mirai collect and that `everywhere()` does not block on a saturated pool, and found one confirmed defect — an interrupted run leaves folds executing. 17 candidates, 3 planned milestones)_
+_Last hygiene check: 2026-07-27 (M14 merged and archived — its own review caught the hang live, the new trace naming `test-parallel-classify.R` after ~17 minutes, so the diagnosis candidate is localized and ready to plan. 12 findings, 4 actioned and 5 more fixed; M06's row pruned, 19 candidates, 1 lesson added, 1 corrected, 1 extended, 1 pair consolidated)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M12 | Fitting time only where an assertion needs it | done | — | normal | milestones/archive/M12-test-suite-runtime.md |
-| M14 | A hang says where it happened | review | — | high | milestones/M14-hang-localization.md |
+| M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | planned | — | normal | milestones/M15-interrupt-leaves-no-work.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
 | M10 | The startup check inspects every worker and says what went wrong | done | — | normal | milestones/archive/M10-preflight-probe-coverage.md |
-| M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
