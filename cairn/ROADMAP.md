@@ -7,6 +7,7 @@ _Last hygiene check: 2026-07-26 (M07 merged and archived — `nested_tune_grid()
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M08 | Selection instability you can see | planned | — | normal | milestones/M08-autoplot-nested-results.md |
 | M03 | Fold failures are recorded, never fatal | done | M02 | high | milestones/archive/M03-failed-fold-recording.md |
 | M04 | Printing surfaces the run and its disagreement | done | M03 | normal | milestones/archive/M04-print-nested-results.md |
 | M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
@@ -19,7 +20,6 @@ _Last hygiene check: 2026-07-26 (M07 merged and archived — `nested_tune_grid()
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
 - Deploy the pkgdown site, so the URLs DESCRIPTION and README already advertise resolve — the site root 404s today, with no `gh-pages` branch and no deploy workflow (`usethis::use_pkgdown_github_pages()` is the standard route) — added 2026-07-26 — M06 review finding F6, scored 45; the dead URL predates M06, which only added a second link depending on it
 - Report the M01 diagnosis upstream on rsample#283 (cause is inside_resample()'s as.data.frame(); the 13x figure's reprex used a 10x10 scheme, not 5x2) — added 2026-07-25 — G4; promoted from the memory candidate, which became M01
-- Plotting selection instability, so the disagreement M04 prints can also be seen — added 2026-07-25 — split from M02; failed-fold handling became M03 and print/summary became M04. Trimmed to its remainder 2026-07-26: the parallelism half became M07, leaving plotting, which needs its own dependency gate (ggplot2) and is defended by no principle — DESIGN keeps instability-surfacing a convention deliberately, not a GP
 - Reduce what each mirai worker must serialize — every fold's split references the whole dataset, so parallel dispatch sends a copy per worker, which is the memory axis M01's in-process leanness does not cover (GP4) — added 2026-07-26 — M07 Out; measure before designing, since mirai may already share via its own mechanisms
 - Make the parallel pre-flight probe configurable and honest about timeouts — the 30 s bound is a hard-coded constant with no option, and a timeout is reported as "cannot load the package", telling a user to install what they already have — added 2026-07-26 — M07 review finding F3, scored 68 (below the action threshold); loading `tune` alone in a cold daemon measured 6.5 s, so a loaded CI runner or AV-scanned Windows library could plausibly exceed it
 - Probe every daemon in the parallel pre-flight, not just one — `mirai::mirai()` submits a single task that one daemon takes, so in a heterogeneous pool (remote daemons, or a respawned one that `everywhere()` priming never reached) a single loadable daemon passes the check while the rest return opaque worker failures — added 2026-07-26 — M07 review finding F4, scored 60; RR03 Q5 already flags remote pools as unprobed

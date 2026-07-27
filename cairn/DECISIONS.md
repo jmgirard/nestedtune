@@ -497,6 +497,42 @@ documented rather than engineered away: daemons are separate R processes, so
 alone does not reach them, and a stale installed copy makes daemons run stale
 code while the host runs development code.
 
+### D-019 (2026-07-26): `autoplot()` on `nested_results` is one method with a `type` argument, and `ggplot2` joins Imports with `vdiffr` in Suggests — settles the outer-level semantics D-010 deferred and extends the dependency set D-018 last amended
+
+**Context:** D-010 refused `tune_results` inheritance and recorded that
+`autoplot()` would therefore error, adding that "any of them that turns out to
+be genuinely wanted is written deliberately, with outer-level semantics decided
+at that point". M08 is that point. The object supports two genuinely different
+views: what each outer fold selected — the instability DESIGN calls first-class
+and nothing else in the ecosystem shows — and how the per-fold outer scores
+spread. Registering a method for `ggplot2::autoplot()` normally requires
+ggplot2 as a hard dependency, and the profile's test-doctrine allows testing a
+plot with `vdiffr` precisely when the plot is the product.
+
+**Decision:** One export, `autoplot.nested_results(object, type =
+c("parameters", "performance"), ...)`, defaulting to the instability view;
+`ggplot2` joins Imports and `vdiffr` joins Suggests. Considered and rejected at
+the M08 plan gate: two separate exported functions (more discoverable, and each
+gets its own help page, but it puts two names in a small namespace and abandons
+the idiom every other tidymodels object answers to); the instability view alone
+(smallest thing that earns the milestone, but the fold spread is then reachable
+only through `collect_metrics(summarize = FALSE)`); `ggplot2` in Suggests with
+the method registered lazily in `.onLoad()` (keeps the hard surface at six
+packages, which is GP4's instinct, but it is machinery every reader must
+understand and the vignette then needs the `requireNamespace()` guard whose
+failure mode M06 was caught by); shipping a tidy data frame and no plot at all
+(zero dependency cost, but it does not deliver the candidate).
+
+**Consequences:** The hard-dependency surface becomes rsample, cli, rlang, tune
+(>= 2.0.0), workflows, parsnip, ggplot2 — the first addition to Imports since
+D-009, and the first that is not needed to compute a result. GP3's preference
+for one obvious path over a knob is traded off deliberately: two views of one
+object is the case where an argument is the honest answer, and tune's own
+`autoplot()` sets the precedent GP1 asks the package to match. `show_best()`
+and `select_best()` stay unregistered, so D-010's refusal is narrowed to those
+two rather than overturned. Pre-1.0 the `type` values stay changeable without a
+deprecation cycle (D-003).
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
