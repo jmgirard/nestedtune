@@ -1,15 +1,14 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-26 (M09 merged and archived — a cancelled parallel run now aborts instead of reporting an estimate over folds that never ran; review fixed three defects including an AC4 assertion that pinned nothing, M04's row pruned under terminal-row retention, 12 candidates, 3 lessons added and 2 retired)_
+_Last hygiene check: 2026-07-27 (M10 merged and archived — the parallel startup check now probes every daemon and separates a load failure from a non-response; review fixed six defects including a bound validated only after dispatch, M05's row pruned under terminal-row retention, 13 candidates, 2 lessons added and 2 retired)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
-| M10 | The startup check inspects every worker and says what went wrong | review | — | normal | milestones/M10-preflight-probe-coverage.md |
-| M05 | The final model is its own object | done | M02 | high | milestones/archive/M05-final-fit-path.md |
+| M10 | The startup check inspects every worker and says what went wrong | done | — | normal | milestones/archive/M10-preflight-probe-coverage.md |
 | M06 | A guide that says what to report | done | M05 | normal | milestones/archive/M06-nested-cv-vignette.md |
 | M07 | Parallel outer folds | done | M02 | high | milestones/archive/M07-parallel-outer-folds.md |
 | M08 | Selection instability you can see | done | — | normal | milestones/archive/M08-autoplot-nested-results.md |
@@ -18,6 +17,7 @@ _Last hygiene check: 2026-07-26 (M09 merged and archived — a cancelled paralle
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
+- Cut this repo's GitHub Actions bill, which is ~5,393 billed minutes over ~100 runs on a private repo: macOS is 52% of it at only 260 raw minutes (×10 multiplier) while being the fastest job, 14 of 23 default-branch pushes were docs-only `cairn/` commits that fire the full 5-OS matrix (~27%), and 31 superseded runs burned ~897 billed minutes for want of a `concurrency` block (~17%) — added 2026-07-27 — measured from the jobs API; agreed shape is paths-ignore for `cairn/**`, concurrency cancel scoped off the default branch, and PRs on ubuntu+windows with the full matrix kept on `main` and tags; dependency caching is already in place via setup-r-dependencies and is not worth touching
 - Deploy the pkgdown site, so the URLs DESCRIPTION and README already advertise resolve — the site root 404s today, with no `gh-pages` branch and no deploy workflow (`usethis::use_pkgdown_github_pages()` is the standard route) — added 2026-07-26 — M06 review finding F6, scored 45; the dead URL predates M06, which only added a second link depending on it
 - Report the M01 diagnosis upstream on rsample#283 (cause is inside_resample()'s as.data.frame(); the 13x figure's reprex used a 10x10 scheme, not 5x2) — added 2026-07-25 — G4; promoted from the memory candidate, which became M01
 - Reduce what each mirai worker must serialize — every fold's split references the whole dataset, so parallel dispatch sends a copy per worker, which is the memory axis M01's in-process leanness does not cover (GP4) — added 2026-07-26 — M07 Out; measure before designing, since mirai may already share via its own mechanisms
