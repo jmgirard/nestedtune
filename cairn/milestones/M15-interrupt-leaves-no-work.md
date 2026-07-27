@@ -1,11 +1,11 @@
 # M15: An interrupted run stops the work it started
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m15-interrupt-leaves-no-work`
 
 ## Goal
 
@@ -87,6 +87,7 @@ comment needs work. All test-suite diagnosability work → M14.
 - 2026-07-27: plan chose cancelling the map on unwind over bounding `collect_mirai()`, because `R/nested-tune-grid.R:153-157` declines a per-fold time limit on the ground that a slow fold and a dead one are indistinguishable, and that stance is not this milestone's to overturn; falsified by a bound that distinguishes them, which would need its own decision entry.
 - 2026-07-27: plan chose a comment correction over a code change to the pre-flight probe, because `everywhere()` was shown by execution to return in 0.00 s on a saturated dispatcher-backed pool, disproving the blocking-send theory the scope was drafted around; falsified by a mirai version where the send does block.
 - 2026-07-27: criteria audit (fresh-context [O], pre-gate) found the drafted AC2 unsatisfiable — `collect_mirai()` returns only once every element has resolved, so classification always runs with zero outstanding tasks — and it was re-aimed at non-local exits generally; the drafted AC3 was found trivially satisfiable by moving a deadline assignment and was replaced by AC4's version anchor; the formals clause was scoped to exported functions, since `test-parallel-classify.R:439` already asserts it.
+- 2026-07-27: implement started on branch `m15-interrupt-leaves-no-work`; pre-gate probes against mirai 2.7.2 / nanonext 1.10.1 reproduced the defect with a real SIGINT (pool left `executing = 2`), confirmed the cancelling `on.exit()` fixes it (`executing = 0`), and found `stop_mirai()` on an already-collected map a harmless no-op.
 
 ## Decisions
 

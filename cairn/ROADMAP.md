@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-27 (M14 merged and archived — its own review caug
 |---|---|---|---|---|---|
 | M12 | Fitting time only where an assertion needs it | done | — | normal | milestones/archive/M12-test-suite-runtime.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
-| M15 | An interrupted run stops the work it started | planned | — | normal | milestones/M15-interrupt-leaves-no-work.md |
+| M15 | An interrupted run stops the work it started | in-progress | — | normal | milestones/M15-interrupt-leaves-no-work.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
 | M09 | A stopped run reports nothing, not a partial estimate | done | — | high | milestones/archive/M09-parallel-cancellation.md |
