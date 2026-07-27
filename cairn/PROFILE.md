@@ -59,10 +59,10 @@ rules in tracking-rules:
   and `.claude/**`, which cannot change what `R CMD check` sees; its effect is
   on the `push` trigger, since GitHub evaluates `paths-ignore` on a
   `pull_request` against the whole PR diff.
-- `.github/ci-usage.py` measures both over any window (baseline:
-  `.github/ci-usage-baseline.md`). It counts commits from `git log`, not the
-  runs they fired, and reports what cancelling reclaims rather than what a
-  superseded run cost — so it still works once the filter is live.
+- `.github/ci-usage.py` measures both over any window inside GitHub's 90-day
+  run retention (baseline: `.github/ci-usage-baseline.md`). It counts commits
+  from `git log`, not the runs they fired, and reports what cancelling
+  reclaims rather than what a superseded run cost — so it works once live.
 - **The merge clause, for both:** cairn's git model never merges red or pending
   CI. A filtered event produces no run, so its check is absent rather than
   pending and merging past it is correct; what it forbids is merging past a

@@ -45,7 +45,7 @@ candidate row. Dependency caching → already provided by
       `pull_request` triggers, listing exactly `cairn/**`, `CLAUDE.md`, and
       `.claude/**`, and no packaged path (`R/`, `tests/`, `man/`, `vignettes/`,
       `DESCRIPTION`, `NAMESPACE`, `.github/workflows/`) matches any of them.
-- [ ] AC4. The committed script reads the `paths-ignore` list out of the
+- [x] AC4. The committed script reads the `paths-ignore` list out of the
       workflow files, enumerates every default-branch commit in the window
       from `git log` — never from the runs those commits fired, so the
       classification survives the filter going live — and classifies each as
@@ -53,7 +53,7 @@ candidate row. Dependency caching → already provided by
       it reports 22 of 32 default-branch commits skipped, and every one of the
       remaining 10 changes at least one packaged path. Its classification is
       committed as evidence.
-- [ ] AC5. The same script, over the same window and counting only runs whose
+- [x] AC5. The same script, over the same window and counting only runs whose
       `status` is `completed`, reports the baseline recorded in this file:
       108 runs, 324 jobs, 2,276 raw machine-minutes (summed per job as
       `completed_at - started_at`); 30 runs / 628 min on skipped commits; 32
@@ -260,4 +260,94 @@ counts 32. Fixing this needs a gated AC4 amendment at
 `/milestone-implement` step 6 alongside the code fix, then re-review.
 Everything else verified: AC1, AC2, AC3, AC5, AC6, AC7 all hold on fresh
 evidence, and the consistency gate is green.
+
+## Review — second pass (2026-07-27)
+
+Re-verified after the return. Evidence gathered fresh; nothing carried over.
+
+### Acceptance criteria
+
+- **AC1 ✓** Both `concurrency` blocks unchanged and identical; the expression
+  is `false` on a default-branch push and `true` on every other ref these
+  workflows trigger on.
+- **AC2 ✓** Two independent demonstrations survive on the branch: runs
+  30247760551/30247760779 and 30248652805/30248651870 all `cancelled`, their
+  replacements 30247801003/30247800950 and 30248674159/30248674036 all
+  `success`.
+- **AC3 ✓** Four identical `paths-ignore` lists across both triggers of both
+  workflows; no packaged path matches, every tracking path does.
+- **AC4 ✓ (amended)** The commit set now comes from `git log`: 32 commit rows,
+  22 skipped, 10 run, and **0** run-commits without a packaged path. Confirmed
+  independently — a reviewer's own `git log main --since --until` returned the
+  same 32/22/10 split, and its own re-implementation of the classifier agreed.
+- **AC5 ✓ (amended)** Script re-run at review time is byte-identical to the
+  committed baseline. 108 runs / 324 jobs / 2276 min; 30 / 628 skipped; 32 /
+  823 superseded with 442 reclaimable; 9 / 248 off-branch with 162
+  reclaimable. A reviewer's independent implementation (its own pagination,
+  grouping by `workflow_id` rather than run name) reproduced every figure
+  including both amended ones.
+- **AC6 ✓** PROFILE.md names both divergences with a reason each and
+  reconciles the merge clause; the measurability claim is now bounded by
+  GitHub's 90-day run retention (G9).
+- **AC7 ✓** `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes in
+  6m1s, re-run fresh.
+
+### Consistency gate
+
+`cairn_validate` all checks passed · `devtools::document()` no diff ·
+`pkgdown::check_pkgdown()` no problems · `devtools::test()` 1175 pass, 0 fail ·
+PR CI green on all six checks (five matrix configs plus coverage) ·
+no `README.Rmd` in this repo · no NEWS entry, deliberately: no packaged
+behavior changed.
+
+### Independent review — second pass
+
+- **[S] prior-PR-comments lens:** no regressions. Verified each of the four
+  actioned fixes by reading the rewritten code rather than trusting the work
+  log, and confirmed F13, F8, F10 and F7's pagination half were fixed by the
+  same rewrite. F3, F6, F9, F12 remain latent and untouched.
+- **[S] blame-history lens:** no findings. The rewrite dropped no deliberate
+  behavior from the first version — the one behavior that changed *was* the
+  F11 bug — and both amendments made the criteria stricter, not looser.
+- **[O] diff-bug lens:** 9 findings against the rewrite; 4 scored ≥80, all
+  fixed in this pass rather than returned, since no criterion failed.
+
+**Actioned (score ≥ 80), all fixed on the branch:**
+
+- **G1 (93)** The block-agreement check compared only blocks that existed, so a
+  *deleted* `paths-ignore` block was invisible and the workflow comments'
+  claim was still false in the deletion direction. Verified silent in three
+  shapes. Now keyed by trigger, so a trigger carrying no list is a loud
+  failure; all three shapes exit non-zero, drift still caught, fallback intact.
+- **G2 (87)** `git diff-tree -m --first-parent` does not produce a
+  first-parent diff — `--first-parent` is a traversal option `diff-tree`
+  ignores, so `-m` emitted one diff per parent and `--no-commit-id`
+  concatenated them into a union across parents. Verified on a synthetic merge
+  (git 2.55): the old invocation printed both parents' files, the new
+  `--diff-merges=first-parent` prints only the first parent's. Dormant for the
+  baseline (no merge commits in the window).
+- **G3 (83)** `default_branch_commits()` was called twice and zipped
+  positionally, so two non-atomic `git log` reads could pair every commit with
+  the previous one's verdict. Now read off the entries themselves.
+- **G9 (85)** PROFILE.md's "measures both over any window" was falsified by the
+  90-day retention the script's own docstring records. Now bounded.
+
+**Logged below threshold (score < 80), 5 findings — surfaced, not actioned:**
+
+- G6 (74) a legal `--allow-empty` commit aborts the measurement, and the error
+  message's claim about empty file lists is untrue of empty commits.
+- G4 (68) the commit denominator reads the local default-branch ref while runs
+  come from the API, so a stale unfetched checkout shrinks it silently.
+- G7 (63) `superseded()` keys off `updated_at`, which a re-run bumps; with
+  `filter=all` a manual re-run's minutes could land in the reclaimed tail. No
+  `run_attempt > 1` exists in the window.
+- G5 (62) a legal YAML layout with the sequence dash at the key's indent exits
+  with "declares no entries" — loud, but misdiagnosed.
+- G8 (55) the 100-page cap advises "narrow the window", but only `--since`
+  reduces paging.
+
+### Gate outcome
+
+All seven criteria verified on fresh evidence; consistency gate green; four
+findings fixed in place, five logged. Ready for the merge gate.
 

@@ -103,44 +103,69 @@ def repo_facts() -> dict:
     return gh_api("repos/{owner}/{repo}")
 
 
-def parse_ignore_blocks(text: str, name: str) -> list[list[str]]:
-    """Every `paths-ignore:` block in one workflow file, each kept separate.
+def parse_ignore_block(lines: list[str], index: int, name: str) -> list[str]:
+    """The `paths-ignore:` sequence beginning at `lines[index]`.
 
-    Kept separate on purpose: a file carries one block per trigger, and merging
-    them here would hide the drift between triggers that duplicating the list
-    invites. Parsed by hand rather than with a YAML library so the script keeps
-    its no-dependency promise -- which means it must refuse anything it does not
+    Parsed by hand rather than with a YAML library so the script keeps its
+    no-dependency promise -- which means it must refuse anything it does not
     fully understand instead of quietly returning a wrong list.
     """
-    blocks: list[list[str]] = []
+    header = re.match(r"^(\s*)paths-ignore:(.*)$", lines[index])
+    assert header is not None
+    indent, trailing = header.group(1), header.group(2).strip()
+    if trailing and not trailing.startswith("#"):
+        sys.exit(
+            f"{name}:{index + 1}: `paths-ignore` is written inline "
+            f"({trailing!r}). This parser reads block sequences only, and "
+            "reading the wrong list is worse than refusing to read one."
+        )
+
+    items: list[str] = []
+    for follow in lines[index + 1:]:
+        if not follow.strip() or follow.strip().startswith("#"):
+            continue
+        if len(follow) - len(follow.lstrip()) <= len(indent):
+            break
+        entry = follow.strip()
+        if not entry.startswith("-"):
+            break
+        items.append(parse_glob(entry, name, index))
+
+    if not items:
+        sys.exit(f"{name}:{index + 1}: `paths-ignore` declares no entries")
+    return items
+
+
+def workflow_triggers(text: str, name: str) -> dict[str, list[str] | None]:
+    """Each `push`/`pull_request` trigger in one workflow, with its globs or None.
+
+    Keyed by trigger rather than collected into one list per file, for two
+    reasons. Merging within a file would hide drift between two triggers, which
+    is the drift duplicating the list actually invites -- GitHub Actions having
+    no YAML-anchor support to share one copy. And a trigger that carries no
+    filter at all has to stay visible as `None`: a deleted block is the failure
+    a list of what-exists cannot see, and it is the one that silently puts a
+    workflow back on every tracking commit.
+    """
     lines = text.splitlines()
+    found: dict[str, list[str] | None] = {}
     for index, line in enumerate(lines):
-        header = re.match(r"^(\s*)paths-ignore:(.*)$", line)
+        header = re.match(r"^(\s+)(push|pull_request):\s*(#.*)?$", line)
         if not header:
             continue
-        indent, trailing = header.group(1), header.group(2).strip()
-        if trailing and not trailing.startswith("#"):
-            sys.exit(
-                f"{name}:{index + 1}: `paths-ignore` is written inline "
-                f"({trailing!r}). This parser reads block sequences only, and "
-                "reading the wrong list is worse than refusing to read one."
-            )
-
-        items: list[str] = []
-        for follow in lines[index + 1:]:
+        indent, trigger = header.group(1), header.group(2)
+        globs: list[str] | None = None
+        for offset in range(index + 1, len(lines)):
+            follow = lines[offset]
             if not follow.strip() or follow.strip().startswith("#"):
                 continue
             if len(follow) - len(follow.lstrip()) <= len(indent):
                 break
-            entry = follow.strip()
-            if not entry.startswith("-"):
+            if re.match(r"^\s*paths-ignore:", follow):
+                globs = parse_ignore_block(lines, offset, name)
                 break
-            items.append(parse_glob(entry, name, index))
-
-        if not items:
-            sys.exit(f"{name}:{index + 1}: `paths-ignore` declares no entries")
-        blocks.append(items)
-    return blocks
+        found[trigger] = globs
+    return found
 
 
 def parse_glob(entry: str, name: str, line_no: int) -> str:
@@ -170,26 +195,40 @@ def parse_glob(entry: str, name: str, line_no: int) -> str:
 def read_paths_ignore() -> tuple[list[str], str]:
     """The `paths-ignore` globs the workflows declare, one list or an error.
 
-    Every block in every workflow must declare the same list. Blocks are
-    compared individually, so drift between two triggers of the SAME file is
-    caught -- which is the drift the duplicated list actually invites, GitHub
-    Actions having no YAML-anchor support to share one copy.
+    Every `push`/`pull_request` trigger across every workflow must carry the
+    same list. Two ways to fail, and the second is the one a survey of what
+    exists would miss: a trigger whose list DIFFERS, and a trigger carrying no
+    list at all. Either way the script refuses, because both mean the filter it
+    is about to measure is not the filter that is running.
     """
-    per_block: dict[str, tuple[str, ...]] = {}
+    declared: dict[str, tuple[str, ...]] = {}
+    unfiltered: list[str] = []
     files = sorted(WORKFLOW_DIR.glob("*.yaml")) + sorted(WORKFLOW_DIR.glob("*.yml"))
     for path in files:
-        for n, block in enumerate(parse_ignore_blocks(path.read_text(), path.name), 1):
-            per_block[f"{path.name}#{n}"] = tuple(block)
+        for trigger, globs in workflow_triggers(path.read_text(), path.name).items():
+            key = f"{path.name}:{trigger}"
+            if globs is None:
+                unfiltered.append(key)
+            else:
+                declared[key] = tuple(globs)
 
-    if not per_block:
+    if not declared and not unfiltered:
+        return sorted(FALLBACK_IGNORE), "fallback (no workflow declares paths-ignore)"
+    if not declared:
         return sorted(FALLBACK_IGNORE), "fallback (no workflow declares paths-ignore)"
 
-    if len(set(per_block.values())) > 1:
-        detail = "\n".join(f"  {k}: {list(v)}" for k, v in sorted(per_block.items()))
-        sys.exit(f"workflow `paths-ignore` blocks disagree:\n{detail}")
+    if unfiltered:
+        sys.exit(
+            "these triggers carry no `paths-ignore` while others do, so their "
+            "runs are not filtered and crediting them to the filter would "
+            f"overstate it: {', '.join(sorted(unfiltered))}"
+        )
+    if len(set(declared.values())) > 1:
+        detail = "\n".join(f"  {k}: {list(v)}" for k, v in sorted(declared.items()))
+        sys.exit(f"workflow `paths-ignore` lists disagree:\n{detail}")
 
-    sources = sorted({k.split("#")[0] for k in per_block})
-    return list(next(iter(per_block.values()))), ", ".join(sources)
+    sources = sorted({k.split(":")[0] for k in declared})
+    return list(next(iter(declared.values()))), ", ".join(sources)
 
 
 def matches_ignore(filename: str, globs: list[str]) -> bool:
@@ -217,12 +256,15 @@ def commit_files(sha: str) -> list[str]:
     Two commits print nothing under the obvious invocation, and both would then
     look like a commit changing no packaged file -- indistinguishable from a
     tracking-only one, and wrong in the reassuring direction. A merge needs
-    `--first-parent`; a root commit, having no parent to diff against, needs
-    `--root`. This repo's own first commit is a root commit, so the second case
-    is not hypothetical.
+    `--diff-merges=first-parent` -- NOT `-m --first-parent`, where
+    `--first-parent` is a traversal option `diff-tree` ignores, leaving `-m` to
+    emit one diff per parent and `--no-commit-id` to concatenate them into a
+    union across parents. A root commit, having no parent to diff against,
+    needs `--root`; this repo's own first commit is one, so that case is not
+    hypothetical either.
     """
-    out = git("diff-tree", "--no-commit-id", "--name-only", "-r", "-m",
-              "--first-parent", "--root", sha)
+    out = git("diff-tree", "--no-commit-id", "--name-only", "-r",
+              "--diff-merges=first-parent", "--root", sha)
     files = [f for f in out.split("\n") if f]
     if not files:
         sys.exit(
@@ -363,6 +405,7 @@ def measure(since_s: str, until_s: str) -> dict:
         files = commit_files(sha)
         packaged = sorted(f for f in files if not matches_ignore(f, globs))
         commits.append({
+            "full_sha": sha,
             "sha": sha[:9],
             "subject": git("log", "-1", "--format=%s", sha).strip(),
             "skipped": not packaged,
@@ -371,10 +414,10 @@ def measure(since_s: str, until_s: str) -> dict:
             "runs": len(runs_by_sha.get(sha, [])),
         })
 
-    skipped_shas = {
-        sha for sha, c in zip(default_branch_commits(branch, since_s, until_s), commits)
-        if c["skipped"]
-    }
+    # Read off the entries themselves, never a second `git log`: two
+    # non-atomic reads can return different lists, and zipping them positionally
+    # would pair every commit with the previous one's verdict, silently.
+    skipped_shas = {c["full_sha"] for c in commits if c["skipped"]}
     skipped_runs = [r for sha in skipped_shas for r in runs_by_sha.get(sha, [])]
     sup = superseded(runs)
     sup_runs = [r for r in runs if r["id"] in sup]
