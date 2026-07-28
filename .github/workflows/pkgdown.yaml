@@ -1,0 +1,91 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# Builds the pkgdown site `DESCRIPTION` and `README.md` have advertised since
+# M06, and publishes it to `gh-pages` from the default branch only.
+#
+# The `paths-ignore` list has to meet the same test the gating workflows' copies
+# meet: these paths cannot change what the run sees. `cairn/**` and `.claude/**`
+# are nothing pkgdown reads. `CLAUDE.md` is the one that needs saying, because
+# pkgdown DOES read it -- `pkgdown:::package_mds()` globs every root and
+# `.github/` markdown file against a hardcoded exclusion list with no config
+# knob, and a local build produced `docs/CLAUDE.html`. It is on this list only
+# because the `Drop the repo-internal pages` step below deletes that page before
+# anything is published; delete that step and this entry becomes a lie.
+#
+# The list is spelled out under both triggers because GitHub Actions does not
+# resolve YAML anchors in workflow files; `.github/ci-usage.py` reads every
+# copy back separately -- both triggers here, both in R-CMD-check.yaml, and
+# both in test-coverage.yaml -- and exits non-zero if any two of the six
+# disagree.
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - 'cairn/**'
+      - 'CLAUDE.md'
+      - '.claude/**'
+  pull_request:
+    paths-ignore:
+      - 'cairn/**'
+      - 'CLAUDE.md'
+      - '.claude/**'
+  workflow_dispatch:
+
+name: pkgdown.yaml
+
+permissions: read-all
+
+# Same reasoning as the gating workflows: a superseded run answers a question
+# about a commit nobody is waiting on. The default branch is exempt because it
+# is a distribution channel -- and here it is the branch that actually
+# publishes, so a cancelled run there would leave the site half-written.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+
+jobs:
+  pkgdown:
+    runs-on: ubuntu-latest
+
+    # Not the gating workflows' measured 20-minute cap, which is priced against
+    # a hang inside `test_check("nestedtune")`; this job runs no tests and the
+    # vignette starts no daemons. It is here only so a runaway build fails in
+    # minutes instead of burning GitHub's 360-minute default.
+    timeout-minutes: 20
+
+    # The one job in this repo that writes: `gh-pages` is pushed by the deploy
+    # step below. Every other workflow runs `read-all`.
+    permissions:
+      contents: write
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Build site
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
+
+      # `github.ref_name` rather than `github.event_name != 'pull_request'`: the
+      # looser form also publishes from a `workflow_dispatch` on a feature
+      # branch, which is exactly the accident this guard exists to refuse.
+      - name: Deploy to gh-pages
+        if: github.ref_name == github.event.repository.default_branch
+        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        with:
+          clean: false
+          branch: gh-pages
+          folder: docs

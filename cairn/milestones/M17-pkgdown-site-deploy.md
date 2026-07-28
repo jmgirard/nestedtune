@@ -1,11 +1,11 @@
 # M17: The advertised documentation site exists
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m17-pkgdown-site-deploy`
 
 ## Goal
 
@@ -84,7 +84,7 @@ default single-site layout.
 
 ## Tasks
 
-- [ ] T1 Add `.github/workflows/pkgdown.yaml` derived from the r-lib/actions
+- [x] T1 Add `.github/workflows/pkgdown.yaml` derived from the r-lib/actions
       example: `push` on the default branch, `pull_request`, and
       `workflow_dispatch`, with both triggers carrying the `paths-ignore` list
       the other workflows carry; `JamesIves/github-pages-deploy-action` to
@@ -111,6 +111,11 @@ default single-site layout.
 - 2026-07-27: plan gate chose keeping `CLAUDE.md` and `.github/ci-usage-baseline.md` off the site over shipping them, because pkgdown offers no exclusion knob and the only mechanism is a post-build delete costing about two lines; falsified by a pkgdown release adding a config option, which would make the delete the wrong shape.
 - 2026-07-27: plan gate chose ending at a committed workflow plus a handoff line over enabling GitHub Pages within the milestone, because that is a repository setting only the maintainer can change; falsified by nothing short of the maintainer delegating the setting change explicitly.
 - 2026-07-27: criteria audit ([O], fresh context) returned seven findings against the step-2 draft; six were fixed before the gate (AC2's unmeasurable "present in the build output", AC3's universal quantifier over a two-item list, AC4 naming only one of two copy-count comments and resting on the whole script rather than `read_paths_ignore()`, AC6 requiring a live URL unreachable before the maintainer acts, three uncovered deliverables, and the missing dependency D-entry) and the seventh — the publish step's guard — became the gate's second question.
+- 2026-07-27: implement started on `m17-pkgdown-site-deploy`; no implementation question gate — the plan gate settled the dependency, publish route, triggers, and internal-page choices, leaving nothing genuinely open.
+- 2026-07-27: T1 — `.github/workflows/pkgdown.yaml` added; `read_paths_ignore()` returns one list over `R-CMD-check.yaml, pkgdown.yaml, test-coverage.yaml` and the copies now number six, so both copy-count comments went from four to six.
+- 2026-07-27: T1 — the profile's test for a fourth `paths-ignore` copy ("cannot change what the run sees") holds for `cairn/**` and `.claude/**` outright, but `CLAUDE.md` passes it only because T3 deletes the page pkgdown builds from it; the workflow's header comment says so, so removing T3's step without the entry reads as a contradiction rather than a silent lie.
+- 2026-07-27: T1 — added a `concurrency` block and `timeout-minutes: 20` beyond what the plan named, matching the repo's other workflows; the cap is justified differently here (bounding a runaway against GitHub's 360-minute default) since this job runs no tests and the vignette starts no daemons.
+- 2026-07-27: T1 — chose `if: github.ref_name == github.event.repository.default_branch` over r-lib's `github.event_name != 'pull_request'`, which would also publish from a `workflow_dispatch` on a feature branch.
 
 ## Decisions
 
