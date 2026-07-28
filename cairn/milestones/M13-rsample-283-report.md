@@ -64,7 +64,7 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - [x] T1 Write `benchmarks/rsample-283-reprex.R`: build both schemes explicitly
       on `LetterRecognition`, measure with `lobstr::obj_size()` as
       `test-nested-resamples-memory.R` does, record versions/OS/seed.
-- [ ] T2 Derive the rsample-side closed-form model in the reprex, validate it
+- [x] T2 Derive the rsample-side closed-form model in the reprex, validate it
       at v=10/inner-5 against the committed 11.373×, and apply it to both
       schemes; state the agreement or the gap.
 - [ ] T3 Draft the comment as `benchmarks/rsample-283-comment.md`; show it
@@ -79,6 +79,8 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - 2026-07-27: branch `m13-rsample-283-report` cut from `main` at `74068e3`; status → in-progress.
 - 2026-07-27: substantive amendment at the implement question gate — AC2 named `analytic_size()` (the *lean* model, 2.633× at v=10/inner-5) as the source of 11.373×, which is in fact the *measured* rsample figure at `test-nested-resamples-memory.R:87`, and at inner-5 rather than the 10×10 the criterion asked it to corroborate. AC2 and T2 now require an rsample-side closed-form model derived in the reprex, validated against that measured 11.373×, then applied to both schemes; live + closed-form are GP2's two types.
 - 2026-07-27: T1 — `benchmarks/rsample-283-reprex.R` measures both schemes on `LetterRecognition` (rsample 1.3.2, R 4.6.1, aarch64-apple-darwin25.4.0, seed 35222): 10×10 = 33,715,400 B over 10 outer folds = **12.749×**; 5×2 = 13,871,840 B over 5 outer folds = **5.245×**. The issue's own call errors under 1.3.2 (`rlib_error_dots_nonempty`, naming `times = 5`), recorded by the script rather than worked around. Suite clean, 1247 pass.
+- 2026-07-27: T2 — closed-form model `rsample_size() = data_bytes*v + 4n(v-1)*inner_v` added to the reprex (v analysis frames + outer/inner analysis indices; `out_id` is `NA` on both, verified). It sits under all three measurements as an overhead-free model must: 10×5 −0.11%, 10×10 −0.20%, 5×2 −0.06%. The live 10×5 re-measurement reproduces the committed 11.373× to +0.00%. Contrast with the committed lean model is one term: `data_bytes*v` vs `data_bytes` — (v−1) copies of the data, which is the diagnosis.
+- 2026-07-27: T2 — the issue's 2022 figure (34,434,200 B) exceeds today's 10×10 (33,715,400 B) by 718,800 B against a predicted 720,000 B for ten explicit integer row-names vectors; `.row_names_info()` on an analysis frame now returns −18000 (compact). The phenomenon is unchanged; only row-name storage moved.
 - 2026-07-27: implement gate chose `benchmarks/rsample-283-comment.md` as the draft comment's home over the milestone file, because archiving compresses the milestone to ≤25 lines exactly when the maintainer goes to post it; and kept the rsample-side model in the benchmark script only, per Scope Out — a test on an external package's internals would fail this suite for upstream reasons.
 
 ## Decisions

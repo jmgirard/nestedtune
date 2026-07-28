@@ -14,12 +14,31 @@
 # Nothing here is asserted. This script exists so that every figure quoted to
 # rsample's maintainers is reproducible from a committed recipe, and so a later
 # rsample release that changes the answer can be caught by running it again.
+#
+# Two independent oracle types back each figure (GP2):
+#
+#   live         the measurement below, `lobstr::obj_size()` on a structure
+#                rsample builds here, at the version this script prints
+#   closed-form  `rsample_size()` below, the storage the structure must hold,
+#                recomputed with explicit arithmetic and independent of
+#                rsample's implementation
+#
+# The closed-form model is anchored to a third, already-committed measurement:
+# 11.373x at v = 10 / inner v = 5, recorded at
+# tests/testthat/test-nested-resamples-memory.R:87 by the oracle that backs
+# nestedtune's own lean constructor.
 
 stopifnot(requireNamespace("rsample", quietly = TRUE),
           requireNamespace("mlbench", quietly = TRUE),
           requireNamespace("lobstr", quietly = TRUE))
 
 SEED <- 35222 # the seed the issue's own reprex fixes
+
+# Committed elsewhere in this repo; see the header note above.
+COMMITTED_10x5 <- 11.373
+
+# What the issue reports, for the drift accounting at the end.
+ISSUE_BYTES <- 34434200
 
 cat(R.version.string, "|", R.version$platform, "\n")
 cat("rsample", as.character(packageVersion("rsample")),
@@ -30,10 +49,49 @@ cat("rsample", as.character(packageVersion("rsample")),
 env <- new.env(parent = emptyenv())
 utils::data("LetterRecognition", package = "mlbench", envir = env)
 d <- env$LetterRecognition
+n <- nrow(d)
 data_bytes <- as.numeric(lobstr::obj_size(d))
 
 cat(sprintf("LetterRecognition: %d x %d, %s B\n\n",
-            nrow(d), ncol(d), format(data_bytes, big.mark = ",")))
+            n, ncol(d), format(data_bytes, big.mark = ",")))
+
+# ---- the closed-form storage model ------------------------------------------
+#
+# What a `nested_cv` object must hold, term by term. `inside_resample()` calls
+# `as.data.frame()` on each outer split, which materializes that fold's
+# analysis set; the inner rset then references that copy rather than the
+# original data. So:
+#
+#   data_bytes                 one shared copy of the source data
+#   data_bytes * (v - 1)       v materialized analysis frames, each holding
+#                              n(v-1)/v of the n rows, so v * (v-1)/v copies
+#   4 * n * (v - 1)            the outer splits' analysis indices: n(v-1)/v
+#                              integers each, v of them. `out_id` is NA on
+#                              these -- a split indexing the whole data can
+#                              derive its complement.
+#   4 * n * (v-1) * (inner_v-1)  the inner splits' analysis indices: each inner
+#                              split holds m(inner_v-1)/inner_v of its fold's
+#                              m = n(v-1)/v rows, inner_v splits per fold,
+#                              v folds. `out_id` is NA on these too.
+#
+# R stores an integer in 4 bytes. The two index terms collapse:
+#
+#   4n(v-1) + 4n(v-1)(inner_v-1) = 4n(v-1) * inner_v
+#
+# The model omits per-object overhead -- the rsplit lists, the tibbles, their
+# attributes -- so it should sit slightly UNDER every measurement. A model
+# running OVER would mean the structure holds less than this accounting says,
+# and the diagnosis would be wrong.
+rsample_size <- function(data_bytes, n, v, inner_v) {
+  data_bytes * v + 4 * n * (v - 1) * inner_v
+}
+
+# For contrast, the model already committed for nestedtune's lean constructor
+# (test-nested-resamples-memory.R:43). Its data term does not scale with v --
+# that difference, (v-1) copies of the data, IS the issue.
+lean_size <- function(data_bytes, n, v, inner_v) {
+  data_bytes + 4 * n * (v - 1) * (inner_v + 1)
+}
 
 # ---- the call the issue actually made ---------------------------------------
 #
@@ -56,39 +114,79 @@ cat("the issue's original call, under rsample",
     },
     "\n\n")
 
-# ---- both schemes, built explicitly -----------------------------------------
+# ---- measurement against the model ------------------------------------------
 
-measure <- function(v, inner_v) {
+measure <- function(v, inner_v, note) {
   set.seed(SEED)
   nested <- rsample::nested_cv(d,
                                outside = rsample::vfold_cv(v = v),
                                inside = rsample::vfold_cv(v = inner_v))
   bytes <- as.numeric(lobstr::obj_size(nested))
+  model <- rsample_size(data_bytes, n, v, inner_v)
   data.frame(
     scheme = sprintf("%dx%d", v, inner_v),
-    v = v,
-    inner_v = inner_v,
+    note = note,
     outer_folds = nrow(nested),
     bytes = bytes,
     per_fold = bytes / nrow(nested),
-    ratio = bytes / data_bytes
+    ratio = bytes / data_bytes,
+    model_ratio = model / data_bytes,
+    resid_pct = 100 * (model / bytes - 1),
+    lean_ratio = lean_size(data_bytes, n, v, inner_v) / data_bytes
   )
 }
 
 schemes <- rbind(
-  measure(10, 10), # what the reprex built
-  measure(5, 2)    # what its prose describes
+  measure(10, 5, "the committed anchor"),
+  measure(10, 10, "what the reprex built"),
+  measure(5, 2, "what its prose describes")
 )
 
-cat("scheme  outer folds        bytes      per fold    x data\n")
+cat("scheme  outer        bytes     x data   model   resid    lean model\n")
 for (i in seq_len(nrow(schemes))) {
   r <- schemes[i, ]
-  cat(sprintf("%-6s  %11d  %11s  %12s  %8.3f\n",
+  cat(sprintf("%-6s  %5d  %11s  %9.3f %7.3f %+6.2f%%  %9.3f   %s\n",
               r$scheme, r$outer_folds,
               format(round(r$bytes), big.mark = ","),
-              format(round(r$per_fold), big.mark = ","),
-              r$ratio))
+              r$ratio, r$model_ratio, r$resid_pct, r$lean_ratio, r$note))
 }
-cat("\nissue #283 reports 34,434,200 B, 3,443,420 B per resample, 13.02037x.\n")
-cat("`obj_size(nested) / nrow(nested)` is the issue's own per-resample figure;",
-    "\nthe divisor it used is the outer fold count printed above.\n")
+
+anchor <- schemes[schemes$scheme == "10x5", ]
+cat(sprintf(
+  paste0("\nanchor: this run measures %.3fx at 10x5; the committed figure is ",
+         "%.3fx (%+.2f%%),\n        and the model predicts %.3fx (%+.2f%% ",
+         "against the committed figure).\n"),
+  anchor$ratio, COMMITTED_10x5,
+  100 * (anchor$ratio / COMMITTED_10x5 - 1),
+  anchor$model_ratio,
+  100 * (anchor$model_ratio / COMMITTED_10x5 - 1)))
+
+# ---- the issue's 2022 figure against today's --------------------------------
+#
+# The issue measured 34,434,200 B where the same scheme measures less today.
+# The gap is one explicit integer row-names vector per materialized analysis
+# frame: v frames of n(v-1)/v rows, 4 bytes each. Today those frames carry
+# compact row names, which `.row_names_info()` reports as a negative count.
+
+reprex_row <- schemes[schemes$scheme == "10x10", ]
+rownames_cost <- 4 * (n * 9 / 10) * 10
+set.seed(SEED)
+one_frame <- as.data.frame(
+  rsample::nested_cv(d,
+                     outside = rsample::vfold_cv(v = 10),
+                     inside = rsample::vfold_cv(v = 10))$splits[[1]]
+)
+cat(sprintf(
+  paste0("\ndrift: issue %s B - this run %s B = %s B;\n",
+         "       %d explicit row-names vectors would cost %s B.\n",
+         "       .row_names_info() on an analysis frame today: %d ",
+         "(negative = compact).\n"),
+  format(ISSUE_BYTES, big.mark = ","),
+  format(round(reprex_row$bytes), big.mark = ","),
+  format(round(ISSUE_BYTES - reprex_row$bytes), big.mark = ","),
+  10, format(rownames_cost, big.mark = ","),
+  .row_names_info(one_frame)))
+
+cat("\nissue #283 reports 3,443,420 B per resample, from",
+    "`obj_size(nested) / nrow(nested)`;\nthe divisor it used is the outer",
+    "fold count printed above.\n")
