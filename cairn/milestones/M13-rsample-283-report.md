@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2
-- **Branch/PR:** `m13-rsample-283-report`
+- **Branch/PR:** `m13-rsample-283-report` / https://github.com/jmgirard/nestedtune/pull/18
 
 ## Goal
 
@@ -28,11 +28,11 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 
 ## Acceptance criteria
 
-- [ ] AC1 A committed reprex script measures object size under an explicit
+- [x] AC1 A committed reprex script measures object size under an explicit
       `vfold_cv(v = 10)`/`vfold_cv(v = 10)` scheme and under the 5×2 scheme the
       issue's prose describes, showing the 13× figure attaches to the former and
       not the latter; it records the rsample version, R version, OS, and seed.
-- [ ] AC2 The reprex's measured figures are corroborated by a closed-form
+- [x] AC2 The reprex's measured figures are corroborated by a closed-form
       storage model for `rsample::nested_cv()` — one shared copy of the data,
       one materialized analysis frame per outer fold, and the outer and inner
       index vectors — recomputed in the reprex with explicit arithmetic. The
@@ -43,13 +43,13 @@ itself: M01 already ships the lean constructor this diagnosis explains.
       section. Measurement (live) and the model (closed-form) are the ≥2
       independent oracle types GP2 requires for a number the package is about
       to publish.
-- [ ] AC3 A committed draft comment states that `inside_resample()`'s
+- [x] AC3 A committed draft comment states that `inside_resample()`'s
       `as.data.frame()` is the cause; that the 13× figure came from
       `vfold_cv(times = 5)`/`(times = 2)` falling into `...` because
       `vfold_cv()` has no `times` argument, so both levels defaulted to `v = 10`;
       and that current rsample rejects that call via `check_dots_empty()`. It
       cites AC1's figures for both schemes.
-- [ ] AC4 The milestone file carries a handoff line naming rsample#283 as the
+- [x] AC4 The milestone file carries a handoff line naming rsample#283 as the
       target; the comment URL is recorded there once the maintainer posts it.
 
 ## Coverage
@@ -91,3 +91,17 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - 2026-07-27: **HANDOFF — target https://github.com/tidymodels/rsample/issues/283.** The body to post is `benchmarks/rsample-283-comment.md` below its `---` rule; re-run `benchmarks/rsample-283-reprex.R` first if rsample has moved past 1.3.2, since the comment quotes that version's figures. Posting is the maintainer's act and no script here takes it. **Comment URL: _(unposted as of 2026-07-27; append a dated work-log line recording it once posted)_.**
 
 ## Review
+
+### Acceptance criteria — fresh evidence
+
+- **AC1 — met.** `Rscript benchmarks/rsample-283-reprex.R`, run 2026-07-27, prints its own provenance line: R 4.6.1, aarch64-apple-darwin25.4.0, rsample 1.3.2, mlbench 2.1.10, lobstr 1.2.1, seed 35222. Both schemes are built with explicit `vfold_cv(v = )` calls: 10×10 = 33,715,400 B / **12.749×** over 10 outer folds; 5×2 = 13,871,840 B / **5.245×** over 5. The 13× attaches to the former — 12.749× reconciles to the issue's reported 13.020× through the script's drift term (718,800 B measured against 720,000 B predicted for ten explicit row-names vectors) — and cannot attach to the latter, which is less than half of it. The script also records that the issue's own call no longer runs at all under 1.3.2 (`rlib_error_dots_nonempty`, naming `times = 5`).
+- **AC2 — met; the model agrees, and the residuals carry the right sign.** `rsample_size()` is recomputed from four explicit terms (shared data; `v` materialized analysis frames; outer analysis indices; inner analysis indices — `out_id` verified `NA` on both split levels), collapsing to `data_bytes*v + 4n(v-1)*inner_v`. Validated at the anchor first: the same run re-measures **11.373×** at v=10/inner-5, reproducing the committed figure at `tests/testthat/test-nested-resamples-memory.R:87` to **+0.00%**, and the model predicts 11.361× there, **−0.10%** against it. Applied to the two reported schemes it gives 12.722× against a measured 12.749× (**−0.20%**) and 5.242× against 5.245× (**−0.06%**). The gap is stated rather than merely small: the model is under every measurement, which is the only direction a storage-only accounting may err — it charges data and index vectors and nothing for the `rsplit` lists and tibbles themselves. A model running *over* would mean the structure holds less than the diagnosis claims. Two independent oracle types back each published figure per GP2: **live** (`lobstr::obj_size()` on a structure rsample builds at run time) and **closed-form** (the arithmetic above, independent of rsample's implementation).
+- **AC3 — met, all four clauses located in `benchmarks/rsample-283-comment.md`.** The cause: lines 42–52 quote `inside_resample()`'s body and state that `as.data.frame()` on an `rsplit` materializes the fold's analysis set, leaving `v - 1` extra copies of the dataset. The `times` story: lines 20–24 state `vfold_cv()` has no `times` argument (its arguments are `v` and `repeats`), that `times` belongs to `bootstraps()` — the landing-page example the issue says it adapted — that in 2022 it fell into `...`, and that both levels took `v = 10`; line 25 adds the reprex's own corroboration, `34,434,200 / nrow = 3,443,420` implying a divisor of 10. Current rejection: line 29 names `check_dots_empty()` and lines 31–36 quote the resulting error verbatim. Both schemes' figures: the table at lines 76–79 carries 12.749× and 5.245× with their byte counts. Each source fact was re-verified by execution before drafting, not taken from the tracking record.
+- **AC4 — met, with one carry-forward.** The milestone-local `## Decisions` section carries the handoff naming https://github.com/tidymodels/rsample/issues/283 as the target, pointing at the postable body and requiring a re-run if rsample moves past 1.3.2. The URL slot is explicitly unfilled. Carry-forward: that section is history and is never edited (IP4), so the URL arrives as an appended work-log line — and since the milestone is archived at `done` *before* the maintainer posts, the archive summary must carry the handoff forward or the pointer is lost at the moment it is needed.
+
+No `Driving RR:` on this milestone, so the projection-vs-outcome record no-ops.
+
+### Consistency gate
+
+- Universal: `cairn_validate.py` exit 0 — 16 CHECKs PASS, 8 advisories OK. No principle changed, so `cairn_impact.py` was not run.
+- Toolchain (`r-package` `consistency-gate` slot): `devtools::check()` **Status: OK** (0 errors, 0 warnings, 0 notes; tests 67s/114s). `devtools::document()` produces no diff. `pkgdown::check_pkgdown()` — "No problems found". No `README.Rmd` in this repo, so the knit check is a clean no-op. No new top-level files: both additions sit under `benchmarks/`, already `.Rbuildignore`d. No `NEWS.md` entry, correctly — the diff touches no package code and nothing user-visible changed.
