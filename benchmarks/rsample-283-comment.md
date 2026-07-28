@@ -17,9 +17,11 @@ because the fix only makes sense once the shape of the growth is clear.
 ### What the reprex measured
 
 The reprex reads as an outer 5-fold with an inner 2-fold, but `vfold_cv()` has
-no `times` argument — its arguments are `v` and `repeats`. `times` belongs to
-`bootstraps()`, which is exactly what the landing-page example being adapted
-here uses, so this is an easy slip to make. In 2022 the argument fell into
+no `times` argument — its fold count is `v`, and `repeats` is what repeats the
+scheme. `times` is the corresponding argument on several of the Monte-Carlo and
+bootstrap functions, `bootstraps()` among them — and the landing-page bootstrap
+example this reprex says it adapted is one of those, so this is an easy slip to
+make. In 2022 the argument fell into
 `...` and was silently discarded, and both levels took the default `v = 10`.
 The reprex's own output shows it: `obj_size(nested) / nrow(nested)` gives
 `3,443,420`, which is `34,434,200 / 10` — a 5-fold outer scheme would have
