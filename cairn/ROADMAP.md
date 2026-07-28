@@ -11,7 +11,7 @@ _Last hygiene check: 2026-07-27 (M16 merged and archived — the daemon tests' d
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
 | M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
-| M17 | The advertised documentation site exists | planned | — | normal | milestones/M17-pkgdown-site-deploy.md |
+| M17 | The advertised documentation site exists | review | — | normal | milestones/M17-pkgdown-site-deploy.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent

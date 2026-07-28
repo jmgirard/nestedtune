@@ -17,6 +17,10 @@ tests/testthat/_snaps/**/*.new.*
 .Rhistory
 .RData
 .Ruserdata
+# The pkgdown site is built by .github/workflows/pkgdown.yaml and published to
+# the gh-pages branch, so a `docs/` tree is only ever a local build artifact.
+# `.Rbuildignore` already keeps it out of the tarball; this keeps it out of git.
+docs/
 
 # Python bytecode, from running .github/ci-usage.py
 __pycache__/

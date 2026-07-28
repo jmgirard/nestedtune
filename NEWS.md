@@ -1,5 +1,11 @@
 # nestedtune 0.0.0.9000
 
+* The reference pages and `vignette("nested-cv")` are now built into a
+  documentation website, rebuilt whenever a change lands on the default branch
+  that the package itself can see. `DESCRIPTION` and the README have pointed at
+  <https://jmgirard.github.io/nestedtune/> since the guide was added; the site
+  goes live there once GitHub Pages is switched on for the repository.
+
 * Interrupting a parallel run now asks the folds it had already sent to the
   workers to stop. Before, the interrupt gave you your prompt back but left
   those folds computing — work whose results nobody would ever read, on the
