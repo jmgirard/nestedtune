@@ -69,7 +69,7 @@ itself: M01 already ships the lean constructor this diagnosis explains.
       schemes; state the agreement or the gap.
 - [x] T3 Draft the comment as `benchmarks/rsample-283-comment.md`; show it
       verbatim at the review gate before anything is committed as final.
-- [ ] T4 Add the handoff line; leave the URL slot for the maintainer to fill.
+- [x] T4 Add the handoff line; leave the URL slot for the maintainer to fill.
 
 ## Work log
 
@@ -82,8 +82,11 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - 2026-07-27: T2 — closed-form model `rsample_size() = data_bytes*v + 4n(v-1)*inner_v` added to the reprex (v analysis frames + outer/inner analysis indices; `out_id` is `NA` on both, verified). It sits under all three measurements as an overhead-free model must: 10×5 −0.11%, 10×10 −0.20%, 5×2 −0.06%. The live 10×5 re-measurement reproduces the committed 11.373× to +0.00%. Contrast with the committed lean model is one term: `data_bytes*v` vs `data_bytes` — (v−1) copies of the data, which is the diagnosis.
 - 2026-07-27: T2 — the issue's 2022 figure (34,434,200 B) exceeds today's 10×10 (33,715,400 B) by 718,800 B against a predicted 720,000 B for ten explicit integer row-names vectors; `.row_names_info()` on an analysis frame now returns −18000 (compact). The phenomenon is unchanged; only row-name storage moved.
 - 2026-07-27: T3 — `benchmarks/rsample-283-comment.md` drafted, marked not-posted in its own header. Three source facts re-verified by execution before drafting: `vfold_cv()`'s formals are `v`/`repeats` with `check_dots_empty()` on its first line, `bootstraps()` is the one carrying `times` (and is the landing-page example the issue says it adapted), and `inside_resample()` is two lines whose first is `call_modify(cl, data = as.data.frame(src))`.
+- 2026-07-27: T4 — handoff recorded in the milestone-local Decisions section naming rsample#283 as the target, with the comment URL left unfilled; it is appended as a dated work-log line once the maintainer posts, since the Decisions section is history and never edited (IP4).
 - 2026-07-27: implement gate chose `benchmarks/rsample-283-comment.md` as the draft comment's home over the milestone file, because archiving compresses the milestone to ≤25 lines exactly when the maintainer goes to post it; and kept the rsample-side model in the benchmark script only, per Scope Out — a test on an external package's internals would fail this suite for upstream reasons.
 
 ## Decisions
+
+- 2026-07-27: **HANDOFF — target https://github.com/tidymodels/rsample/issues/283.** The body to post is `benchmarks/rsample-283-comment.md` below its `---` rule; re-run `benchmarks/rsample-283-reprex.R` first if rsample has moved past 1.3.2, since the comment quotes that version's figures. Posting is the maintainer's act and no script here takes it. **Comment URL: _(unposted as of 2026-07-27; append a dated work-log line recording it once posted)_.**
 
 ## Review
