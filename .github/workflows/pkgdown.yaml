@@ -43,8 +43,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
+# Two jobs, deliberately. Building the site EXECUTES code from the ref being
+# built -- the vignette, every roxygen `@examples` block, and whatever those
+# load out of Suggests -- so the build job must not hold a token that can write
+# to this repository. It runs at `read-all` like every other job here and hands
+# `docs/` on as an artifact; only `deploy`, which runs no repository code at
+# all, takes `contents: write`, and only on the default branch. Collapsing these
+# back into one job would put a writable token in the same process as
+# PR-authored code on every pull request.
 jobs:
-  pkgdown:
+  build:
     runs-on: ubuntu-latest
 
     # Not the gating workflows' measured 20-minute cap, which is priced against
@@ -52,11 +60,6 @@ jobs:
     # vignette starts no daemons. It is here only so a runaway build fails in
     # minutes instead of burning GitHub's 360-minute default.
     timeout-minutes: 20
-
-    # The one job in this repo that writes: `gh-pages` is pushed by the deploy
-    # step below. Every other workflow runs `read-all`.
-    permissions:
-      contents: write
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -70,9 +73,16 @@ jobs:
         with:
           use-public-rspm: true
 
+      # `local::.` installs the package itself, which is what makes
+      # `install = FALSE` correct on the build step below. The builder is NOT
+      # named here: `needs: website` resolves it from `Config/Needs/website` in
+      # DESCRIPTION (D-022). Adding `any::pkgdown` back would install it either
+      # way, which is the ad-hoc line D-022 rejected -- and it would make the
+      # DESCRIPTION field decorative, since dropping the field would still build
+      # green.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: local::.
           needs: website
 
       # pkgdown renders every root and `.github/` markdown file it does not
@@ -101,10 +111,9 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
-      # The two pages `DESCRIPTION` and `README.md` advertise. A pkgdown build
-      # that silently stopped emitting either would still deploy a green-looking
-      # site whose advertised links 404 -- which is the state this milestone
-      # exists to end.
+      # Guards the removal above: if the `Drop the repo-internal sources` step
+      # is ever weakened, this is what turns the resulting publication into a
+      # failed run instead of a live page.
       - name: Check the repo-internal pages are absent
         run: |
           found=0
@@ -117,6 +126,10 @@ jobs:
           exit "$found"
         shell: bash
 
+      # The two pages `DESCRIPTION` and `README.md` advertise. A pkgdown build
+      # that silently stopped emitting either would still deploy a green-looking
+      # site whose advertised links 404 -- which is the state this milestone
+      # exists to end.
       - name: Check the advertised pages exist
         run: |
           missing=0
@@ -129,12 +142,41 @@ jobs:
           exit "$missing"
         shell: bash
 
-      # `github.ref_name` rather than `github.event_name != 'pull_request'`: the
-      # looser form also publishes from a `workflow_dispatch` on a feature
-      # branch, which is exactly the accident this guard exists to refuse.
+      - name: Upload the built site
+        uses: actions/upload-artifact@v7
+        with:
+          name: pkgdown-site
+          path: docs
+          retention-days: 1
+
+  # Runs no code from the ref being built -- it only unpacks an artifact and
+  # pushes it -- which is what makes `contents: write` safe to hold here and
+  # nowhere else in this repository.
+  #
+  # `github.ref_name` rather than `github.event_name != 'pull_request'`: the
+  # looser form also publishes from a `workflow_dispatch` on a feature branch,
+  # which is exactly the accident this guard exists to refuse. It is on the job
+  # so a pull request never starts the writable job at all.
+  deploy:
+    needs: build
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: pkgdown-site
+          path: docs
+
+      # Pinned by commit SHA, not by tag: tags are mutable, and this is the one
+      # action in the repository that runs with a token able to write to it.
+      # `test-coverage.yaml` pins codecov the same way.
       - name: Deploy to gh-pages
-        if: github.ref_name == github.event.repository.default_branch
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # v4.5.0
         with:
           clean: false
           branch: gh-pages
