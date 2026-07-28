@@ -596,6 +596,37 @@ surface is untouched (rsample, cli, rlang, tune >= 2.0.0, workflows, parsnip,
 ggplot2). D-018's no-knob line is not engaged — nothing here reaches an exported
 signature.
 
+### D-022 (2026-07-27): `pkgdown` is declared in `DESCRIPTION` as `Config/Needs/website` — extends the dependency set D-021 last touched, and is the first entry outside `Imports`/`Suggests`
+
+**Context:** `DESCRIPTION:15` and `README.md:110` have advertised
+`https://jmgirard.github.io/nestedtune/` since M06, and the URL 404s: there is no
+`gh-pages` branch and `gh api repos/jmgirard/nestedtune/pages` returns HTTP 404
+(observed 2026-07-27). `_pkgdown.yml` is committed and
+`pkgdown::check_pkgdown()` reports "No problems found.", so the site's structure
+is ready and only the build-and-publish path is missing. `pkgdown` is declared
+nowhere in `DESCRIPTION`, so `r-lib/actions/setup-r-dependencies@v2` — which the
+repo's other two checked workflows already use — has nothing to resolve.
+
+**Decision:** `DESCRIPTION` gains `Config/Needs/website: pkgdown`, unpinned, and
+`.github/workflows/pkgdown.yaml`'s dependency step declares `needs: website`.
+Considered and rejected at the M17 plan gate: naming `any::pkgdown` in the
+workflow's `extra-packages` line, which adds no `DESCRIPTION` field and needs no
+entry here, but leaves the dependency legible only inside a workflow file — every
+other tool this package leans on is discoverable from `DESCRIPTION`, and the
+r-lib action exists to read exactly this field. A version floor
+(`pkgdown (>= 2.2.0)`, the version that produced M17's local build evidence) was
+also weighed and declined: nothing has yet shown an older builder behaves
+differently, and a pin nothing needs is a pin nobody maintains.
+
+**Consequences:** The user-facing install weight is unchanged and the
+hard-dependency surface is untouched (rsample, cli, rlang, tune >= 2.0.0,
+workflows, parsnip, ggplot2); `Config/Needs/*` is read by CI tooling and never
+by `install.packages()`. It is the first declared dependency that lives outside
+`Imports` and `Suggests` alike, and the first that serves neither a result, a
+document shipped in the package, nor the diagnosis of the suite, but the
+publication of documentation the package already contains. D-018's no-knob line
+is not engaged — nothing here reaches an exported signature.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
