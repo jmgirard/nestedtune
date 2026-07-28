@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M16 merged and archived — the daemon tests' declared worst case is now written down and guarded, classify 1008.7→408.7 s and all four files 4743.7→1983.7 s; the 2026-07-27 stall reads as a file running its legal worst case, not a wedge. 5 findings, 1 actioned; M10's row pruned at terminal-row retention, 19 candidates; 1 lesson added and 2 corrected/extended in place, the M02 cli-pluralization line pruned at cap)_
+_Last hygiene check: 2026-07-27 (M16 merged and archived — the daemon tests' declared worst case is now written down and guarded: classify 1008.7→408.7 s, all four files 4743.7→1983.7 s, and the stall reads as a file running its legal worst case, not a wedge. 5 findings, 1 actioned; M10's row pruned, 19 candidates, 1 lesson added and 2 corrected in place)_
 
 ## Milestones
 
