@@ -32,12 +32,17 @@ itself: M01 already ships the lean constructor this diagnosis explains.
       `vfold_cv(v = 10)`/`vfold_cv(v = 10)` scheme and under the 5×2 scheme the
       issue's prose describes, showing the 13× figure attaches to the former and
       not the latter; it records the rsample version, R version, OS, and seed.
-- [ ] AC2 The reprex's 10×10 figure is corroborated by the analytic oracle
-      already committed at `tests/testthat/test-nested-resamples-memory.R:43`
-      (`analytic_size()`, which records 11.373× for rsample at v=10/inner-5 on
-      the same `LetterRecognition` data), and the agreement or the gap is stated
-      in the Review section — satisfying GP2's ≥2-independent-types bar for a
-      number the package is about to publish.
+- [ ] AC2 The reprex's measured figures are corroborated by a closed-form
+      storage model for `rsample::nested_cv()` — one shared copy of the data,
+      one materialized analysis frame per outer fold, and the outer and inner
+      index vectors — recomputed in the reprex with explicit arithmetic. The
+      model is first validated against the already-committed *measured* rsample
+      figure of 11.373× at v=10/inner-5
+      (`tests/testthat/test-nested-resamples-memory.R:87`), then applied to the
+      10×10 and 5×2 schemes; the agreement or the gap is stated in the Review
+      section. Measurement (live) and the model (closed-form) are the ≥2
+      independent oracle types GP2 requires for a number the package is about
+      to publish.
 - [ ] AC3 A committed draft comment states that `inside_resample()`'s
       `as.data.frame()` is the cause; that the 13× figure came from
       `vfold_cv(times = 5)`/`(times = 2)` falling into `...` because
@@ -59,10 +64,11 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - [ ] T1 Write `benchmarks/rsample-283-reprex.R`: build both schemes explicitly
       on `LetterRecognition`, measure with `lobstr::obj_size()` as
       `test-nested-resamples-memory.R` does, record versions/OS/seed.
-- [ ] T2 Compare the 10×10 figure against `analytic_size()`'s 11.373× and state
-      the agreement or the gap.
-- [ ] T3 Draft the comment; show it verbatim at the review gate before anything
-      is committed as final.
+- [ ] T2 Derive the rsample-side closed-form model in the reprex, validate it
+      at v=10/inner-5 against the committed 11.373×, and apply it to both
+      schemes; state the agreement or the gap.
+- [ ] T3 Draft the comment as `benchmarks/rsample-283-comment.md`; show it
+      verbatim at the review gate before anything is committed as final.
 - [ ] T4 Add the handoff line; leave the URL slot for the maintainer to fill.
 
 ## Work log
@@ -71,6 +77,8 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - 2026-07-27: plan gate chose ending at a committed draft plus handoff over posting within the milestone, because the post is irreversible and public and would precede the review that validates its figures; falsified by nothing short of the maintainer delegating the post explicitly.
 - 2026-07-27: plan gate chose re-measuring both schemes explicitly over re-running the issue's original reprex, because current rsample rejects that call via `check_dots_empty()` (G4) so it cannot be run at all; falsified by evidence that an rsample version accepting the original call is the right comparison target.
 - 2026-07-27: branch `m13-rsample-283-report` cut from `main` at `74068e3`; status → in-progress.
+- 2026-07-27: substantive amendment at the implement question gate — AC2 named `analytic_size()` (the *lean* model, 2.633× at v=10/inner-5) as the source of 11.373×, which is in fact the *measured* rsample figure at `test-nested-resamples-memory.R:87`, and at inner-5 rather than the 10×10 the criterion asked it to corroborate. AC2 and T2 now require an rsample-side closed-form model derived in the reprex, validated against that measured 11.373×, then applied to both schemes; live + closed-form are GP2's two types.
+- 2026-07-27: implement gate chose `benchmarks/rsample-283-comment.md` as the draft comment's home over the milestone file, because archiving compresses the milestone to ≤25 lines exactly when the maintainer goes to post it; and kept the rsample-side model in the benchmark script only, per Scope Out — a test on an external package's internals would fail this suite for upstream reasons.
 
 ## Decisions
 
