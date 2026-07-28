@@ -92,13 +92,14 @@ default single-site layout.
       `if: github.ref_name == github.event.repository.default_branch`. Update
       both copy-count comments (`R-CMD-check.yaml:12`, `test-coverage.yaml:3`)
       from four to six, and confirm `read_paths_ignore()` still returns one list.
-- [ ] T2 Add `Config/Needs/website: pkgdown` to `DESCRIPTION` and `needs: website`
+- [x] T2 Add `Config/Needs/website: pkgdown` to `DESCRIPTION` and `needs: website`
       to the workflow's `setup-r-dependencies` step; add a `check_pkgdown()`
       step before the build; add `docs/` to `.gitignore`; add the step asserting
       `docs/index.html` and `docs/articles/nested-cv.html` exist.
-- [ ] T3 Delete `docs/CLAUDE.html` and `docs/ci-usage-baseline.html`, and their
-      `sitemap.xml` entries, after the build step and before the publish step;
-      assert their absence in the same run.
+- [x] T3 Remove `CLAUDE.md` and `.github/ci-usage-baseline.md` from the runner's
+      checkout before the build, so pkgdown never renders them; assert
+      `docs/CLAUDE.html` and `docs/ci-usage-baseline.html` are absent after the
+      build and before the publish step.
 - [ ] T4 Add the handoff line naming the Pages setting; leave the URL-status
       slot empty for after it is enabled.
 
@@ -116,6 +117,10 @@ default single-site layout.
 - 2026-07-27: T1 — the profile's test for a fourth `paths-ignore` copy ("cannot change what the run sees") holds for `cairn/**` and `.claude/**` outright, but `CLAUDE.md` passes it only because T3 deletes the page pkgdown builds from it; the workflow's header comment says so, so removing T3's step without the entry reads as a contradiction rather than a silent lie.
 - 2026-07-27: T1 — added a `concurrency` block and `timeout-minutes: 20` beyond what the plan named, matching the repo's other workflows; the cap is justified differently here (bounding a runaway against GitHub's 360-minute default) since this job runs no tests and the vignette starts no daemons.
 - 2026-07-27: T1 — chose `if: github.ref_name == github.event.repository.default_branch` over r-lib's `github.event_name != 'pull_request'`, which would also publish from a `workflow_dispatch` on a feature branch.
+- 2026-07-27: T3 amended (minor, mechanism only — AC2 is unchanged and still verified exactly as written). The plan said delete the two built HTML pages after the build; implementation removes the two markdown SOURCES before it instead, because `pkgdown:::get_site_paths()` globs every `*.html` under `docs/` and both `sitemap.xml` and `search.json` are built from that glob — so a post-build delete would leave the pages in the sitemap and `CLAUDE.md`'s full text in the public search index. Verified by execution: `package_mds()` on a fixture returns both files before removal and nothing after.
+- 2026-07-27: T2 + T3 landed in one checkpoint commit rather than two, because both edit `.github/workflows/pkgdown.yaml` and splitting them would have meant staging partial hunks of one file.
+- 2026-07-27: T2 — added a `NEWS.md` entry as a discovered sub-task the plan did not name; the profile's consistency-gate requires the changelog to cover user-visible change, and a published documentation site qualifies. The entry describes the mechanism (built and republished on default-branch changes), which is true at merge; the URL itself resolves only once the maintainer completes AC6's handoff.
+- 2026-07-27: verify slot — `devtools::test()` clean before checking T2/T3 off; an earlier run was discarded because it was piped through `tail`, so the reported exit code was the pipe's and the results summary had been truncated away.
 
 ## Decisions
 
