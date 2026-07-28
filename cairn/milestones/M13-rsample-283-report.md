@@ -1,11 +1,11 @@
 # M13: The rsample diagnosis reaches its maintainers
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** low
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2
-- **Branch/PR:** —
+- **Branch/PR:** `m13-rsample-283-report`
 
 ## Goal
 
@@ -70,6 +70,7 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - 2026-07-27: created by /milestone-plan.
 - 2026-07-27: plan gate chose ending at a committed draft plus handoff over posting within the milestone, because the post is irreversible and public and would precede the review that validates its figures; falsified by nothing short of the maintainer delegating the post explicitly.
 - 2026-07-27: plan gate chose re-measuring both schemes explicitly over re-running the issue's original reprex, because current rsample rejects that call via `check_dots_empty()` (G4) so it cannot be run at all; falsified by evidence that an rsample version accepting the original call is the right comparison target.
+- 2026-07-27: branch `m13-rsample-283-report` cut from `main` at `74068e3`; status → in-progress.
 
 ## Decisions
 
