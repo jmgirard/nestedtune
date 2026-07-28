@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M17 merged and archived — the docs site now builds and publishes from main, with the build job stripped of write access and this repo's internal notes kept off the public site; Pages itself is the maintainer's to switch on. 14 findings, 5 actioned; M11's row pruned, 21 candidates, 2 lessons added and the 2 stalest pruned to hold the cap)_
+_Last hygiene check: 2026-07-27 (M13 merged and archived — rsample#283's 13x is shown to be a 10x10 figure, the cause pinned, and a drafted comment waits for the maintainer to post; its handoff rides in M13's archive summary, since the URL arrives after the close. 27 findings, 6 actioned; M12's row pruned, the candidate M13 became removed leaving 20, 1 lesson added and the stalest pruned)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M12 | Fitting time only where an assertion needs it | done | — | normal | milestones/archive/M12-test-suite-runtime.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
 | M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
 | M17 | The advertised documentation site exists | done | — | normal | milestones/archive/M17-pkgdown-site-deploy.md |
-| M13 | The rsample diagnosis reaches its maintainers | review | — | low | milestones/M13-rsample-283-report.md |
+| M13 | The rsample diagnosis reaches its maintainers | done | — | low | milestones/archive/M13-rsample-283-report.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
@@ -29,7 +28,6 @@ _Last hygiene check: 2026-07-27 (M17 merged and archived — the docs site now b
 - Make the published site's hygiene self-maintaining rather than a two-name list — added 2026-07-27 — M17 review findings F4 (65), F5 (35), F6 (45), all below the action threshold and grouped because one pass fixes them. Three gaps, same area: the absent-assertion checks only `docs/CLAUDE.html` and `docs/ci-usage-baseline.html`, not `search.json`/`sitemap.xml`, so a future revert to the rejected post-build-delete shape would publish `CLAUDE.md`'s full text to the site's own search box with a green run; the `rm` and the assertion both hardcode two filenames, so a later `AGENTS.md` at the root publishes silently; and `clean: false` on the deploy action makes publication additive, so anything that reaches `gh-pages` once stays served forever, including a page renamed away pre-1.0 under D-003. Promote on any repo-internal markdown file being added at the root or in `.github/`, which is the event the hardcoded list cannot survive
 - Bring the CI records up to three workflows — added 2026-07-27 — M17 review findings F9 (65) and F13 (35), both below the action threshold. `.github/ci-usage-baseline.md:5` still records the path filter as "read from R-CMD-check.yaml, test-coverage.yaml" when three workflows now declare it, and M11's baseline numbers (108 runs / 2276 machine-min / 324 jobs) were measured before a fourth workflow existed that runs ~2m30s on every qualifying push and PR; `cairn/PROFILE.md`'s test-doctrine slot still describes CI as the usethis pair plus four divergences scoped to "both gating workflows", so a reader of that slot alone does not learn the third workflow exists. Promote on the next CI-economy audit, whose comparison against the stale baseline would read the added workflow as a regression in the filter
 - Publish a development-version site under `/dev/` (pkgdown's `development: mode`), so a released site and the in-development one stop being the same pages — added 2026-07-27 — M17 Out. At `0.0.0.9000` pkgdown's default `mode: release` builds to the site root, which is what M17 ships and what the advertised URL points at; `mode: devel` moves it under `/dev/` and leaves the root empty until a release exists, which is why M17 keeps the default. Promote on the first tagged release, whose site would otherwise overwrite the development pages at the same URLs
-- Report the M01 diagnosis upstream on rsample#283 (cause is inside_resample()'s as.data.frame(); the 13x figure's reprex used a 10x10 scheme, not 5x2) — added 2026-07-25 — G4; promoted from the memory candidate, which became M01
 - Reduce what each mirai worker must serialize — every fold's split references the whole dataset, so parallel dispatch sends a copy per worker, which is the memory axis M01's in-process leanness does not cover (GP4) — added 2026-07-26 — M07 Out; measure before designing, since mirai may already share via its own mechanisms
 - Probe remote mirai daemon pools, which nothing verifies today — RR03 Q5 established the load requirement by execution only for local daemons and marked the remote case *inferred* from the same mechanism, so a remote host missing the package still surfaces as opaque per-fold worker failures — added 2026-07-26 — M10 Out, carried over from the absorbed pre-flight rows; needs a remote host to test against before it is plannable
 - Give the orchestration tests a metric set that is not tune's default, so a dropped `metrics` argument fails something — today every fixture uses `metric_set(rmse, rsq)`, which equals the regression default, and `metrics = NULL` gives identical results — added 2026-07-26 — M05 review finding F1, scored 78 (below the action threshold); affects `nested_tune_grid()` as well as `nested_final_fit()`
