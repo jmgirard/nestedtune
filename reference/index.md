@@ -1,0 +1,43 @@
+# Package index
+
+## Nested resampling
+
+Build a nested resampling design whose size does not grow by a copy of
+the data for every outer fold.
+
+- [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+  : Build a nested resampling design without copying the data per outer
+  fold
+
+## Running the loop
+
+Tune on each outer fold’s inner resamples, select, then fit and score on
+the outer split — and keep what each fold chose.
+
+- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  : Run the nested cross-validation loop
+- [`collect_metrics(`*`<nested_results>`*`)`](https://jmgirard.github.io/nestedtune/reference/collect_metrics.nested_results.md)
+  : Collect the metrics from a nested resampling run
+- [`print(`*`<nested_results>`*`)`](https://jmgirard.github.io/nestedtune/reference/print.nested_results.md)
+  : Print a nested cross-validation result
+- [`autoplot(`*`<nested_results>`*`)`](https://jmgirard.github.io/nestedtune/reference/autoplot.nested_results.md)
+  : Plot a nested cross-validation result
+
+## The final model
+
+Run the same tuning procedure once more with the whole dataset in hand,
+and get back the model to deploy — as its own object, never a field on
+the results.
+
+- [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  : Fit the final model after nested cross-validation
+- [`print(`*`<nested_final_fit>`*`)`](https://jmgirard.github.io/nestedtune/reference/print.nested_final_fit.md)
+  : Print a final fit
+
+## Re-exports
+
+- [`reexports`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
+  [`collect_metrics`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
+  [`extract_workflow`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
+  [`autoplot`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
+  : Objects exported from other packages
