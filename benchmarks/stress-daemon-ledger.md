@@ -41,6 +41,27 @@ The next instrumentation step is per-*test* granularity within that file.
 testthat exposes no per-test hook a reporter can use for this, so the file
 carries it by hand.
 
+> **Superseded 2026-07-27 (M16).** The last sentence above is wrong, and the
+> paragraph is left standing because this is a dated record of what was believed
+> when the localization was written. testthat's `Reporter` class *does* expose a
+> per-test hook: `start_test(context, test)` and `end_test(context, test)` fire
+> once per `test_that()` block carrying the block's description — verified by
+> execution against testthat 3.3.2. So per-test tracing needed no by-hand
+> instrumentation in this file, and M16 got it for the whole suite by extending
+> `HangTraceReporter` instead.
+>
+> **The three suspects also resolved, two of them by execution (M16 plan gate,
+> mirai 2.7.2).** The fixed port cannot wedge: `daemons(url =)` against an
+> occupied port raises `10 | Address in use` in 0.03 s. The teardown ordering
+> cannot wedge either: `daemons(0)` returns in 0.21 s with a live 20-second task
+> outstanding — though it does leave that task running, which is the orphan `R`
+> this job's cleanup reported. What remains is the third: this file typically
+> runs 12.0 s but its declared waits permitted **1008.7 s**, against the 20-minute
+> cap that killed the job at ~17 minutes. The likeliest reading of the run above
+> is therefore not a wedge at all, but the file running its own legal worst case.
+> M16 cut that worst case to 408.7 s and made it a checked number
+> (`benchmarks/test-time-budget.R`).
+
 ## The deliberate hunt — 50 iterations, nothing
 
 Run twice, because the first shape was wrong.
