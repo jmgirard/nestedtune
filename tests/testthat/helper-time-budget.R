@@ -24,8 +24,26 @@
 # call is accounted for -- a new one cannot land silently by looking like the
 # many harmless ones.
 #
-# Seconds are read from the helper's own constants, never copied, so cutting a
-# bound in helper-parallel.R moves the ledger with it and the two cannot drift.
+# HOW A ROW'S SECONDS ARE KEPT HONEST, which is two different mechanisms and was
+# once described here as one (M16 review F3, scored 85).
+#
+# Rows whose bound lives in helper-parallel.R read the constant itself --
+# COLLECT_BOUNDED_DEFAULT_S, START_DAEMONS_BOUND_S(), MIXED_DAEMONS_BOUND_S --
+# so cutting a bound there moves the ledger with it and those cannot drift.
+#
+# The rest carry a literal copied from an explicit argument at the call site
+# (`daemons_load_status(timeout = 1000L)` and friends), and a copy can drift:
+# raising the real argument while leaving the row alone would leave every guard
+# green and the printed total unchanged. So `test-suite-hygiene.R` re-reads each
+# such argument from the source and fails when the row disagrees.
+#
+# What that cross-check cannot reach is declared here rather than left implicit,
+# because an unstated exemption is how the first version of this comment came to
+# overclaim. Two kinds escape it: a bound set through the OPTION at one line and
+# spent at another (classify:409 sets it, :415 spends it), and a wait that is no
+# function call at all (the deadline poll in interrupt). Neither carries an
+# explicit argument on its own line, which is exactly how the cross-check
+# recognises them, and both are named here so the gap is on the record.
 
 # One site's worst case: what it waits for, times the number of times the
 # surrounding code runs it. `times` is 1 unless a loop says otherwise -- the
@@ -195,10 +213,10 @@ time_budget_ledger <- function() {
     # again here would double-count. They get rows anyway so the guard sees them
     # classified rather than absent, which is the whole discipline: a wait is
     # either budgeted somewhere or it is a finding.
-    tb_row("helper-parallel.R", 60L, "collect_bounded", 0,
+    tb_row("helper-parallel.R", 61L, "collect_bounded", 0,
            "prime_daemons()",
            note = "PRIME_DAEMONS_BOUND_S, counted at each start_daemons() site"),
-    tb_row("helper-parallel.R", 80L, "collect_bounded", 0,
+    tb_row("helper-parallel.R", 81L, "collect_bounded", 0,
            "warm_daemons()",
            note = "WARM_DAEMONS_BOUND_S, counted at each start_daemons() site")
   )

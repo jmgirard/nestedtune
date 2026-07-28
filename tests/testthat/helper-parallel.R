@@ -17,6 +17,7 @@ COLLECT_BOUNDED_DEFAULT_S <- 60
 PRIME_DAEMONS_BOUND_S <- 60
 WARM_DAEMONS_BOUND_S <- 60
 PREFLIGHT_TEST_TIMEOUT_MS <- 120000L
+MIXED_DAEMONS_BOUND_S <- 60
 
 # Collect a mirai, or a whole mirai_map, with a deadline -- never open-endedly.
 #
@@ -139,7 +140,7 @@ lean_library <- function(keep = c("mirai", "nanonext")) {
 # The daemons are spawned by hand against a host URL rather than by daemons(n),
 # because the environment has to differ per daemon and daemons(n) launches them
 # all alike. Returns the connection count actually reached.
-start_mixed_daemons <- function(lean_lib, timeout = 60) {
+start_mixed_daemons <- function(lean_lib, timeout = MIXED_DAEMONS_BOUND_S) {
   mirai::daemons(0)
   mirai::daemons(n = 0, url = "tcp://127.0.0.1:0", dispatcher = TRUE)
   url <- mirai::status()$daemons

@@ -127,6 +127,52 @@ test_that("the budget ledger has no rows for calls that are gone", {
   )
 })
 
+# Re-read a bound from the call site itself, in seconds.
+#
+# A ledger row whose seconds were COPIED from an explicit argument can drift from
+# that argument silently -- raising `timeout = 60000` to `600000` would leave both
+# accounting guards green and the printed total unchanged, while the real worst
+# case grew by nine minutes (M16 review F3). Rows whose bound comes from a named
+# constant in helper-parallel.R cannot drift that way and need no check.
+#
+# NA means the line carries no explicit bound of its own: the option-set-elsewhere
+# case and the deadline poll, both named in helper-time-budget.R's header.
+call_site_bound_s <- function(path, line) {
+  txt <- readLines(path, warn = FALSE)[[line]]
+  ms <- regmatches(txt, regexpr("timeout\\s*=\\s*[0-9.]+", txt))
+  if (length(ms)) return(as.numeric(sub(".*=\\s*", "", ms)) / 1000)
+  sec <- regmatches(txt, regexpr("seconds\\s*=\\s*[0-9.]+", txt))
+  if (length(sec)) return(as.numeric(sub(".*=\\s*", "", sec)))
+  NA_real_
+}
+
+test_that("a copied bound still matches the argument it was copied from", {
+  ledger <- time_budget_ledger()
+  # Only rows that actually declare a wait, and only the two calls that take an
+  # explicit bound. A `check_daemons_can_load()` row carrying a fabricated
+  # `preflight_outcome(..., timeout = 300000)` on its line waits for nothing --
+  # its number is message content, not budget.
+  ledger <- ledger[ledger$call %in% c("daemons_load_status", "collect_bounded") &
+                     ledger$seconds > 0, , drop = FALSE]
+
+  checked <- 0L
+  for (i in seq_len(nrow(ledger))) {
+    at <- call_site_bound_s(test_path(ledger$file[[i]]), ledger$line[[i]])
+    if (is.na(at)) next
+    checked <- checked + 1L
+    expect_equal(
+      ledger$seconds[[i]], at * ledger$times[[i]],
+      info = paste0(ledger$file[[i]], ":", ledger$line[[i]],
+                    " declares ", ledger$seconds[[i]],
+                    " s but the call site says ", at * ledger$times[[i]], " s")
+    )
+  }
+  # Without this the test passes by checking nothing the moment the filter or the
+  # regex stops matching -- the failure M14's review found in a harness that
+  # reported clean having asserted nothing.
+  expect_gt(checked, 4L)
+})
+
 test_that("the localized file's declared worst case fits the CI budget", {
   # AC4. The number this milestone exists to move: what test-parallel-classify.R
   # is ALLOWED to wait for, which on 2026-07-27 was 1008.7 s against a 1200 s

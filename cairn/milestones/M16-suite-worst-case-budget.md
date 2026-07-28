@@ -119,6 +119,7 @@ pre-flight deadline off the wall clock → its existing candidate row. Any chang
 - 2026-07-27: T2 done — bound ledger in `tests/testthat/helper-time-budget.R`, thin reporter in `benchmarks/test-time-budget.R`; `helper-parallel.R`'s four bounds named as constants both files read, so they cannot drift. Pre-M16 measured: classify 1008.7 s (confirming the plan-gate arithmetic), identity 3000.0 s, interrupt 615.0 s, detection 120.0 s — ~79 minutes across four files against a 20-minute cap.
 - 2026-07-27: T3 and T4 done, committed together because T3's ceiling assertions are red until T4 cuts the bounds and a checkpoint is never committed red. The guard checks both directions (no unbudgeted call, no stale row) and found three sites the hand census missed: `test-parallel-identity.R:166` and the two `collect_bounded()` calls inside `start_daemons()`. Cuts: prime 120->60 s, warm 180->60 s, the suite-wide option 300->120 s, and an explicit 60 s bound at the file's largest wait, which was 300 s inherited invisibly from the option. Classify 1008.7 -> 408.7 s, under the 480 s ceiling and under half. Suite clean, 1233 pass.
 - 2026-07-27: T5 and T6 done. The `:213` pool binds an ephemeral port; the busy-pool test cancels explicitly before its first assertion AND registers an unconditional `on.exit` cancel ahead of the pool teardown. AC6 evidence by execution: without a cancel the task is still unresolved after `daemons(0)` (TRUE) and with it resolved (FALSE) — the live-task leak, direct rather than inferred from teardown silence. Positive control: a deliberately leaked pool makes `teardown-zz-nothing-survives.R` fire, so its silence is informative. Suite clean, 1233 pass.
+- 2026-07-27: review actioned F3 (85) — named `MIXED_DAEMONS_BOUND_S`, added a call-site cross-check for copied bounds (verified by inversion), corrected the ledger header's over-claim. Suite 1239 pass, check 0/0/0, budget unchanged at 408.7 s. F1/F2/F4/F5 logged below threshold.
 - 2026-07-27: T7 done — superseding note appended to the stress ledger (the per-test-hook claim, plus the two suspects execution refuted); the wrong paragraph left standing as the dated record it is. `devtools::document()` no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes, tests 69s/114s under check — which also proves the runner's `source()` of the new helper resolves under `R CMD check`. No NEWS entry: nothing user-visible changed.
 - 2026-07-27: implement gate chose keeping the bound table in `tests/testthat/helper-time-budget.R` over a benchmarks-only ledger, because `benchmarks/` is `.Rbuildignore`d so AC3's guard would skip under `R CMD check` — where an unbudgeted wait costs a 20-minute job; falsified by the guard proving unrunnable from a test file.
 - 2026-07-27: implement gate chose 60 s + 60 s for `prime_daemons()` and `warm_daemons()` over 90/45 and over leaving 180 s, landing the file near 428 s against AC4's 480 s ceiling; falsified by a warmup overrun that the 120 s probe budget does not absorb.
@@ -170,6 +171,42 @@ Fresh evidence, gathered 2026-07-27 on `m16-suite-worst-case-budget` at PR #15.
 owed. No `DESIGN.md` principle changed, so `cairn_impact` is not run.
 
 **Returns:** none. This is M16's first pass through review.
+
+**Independent review — three lenses, then a Sonnet scorer.**
+The [O] diff-bug lens independently re-derived the parse-token census (48 rows,
+one per wait-shaped token across all five files) and the arithmetic (408.678
+post, 1008.678 pre) — both reconcile — and verified the mirai claims by
+execution. The [S] blame-history lens found nothing undone: every cut is named in
+Scope and reasoned in the work log, and D-021's substance is untouched by the
+reporter's move. The [S] prior-review lens found no regression; its probe showed
+the repo has no inline PR comments at all, so `milestones/archive/` was the only
+surface. 5 findings, 1 at or above the action threshold.
+
+**Actioned — F3 (85): the ledger's copied seconds were unchecked while its header
+claimed they could not drift.** Only the constant-derived rows were drift-proof;
+108.7 s of classify's 408.7 s were literals copied from call-site arguments, and
+raising `daemons_load_status(timeout = 60000)` to `600000` left every guard green
+with the printed total frozen. Fixed three ways: `start_mixed_daemons()`'s bound
+is now the named constant `MIXED_DAEMONS_BOUND_S` (it lived in the very file the
+comment promised could not drift); a new test re-reads each explicit `timeout =`
+/ `seconds =` argument from source and fails when the row disagrees (verified by
+inversion — raising :496 to 600000 now reports "declares 60 s but the call site
+says 600 s"); and the header now states which rows are constant-derived, which
+are copied-and-checked, and the two the cross-check cannot reach.
+
+**Logged below threshold, not actioned (4).**
+- F1 (58) — the guard's `setdiff()` deduplicates, so two wait calls collapsed onto
+  one physical line would be satisfied by a single ledger row. Real but
+  narrow-trigger; no such pair exists today.
+- F2 (25) — `BUDGETED_FILES` is a fixed five-file list, so a new daemon test file
+  would go unbudgeted silently. AC3 enumerated those files by name, so this is
+  future-proofing beyond what was asked.
+- F4 (30) — the ledger does not charge `R/parallel.R:91`'s unbounded
+  `collect_mirai()`. Already named with rationale in `test-suite-hygiene.R` and
+  ruled out by Scope Out; a third statement would be redundant.
+- F5 (40) — the reporter prints no grand total and does not remark that identity's
+  1200.0 s equals the cap. The Review section states it verbatim; AC4 sets no
+  ceiling there by design.
 
 **Side effect worth recording.** The bound cuts reach every daemon file, not only
 the localized one: declared worst case across the four fell 4743.7 s -> 1983.7 s.
