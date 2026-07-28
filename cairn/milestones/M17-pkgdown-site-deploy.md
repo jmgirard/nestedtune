@@ -128,29 +128,36 @@ default single-site layout.
 ## Review
 
 Reviewed 2026-07-27 against PR #16. Evidence for AC1–AC3 and AC5 comes from the
-`pkgdown` workflow run this PR fired
-(`actions/runs/30320277988`, job conclusion `success`); step conclusions are
-quoted from the GitHub jobs API, not from recall.
+`pkgdown` workflow run `actions/runs/30321336921` — the run *after* the
+five actioned findings were fixed, since F1 and F2 changed the workflow's
+structure and the earlier run (30320277988) no longer describes what ships.
+Step conclusions are quoted from the GitHub jobs API, not from recall.
+All ten PR checks pass.
 
 ### Acceptance criteria
 
-- **AC1 — met.** Run 30320277988 step 7 `Check pkgdown config: success`, step 8
-  `Build site: success`; the config check precedes the build in step order.
-  `DESCRIPTION:41` carries `Config/Needs/website: pkgdown`;
-  `.github/workflows/pkgdown.yaml:76` declares `needs: website` on the
-  `setup-r-dependencies` step, and that step concluded `success` having resolved
-  the builder from it. `git check-ignore -v docs/index.html` reports
-  `.gitignore:23:docs/`, so a local build tree is uncommittable;
-  `.Rbuildignore:9` already carried `^docs$`.
+- **AC1 — met.** Run 30321336921, job `build`: step 7
+  `Check pkgdown config: success`, step 8 `Build site: success`; the config
+  check precedes the build in step order. `DESCRIPTION:41` carries
+  `Config/Needs/website: pkgdown` and the `setup-r-dependencies` step declares
+  `needs: website` with `extra-packages: local::.` only. The criterion's "from
+  that declaration rather than an ad-hoc line" is now falsifiable and observed:
+  nothing else in the run installs pkgdown, so step 7 would fail outright if the
+  DESCRIPTION field were absent. (Before the F1 fix `any::pkgdown` sat in
+  `extra-packages`, which installed the builder either way and left the field
+  decorative.) `git check-ignore -v docs/index.html` reports `.gitignore:23:docs/`,
+  so a local build tree is uncommittable; `.Rbuildignore:9` already carried
+  `^docs$`.
 
-- **AC2 — met.** Run 30320277988 step 9
+- **AC2 — met.** Run 30321336921, job `build`: step 9
   `Check the repo-internal pages are absent: success`. It sits after step 8
-  (`Build site`) and before step 11 (`Deploy to gh-pages`), as the criterion
-  requires, and it fails on the existence of either `docs/CLAUDE.html` or
-  `docs/ci-usage-baseline.html`. The removal that makes it pass is step 6,
-  `Drop the repo-internal sources: success`.
+  (`Build site`) and before the publish step, which after the F2 split is the
+  separate `deploy` job gated on `needs: build` — so it still precedes
+  publication, and now cannot even be reached without it. It fails on the
+  existence of either `docs/CLAUDE.html` or `docs/ci-usage-baseline.html`. The
+  removal that makes it pass is step 6, `Drop the repo-internal sources: success`.
 
-- **AC3 — met.** Run 30320277988 step 10
+- **AC3 — met.** Run 30321336921, job `build`: step 10
   `Check the advertised pages exist: success`, in the same run and after the
   build. The step fails if either `docs/index.html` (the target of
   `DESCRIPTION:15`) or `docs/articles/nested-cv.html` (the target of README's
@@ -166,12 +173,15 @@ quoted from the GitHub jobs API, not from recall.
   `stress-daemon-tests.yaml` still declares neither trigger and so contributes
   none.
 
-- **AC5 — met.** The workflow declares `push` on `branches: [main, master]`
-  (`.github/workflows/pkgdown.yaml:21-22`) and the publish step carries
-  `if: github.ref_name == github.event.repository.default_branch`. On this PR's
-  run 30320277988 the build step concluded `success` and step 11
-  `Deploy to gh-pages` concluded `skipped` — a pull request built the site and
-  published nothing, observed rather than reasoned about.
+- **AC5 — met, and more strongly than the criterion asks.** The workflow declares
+  `push` on `branches: [main, master]`, and after the F2 split the guard
+  `if: github.ref_name == github.event.repository.default_branch` sits on the
+  `deploy` job rather than on a step inside the build job. On run 30321336921 the
+  `build` job concluded `success` and the `deploy` job concluded `skipped` — a
+  pull request built the site and published nothing, observed rather than
+  reasoned about. The criterion says "publish step"; the guard now fences the
+  whole publishing job, which satisfies it and additionally keeps the writable
+  token out of any run that executes repository code.
 
 - **AC6 — met.** The work log carries the handoff at
   `M17-pkgdown-site-deploy.md:124`, naming the setting in full (Settings → Pages
@@ -194,3 +204,60 @@ the user-visible change and names no milestone; no README.Rmd exists, so the
 knit-sync check is a no-op; no new top-level file was added, so the
 `.Rbuildignore` check is a no-op (`.github/` was already ignored).
 `devtools::test()` at implement time: FAIL 0, WARN 0, SKIP 0, PASS 1239.
+
+### Independent review
+
+Three fresh-context reviewers with distinct evidence bases produced 14 findings
+([O] diff-bug 12, [S] blame-history 1, [S] prior-review 1); a separate [S] scorer
+that generated none of them scored each 0–100. The prior-review lens probed
+`pulls/comments` and found no real GitHub inline threads, so it worked from
+archived `## Review` sections.
+
+**Actioned (≥80), all fixed on the branch in `f2dd777`:**
+
+- **F1 (93)** — `extra-packages: any::pkgdown, local::.` installed the builder
+  unconditionally, so `Config/Needs/website: pkgdown` was decorative and AC1's
+  "installs from that declaration rather than an ad-hoc line" could not fail.
+  D-022 had recorded that exact line as the rejected alternative. Dropped
+  `any::pkgdown`; `local::.` stays, since it is what makes `install = FALSE`
+  correct on the build step.
+- **F7 (92)** — the comment describing the advertised-pages check sat above the
+  repo-internal check. In a file whose comments are load-bearing, that invites a
+  later reader to delete the wrong guard. Both steps now carry their own.
+- **F2 (85)** — `permissions: contents: write` was job-level on the single job
+  that also ran `build_site_github_pages()`, i.e. the vignette and every roxygen
+  `@examples` block, with `GITHUB_PAT` in the environment — on pull requests too.
+  Split into a `build` job at `read-all` that uploads `docs/` as an artifact and
+  a `deploy` job holding `contents: write`, which runs no repository code and is
+  gated on the default branch.
+- **F3 (85)** — `NEWS.md` claimed the pages "are now reachable there" (false
+  until the maintainer enables Pages) and "republished whenever the default
+  branch changes" (false: `paths-ignore` skips tracking-only pushes). Reworded so
+  both claims are true at merge.
+- **F10 (82)** — `JamesIves/github-pages-deploy-action@v4.5.0` was tag-pinned
+  while `test-coverage.yaml` SHA-pins codecov — and the tag-pinned one was the
+  only action running with a token that can write to this repo. Pinned to
+  `65b5dfd4f5bcd3a7403bbc2959c144256167464e`.
+
+F2's split also retires F11 as a side effect: the workflow-level `read-all` was
+dead code under one job that set its own permissions, and now governs `build`.
+
+**Logged below threshold (<80), not actioned — 9 findings.** F4 (65) the absent-
+assertion checks the two HTML pages but not `search.json`/`sitemap.xml`, so it
+would not catch a future revert to the post-build-delete shape. F9 (65)
+`.github/ci-usage-baseline.md:5` still says the filter is read from two
+workflows, and M11's baseline was measured before a fourth workflow existed.
+F11 (50) dead workflow-level `permissions` — retired by F2's fix. F6 (45)
+`clean: false` makes deployment additive, so a page removed from `docs/` lives on
+`gh-pages` forever. F5 (35) the internal-page list is hardcoded to two filenames,
+so a future `AGENTS.md` would publish silently. F13 (35) `PROFILE.md`'s
+test-doctrine slot still describes CI as two gating workflows and does not
+mention the third. F8 (30) `read_paths_ignore()`'s all-copies-must-agree rule
+welds `CLAUDE.md` into all six lists, so the exit the plan gate named (a future
+pkgdown exclusion knob) needs all three workflows touched. F12 (15) empty
+milestone `## Decisions` section — matches M11 and M16, so convention. F14 (15)
+M06's F6 is only partly discharged since the URL still 404s until Pages is on —
+which is the documented scope boundary, not an omission.
+
+F4, F5, F6, F9, and F13 are the ones with residue worth a row; see the ROADMAP
+candidates added at merge.
