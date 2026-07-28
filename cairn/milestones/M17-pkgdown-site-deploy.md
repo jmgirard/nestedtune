@@ -1,6 +1,6 @@
 # M17: The advertised documentation site exists
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -100,7 +100,7 @@ default single-site layout.
       checkout before the build, so pkgdown never renders them; assert
       `docs/CLAUDE.html` and `docs/ci-usage-baseline.html` are absent after the
       build and before the publish step.
-- [ ] T4 Add the handoff line naming the Pages setting; leave the URL-status
+- [x] T4 Add the handoff line naming the Pages setting; leave the URL-status
       slot empty for after it is enabled.
 
 ## Work log
@@ -121,6 +121,7 @@ default single-site layout.
 - 2026-07-27: T2 + T3 landed in one checkpoint commit rather than two, because both edit `.github/workflows/pkgdown.yaml` and splitting them would have meant staging partial hunks of one file.
 - 2026-07-27: T2 — added a `NEWS.md` entry as a discovered sub-task the plan did not name; the profile's consistency-gate requires the changelog to cover user-visible change, and a published documentation site qualifies. The entry describes the mechanism (built and republished on default-branch changes), which is true at merge; the URL itself resolves only once the maintainer completes AC6's handoff.
 - 2026-07-27: verify slot — `devtools::test()` clean before checking T2/T3 off; an earlier run was discarded because it was piped through `tail`, so the reported exit code was the pipe's and the results summary had been truncated away.
+- 2026-07-27: T4 HANDOFF — the maintainer must enable GitHub Pages on `jmgirard/nestedtune` once this merges and the workflow has pushed a `gh-pages` branch: **Settings → Pages → Source: Deploy from a branch → Branch: `gh-pages`, folder `/ (root)`**. Nothing in this milestone can do it — it is a repository setting, and the repo has no Pages site today (`gh api repos/jmgirard/nestedtune/pages` → HTTP 404, observed 2026-07-27). LIVE URL STATUS: unfilled. It is recorded as a new work-log line, not by editing this one, because the work log is append-only (D-045).
 
 ## Decisions
 
