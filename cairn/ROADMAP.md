@@ -12,7 +12,7 @@ _Last hygiene check: 2026-07-27 (M17 merged and archived — the docs site now b
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
 | M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
 | M17 | The advertised documentation site exists | done | — | normal | milestones/archive/M17-pkgdown-site-deploy.md |
-| M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
+| M13 | The rsample diagnosis reaches its maintainers | review | — | low | milestones/M13-rsample-283-report.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
