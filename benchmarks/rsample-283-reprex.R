@@ -25,7 +25,7 @@
 #
 # The closed-form model is anchored to a third, already-committed measurement:
 # 11.373x at v = 10 / inner v = 5, recorded at
-# tests/testthat/test-nested-resamples-memory.R:87 by the oracle that backs
+# tests/testthat/test-nested-resamples-memory.R:86 by the oracle that backs
 # nestedtune's own lean constructor.
 
 stopifnot(requireNamespace("rsample", quietly = TRUE),
@@ -78,10 +78,14 @@ cat(sprintf("LetterRecognition: %d x %d, %s B\n\n",
 #
 #   4n(v-1) + 4n(v-1)(inner_v-1) = 4n(v-1) * inner_v
 #
-# The model omits per-object overhead -- the rsplit lists, the tibbles, their
-# attributes -- so it should sit slightly UNDER every measurement. A model
-# running OVER would mean the structure holds less than this accounting says,
-# and the diagnosis would be wrong.
+# The model lands slightly under every measurement, but that is a net effect
+# and not a guarantee, so it is not a falsification test. Two errors run in
+# opposite directions: it omits per-object overhead (the rsplit lists, the
+# tibbles, their attributes), which pulls it under; and its data term
+# over-predicts, because `lobstr` charges the factor-level strings shared
+# across the materialized frames only once -- the ten frames at v = 10 measure
+# 23,776,840 B against the term's 23,801,760 B. The agreement below is close
+# because those two cancel, not because either bound is tight.
 rsample_size <- function(data_bytes, n, v, inner_v) {
   data_bytes * v + 4 * n * (v - 1) * inner_v
 }

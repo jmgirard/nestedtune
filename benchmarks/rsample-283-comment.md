@@ -89,19 +89,32 @@ materialized frames carry compact row names — `.row_names_info()` returns
 −18,000 — so the difference is row-name storage, not a change in the
 phenomenon.
 
-### Scope of the fix
+### Whether a leaner form is possible
 
 The behaviour is not inherent to `rsplit`. An inner split can index the
-original data directly and carry both an analysis and an assessment index,
-which keeps the object growing only with index vectors:
-`data_bytes + 4 * n * (v - 1) * (inner_v + 1)`, or 3.995 × instead of 12.749 ×
-at 10 × 10. That form is reachable from public rsample API — `make_splits()`
-plus `manual_rset()` — without touching internals, and the resulting splits are
-row-identical to the current ones.
+original data directly instead of a materialized copy, provided it carries an
+explicit assessment index — `out_id` cannot stay `NA`, because the complement
+of an index into the *whole* data would sweep in the outer fold's assessment
+rows. The object then grows only with index vectors:
+`data_bytes + 4 * n * (v - 1) * (inner_v + 1)`. That model gives 3.995 × at
+10 × 10 against the 12.749 × measured above — though 3.995 is a modelled figure,
+not a measured one; the corresponding form was measured only at 10 × 5, where it
+came to 2.649 × against 2.633 × modelled, so the model runs a little under.
+
+One caveat on how such splits are built, learned the hard way. Constructing
+them from scratch with `make_splits()` + `manual_rset()` looks like the obvious
+route and is not: `make_splits()` returns a bare `rsplit`, so the result loses
+the split subclass and the per-split `id` tibble that `labels()` and
+`add_resample_id()` read, and `manual_rset()` drops `id2`. Rewriting the
+`data` / `in_id` / `out_id` fields of the splits `nested_cv()` already produced
+keeps all of that intact, and splits built that way are row-identical to the
+current ones — that is the form that is actually tested downstream.
 
 Disclosure on where this comes from: the diagnosis fell out of building a
 memory-lean nested-resampling constructor on top of rsample
 ([nestedtune](https://github.com/jmgirard/nestedtune)), where the 11.373 ×
-figure above is a committed oracle. Posting this as a diagnosis rather than a
-pull request deliberately — whether `nested_cv()` should change shape is your
-call, and there is a compatibility question in it that is not ours to answer.
+figure above is a committed oracle and the field-rewriting approach above is
+what it ships. Posting this as a diagnosis rather than a pull request
+deliberately — whether `nested_cv()` should change shape is yours to decide,
+and there is a backward-compatibility question in it that I can't answer from
+outside.
