@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (audit pass after M15's: all checks green, nothing in flight, both GitHub inboxes empty, no orphans and no git gap — nothing changed. Standing item: the hang candidate's promotion condition now reads as met, localized to `test-parallel-classify.R`, awaiting a plan)_
+_Last hygiene check: 2026-07-27 (M16 merged and archived — the daemon tests' declared worst case is now written down and guarded, classify 1008.7→408.7 s and all four files 4743.7→1983.7 s; the 2026-07-27 stall reads as a file running its legal worst case, not a wedge. 5 findings, 1 actioned; M10's row pruned at terminal-row retention, 19 candidates; 1 lesson added and 2 corrected/extended in place, the M02 cli-pluralization line pruned at cap)_
 
 ## Milestones
 
@@ -10,10 +10,9 @@ _Last hygiene check: 2026-07-27 (audit pass after M15's: all checks green, nothi
 | M12 | Fitting time only where an assertion needs it | done | — | normal | milestones/archive/M12-test-suite-runtime.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
-| M16 | The suite's worst case fits inside the CI budget | review | — | high | milestones/M16-suite-worst-case-budget.md |
+| M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
 | M13 | The rsample diagnosis reaches its maintainers | planned | — | low | milestones/M13-rsample-283-report.md |
 | M11 | Every CI run is one somebody is waiting for | done | — | normal | milestones/archive/M11-ci-run-economy.md |
-| M10 | The startup check inspects every worker and says what went wrong | done | — | normal | milestones/archive/M10-preflight-probe-coverage.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
