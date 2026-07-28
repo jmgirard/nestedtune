@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m17-pkgdown-site-deploy`
+- **Branch/PR:** `m17-pkgdown-site-deploy` · https://github.com/jmgirard/nestedtune/pull/16
 
 ## Goal
 
@@ -34,7 +34,7 @@ default single-site layout.
 
 ## Acceptance criteria
 
-- [ ] AC1 `.github/workflows/pkgdown.yaml` runs `pkgdown::check_pkgdown()` and
+- [x] AC1 `.github/workflows/pkgdown.yaml` runs `pkgdown::check_pkgdown()` and
       then builds the site, and its run on this milestone's PR completes with
       both steps reporting success. `DESCRIPTION` carries
       `Config/Needs/website: pkgdown`, the workflow's `setup-r-dependencies`
@@ -42,18 +42,18 @@ default single-site layout.
       declaration rather than an ad-hoc line, and `.gitignore` lists `docs/` so
       a local build leaves nothing committable (`.Rbuildignore:9` already
       carries `^docs$`).
-- [ ] AC2 The site the workflow builds carries no page derived from `CLAUDE.md`
+- [x] AC2 The site the workflow builds carries no page derived from `CLAUDE.md`
       or `.github/ci-usage-baseline.md`: a step in the same run, after the build
       and before the publish step, fails if `docs/CLAUDE.html` or
       `docs/ci-usage-baseline.html` exists, and it passes. Both were produced by
       `pkgdown::build_site()` on 2026-07-27 before this milestone, and
       `pkgdown:::package_mds(".")` returns exactly those two sources.
-- [ ] AC3 Both pkgdown URLs the package advertises resolve to a page in the
+- [x] AC3 Both pkgdown URLs the package advertises resolve to a page in the
       build output: `docs/index.html` for `DESCRIPTION:15`'s
       `https://jmgirard.github.io/nestedtune/`, and `docs/articles/nested-cv.html`
       for README's `[guide]` link (`README.md:110`). A step in the same run
       fails if either file is missing.
-- [ ] AC4 `.github/ci-usage.py`'s `read_paths_ignore()` returns one agreed list
+- [x] AC4 `.github/ci-usage.py`'s `read_paths_ignore()` returns one agreed list
       with `pkgdown.yaml` in the workflow set — shown by calling it directly,
       not by running the script, which shells out to `gh` and can exit for
       unrelated reasons — rather than exiting on a disagreeing or missing
@@ -61,12 +61,12 @@ default single-site layout.
       exist (`.github/workflows/R-CMD-check.yaml:12`,
       `.github/workflows/test-coverage.yaml:3`) names the count that is then
       true.
-- [ ] AC5 Nothing publishes except from the default branch: the workflow
+- [x] AC5 Nothing publishes except from the default branch: the workflow
       declares a `push` trigger on the default branch, its publish step carries
       `if: github.ref_name == github.event.repository.default_branch`, and this
       milestone's own PR run shows the build step succeeded and the publish step
       skipped.
-- [ ] AC6 The milestone file carries a handoff line naming the GitHub Pages
+- [x] AC6 The milestone file carries a handoff line naming the GitHub Pages
       setting the maintainer must enable (Source: Deploy from a branch →
       `gh-pages` / root) — the repo has no Pages site today
       (`gh api repos/jmgirard/nestedtune/pages` returned HTTP 404, observed
@@ -126,3 +126,71 @@ default single-site layout.
 ## Decisions
 
 ## Review
+
+Reviewed 2026-07-27 against PR #16. Evidence for AC1–AC3 and AC5 comes from the
+`pkgdown` workflow run this PR fired
+(`actions/runs/30320277988`, job conclusion `success`); step conclusions are
+quoted from the GitHub jobs API, not from recall.
+
+### Acceptance criteria
+
+- **AC1 — met.** Run 30320277988 step 7 `Check pkgdown config: success`, step 8
+  `Build site: success`; the config check precedes the build in step order.
+  `DESCRIPTION:41` carries `Config/Needs/website: pkgdown`;
+  `.github/workflows/pkgdown.yaml:76` declares `needs: website` on the
+  `setup-r-dependencies` step, and that step concluded `success` having resolved
+  the builder from it. `git check-ignore -v docs/index.html` reports
+  `.gitignore:23:docs/`, so a local build tree is uncommittable;
+  `.Rbuildignore:9` already carried `^docs$`.
+
+- **AC2 — met.** Run 30320277988 step 9
+  `Check the repo-internal pages are absent: success`. It sits after step 8
+  (`Build site`) and before step 11 (`Deploy to gh-pages`), as the criterion
+  requires, and it fails on the existence of either `docs/CLAUDE.html` or
+  `docs/ci-usage-baseline.html`. The removal that makes it pass is step 6,
+  `Drop the repo-internal sources: success`.
+
+- **AC3 — met.** Run 30320277988 step 10
+  `Check the advertised pages exist: success`, in the same run and after the
+  build. The step fails if either `docs/index.html` (the target of
+  `DESCRIPTION:15`) or `docs/articles/nested-cv.html` (the target of README's
+  `[guide]` link at `README.md:110`) is missing.
+
+- **AC4 — met.** `read_paths_ignore()` called directly (not via the script, whose
+  `gh` calls can exit for unrelated reasons) returns
+  `['cairn/**', 'CLAUDE.md', '.claude/**']` with sources
+  `R-CMD-check.yaml, pkgdown.yaml, test-coverage.yaml` — one agreed list, no
+  exit. Enumerating `workflow_triggers()` over the workflow dir gives six
+  copies, and both comments stating the count now say six
+  (`R-CMD-check.yaml:12`, `test-coverage.yaml:3`).
+  `stress-daemon-tests.yaml` still declares neither trigger and so contributes
+  none.
+
+- **AC5 — met.** The workflow declares `push` on `branches: [main, master]`
+  (`.github/workflows/pkgdown.yaml:21-22`) and the publish step carries
+  `if: github.ref_name == github.event.repository.default_branch`. On this PR's
+  run 30320277988 the build step concluded `success` and step 11
+  `Deploy to gh-pages` concluded `skipped` — a pull request built the site and
+  published nothing, observed rather than reasoned about.
+
+- **AC6 — met.** The work log carries the handoff at
+  `M17-pkgdown-site-deploy.md:124`, naming the setting in full (Settings → Pages
+  → Source: Deploy from a branch → Branch `gh-pages`, folder `/ (root)`) and
+  recording that the repo has no Pages site today. It carries
+  `LIVE URL STATUS: unfilled`, with a note that the status arrives as a new
+  appended work-log line rather than an edit to that one, the log being
+  append-only under D-045.
+
+### Consistency gate
+
+Universal cairn-file checks: `cairn_validate` exit 0, all checks passed.
+`cairn_impact` skipped — `Principles touched:` is `—` and no IP/GP changed.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+`devtools::check()` `Status: OK` (0 errors, 0 warnings, 0 notes);
+`devtools::document()` leaves `man/`, `NAMESPACE`, and `DESCRIPTION` clean;
+`pkgdown::check_pkgdown()` "No problems found."; `NEWS.md` carries an entry for
+the user-visible change and names no milestone; no README.Rmd exists, so the
+knit-sync check is a no-op; no new top-level file was added, so the
+`.Rbuildignore` check is a no-op (`.github/` was already ignored).
+`devtools::test()` at implement time: FAIL 0, WARN 0, SKIP 0, PASS 1239.
