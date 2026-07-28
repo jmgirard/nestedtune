@@ -149,9 +149,10 @@ jobs:
           path: docs
           retention-days: 1
 
-  # Runs no code from the ref being built -- it only unpacks an artifact and
-  # pushes it -- which is what makes `contents: write` safe to hold here and
-  # nowhere else in this repository.
+  # Runs no code from the ref being built -- it checks the ref out, unpacks an
+  # artifact and pushes it, and executes nothing it checked out -- which is what
+  # makes `contents: write` safe to hold here and nowhere else in this
+  # repository.
   #
   # `github.ref_name` rather than `github.event_name != 'pull_request'`: the
   # looser form also publishes from a `workflow_dispatch` on a feature branch,
@@ -167,6 +168,14 @@ jobs:
       contents: write
 
     steps:
+      # The deploy action's first act is `git config user.name` inside the
+      # workspace, so it needs one to be a git checkout: without this step the
+      # job dies at `fatal: not in a git directory` before it reads the
+      # artifact. Nothing here runs what is checked out -- see the job comment
+      # above -- and the artifact is unpacked into `docs/`, which is gitignored,
+      # so the checkout and the built site never contend for the same paths.
+      - uses: actions/checkout@v6
+
       - uses: actions/download-artifact@v7
         with:
           name: pkgdown-site

@@ -1,5 +1,10 @@
 # nestedtune 0.0.0.9000
 
+* The documentation website now actually publishes. The job that pushes the
+  built site had no copy of the repository to work in, so the first build to
+  reach the default branch failed at the publishing step and no site was ever
+  served.
+
 * The reference pages and `vignette("nested-cv")` are now built into a
   documentation website, rebuilt whenever a change lands on the default branch
   that the package itself can see. `DESCRIPTION` and the README have pointed at
