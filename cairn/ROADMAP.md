@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (M13 merged and archived — rsample#283's 13x is shown to be a 10x10 figure, the cause pinned, and a drafted comment waits for the maintainer to post; its handoff rides in M13's archive summary, since the URL arrives after the close. 27 findings, 6 actioned; M12's row pruned, the candidate M13 became removed leaving 20, 1 lesson added and the stalest pruned)_
+_Last hygiene check: 2026-07-27 (audit pass with nothing in flight since M13's merge — 16 checks and 8 advisories green, both GitHub inboxes empty, tree clean, no work to reconcile; one reported gap: CLAUDE.md's cairn section is read at every session start but is not covered by the rulebook's always-read worked table)_
 
 ## Milestones
 
