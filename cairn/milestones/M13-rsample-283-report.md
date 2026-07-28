@@ -61,7 +61,7 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 
 ## Tasks
 
-- [ ] T1 Write `benchmarks/rsample-283-reprex.R`: build both schemes explicitly
+- [x] T1 Write `benchmarks/rsample-283-reprex.R`: build both schemes explicitly
       on `LetterRecognition`, measure with `lobstr::obj_size()` as
       `test-nested-resamples-memory.R` does, record versions/OS/seed.
 - [ ] T2 Derive the rsample-side closed-form model in the reprex, validate it
@@ -78,6 +78,7 @@ itself: M01 already ships the lean constructor this diagnosis explains.
 - 2026-07-27: plan gate chose re-measuring both schemes explicitly over re-running the issue's original reprex, because current rsample rejects that call via `check_dots_empty()` (G4) so it cannot be run at all; falsified by evidence that an rsample version accepting the original call is the right comparison target.
 - 2026-07-27: branch `m13-rsample-283-report` cut from `main` at `74068e3`; status → in-progress.
 - 2026-07-27: substantive amendment at the implement question gate — AC2 named `analytic_size()` (the *lean* model, 2.633× at v=10/inner-5) as the source of 11.373×, which is in fact the *measured* rsample figure at `test-nested-resamples-memory.R:87`, and at inner-5 rather than the 10×10 the criterion asked it to corroborate. AC2 and T2 now require an rsample-side closed-form model derived in the reprex, validated against that measured 11.373×, then applied to both schemes; live + closed-form are GP2's two types.
+- 2026-07-27: T1 — `benchmarks/rsample-283-reprex.R` measures both schemes on `LetterRecognition` (rsample 1.3.2, R 4.6.1, aarch64-apple-darwin25.4.0, seed 35222): 10×10 = 33,715,400 B over 10 outer folds = **12.749×**; 5×2 = 13,871,840 B over 5 outer folds = **5.245×**. The issue's own call errors under 1.3.2 (`rlib_error_dots_nonempty`, naming `times = 5`), recorded by the script rather than worked around. Suite clean, 1247 pass.
 - 2026-07-27: implement gate chose `benchmarks/rsample-283-comment.md` as the draft comment's home over the milestone file, because archiving compresses the milestone to ≤25 lines exactly when the maintainer goes to post it; and kept the rsample-side model in the benchmark script only, per Scope Out — a test on an external package's internals would fail this suite for upstream reasons.
 
 ## Decisions
