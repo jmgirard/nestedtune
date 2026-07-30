@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP3
-- **Branch/PR:** `m19-driver-design-guards`
+- **Branch/PR:** `m19-driver-design-guards` / https://github.com/jmgirard/nestedtune/pull/20
 
 ## Goal
 
@@ -49,7 +49,7 @@ result or a base-R error.
 
 All baselines below were verified by execution 2026-07-30.
 
-- [ ] **AC1.** Both drivers refuse a design holding a non-`rsplit` element in
+- [x] **AC1.** Both drivers refuse a design holding a non-`rsplit` element in
       `splits` or a non-`rset` element in `inner_resamples`, via
       `cli::cli_abort()` naming `{.arg resamples}`, the first offending column
       and position, and what that element holds instead; `conditionCall()` is
@@ -68,12 +68,12 @@ All baselines below were verified by execution 2026-07-30.
       `nested_final_fit()` raises base R's `$ operator is invalid for atomic
       vectors`, `conditionCall()` `x$splits[[1]]$data` — no nestedtune
       condition, no argument named.
-- [ ] **AC2.** Every `check_nested()` check refuses at both drivers with the
+- [x] **AC2.** Every `check_nested()` check refuses at both drivers with the
       same message, each naming its own call — including on the parts the final
       fit does not read (gate decision, 2026-07-30). Final-fit-only checks
       (`check_inside_spec()`) stay so: a design with no `inside` attribute runs
       to completion under `nested_tune_grid()` today and must still do so.
-- [ ] **AC3.** Both drivers refuse a workflow with a model specification but no
+- [x] **AC3.** Both drivers refuse a workflow with a model specification but no
       preprocessor, naming `{.arg object}` with an `i` bullet stating the
       remedy, as the neighbouring `object` checks do; `conditionCall()` is the
       user's call. Baseline on `add_model(workflow(), <ranger spec>)`:
@@ -81,25 +81,25 @@ All baselines below were verified by execution 2026-07-30.
       formula, recipe, or variables preprocessor is required.";
       `nested_final_fit()` raises that same error, `conditionCall()`
       `check_workflow(workflow, pset = pset, call = call)`.
-- [ ] **AC4.** Every refusal added here fires before the entry `sample.int()`
+- [x] **AC4.** Every refusal added here fires before the entry `sample.int()`
       draw: in a session that has never drawn, `exists(".Random.seed", envir =
       globalenv())` is `FALSE` after each refused call. This discriminates where
       `identical(.Random.seed, before)` cannot — `restore_rng()`
       (`R/nested-tune-grid.R:464`) deliberately leaves a state it created in
       place, so identity holds even for a refusal that already drew and
       re-seeded (audit finding, 2026-07-30).
-- [ ] **AC5.** `eval_inside_spec()`'s two aborts name the user's call — the
+- [x] **AC5.** `eval_inside_spec()`'s two aborts name the user's call — the
       not-an-`rset` branch (`R/checks.R:263`) and the could-not-be-re-evaluated
       branch (`R/checks.R:249`), both giving `final_fit_worker(...)` today.
       `check_inside_spec()` is already correct and is not touched.
-- [ ] **AC6.** `@param resamples` on both drivers states that `splits` holds
+- [x] **AC6.** `@param resamples` on both drivers states that `splits` holds
       `rsplit` objects and `inner_resamples` holds `rset` objects, and
       `nested_final_fit()`'s "Only its inner specification and its data are
       used: the outer folds play no part in a final fit."
       (`R/nested-final-fit.R:26`) is rewritten, since AC2 makes it false.
       `NEWS.md` gains an entry naming the refusals. `devtools::document()`
       leaves no uncommitted diff — a regression guard, clean today.
-- [ ] **AC7.** The profile's `verify` slot is clean and `R CMD check` passes
+- [x] **AC7.** The profile's `verify` slot is clean and `R CMD check` passes
       with no new NOTE.
 
 ## Coverage
@@ -161,3 +161,52 @@ All baselines below were verified by execution 2026-07-30.
 ## Decisions
 
 ## Review
+
+PR #20 (https://github.com/jmgirard/nestedtune/pull/20). `main` had not moved
+since the branch was cut (0/0 against `origin/main`), so no merge-forward was
+needed. All evidence below executed on the branch 2026-07-30.
+
+### Acceptance criteria evidence
+
+- **AC1.** Six calls executed — both drivers against each of three malformed
+  designs (`inner_resamples[[2]]` a string; `splits[[1]]` a string;
+  `rsample::nested_cv(inside = list())`). All six abort. Messages name
+  `{.arg resamples}`, the offending column (`inner_resamples` / `splits`), the
+  element index (2, 1, 1), and the type held (`a string`, `a list`);
+  `conditionCall()` is the user's `nested_tune_grid(...)` / `nested_final_fit(...)`
+  in all six.
+- **AC2.** Symmetry: the message text for a given malformed design is identical
+  at both drivers, each naming its own call (AC1's six calls are the evidence).
+  Negative half: on a design with `attr(x, "inside")` removed,
+  `nested_tune_grid()` returns a `nested_results` with every fold `.completed`,
+  while `nested_final_fit()` alone refuses it — so `check_inside_spec()` stayed
+  final-fit-only.
+- **AC3.** Both drivers refuse `add_model(workflow(), <ranger spec>)` with
+  "`object` has no preprocessor.", the `x` bullet "The workflow carries a model
+  specification only.", and an `i` bullet naming `add_formula()`,
+  `add_recipe()`, and `add_variables()`; `conditionCall()` is the user's call.
+- **AC4.** `test-nested-tune-grid-checks.R` 54 passing, 0 failed. Mutation:
+  moving `check_nested()` to after the `sample.int()` draw fails the placement
+  test at `:417` twice (plus one unrelated collateral error), confirming the
+  assertion can fail — the property the plan-gate audit found the
+  `.Random.seed`-identity formulation could not test.
+- **AC5.** Both `eval_inside_spec()` branches now give `conditionCall()` of the
+  user's `nested_final_fit(...)`: the could-not-be-re-evaluated branch (on a
+  design whose `inside` names a vanished `v`) and the did-not-produce-an-`rset`
+  branch (on `attr(x, "inside") <- quote(data.frame())`). Both named
+  `final_fit_worker(...)` before.
+- **AC6.** Both `.Rd` files carry the `rsplit`/`rset` requirement; the old
+  "the outer folds play no part in a final fit." sentence is gone from the
+  `@param` (0 matches in source); `NEWS.md` carries three entries;
+  `devtools::document()` leaves no diff in `man/` or `NAMESPACE`.
+- **AC7.** `devtools::check()` — 0 errors, 0 warnings, 0 notes, 3m30.9s.
+
+### Consistency gate
+
+`cairn_validate` — 16 checks PASS, 8 advisories OK, exit 0. `cairn_impact`
+not applicable: the diff does not touch `DESIGN.md`, so no principle changed.
+Profile `consistency-gate` slot: `document()` no diff; generated files not
+hand-edited (covered by that); no `README.Rmd` in this repo; `check_pkgdown()`
+"No problems found."; `NEWS.md` carries the user-visible entries with no
+milestone numbers; no new top-level files, so no `.Rbuildignore` additions
+owed; full `check()` clean as above.
