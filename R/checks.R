@@ -27,6 +27,30 @@ check_workflow <- function(object, call = rlang::caller_env()) {
       call = call
     )
   }
+  # Asked before extract_spec_parsnip(), which raises its own error for this --
+  # a fine message, but one whose conditionCall() is that internal call rather
+  # than the user's, so the one bad-`object` shape a user is most likely to
+  # produce was the one that did not name their call. `workflows` has a
+  # has_spec() but does not export it, and `:::` is a check failure, so this
+  # asks the structure directly; if that layout ever moved, the extraction
+  # below still refuses, which is the behaviour this replaces.
+  if (is.null(object$fit$actions$model)) {
+    cli::cli_abort(
+      c(
+        "{.arg object} has no model specification.",
+        # An empty workflow carries no preprocessor either, so the bullet says
+        # which of the two shapes was actually handed over rather than assuming
+        # the commoner one.
+        x = if (length(object$pre$actions) > 0L) {
+          "The workflow carries a preprocessor only."
+        } else {
+          "The workflow is empty."
+        },
+        i = "Add one with {.fn workflows::add_model}."
+      ),
+      call = call
+    )
+  }
   check_model_spec(workflows::extract_spec_parsnip(object), call = call)
   invisible(object)
 }
@@ -212,10 +236,11 @@ check_inside_spec <- function(resamples, call = rlang::caller_env()) {
 eval_inside_spec <- function(inside, data, env, call = rlang::caller_env()) {
   spec <- paste(deparse(inside), collapse = " ")
   # The data is bound to a name in a child environment rather than inlined into
-  # the call. Inlining is what `nested_resamples()` does and is equivalent here,
-  # but any condition raised downstream deparses the call it was raised from --
-  # and a call carrying the whole data frame produces an error message thousands
-  # of lines long, which is the opposite of what this wrapper is for.
+  # the call, because any condition raised downstream deparses the call it was
+  # raised from -- and a call carrying the whole data frame produces an error
+  # message thousands of lines long, which is the opposite of what this wrapper
+  # is for. `nested_resamples()` took the same shape at M18 (`eval_spec()`);
+  # before that it inlined, and this comment said so.
   eval_env <- rlang::new_environment(list(.nestedtune_data = data), parent = env)
   out <- tryCatch(
     eval(rlang::call_modify(inside, data = quote(.nestedtune_data)), eval_env),

@@ -67,8 +67,7 @@ nested_resamples <- function(data, outside, inside) {
 
   outer_cl <- cl[["outside"]]
   if (rlang::is_call(outer_cl)) {
-    outer_cl <- rlang::call_modify(outer_cl, data = data)
-    outside <- eval(outer_cl, env)
+    outside <- eval_spec(outer_cl, data, env, "outside", call = environment())
   }
   if (!inherits(outside, "rset")) {
     cli::cli_abort(c(
@@ -118,7 +117,8 @@ nested_resamples <- function(data, outside, inside) {
     inner_resamples_from_split,
     cl = inner_cl,
     env = env,
-    data = data
+    data = data,
+    call = environment()
   )
 
   out <- outside
@@ -135,11 +135,27 @@ nested_resamples <- function(data, outside, inside) {
 # call, so the inner specification sees exactly what rsample would hand it --
 # same rows, same order, same columns, so the same seed draws the same splits --
 # while the returned splits reference `data` instead.
-inner_resamples_from_split <- function(split, cl, env, data) {
+inner_resamples_from_split <- function(split, cl, env, data, call) {
   outer_idx <- as.integer(split$in_id)
   analysis_frame <- as.data.frame(split)
 
-  inner_rset <- eval(rlang::call_modify(cl, data = analysis_frame), env)
+  # This function runs once per outer fold, so the rset guard below it covers
+  # every fold. A pre-pass over the first fold would be cheaper to write and
+  # wrong: building an rset draws from the RNG, so the extra evaluation would
+  # shift the stream and change every design this function returns.
+  inner_rset <- eval_spec(cl, analysis_frame, env, "inside", call = call)
+  if (!inherits(inner_rset, "rset")) {
+    cli::cli_abort(
+      c(
+        "{.arg inside} did not produce an {.cls rset}.",
+        x = "{.code {paste(deparse(cl), collapse = ' ')}} gave \\
+             {.obj_type_friendly {inner_rset}}.",
+        i = "It is evaluated once per outer fold, so it must return an \\
+             {.cls rset} for every one of them."
+      ),
+      call = call
+    )
+  }
 
   # Rebuilding the splits from scratch would drop everything rsample attaches
   # beyond the indices -- the split subclass and the per-split `id` tibble that
@@ -166,6 +182,34 @@ inner_resamples_from_split <- function(split, cl, env, data) {
   out[["splits"]] <- splits
   attr(out, "fingerprint") <-
     attr(rsample::manual_rset(splits, inner_rset$id), "fingerprint")
+  out
+}
+
+# Evaluate a resampling specification against a data frame.
+#
+# The frame is bound to a name in a child environment rather than inlined into
+# the call. The two are equivalent whenever the call succeeds -- verified
+# identical down to the fingerprint -- but any condition raised downstream
+# deparses the call it came from, and a call carrying the frame produces a
+# message that is the data: 1,194 characters on a 30x2 frame, and growing with
+# it. `eval_inside_spec()` (R/checks.R) already takes this shape on the
+# final-fit path for the same reason; construction did not.
+eval_spec <- function(cl, data, env, arg, call) {
+  eval_env <- rlang::new_environment(list(.nestedtune_data = data), parent = env)
+  out <- tryCatch(
+    eval(rlang::call_modify(cl, data = quote(.nestedtune_data)), eval_env),
+    error = function(cnd) cnd
+  )
+  if (inherits(out, "condition")) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} could not be evaluated.",
+        x = "Tried to run {.code {paste(deparse(cl), collapse = ' ')}}."
+      ),
+      parent = out,
+      call = call
+    )
+  }
   out
 }
 
