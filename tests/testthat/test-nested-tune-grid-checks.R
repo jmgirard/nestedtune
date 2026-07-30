@@ -48,6 +48,19 @@ test_that("a workflow carrying no model spec is refused by nestedtune", {
   expect_error(nested_tune_grid(workflows::workflow(), folds),
                "no model specification")
 
+  # The two shapes get different bullets: an empty workflow carries no
+  # preprocessor either, and saying it does would describe the wrong object.
+  expect_match(
+    conditionMessage(tryCatch(nested_tune_grid(prep_only, folds),
+                              error = function(e) e)),
+    "carries a preprocessor only"
+  )
+  expect_match(
+    conditionMessage(tryCatch(nested_tune_grid(workflows::workflow(), folds),
+                              error = function(e) e)),
+    "is empty"
+  )
+
   cnd <- tryCatch(nested_tune_grid(prep_only, folds), error = function(e) e)
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
   # The remedy, not just a bullet: GP3 refuses, and every other check says how

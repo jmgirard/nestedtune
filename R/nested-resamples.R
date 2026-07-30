@@ -139,10 +139,10 @@ inner_resamples_from_split <- function(split, cl, env, data, call) {
   outer_idx <- as.integer(split$in_id)
   analysis_frame <- as.data.frame(split)
 
-  # Evaluated once per outer fold, so the guard inside eval_spec() covers every
-  # fold. A pre-pass over the first fold would be cheaper to write and wrong:
-  # building an rset draws from the RNG, so the extra evaluation would shift the
-  # stream and change every design this function returns.
+  # This function runs once per outer fold, so the rset guard below it covers
+  # every fold. A pre-pass over the first fold would be cheaper to write and
+  # wrong: building an rset draws from the RNG, so the extra evaluation would
+  # shift the stream and change every design this function returns.
   inner_rset <- eval_spec(cl, analysis_frame, env, "inside", call = call)
   if (!inherits(inner_rset, "rset")) {
     cli::cli_abort(

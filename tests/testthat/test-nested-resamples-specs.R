@@ -220,6 +220,10 @@ test_that("the refusal names the user's call, not an internal one", {
 # truncated messages are equal; the length bound is what makes it fail.
 
 test_that("a failing spec reports a message that does not carry the data", {
+  # Seeded, per the helper file's fixture-provenance rule -- the assertion does
+  # not depend on the values, but an unseeded fixture advances the shared stream
+  # mid-file and the fixture cache keys on it.
+  set.seed(99)
   small <- data.frame(a = rnorm(30), b = rnorm(30))
   large <- data.frame(a = rnorm(3000), b = rnorm(3000))
 

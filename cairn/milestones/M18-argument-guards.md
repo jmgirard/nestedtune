@@ -198,3 +198,57 @@ files unedited; no `README.Rmd` in this repo so the knit check is a no-op;
 `pkgdown::check_pkgdown()` reports "No problems found"; `NEWS.md` carries entries
 for the user-visible refusals and names no milestone number; `check()` reports no
 NOTEs, so no `.Rbuildignore` gap.
+
+### Independent review — three lenses, then a scorer
+
+26 candidate findings, unfiltered, from an [O] diff-bug lens, an [S] blame-history
+lens and an [S] prior-review lens; scored by a fresh [S] scorer that generated none
+of them. The prior-review lens found **zero regressions** and confirmed M18 is a
+superset of M02 F6 (which named only `nested_tune_grid()`; AC3 covers both drivers).
+Its GitHub inline-comment probe returned empty, so no per-PR walk — consistent with
+M91's measurement.
+
+**Actioned (scored ≥ 80), all fixed on the branch:**
+
+- **D1 (92)** — the `sep_*` fixture's 3-of-3 separation was a property of the default
+  generator triple: measured 1 of 3 under `normal.kind = "Box-Muller"` and 0 of 3
+  under `RNGkind("L'Ecuyer-CMRG")` or `sample.kind = "Rounding"`, while the helper
+  comment claimed reproducibility. Both helpers now pin the full triple as
+  `reference_nested_loop()` does (D-011) and restore the caller's kinds; re-verified
+  3 of 3 under all five configurations.
+- **C2 (88)** — the no-model-spec `x` bullet told an *empty* workflow it "carries a
+  preprocessor only", and the test pinned that wording as correct. Bullet is now
+  conditional on `length(object$pre$actions)`; both shapes asserted.
+- **B1 (87)** — the comment above the rset guard said the guard lives in `eval_spec()`.
+  It does not.
+- **E4 (85)** — `test-metrics-argument.R` asserts against recorded oracle O1 but
+  carried no provenance header, so a ≥2-types audit reading declared locations would
+  not see it. Header added.
+- **A2 (83)** — binding the data to a name changes `parent.frame()` identity inside a
+  specification. Inherent to the approach the plan chose; **not fixed**, candidate row
+  raised.
+- **E5 (82)** — repeated byte-identical builds bypassed M12's fixture cache and were
+  therefore invisible to the `builds > 1` report built to detect exactly that. Now
+  memoised; the five affected files run in 11 s together, against the ~20.9 s the lens
+  measured for this file alone. The work log's earlier "~8 s" was an unmeasured
+  estimate and is wrong.
+
+Mutation inversion re-run after these edits, since they changed the asserting tests:
+all three sites still red (4, 4, 1), baseline `[ FAIL 0 | PASS 41 ]`.
+
+**Also fixed though sub-threshold**, being one-line and verified true: BH1 (76, the
+`eval_inside_spec()` comment this milestone falsified), E7 (68, unseeded fixtures in
+the AC2 test), F2/F3/F5 (NEWS overstated the baseline as "thousands", omitted the
+chained-cause change, and named only the preprocessor-only shape).
+
+**Logged, not actioned (below 80):** E2 (32) assertion weaker than its comment;
+E3 (38) loop-gated assertions, cannot fire; E6 (42) — fixed anyway, since memoising
+made the `sep_*` signature cache-routed and the completeness claim then genuinely
+false; G3 (42) AC5's site count, the extra `R/parallel.R` sites being signature-level
+and not silent; D4 (45) — fixed anyway, one line; A1 (55) `.nestedtune_data` shadowing
+a same-named caller binding; B3 (55) a zero-split rset passes the class guard; C4 (55)
+the fallback comment overstates robustness; F4 (52) NEWS phrasing; G1 (32) `environment()`
+vs `rlang::current_env()`; G2 (60) neither refusal documented in roxygen; C3 (35) and
+B4 (35) both concern `check_nested()` and the model-without-preprocessor shape, which
+this diff does not touch; G4 (12) and BH2 (8) already logged; BH3 (15) a lesson-retirement
+note for post-merge hygiene.

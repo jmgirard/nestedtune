@@ -273,6 +273,16 @@ test_that("the key separates every fixture signature this suite asks for", {
     final_no_metrics = function() {
       list(object = det_workflow(d), resamples = final_nested(d),
            grid = det_grid(), metrics = NULL)
+    },
+    sep = function() {
+      s <- sep_data()
+      list(object = sep_workflow(s), resamples = sep_nested(s),
+           grid = sep_grid(), metrics = sep_metrics())
+    },
+    sep_no_metrics = function() {
+      s <- sep_data()
+      list(object = sep_workflow(s), resamples = sep_nested(s),
+           grid = sep_grid(), metrics = NULL)
     }
   )
 

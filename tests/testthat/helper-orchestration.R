@@ -238,17 +238,31 @@ unstable_grid <- function() data.frame(num_comp = 1:4)
 # Gaussian. The (data seed, design seed) pair below was found by searching that
 # space at the OUTER-FOLD level -- a whole-data proxy reports separation the
 # nested design does not have -- and separates in all three outer folds.
-# The path is still PCA and lm, so it stays RNG-free and the disagreement is
-# reproducible.
+#
+# The model path is RNG-free (PCA and lm), but the fixture itself is not: the
+# all-three-folds separation is a property of one seed pair under one generator
+# triple, and a bare set.seed() pins only the uniform generator. Measured at
+# M18 review: under `normal.kind = "Box-Muller"` separation falls to 1 of 3
+# folds, and under `RNGkind("L'Ecuyer-CMRG")` or `sample.kind = "Rounding"` to
+# 0 of 3 -- so an ambient kind left set by another file would make the metric
+# tests fail for a reason that has nothing to do with `metrics`. Both helpers
+# therefore pin the full triple the way reference_nested_loop() does, and
+# restore the caller's kinds so the pin does not leak into the next test.
 sep_data <- function(n = 80, seed = 10, k = 6, df = 1.2) {
-  set.seed(seed)
+  old <- RNGkind()
+  on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
+  set.seed(seed, kind = "Mersenne-Twister",
+           normal.kind = "Inversion", sample.kind = "Rejection")
   d <- as.data.frame(matrix(rnorm(n * k), nrow = n, ncol = k))
   names(d) <- paste0("x", seq_len(k))
   d$y <- 2 * d$x1 - d$x2 + rt(n, df = df) * 3
   d
 }
 
-sep_workflow <- unstable_workflow
+# A wrapper, not an alias: `sep_workflow <- unstable_workflow` would make the
+# two fixtures the same object, so neither could change without silently
+# changing the other's callers.
+sep_workflow <- function(data) unstable_workflow(data)
 
 sep_grid <- function() data.frame(num_comp = 1:5)
 
@@ -258,7 +272,10 @@ sep_metrics <- function() {
 
 # Literal arguments, so nested_final_fit() can re-evaluate the stored call.
 sep_nested <- function(data, seed = 21) {
-  set.seed(seed)
+  old <- RNGkind()
+  on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
+  set.seed(seed, kind = "Mersenne-Twister",
+           normal.kind = "Inversion", sample.kind = "Rejection")
   nested_resamples(
     data,
     outside = rsample::vfold_cv(v = 3),
