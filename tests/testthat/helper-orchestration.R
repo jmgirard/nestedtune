@@ -29,6 +29,20 @@ det_workflow <- function(data) {
 
 det_grid <- function() data.frame(num_comp = 1:3)
 
+# A continuous tunable, for the cases where an integer grid has to be expanded
+# (M21). `num_comp` reaches only as many values as there are predictors, so its
+# expansion is a small fixed set and any two runs agree trivially; `threshold`
+# is continuous, which is where tune's space-filling expansion has choices to
+# make -- and where two runs under different seeds were measured to disagree.
+cont_workflow <- function(data) {
+  rec <- recipes::step_pca(
+    recipes::recipe(y ~ x1 + x2 + x3 + x4, data = data),
+    recipes::all_predictors(),
+    threshold = tune::tune()
+  )
+  workflows::workflow(rec, parsnip::linear_reg())
+}
+
 # The stochastic engine. ranger draws its seed from R's RNG and runs
 # single-threaded here, so a fold's fit is reproducible iff our seeding is
 # (RR01 Q8: with a deterministic engine every RNG test passes vacuously).

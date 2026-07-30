@@ -115,9 +115,9 @@ candidate sets.
       column; `has_results_columns()` (`R/nested-results.R:106`) requires it.
 - [x] T4: `is_fold_record()` (`R/parallel.R:389`) requires the grid element;
       mutation-verify by dropping it from the required set and confirming red.
-- [ ] T5: failure-path tests — one candidate failing everywhere, an outer-fit
+- [x] T5: failure-path tests — one candidate failing everywhere, an outer-fit
       failure, and a fold where every candidate failed.
-- [ ] T6: integer-grid oracle test on a continuous-parameter workflow: the
+- [x] T6: integer-grid oracle test on a continuous-parameter workflow: the
       by-hand `tune_grid()` comparison under the fold's `.tuning_seed`, plus the
       truncation case. Record the observed cross-fold difference in the file's
       oracle provenance header without asserting it.
@@ -138,6 +138,7 @@ candidate sets.
 - 2026-07-30: plan gate chose a bare zero-row tibble for a fold that scored nothing over a typed one, because a fold that died before tuning returned has no result to read parameter names from and typing it would need machinery built solely to furnish an empty record; falsified by a downstream binding of `.grid` across folds that needs uniform columns.
 - 2026-07-30: plan gate chose recording the cross-fold grid difference as an observation over asserting it, because it is a property of tune's expansion and IP2 declines to guarantee anything across tune versions; falsified by the difference proving load-bearing for a user-facing claim rather than only motivating the design.
 - 2026-07-30: plan chose a per-fold list column over a single attribute, weighed autonomously, because folds are measured to disagree and an attribute would need an invented rule for that case while also surviving a row subset as the parent's record (M20's finding); falsified by evidence that folds cannot disagree.
+- 2026-07-30: T5-T6 — failure-path and oracle tests. Two oracle types now cover the record: O3 re-runs `tune_grid()` by hand on each fold's inner resamples under its own `.tuning_seed`, O4 is the data-frame invariant. Truncation measured: `grid = 20L` on a four-predictor `num_comp` workflow records 4 candidates per fold against a `grid` attribute still reading 20. The cross-fold difference was measured on the shipped fixture rather than cited from the plan-gate probe on other data, and recorded in the oracle header unasserted per the plan gate — folds expanded 0.00059/0.24510/0.50336/0.74564/0.98373, 0.03347/0.25516/0.49639/0.75686/0.99656, and 0.00259/0.23142/0.48026/0.74269/0.99798.
 
 ## Decisions
 
