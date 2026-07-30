@@ -184,6 +184,19 @@ test_that("the object carries the grid and metrics it was asked to run", {
   subset <- res[1:2, ]
   expect_identical(attr(subset, "grid"), grid)
   expect_identical(attr(subset, "metrics"), metrics)
+
+  # A column subset too, and not because it is symmetry. `[.data.frame` drops
+  # arbitrary attributes on a column subset while `[.tbl_df` keeps them
+  # (measured at M20 review), so this is the one subset shape whose outcome
+  # depends on which method `[.nested_results`'s NextMethod() reaches. Pinning
+  # it here holds the documented promise to the class rather than to tibble's
+  # current `[`. Dropping the two seed columns keeps every column
+  # has_results_columns() requires, so the result is still a nested_results.
+  cols <- setdiff(names(res), c(".tuning_seed", ".outer_fit_seed"))
+  narrowed <- res[, cols]
+  expect_s3_class(narrowed, "nested_results")
+  expect_identical(attr(narrowed, "grid"), grid)
+  expect_identical(attr(narrowed, "metrics"), metrics)
 })
 
 test_that("a run given no metric set carries no metrics attribute", {

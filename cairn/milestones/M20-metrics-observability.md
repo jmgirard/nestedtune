@@ -97,9 +97,9 @@ nothing in `R/` reads.
       which is where the fold counts sit and has nothing to do with these.
 - [x] T5: add the attribute test per AC4 to `test-nested-tune-grid-results.R`,
       and comment `R/nested-results.R:75-76` to record that `NextMethod()`
-      already carries both attributes through a subset — verified at plan time
-      against row, column, logical and negative indices — so the two lines are
-      belt-and-braces rather than load-bearing.
+      already carries both attributes through a subset. (Corrected at review:
+      that holds for `[.tbl_df` but not `[.data.frame`, which drops them on a
+      column subset — see review finding F1.)
 - [x] T6: verify AC4 by mutation — delete each assignment in
       `new_nested_results()` in turn, record red for both, restore.
 - [x] T7: add the AC5 candidate row to `cairn/ROADMAP.md`, search-first, and
@@ -107,6 +107,7 @@ nothing in `R/` reads.
 
 ## Work log
 
+- 2026-07-30: review fan-out — 18 findings across three lenses (diff-bug 17, blame-history 1, prior-review 0), scored by a fourth agent. Three actioned at ≥80: F2 (88) added the missing column-subset coverage, F1 (85) corrected a false claim about `[.data.frame` in the comment T5 added, F15 (85) fixed a mis-cited check site in the AC5 row. Fifteen logged below threshold. Post-fix: PASS 1346, check 0/0/0.
 - 2026-07-30: review checkpoint — PR #21 opened as draft; all six criteria verified with fresh evidence and ticked under AC fencing; consistency gate clean. Prior-review lens reported zero findings (PR-thread probe empty, archived `## Review` sections the evidence base); blame-history lens reported one (H1, on the `[.nested_results` comment's phrasing). Diff-bug lens still running, so scoring and triage are not yet done.
 - 2026-07-30: `devtools::check()` clean — 0 errors, 0 warnings, 0 notes, 3m23s; test suite 80s/130s under check. No prose-guard authored or edited this milestone, so guard-doctrine §8's fresh-context description review does not apply. Status → review.
 - 2026-07-30: T7 — AC5 candidate row added, search-first sweep over candidates, `milestones/archive/`, and `DECISIONS.md` finding no overlap. T7 extended (minor task edit) with the `NEWS.md` entry the consistency gate requires: documenting the two attributes changes the public contract, so it is user-visible.
@@ -161,6 +162,57 @@ nothing in `R/` reads.
   condition.
 - **AC6** — `devtools::test()` FAIL 0 / WARN 0 / SKIP 0 / **PASS 1343**;
   `R CMD check` **0 errors, 0 warnings, 0 notes** (3m23s).
+
+### Independent review — three lenses, one scorer
+
+Three fresh-context reviewers with distinct evidence bases, then a scorer that
+generated none of the findings. 18 candidate findings; 3 scored ≥80 and were
+actioned, 15 logged below.
+
+**Actioned (≥80).**
+
+- **F2 (88) — no test covered a column subset, so `R/nested-results.R:81-82` had
+  zero coverage.** Fixed: `test-nested-tune-grid-results.R` now asserts both
+  attributes survive `res[, cols]` on a narrowed-but-still-classed object.
+  Verified non-vacuous — breaking the contract (`[.nested_results` dropping both)
+  reds it with 4 failures.
+- **F1 (85) — the new comment on `R/nested-results.R:75-77` claimed
+  `NextMethod()` carries both attributes through a column subset "under
+  `[.tbl_df` and `[.data.frame` alike", which is false.** Measured at review:
+  `[.data.frame` keeps them through a row subset and DROPS them on a column
+  subset; `[.tbl_df` keeps them through every shape. Fixed: the comment now
+  states both methods' actual behavior and that the two lines are the guarantee
+  under `[.data.frame` rather than a duplicate. The same overclaim in T5's task
+  text is corrected in place and marked.
+- **F15 (85) — the AC5 candidate row mis-cited the check site**, naming
+  `R/nested-tune-grid.R:26-30` (the `@param grid` roxygen block) as where the
+  argument is checked. Fixed in place: the row now cites `check_grid()` at
+  `R/checks.R:204`.
+
+**Logged, below the action threshold (15).** F5 (70) the new test duplicates
+`example_results()` without saying why the fixture is rebuilt un-memoised · H1
+(65) "verified at M20" overstated what T6's persisted mutation exercised —
+subsumed by the F1 fix · F16 (62) the file's oracle note points at
+`test-nested-tune-grid-oracles.R` where O1 on this fixture lives in
+`test-metrics-argument.R` · F7 (55) the per-fold loop carries no `info=` label ·
+F11 (55) "as it was given" does not address `grid`'s default of 10 · F6 (50) the
+instrument's non-vacuity invariant is guarded in a different file · F13 (50)
+`expect_null()` beside `expect_false()` is redundant · F10 (45) `x` in `@return`
+is not a parameter name · F14 (35) the combined declared worst case exceeds the
+CI job cap — pre-existing and unguarded · F3 (30) dplyr/vctrs subsetting bypasses
+`[.nested_results`, leaving the fold counts stale — pre-existing IP4 gap · F12
+(30) the metrics-absent test is inert to the constructor mutation by design ·
+F17 (30) strict `expect_identical()` on cross-process doubles carries no note ·
+F9 (25) the `daemons(0)` disclosure is applied only to the new file · F8 (18)
+the ceiling comment's headroom claim — refuted by the scorer against two
+existing 30 s waits · F4 (5) stale, the Review section was written before the
+scorer ran.
+
+### Post-fix verification
+
+`devtools::test()` FAIL 0 / WARN 0 / SKIP 0 / **PASS 1346**; `R CMD check`
+**0 errors, 0 warnings, 0 notes** (3m27s); `devtools::document()` no diff;
+`cairn_validate` exit 0.
 
 ### Consistency gate
 

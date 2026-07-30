@@ -72,12 +72,22 @@ outer_scheme_label <- function(resamples) {
   if (!inherits(out, "nested_results")) {
     class(out) <- c("nested_results", class(out))
   }
-  # Belt-and-braces, not load-bearing: verified at M20 that NextMethod() above
-  # already carries both attributes through a row subset, a column subset, and
-  # logical and negative indices, under `[.tbl_df` and `[.data.frame` alike.
-  # They are kept because they say in the method what the method guarantees --
-  # the two below are the ones that must be here, since the counts describe the
-  # rows and would otherwise survive as the parent's.
+  # Which of these two lines is doing work depends on what NextMethod() reached,
+  # and the two answers differ (measured at M20 review).
+  #
+  # `[.tbl_df` -- the method that actually runs, tibble being loaded whenever
+  # this package is -- carries arbitrary attributes through every subset shape:
+  # row, column, logical and negative alike. Against that method these lines are
+  # a duplicate.
+  #
+  # `[.data.frame` does NOT: it carries them through a row subset and DROPS them
+  # on a column subset. So against that method these lines are the guarantee,
+  # not a duplicate of one, and they are what makes the `@return` promise
+  # ("subsetting rows carries both unchanged") true of the class rather than of
+  # whichever `[` happened to be reached. Keep them.
+  #
+  # The two below are load-bearing under either method, since the counts
+  # describe the rows and would otherwise survive as the parent's.
   attr(out, "grid") <- attr(x, "grid")
   attr(out, "metrics") <- attr(x, "metrics")
   # The scheme label is not recomputable from the rows, and the rows kept are
