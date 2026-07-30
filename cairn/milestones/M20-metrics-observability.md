@@ -1,11 +1,11 @@
 # M20: The metric set a run scored under is provable, on every path and on the object
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** —
+- **Branch/PR:** `m20-metrics-observability`
 
 ## Goal
 
@@ -106,6 +106,7 @@ nothing in `R/` reads.
 
 ## Work log
 
+- 2026-07-30: start — status in-progress on `m20-metrics-observability`.
 - 2026-07-30: created by /milestone-plan, promoting the parallel-`metrics`-delivery candidate row (added 2026-07-30 from M18's Out list) and the unread-attribute third of the metrics-loose-ends row, which is trimmed to its remainder.
 - 2026-07-30: criteria audit ([O], fresh context) returned 22 findings; ten fixed into the criteria before the gate — missing `last_dispatch()` assertion; the fixture cache's key ignoring daemon state, which would have served the parallel test a serially-built value; `identical()` false on two `metric_set()` calls; `metrics = NULL` deleting rather than storing the attribute; "the four parallel files" excluding the file this adds; `time_budget_totals()` not summing; a non-discriminating `document()` clause; "wait-shaped" not matching the guard's six names; the serial comparison readable as an IP2 claim it cannot support; `R/nested-results.R:75-76` dead — and three routed to the gate.
 - 2026-07-30: plan gate chose a daemon-backed contract test over mocking `mirai_map()`'s `.args` because a mock pins the argument slot rather than the behavior and breaks under a behavior-preserving move of `metrics` into the per-fold payload; falsified by evidence that no daemon-backed test can be kept inside the CI job budget.

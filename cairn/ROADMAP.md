@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (M19 merged and archived; M17's row pruned under
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M20 | The metric set a run scored under is provable, on every path and on the object | planned | — | normal | milestones/M20-metrics-observability.md |
+| M20 | The metric set a run scored under is provable, on every path and on the object | in-progress | — | normal | milestones/M20-metrics-observability.md |
 | M19 | A malformed design is refused at the driver, not at the tenth fold | done | — | normal | milestones/archive/M19-driver-design-guards.md |
 | M18 | A misspecified call fails as nestedtune's own error | done | — | normal | milestones/archive/M18-argument-guards.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
