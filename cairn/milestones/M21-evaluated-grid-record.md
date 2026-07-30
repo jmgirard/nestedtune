@@ -121,7 +121,7 @@ candidate sets.
       by-hand `tune_grid()` comparison under the fold's `.tuning_seed`, plus the
       truncation case. Record the observed cross-fold difference in the file's
       oracle provenance header without asserting it.
-- [ ] T7: the print line for disagreeing candidate sets
+- [x] T7: the print line for disagreeing candidate sets
       (`R/nested-results-print.R`), beside the existing selection-instability
       line; re-record affected snapshots.
 - [ ] T8: `@return` and the failure section in `R/nested-tune-grid.R`;
@@ -139,6 +139,9 @@ candidate sets.
 - 2026-07-30: plan gate chose recording the cross-fold grid difference as an observation over asserting it, because it is a property of tune's expansion and IP2 declines to guarantee anything across tune versions; falsified by the difference proving load-bearing for a user-facing claim rather than only motivating the design.
 - 2026-07-30: plan chose a per-fold list column over a single attribute, weighed autonomously, because folds are measured to disagree and an attribute would need an invented rule for that case while also surviving a row subset as the parent's record (M20's finding); falsified by evidence that folds cannot disagree.
 - 2026-07-30: T5-T6 — failure-path and oracle tests. Two oracle types now cover the record: O3 re-runs `tune_grid()` by hand on each fold's inner resamples under its own `.tuning_seed`, O4 is the data-frame invariant. Truncation measured: `grid = 20L` on a four-predictor `num_comp` workflow records 4 candidates per fold against a `grid` attribute still reading 20. The cross-fold difference was measured on the shipped fixture rather than cited from the plan-gate probe on other data, and recorded in the oracle header unasserted per the plan gate — folds expanded 0.00059/0.24510/0.50336/0.74564/0.98373, 0.03347/0.25516/0.49639/0.75686/0.99656, and 0.00259/0.23142/0.48026/0.74269/0.99798.
+
+- 2026-07-30: T7-T8 — the disagreement print line, `@return`, the failure section, `print.nested_results()` docs, and the NEWS entry. The M20 NEWS bullet was left standing rather than corrected: its claim is about `attr(x, "grid")`, which is still not a record of what was evaluated, so M21 adds a record beside it rather than falsifying it. Comparison is by `identical()` on the sorted parameter columns, never on `.config` (positional) and never on formatted strings (a difference below print precision is still a difference); all three are asserted.
+- 2026-07-30: the `BUDGETED_FILES` judgment logged at the implement gate was half wrong, and the guard caught it. No row was owed — nothing added a wait — but the ledger is anchored by `file:line`, so inserting a fixture line and a test above the existing rows made all 30 stale at once (+31 in `test-parallel-classify.R`, +1 in `test-parallel-interrupt.R`). Renumbered mechanically and re-verified. The coupling is deliberate (M16 built it so a copied bound cannot drift from its call site), but it means any insertion into a budgeted file above a wait call costs a renumbering pass.
 
 ## Decisions
 

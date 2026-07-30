@@ -21,6 +21,12 @@
 #' outer folds choose different parameters, the tuning procedure is unstable on
 #' this data — averaging the metrics hides that, so printing marks it.
 #'
+#' Printing also says when the folds were not choosing from the same menu. A
+#' grid given as a size is expanded per fold, under that fold's own seed, so a
+#' continuous parameter leaves every fold with its own candidates — which
+#' changes how the selection lines above should be read. The line reports each
+#' fold's candidate count and appears only when the sets actually differ.
+#'
 #' @param x A `nested_results` object from [nested_tune_grid()].
 #' @param ... Not used.
 #'
@@ -127,7 +133,70 @@ print_selection <- function(x) {
       length(completed)
     )
   }
+  print_candidate_sets(x$.grid[completed])
   invisible(NULL)
+}
+
+# Whether the folds were even choosing from the same menu (M21).
+#
+# Printed here rather than in the design block because it qualifies the lines
+# above it: a reader comparing what each fold selected is entitled to know that
+# the folds did not all have the same candidates to select from. With the
+# default `grid = 10` and any continuous parameter this is the ordinary case,
+# not an edge case -- expansion is stochastic and each fold tunes under its own
+# seed.
+#
+# Silent on agreement, so the line appears only when it changes how the
+# selections above should be read.
+print_candidate_sets <- function(grids) {
+  if (length(grids) < 2L || same_candidates(grids)) {
+    return(invisible(NULL))
+  }
+  counts <- vapply(
+    grids,
+    function(g) if (is.data.frame(g)) nrow(g) else NA_integer_,
+    integer(1)
+  )
+  # The counts, not just the fact of disagreement: they separate two different
+  # stories. Equal counts mean the folds searched the same number of different
+  # values; unequal ones mean one fold's grid truncated further than another's.
+  shown <- cli::cli_vec(
+    counts,
+    list("vec-sep" = ", ", "vec-last" = ", ", "vec-trunc" = 12)
+  )
+  cli::cli_bullets(c(
+    "!" = "Candidates searched: {shown} — the folds did not search the \\
+           same grid"
+  ))
+  invisible(NULL)
+}
+
+# Compared on the parameter values themselves, never on `.config`: that label is
+# positional, so two folds that searched the same candidates in a different
+# order carry different labels for them. Compared by identical() on the sorted
+# columns rather than through formatted strings, so two values that differ
+# beyond the print precision still count as different.
+same_candidates <- function(grids) {
+  keys <- lapply(grids, candidate_key)
+  all(vapply(keys[-1L], identical, logical(1), keys[[1L]]))
+}
+
+candidate_key <- function(g) {
+  if (!is.data.frame(g)) {
+    return(NULL)
+  }
+  params <- sort(setdiff(names(g), ".config"))
+  if (length(params) == 0L || nrow(g) == 0L) {
+    return(list())
+  }
+  values <- lapply(params, function(p) g[[p]])
+  # Row order is not part of the candidate set, so it is normalised away before
+  # comparison; the names travel too, so a fold carrying a different parameter
+  # entirely is a difference rather than a coincidence of values.
+  ord <- do.call(order, values)
+  sorted <- lapply(values, function(v) v[ord])
+  names(sorted) <- params
+  sorted
 }
 
 # Every column any completed fold chose a value for, less tune's bookkeeping.

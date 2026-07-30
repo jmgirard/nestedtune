@@ -118,3 +118,28 @@
         deploy. Build that with `nested_final_fit()`, and report this estimate as
         what its procedure achieves.
 
+---
+
+    Code
+      print(differing)
+    Message
+      
+      -- Nested cross-validation results ---------------------------------------------
+      Outer resamples: 3-fold cross-validation
+      Outer folds: 3 requested, 3 completed
+      
+      -- Selected parameters --
+      
+      ! threshold: 0.988993033999577, 0.992952768923715, 0.997935210121796 (folds
+        disagree)
+      ! Candidates searched: 5, 5, 5 — the folds did not search the same grid
+      
+      -- Estimate (3 of 3 outer folds) --
+      
+      rmse (standard): 1.12
+      rsq (standard): 0.815
+      
+      i A nested estimate describes the tune-and-fit procedure, not a model you can
+        deploy. Build that with `nested_final_fit()`, and report this estimate as
+        what its procedure achieves.
+

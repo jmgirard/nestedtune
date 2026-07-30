@@ -35,17 +35,36 @@
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
 #'   (`.metrics`), the parameters chosen for it by inner tuning (`.selected`),
-#'   whether the fold finished (`.completed`), anything that went wrong
-#'   (`.notes`), and the two seeds that reproduce it (`.tuning_seed`,
-#'   `.outer_fit_seed`). Use [collect_metrics()] to summarize.
+#'   the candidates its inner tuning actually scored (`.grid`), whether the fold
+#'   finished (`.completed`), anything that went wrong (`.notes`), and the two
+#'   seeds that reproduce it (`.tuning_seed`, `.outer_fit_seed`). Use
+#'   [collect_metrics()] to summarize.
 #'
-#'   The object also carries what it was asked to run as two attributes.
-#'   `attr(x, "grid")` holds the `grid` argument **as it was given** — so it is
-#'   a positive whole number, not a table of candidates, whenever a grid size
-#'   was passed, and it is not a record of which candidates tune went on to
-#'   evaluate. `attr(x, "metrics")` holds the `metrics` argument, and is absent
-#'   rather than `NULL` when none was supplied. Subsetting rows carries both
-#'   unchanged, since they describe the call rather than the rows kept.
+#'   **Two records describe the grid, and they answer different questions.**
+#'   `attr(x, "grid")` holds the `grid` argument **as it was given** — a
+#'   positive whole number, not a table of candidates, whenever a size was
+#'   passed. The `.grid` column holds what each outer fold's inner tuning
+#'   actually scored, one table per fold with a column per tuned parameter.
+#'
+#'   The two diverge routinely, in both directions. A size is expanded by tune
+#'   and may reach fewer candidates than were asked for — a request for 20 on a
+#'   parameter with four reachable values evaluates four — and a candidate that
+#'   fails scores nothing. Folds can also differ from *each other*: expanding a
+#'   size draws from the generator, and each fold tunes under its own seed, so
+#'   a continuous parameter gives every fold its own candidates. Printing says
+#'   so when it happens.
+#'
+#'   One limit is worth stating plainly. `.grid` is derived from the tuning
+#'   run's own metrics, because that is the only place tune records candidates
+#'   at all. A candidate that failed on **every** inner resample scored nothing
+#'   and is therefore absent from `.grid` — `.notes` is where its failure is
+#'   recorded. A fold that scored no candidate at all carries a zero-row table,
+#'   never `NULL`.
+#'
+#'   `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
+#'   than `NULL` when none was supplied. Subsetting rows carries both
+#'   attributes unchanged, since they describe the call rather than the rows
+#'   kept; `.grid` is a column, so it travels with the fold it describes.
 #'
 #' @section Reproducibility:
 #'
@@ -99,6 +118,11 @@
 #' its parameters were chosen on less of the inner design than was asked for.
 #' Those notes are kept, so `.completed` being `TRUE` with a non-empty `.notes`
 #' means exactly that: it worked, on less than the whole design.
+#'
+#' A failed fold still records the candidates it got as far as scoring. One that
+#' died at the outer fit had already tuned, so its `.grid` holds the full set;
+#' one whose inner tuning failed outright holds a zero-row table. Neither is
+#' reported as having searched a grid it did not.
 #'
 #' Subsetting rows recomputes `folds_attempted` and `folds_completed` for the
 #' rows kept, so the counts always describe the object in hand. Dropping the
@@ -375,6 +399,20 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
 # candidate that failed on some inner splits and scored on others did run, and
 # reading one element would keep or drop it according to which element was read.
 scored_candidates <- function(tuned) {
+  # Total by construction, because of where it is called from: both call sites
+  # sit outside every tryCatch in this file, so anything raised here would abort
+  # the whole run -- the one outcome M03 exists to prevent, and triggered by
+  # bookkeeping rather than by a fit. No raising input is known: the obvious
+  # candidate, `order()` on a list-valued parameter column, was tried at M21 and
+  # does NOT raise (it sorts and returns both candidates, asserted below in
+  # test-nested-tune-grid-failures.R). This is insurance against a shape not
+  # thought of rather than a fix for one that was, and it is worth a line
+  # because the trade is asymmetric: failing to an empty record understates one
+  # fold, while raising discards every other fold's completed work.
+  tryCatch(scored_candidates_impl(tuned), error = function(cnd) empty_candidates())
+}
+
+scored_candidates_impl <- function(tuned) {
   frames <- scored_metric_frames(tuned)
   if (length(frames) == 0L) {
     return(empty_candidates())

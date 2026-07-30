@@ -266,6 +266,68 @@ test_that("a list-valued selection prints instead of aborting", {
   expect_match(print_text(listy), "1, 2", fixed = TRUE)
 })
 
+test_that("folds that searched different candidate sets are said to have", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(11)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 3)
+  )
+
+  # A continuous parameter with a grid SIZE: tune expands it per fold, under
+  # each fold's own seed, and the expansions differ (measured in
+  # test-nested-tune-grid-oracles.R). The disagreement is checked here rather
+  # than assumed, so a fixture that quietly stopped disagreeing could not go on
+  # recording a valid-looking snapshot of a line it no longer earns.
+  set.seed(20)
+  differing <- nested_tune_grid(
+    cont_workflow(d), folds, grid = 5, metrics = reg_metrics()
+  )
+  expect_false(same_candidates(differing$.grid))
+
+  # The branch this line lives on is reached by no other fixture in the file,
+  # so the method's "never raises, never warns" promise is re-asserted here
+  # rather than assumed from the partial-run and nothing-completed tests above.
+  expect_no_error(print_text(differing))
+  expect_no_warning(print_text(differing))
+
+  txt <- print_text(differing)
+  expect_match(txt, "Candidates searched: 5, 5, 5")
+  expect_match(txt, "did not search the\\s+same grid")
+
+  # A data-frame grid is handed to every fold unchanged, so there is nothing to
+  # disagree about and the line stays away. Asserted because a line that fires
+  # unconditionally would look identical in the snapshot above.
+  set.seed(20)
+  agreeing <- nested_tune_grid(
+    det_workflow(d), folds, grid = det_grid(), metrics = reg_metrics()
+  )
+  expect_true(same_candidates(agreeing$.grid))
+  expect_no_match(print_text(agreeing), "Candidates searched")
+})
+
+test_that("the candidate-set comparison ignores order and tune's config labels", {
+  # `.config` is positional, so two folds that searched the same candidates in a
+  # different order carry different labels for them -- comparing on the label
+  # would report every such pair as a disagreement.
+  a <- data.frame(cost = c(1, 2, 3), .config = c("pre1", "pre2", "pre3"))
+  b <- data.frame(cost = c(3, 1, 2), .config = c("pre9", "pre8", "pre7"))
+  expect_true(same_candidates(list(a, b)))
+
+  # And a difference below print precision is still a difference: the comparison
+  # runs on the values, not on what they format to.
+  c1 <- data.frame(cost = c(1, 2, 3 + 1e-12), .config = c("pre1", "pre2", "pre3"))
+  expect_false(same_candidates(list(a, c1)))
+
+  # A fold carrying a different parameter entirely is a difference too, rather
+  # than a coincidence of values.
+  d1 <- data.frame(penalty = c(1, 2, 3), .config = c("pre1", "pre2", "pre3"))
+  expect_false(same_candidates(list(a, d1)))
+})
+
 test_that("printed output holds its shape", {
   skip_if_no_engines()
   d <- make_reg_data()
@@ -304,9 +366,24 @@ test_that("printed output holds its shape", {
     grid = det_grid(), metrics = reg_metrics()
   )))
 
+  # The candidate-set line's own shape, snapshot beside the rest (M21). Built
+  # from a grid SIZE rather than a frame, which is the only way folds come to
+  # search different candidates.
+  set.seed(11)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 3)
+  )
+  set.seed(20)
+  differing <- nested_tune_grid(
+    cont_workflow(d), folds, grid = 5, metrics = reg_metrics()
+  )
+
   expect_snapshot(print(complete))
   expect_snapshot(print(partial))
   expect_snapshot(print(unanimous))
   expect_snapshot(print(divergent))
   expect_snapshot(print(nothing))
+  expect_snapshot(print(differing))
 })

@@ -32,17 +32,36 @@ candidate.}
 An object of class \code{nested_results}: one row per outer fold, with the
 fold's split and id, the metrics scored on its assessment set
 (\code{.metrics}), the parameters chosen for it by inner tuning (\code{.selected}),
-whether the fold finished (\code{.completed}), anything that went wrong
-(\code{.notes}), and the two seeds that reproduce it (\code{.tuning_seed},
-\code{.outer_fit_seed}). Use \code{\link[=collect_metrics]{collect_metrics()}} to summarize.
+the candidates its inner tuning actually scored (\code{.grid}), whether the fold
+finished (\code{.completed}), anything that went wrong (\code{.notes}), and the two
+seeds that reproduce it (\code{.tuning_seed}, \code{.outer_fit_seed}). Use
+\code{\link[=collect_metrics]{collect_metrics()}} to summarize.
 
-The object also carries what it was asked to run as two attributes.
-\code{attr(x, "grid")} holds the \code{grid} argument \strong{as it was given} — so it is
-a positive whole number, not a table of candidates, whenever a grid size
-was passed, and it is not a record of which candidates tune went on to
-evaluate. \code{attr(x, "metrics")} holds the \code{metrics} argument, and is absent
-rather than \code{NULL} when none was supplied. Subsetting rows carries both
-unchanged, since they describe the call rather than the rows kept.
+\strong{Two records describe the grid, and they answer different questions.}
+\code{attr(x, "grid")} holds the \code{grid} argument \strong{as it was given} — a
+positive whole number, not a table of candidates, whenever a size was
+passed. The \code{.grid} column holds what each outer fold's inner tuning
+actually scored, one table per fold with a column per tuned parameter.
+
+The two diverge routinely, in both directions. A size is expanded by tune
+and may reach fewer candidates than were asked for — a request for 20 on a
+parameter with four reachable values evaluates four — and a candidate that
+fails scores nothing. Folds can also differ from \emph{each other}: expanding a
+size draws from the generator, and each fold tunes under its own seed, so
+a continuous parameter gives every fold its own candidates. Printing says
+so when it happens.
+
+One limit is worth stating plainly. \code{.grid} is derived from the tuning
+run's own metrics, because that is the only place tune records candidates
+at all. A candidate that failed on \strong{every} inner resample scored nothing
+and is therefore absent from \code{.grid} — \code{.notes} is where its failure is
+recorded. A fold that scored no candidate at all carries a zero-row table,
+never \code{NULL}.
+
+\code{attr(x, "metrics")} holds the \code{metrics} argument, and is absent rather
+than \code{NULL} when none was supplied. Subsetting rows carries both
+attributes unchanged, since they describe the call rather than the rows
+kept; \code{.grid} is a column, so it travels with the fold it describes.
 }
 \description{
 \code{nested_tune_grid()} drives the outer loop of nested cross-validation. For
@@ -114,6 +133,11 @@ resamples fail, tuning still returns a candidate and the fold finishes, but
 its parameters were chosen on less of the inner design than was asked for.
 Those notes are kept, so \code{.completed} being \code{TRUE} with a non-empty \code{.notes}
 means exactly that: it worked, on less than the whole design.
+
+A failed fold still records the candidates it got as far as scoring. One that
+died at the outer fit had already tuned, so its \code{.grid} holds the full set;
+one whose inner tuning failed outright holds a zero-row table. Neither is
+reported as having searched a grid it did not.
 
 Subsetting rows recomputes \code{folds_attempted} and \code{folds_completed} for the
 rows kept, so the counts always describe the object in hand. Dropping the
