@@ -186,8 +186,10 @@ filtered set. The plan-time concern that site 1 was unobservable through
 catches it on a separating fixture.
 
 **AC6 — verified.** `devtools::check(document = FALSE)` **Status: OK** — 0 errors,
-0 warnings, 0 notes, 4m 43.8s; its `Running 'testthat.R'` leg passed.
-`devtools::document()` produces no diff in `man/` or `NAMESPACE`.
+0 warnings, 0 notes; its `Running 'testthat.R'` leg passed. `devtools::document()`
+produces no diff in `man/` or `NAMESPACE`. Re-run after the review fixes landed,
+since those changed both `R/` and `tests/`: **Status: OK** again, 0/0/0 in 3m 28.6s,
+`document()` still no-diff.
 
 ### Consistency gate
 
