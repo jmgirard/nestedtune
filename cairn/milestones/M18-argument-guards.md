@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M18: A misspecified call fails as nestedtune's own error
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -113,7 +113,7 @@ in-process call that consumes it.
       `nested_final_fit()` on that fixture.
 - [x] **T6.** Run the three-site mutation inversion, one site at a time,
       restoring each; record the ledger.
-- [ ] **T7.** `NEWS.md` entries for the two new refusals; `devtools::document()`;
+- [x] **T7.** `NEWS.md` entries for the two new refusals; `devtools::document()`;
       full `devtools::check()`.
 
 ## Work log
