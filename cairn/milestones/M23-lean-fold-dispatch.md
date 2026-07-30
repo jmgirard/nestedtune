@@ -70,6 +70,11 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
       that claim.
 - [ ] AC7 The profile `verify` slot is clean: `devtools::test()` passes and
       `devtools::document()` is current after the roxygen change.
+- [ ] AC8 A design from `rsample::nested_cv()`, whose folds share no single
+      frame, is leaned too: with the sentinel taken from one fold's own inner
+      analysis frame, the copy count across that fold's `.x` element plus its
+      `.args` is exactly 1, against `inner_v` on the pre-milestone revision, and
+      AC3's round-trip identity holds for such a design.
 
 ## Coverage
 
@@ -80,18 +85,21 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
 - AC5 → T6
 - AC6 → T7
 - AC7 → T8
+- AC8 → T2, T3, T4
 
 ## Tasks
 
-- [ ] T1 Commit a measurement harness reporting, per outer fold, the serialized
+- [x] T1 Commit a measurement harness reporting, per outer fold, the serialized
       bytes of the `.x` element, of the `.args` list, and the sentinel copy
       count. Run it on the pre-milestone revision and record the baseline in the
       work log.
 - [ ] T2 Write the failing tests first: AC2's closed-form bound and copy count,
       and AC3's round-trip identity for the outer split and the inner `rset`.
-- [ ] T3 Add the lean/rehydrate pair to `R/parallel.R` — strip `$data` from the
-      outer split and each inner split, carry the inner `rset`'s ids and classes,
-      reattach on the worker.
+- [ ] T3 Add the lean/rehydrate pair to `R/parallel.R` — set `$data` to `NULL` on
+      the outer split and on each inner split in place, so every other attribute
+      survives untouched, and reattach on the worker. Each payload carries its
+      fold's inner frame only when that frame is not the shared one `.args`
+      already holds, which is what covers designs from `rsample::nested_cv()`.
 - [ ] T4 Wire them into the parallel branch of `dispatch_folds()`
       (`R/parallel.R:64-118`): lean the payloads before `mirai_map()`, add the
       data to `.args`, and rehydrate in `fold_task()` (`R/parallel.R:428-438`)
@@ -114,6 +122,13 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
 - 2026-07-30: plan gate chose leaving `recipe$template` out over trimming it because it is surgery on a recipes-owned object whose other readers of that copy are unestablished (GP1); falsified by evidence that no recipes code path reads `template` for its rows.
 - 2026-07-30: settled autonomously — the change lands on the parallel branch only, rejecting a single lean path shared with serial, because IP2's parallel-vs-serial test does real work only while serial stays the untouched reference; falsified by a rehydration defect that a serial-path comparison could not see.
 - 2026-07-30: criteria audit ([O], fresh context) returned six findings on the six drafted criteria: AC1 measured only `.x` while the data it moves lands in `.args`; AC2's bar was unreachable on a recipe fixture and named no fixture; AC3 was already satisfied by pre-milestone code; AC4 over-specified capture inside the worker; AC5 could not fail; AC6 named a guard structurally unable to test its claim. Also flagged: one oracle type where the repo's precedent for size claims uses two, and skip-vacuity on the daemon-gated tests. AC1/AC3/AC4/AC5/AC6 and both cross-cutting findings fixed before the gate; the fixture and bar became gate questions.
+
+- 2026-07-30: implement gate found the plan's "one copy in `.args`" incomplete — `nested_tune_grid()` also accepts `rsample::nested_cv()` designs (`R/checks.R:115`), whose folds each materialize their own inner analysis frame (measured: inner1 frame 1333 of 2000 rows, not the outer split's data, and different from inner2's). Invariant holding for both constructors: within one fold every inner split shares one frame. Amended at the gate — AC8 added, T3 rewritten, coverage extended.
+- 2026-07-30: `identical()` has a pointer fast path (0.04 ms vs 1.05 ms per call on a 32 MB frame), so "is this the shared frame?" is decided per fold at no measurable cost; an equal-but-distinct frame answering TRUE is sound here, since substituting one for the other is what rehydration does anyway.
+- 2026-07-30: minor refinement — the lean form sets `$data` to `NULL` in place rather than reconstructing the inner `rset` from ids and classes, so every other attribute survives by construction and AC3's `identical()` round-trip is exact rather than reassembled.
+
+- 2026-07-30: T1 baseline, `benchmarks/dispatch-payload-size.R`, R 4.6.1 / rsample 1.3.2 / mirai 2.7.2, fixture n=5000 x 21, v=5, inner_v=5. `nested_resamples` design: payload 5,141,166 B per fold, 6 copies of the data by sentinel count, `.args` 1,761 B per fold, TOTAL WIRE 25,714,635 B. `rsample::nested_cv` design: payload 4,285,186 B per fold, 1 shared copy plus 5 of the fold's own analysis frame, TOTAL WIRE 21,434,735 B. Closed-form prediction for a leaned payload: 96,000 B.
+- 2026-07-30: the harness measured `.args` at 26,549,958 B until its own workflow was pinned — a formula built inside a function carries that function's frame, and R serializes an ordinary environment by contents while `globalenv()` and namespaces go by reference (the mechanism M12's hashing lesson records). Realistic value is 1,761 B. Left in the script as a named trap rather than silently fixed, since a user building a formula in a data-holding scope pays it for real.
 
 ## Decisions
 
