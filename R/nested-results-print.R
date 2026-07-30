@@ -165,7 +165,7 @@ print_candidate_sets <- function(grids) {
     list("vec-sep" = ", ", "vec-last" = ", ", "vec-trunc" = 12)
   )
   cli::cli_bullets(c(
-    "!" = "Candidates searched: {shown} — the folds did not search the \\
+    "!" = "Candidates searched: {shown} \u2014 the folds did not search the \\
            same grid"
   ))
   invisible(NULL)

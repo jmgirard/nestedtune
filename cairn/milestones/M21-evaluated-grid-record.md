@@ -1,6 +1,6 @@
 # M21: A run says which candidates it actually searched, fold by fold
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -124,7 +124,7 @@ candidate sets.
 - [x] T7: the print line for disagreeing candidate sets
       (`R/nested-results-print.R`), beside the existing selection-instability
       line; re-record affected snapshots.
-- [ ] T8: `@return` and the failure section in `R/nested-tune-grid.R`;
+- [x] T8: `@return` and the failure section in `R/nested-tune-grid.R`;
       `devtools::document()`; NEWS entry; full `check()`.
 
 ## Work log
@@ -142,6 +142,8 @@ candidate sets.
 
 - 2026-07-30: T7-T8 — the disagreement print line, `@return`, the failure section, `print.nested_results()` docs, and the NEWS entry. The M20 NEWS bullet was left standing rather than corrected: its claim is about `attr(x, "grid")`, which is still not a record of what was evaluated, so M21 adds a record beside it rather than falsifying it. Comparison is by `identical()` on the sorted parameter columns, never on `.config` (positional) and never on formatted strings (a difference below print precision is still a difference); all three are asserted.
 - 2026-07-30: the `BUDGETED_FILES` judgment logged at the implement gate was half wrong, and the guard caught it. No row was owed — nothing added a wait — but the ledger is anchored by `file:line`, so inserting a fixture line and a test above the existing rows made all 30 stale at once (+31 in `test-parallel-classify.R`, +1 in `test-parallel-interrupt.R`). Renumbered mechanically and re-verified. The coupling is deliberate (M16 built it so a copied bound cannot drift from its call site), but it means any insertion into a budgeted file above a wait call costs a renumbering pass.
+- 2026-07-30: T8 — docs, NEWS, `document()` clean, `check()` clean (0 errors, 0 warnings, 0 notes; 3m48s). Two corrections on the way there. A defensive `tryCatch` around the derivation was added because both call sites sit outside every tryCatch in the file, and its first comment claimed `order()` on a list-valued parameter column as the reachable raise — measured false (it sorts and returns both candidates), so the comment now says no raising input is known and a test asserts the list-column case plus, via a mocked binding, that the wrapper is not decorative. And `check()` WARNed on a non-ASCII em dash in the cli string: comments tolerate one, a code string does not, so it is now `\u2014` and the snapshot is byte-identical.
+- 2026-07-30: status review — all ten criteria have evidence, suite and check clean on the shipped tree.
 
 ## Decisions
 
