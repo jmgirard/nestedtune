@@ -9,6 +9,8 @@
 <url><loc>https://jmgirard.github.io/nestedtune/news/index.html</loc></url>
 <url><loc>https://jmgirard.github.io/nestedtune/reference/autoplot.nested_results.html</loc></url>
 <url><loc>https://jmgirard.github.io/nestedtune/reference/collect_metrics.nested_results.html</loc></url>
+<url><loc>https://jmgirard.github.io/nestedtune/reference/extract_scored_candidates.html</loc></url>
+<url><loc>https://jmgirard.github.io/nestedtune/reference/extract_tune_results.html</loc></url>
 <url><loc>https://jmgirard.github.io/nestedtune/reference/index.html</loc></url>
 <url><loc>https://jmgirard.github.io/nestedtune/reference/nested_final_fit.html</loc></url>
 <url><loc>https://jmgirard.github.io/nestedtune/reference/nested_resamples.html</loc></url>

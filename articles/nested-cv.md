@@ -326,6 +326,10 @@ final
 #> ℹ Compare the parameters above with `.selected` from that run. Outer folds
 #>   choosing differently is selection instability, and it is information about
 #>   the procedure rather than noise.
+#> ℹ `extract_tune_results()` returns the tuning run selection came from, and
+#>   `extract_scored_candidates()` the candidates it scored. Any metric reachable
+#>   through the first is a selection-time quantity, optimistically biased as a
+#>   claim about this model.
 ```
 
 The outer folds play no part here. Their selections are not pooled or

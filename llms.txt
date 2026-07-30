@@ -156,6 +156,10 @@ the results.
   : Fit the final model after nested cross-validation
 - [`print(`*`<nested_final_fit>`*`)`](https://jmgirard.github.io/nestedtune/reference/print.nested_final_fit.md)
   : Print a final fit
+- [`extract_tune_results()`](https://jmgirard.github.io/nestedtune/reference/extract_tune_results.md)
+  : Extract the tuning run a final fit was selected from
+- [`extract_scored_candidates()`](https://jmgirard.github.io/nestedtune/reference/extract_scored_candidates.md)
+  : Extract the candidates a final fit actually scored
 
 ## Re-exports
 

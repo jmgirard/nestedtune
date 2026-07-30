@@ -341,7 +341,11 @@ whole dataset in hand.</p>
 <span><span class="co">#&gt;   the procedure that produced it.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Compare the parameters above with `.selected` from that run. Outer folds</span></span>
 <span><span class="co">#&gt;   choosing differently is selection instability, and it is information about</span></span>
-<span><span class="co">#&gt;   the procedure rather than noise.</span></span></code></pre></div>
+<span><span class="co">#&gt;   the procedure rather than noise.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `extract_tune_results()` returns the tuning run selection came from, and</span></span>
+<span><span class="co">#&gt;   `extract_scored_candidates()` the candidates it scored. Any metric reachable</span></span>
+<span><span class="co">#&gt;   through the first is a selection-time quantity, optimistically biased as a</span></span>
+<span><span class="co">#&gt;   claim about this model.</span></span></code></pre></div>
 <p>The outer folds play no part here. Their selections are not pooled or
 voted on — they belong to the estimate, which describes the procedure
 across the instability they reveal.</p>

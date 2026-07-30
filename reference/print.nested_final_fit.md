@@ -1,7 +1,8 @@
 # Print a final fit
 
-Reports which parameters the full-data tuning run selected, and says
-where this model's performance estimate actually comes from.
+Reports which parameters the full-data tuning run selected, says where
+this model's performance estimate actually comes from, and names the
+accessors that reach what selection saw.
 
 No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically
@@ -34,4 +35,6 @@ print(x, ...)
 ## See also
 
 [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md),
+[`extract_tune_results()`](https://jmgirard.github.io/nestedtune/reference/extract_tune_results.md),
+[`extract_scored_candidates()`](https://jmgirard.github.io/nestedtune/reference/extract_scored_candidates.md)

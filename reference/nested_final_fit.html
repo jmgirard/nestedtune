@@ -228,6 +228,10 @@ to meet this.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Compare the parameters above with `.selected` from that run. Outer folds</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   choosing differently is selection instability, and it is information about</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   the procedure rather than noise.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `extract_tune_results()` returns the tuning run selection came from, and</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   `extract_scored_candidates()` the candidates it scored. Any metric reachable</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   through the first is a selection-time quantity, optimistically biased as a</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   claim about this model.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final</span><span class="op">)</span>, new_data <span class="op">=</span> <span class="va">mtcars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 1</span></span>
