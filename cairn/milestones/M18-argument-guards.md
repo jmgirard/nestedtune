@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M18: A misspecified call fails as nestedtune's own error
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m18-argument-guards`
 
 ## Goal
 
@@ -124,6 +124,7 @@ in-process call that consumes it.
 - 2026-07-30: plan gate chose serial-only metric-delivery proof over including the mirai `.args` site (`R/parallel.R:86`) because a daemon-backed test lands in the file M16 measured as the suite's worst case; falsified by evidence that the parallel path can drop `metrics` independently of the serial path.
 - 2026-07-30: plan gate chose a purpose-built separating fixture over changing the shared `reg_metrics()` because on `make_reg_data()` every candidate metric selects alike, so the global change would re-record snapshots across ~6 files and still not catch the `tune_grid()` site; falsified by a second milestone needing the same separation from a different fixture.
 - 2026-07-30: plan chose guarding inside the existing per-fold evaluation over a construction-time pre-pass because a pre-pass draws from the RNG again and changes every design returned; falsified by evidence that a specification can produce an `rset` on fold 1 and not on a later fold at a cost the per-fold guard does not catch.
+- 2026-07-30: /milestone-implement — branch `m18-argument-guards` cut from `main` at `1c7ae56`; status `planned` → `in-progress`.
 
 ## Decisions
 

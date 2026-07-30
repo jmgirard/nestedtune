@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (nothing in flight; 16 checks and 8 advisories g
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M18 | A misspecified call fails as nestedtune's own error | planned | — | normal | milestones/M18-argument-guards.md |
+| M18 | A misspecified call fails as nestedtune's own error | in-progress | — | normal | milestones/M18-argument-guards.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
 | M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
