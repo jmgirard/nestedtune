@@ -2,6 +2,16 @@
 
 ## nestedtune 0.0.0.9000
 
+- The object
+  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  returns now documents the two attributes it has always carried.
+  `attr(x, "grid")` and `attr(x, "metrics")` record what the run was
+  asked to do: `grid` holds the argument as you gave it, so it is a grid
+  size rather than a table of candidates whenever you passed a size, and
+  it is not a record of which candidates were evaluated; `metrics` is
+  absent rather than `NULL` when you passed no metric set. Subsetting
+  rows leaves both unchanged.
+
 - [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
   and
   [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)

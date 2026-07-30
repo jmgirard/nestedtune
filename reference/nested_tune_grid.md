@@ -69,6 +69,15 @@ went wrong (`.notes`), and the two seeds that reproduce it
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 to summarize.
 
+The object also carries what it was asked to run as two attributes.
+`attr(x, "grid")` holds the `grid` argument **as it was given** — so it
+is a positive whole number, not a table of candidates, whenever a grid
+size was passed, and it is not a record of which candidates tune went on
+to evaluate. `attr(x, "metrics")` holds the `metrics` argument, and is
+absent rather than `NULL` when none was supplied. Subsetting rows
+carries both unchanged, since they describe the call rather than the
+rows kept.
+
 ## Details
 
 The estimate this returns describes the whole tune-and-fit *procedure*,

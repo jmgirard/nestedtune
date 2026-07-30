@@ -105,6 +105,13 @@ fold's split and id, the metrics scored on its assessment set
 whether the fold finished (<code>.completed</code>), anything that went wrong
 (<code>.notes</code>), and the two seeds that reproduce it (<code>.tuning_seed</code>,
 <code>.outer_fit_seed</code>). Use <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code> to summarize.</p>
+<p>The object also carries what it was asked to run as two attributes.
+<code>attr(x, "grid")</code> holds the <code>grid</code> argument <strong>as it was given</strong> — so it is
+a positive whole number, not a table of candidates, whenever a grid size
+was passed, and it is not a record of which candidates tune went on to
+evaluate. <code>attr(x, "metrics")</code> holds the <code>metrics</code> argument, and is absent
+rather than <code>NULL</code> when none was supplied. Subsetting rows carries both
+unchanged, since they describe the call rather than the rows kept.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
