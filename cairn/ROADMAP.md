@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-30 (M22 planned; the `extract_`-accessor candidate row it promotes is removed, and the metrics row that pointed at it now names M22. Terminal rows unchanged at five)_
+_Last hygiene check: 2026-07-30 (M22 merged and archived; M14's row pruned under terminal-row retention. LESSONS.md sat at 49 against its <50 cap, so M09's vacuous-assertion lesson was extended rather than a line added. Nothing met the retirement bar)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M22 | What selection saw has a name | review | — | normal | milestones/M22-final-fit-accessors.md |
+| M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |
 | M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |
 | M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
 | M19 | A malformed design is refused at the driver, not at the tenth fold | done | — | normal | milestones/archive/M19-driver-design-guards.md |
 | M18 | A misspecified call fails as nestedtune's own error | done | — | normal | milestones/archive/M18-argument-guards.md |
-| M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
