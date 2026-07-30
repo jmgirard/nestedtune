@@ -77,7 +77,7 @@ in-process call that consumes it.
       `tune::tune_grid()` at `R/nested-final-fit.R:201` — one at a time turns
       `Rscript -e 'devtools::test()'` red. A three-row ledger in this file names
       each site, the failing test, and the assertion that caught it.
-- [ ] **AC6.** The profile's `verify` slot is clean and its review-time check
+- [x] **AC6.** The profile's `verify` slot is clean and its review-time check
       passes: `devtools::test()` green, `devtools::document()` no diff,
       `devtools::check()` 0 errors / 0 warnings.
 
@@ -184,3 +184,17 @@ Baseline with all three restored: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 39 ]` on th
 filtered set. The plan-time concern that site 1 was unobservable through
 `nested_results` — which retains no inner tuning run — is refuted: `.selected`
 catches it on a separating fixture.
+
+**AC6 — verified.** `devtools::check(document = FALSE)` **Status: OK** — 0 errors,
+0 warnings, 0 notes, 4m 43.8s; its `Running 'testthat.R'` leg passed.
+`devtools::document()` produces no diff in `man/` or `NAMESPACE`.
+
+### Consistency gate
+
+`cairn_validate` exit 0 — 16 checks PASS, 8 advisories OK. `cairn_impact` skipped:
+`cairn/DESIGN.md` is untouched by this milestone, which works under GP2/GP3 without
+amending either. Profile `consistency-gate` slot: `document()` no diff; generated
+files unedited; no `README.Rmd` in this repo so the knit check is a no-op;
+`pkgdown::check_pkgdown()` reports "No problems found"; `NEWS.md` carries entries
+for the user-visible refusals and names no milestone number; `check()` reports no
+NOTEs, so no `.Rbuildignore` gap.
