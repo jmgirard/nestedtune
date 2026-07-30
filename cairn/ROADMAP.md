@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-30 (nothing in flight; 16 checks and 8 advisories green, both GitHub inboxes empty, no open RB. Reconciled `8ab62e8`, a post-archive wording pass on M13's draft rsample#283 comment. Two items carried unchanged: M13's handoff — that comment is still unposted upstream — and CLAUDE.md's cairn section still outside the rulebook's always-read worked table)_
+_Last hygiene check: 2026-07-30 (M18 merged and archived; 16 checks and 8 advisories green. Two carried items unchanged: M13's draft rsample#283 comment is still unposted upstream, and CLAUDE.md's cairn section is still outside the rulebook's always-read worked table. M18 review raised two candidate rows and trimmed M05's inlining lesson to its unguarded remainder)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M18 | A misspecified call fails as nestedtune's own error | review | — | normal | milestones/M18-argument-guards.md |
+| M18 | A misspecified call fails as nestedtune's own error | done | — | normal | milestones/archive/M18-argument-guards.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
 | M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
 | M17 | The advertised documentation site exists | done | — | normal | milestones/archive/M17-pkgdown-site-deploy.md |
-| M13 | The rsample diagnosis reaches its maintainers | done | — | low | milestones/archive/M13-rsample-283-report.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
@@ -35,12 +34,9 @@ _Last hygiene check: 2026-07-30 (nothing in flight; 16 checks and 8 advisories g
 - Publish a development-version site under `/dev/` (pkgdown's `development: mode`), so a released site and the in-development one stop being the same pages — added 2026-07-27 — M17 Out. At `0.0.0.9000` pkgdown's default `mode: release` builds to the site root, which is what M17 ships and what the advertised URL points at; `mode: devel` moves it under `/dev/` and leaves the root empty until a release exists, which is why M17 keeps the default. Promote on the first tagged release, whose site would otherwise overwrite the development pages at the same URLs
 - Reduce what each mirai worker must serialize — every fold's split references the whole dataset, so parallel dispatch sends a copy per worker, which is the memory axis M01's in-process leanness does not cover (GP4) — added 2026-07-26 — M07 Out; measure before designing, since mirai may already share via its own mechanisms
 - Probe remote mirai daemon pools, which nothing verifies today — RR03 Q5 established the load requirement by execution only for local daemons and marked the remote case *inferred* from the same mechanism, so a remote host missing the package still surfaces as opaque per-fold worker failures — added 2026-07-26 — M10 Out, carried over from the absorbed pre-flight rows; needs a remote host to test against before it is plannable
-- Give the orchestration tests a metric set that is not tune's default, so a dropped `metrics` argument fails something — today every fixture uses `metric_set(rmse, rsq)`, which equals the regression default, and `metrics = NULL` gives identical results — added 2026-07-26 — M05 review finding F1, scored 78 (below the action threshold); affects `nested_tune_grid()` as well as `nested_final_fit()`
 - `predict()` and `augment()` methods on `nested_final_fit`, so the object answers directly instead of only through `extract_workflow()` — added 2026-07-26 — M05 Out; D-014 left them off deliberately, matching what `tune::last_fit()` asks of users
 - An `extract_`-family accessor for the tuning run stored on `nested_final_fit`, named for what it is rather than a euphemism — added 2026-07-26 — RR02 rec 11 (consider); a documented slot suffices pre-1.0
 - Make a design's stored `inside` call survive leaving its construction scope, by substituting its arguments' values at construction rather than capturing the frame — added 2026-07-26 — RR02 B1; M05 hit this on the repo's own `det_nested()` helper, so any wrapper parameterizing `v` is affected. M05 refuses loudly and asks for literals (AC11); capturing the frame instead would retain it, which GP4 argues against. Does not reach `rsample::nested_cv()` designs
 - Variance estimation / inference on the nested estimate — added 2026-07-25 — G6; needs oracle-grade literature support before it is plannable. Absorbs M02 review finding F5 (scored 73): `collect_metrics()` already ships a naive `std_err` across outer folds, mirroring tune's columns, with no roxygen caveat saying it is not an oracle-backed interval — document or drop it when this is planned
-- Route a preprocessor-only workflow through `nested_tune_grid()`'s own `cli_abort()` instead of letting `workflows::extract_spec_parsnip()` raise it, so every bad-`object` shape fails with the same discipline — added 2026-07-25 — M02 review finding F6, scored 75 (below the action threshold)
 - Settle posture toward upstream's dormant tune prototype once tune#969 is answered — added 2026-07-25 — G7
 - Document IP2's enforceable scope in DESIGN.md — it binds only randomness flowing through R's RNG, so engines that bypass it (kernlab SVM, keras/torch) are unreachable by any R-side scheme — added 2026-07-25 — RR01 B4; amending IP text needs a D-entry
-- Validate that `inside` evaluates to an `rset` and `cli_abort()` if not, at `nested_resamples()` construction time; today a non-rset spec surfaces rsample's internal "Split and ID vectors have different lengths" — added 2026-07-25 — M01 review finding F7, scored 78 (below the action threshold). Trimmed to its remainder 2026-07-26: M05 covers the final-fit half, where `eval_inside_spec()` refuses a specification that does not produce an `rset`; construction is still unguarded
