@@ -39,6 +39,13 @@ test_that("the shared argument checks are wired into the final fit", {
   )
   expect_error(nested_final_fit(wf, folds, grid = 0), "positive whole number")
   expect_error(nested_final_fit(wf, folds, metrics = "rmse"), "metric_set")
+
+  prep_only <- workflows::workflow(
+    recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d)
+  )
+  expect_error(nested_final_fit(prep_only, folds), "no model specification")
+  cnd <- tryCatch(nested_final_fit(prep_only, folds), error = function(e) e)
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
 })
 
 test_that("the remaining shared abort branches fire through the final fit too", {

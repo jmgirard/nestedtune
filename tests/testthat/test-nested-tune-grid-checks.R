@@ -30,6 +30,31 @@ test_that("`object` must be an unfitted workflow", {
   expect_error(nested_tune_grid(fitted, folds), "already be fitted")
 })
 
+# A preprocessor-only workflow used to fail from inside
+# workflows::extract_spec_parsnip(), which check_workflow() calls -- so the
+# message was workflows' and conditionCall() named an internal call the user
+# never wrote, where every other bad-`object` shape names theirs.
+
+test_that("a workflow carrying no model spec is refused by nestedtune", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  prep_only <- workflows::workflow(
+    recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d)
+  )
+
+  expect_error(nested_tune_grid(prep_only, folds), "no model specification")
+  expect_error(nested_tune_grid(workflows::workflow(), folds),
+               "no model specification")
+
+  cnd <- tryCatch(nested_tune_grid(prep_only, folds), error = function(e) e)
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+  # The remedy, not just a bullet: GP3 refuses, and every other check says how
+  # to stop being refused.
+  expect_match(conditionMessage(cnd), "add_model")
+})
+
 test_that("the workflow's engine packages must be installed", {
   skip_if_no_engines()
   # A real engine that is almost certainly absent. Skipped rather than

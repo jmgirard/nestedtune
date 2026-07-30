@@ -100,7 +100,7 @@ in-process call that consumes it.
       returns (`vfold_cv()` consumes the stream). Test first.
 - [x] **T2.** Apply the same non-inlining evaluation to `outside`
       (`R/nested-resamples.R:70`). Test first.
-- [ ] **T3.** Add a no-model-spec branch to `check_workflow()` ahead of
+- [x] **T3.** Add a no-model-spec branch to `check_workflow()` ahead of
       `workflows::extract_spec_parsnip()` (`R/checks.R:30`); it inherits the
       user's call from the existing `call = rlang::caller_env()` default, so
       both entry points are covered by the one branch. Test first.
@@ -130,6 +130,7 @@ in-process call that consumes it.
 - 2026-07-30: T1+T2 — new internal `eval_spec()` binds the frame to a name instead of inlining it (both `outside` and `inside`), and the `inside` rset guard sits in the per-fold evaluation. Verified by execution that bind-by-name is byte-identical to inlining under a matched seed, fingerprint included, so no design changes.
 - 2026-07-30: T1 guard proven by inversion — disabling the rset check turned 3 tests red; restored and re-verified. The per-fold test was vacuous on first draft (keyed to frame size, and the small fold was fold 1); re-keyed to the call count and now asserts the third fold was reached.
 - 2026-07-30: T1+T2 verify slot clean — `devtools::test()` `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1255 ]`.
+- 2026-07-30: T3 — `check_workflow()` refuses a workflow with no model spec ahead of `extract_spec_parsnip()`, inheriting the user's call from the existing `call = rlang::caller_env()` default, so one branch covers both entry points. Proven by inversion: disabling it turned 2 tests red, restored to 0. No test depended on workflows' own wording. Verify slot clean — `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1261 ]`.
 
 ## Decisions
 
