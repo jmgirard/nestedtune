@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** `m20-metrics-observability`
+- **Branch/PR:** `m20-metrics-observability` · https://github.com/jmgirard/nestedtune/pull/21
 
 ## Goal
 
@@ -35,7 +35,7 @@ nothing in `R/` reads.
 
 ## Acceptance criteria
 
-- [ ] AC1: `tests/testthat/test-parallel-metrics.R` runs `nested_tune_grid()`
+- [x] AC1: `tests/testthat/test-parallel-metrics.R` runs `nested_tune_grid()`
       on the `sep_*` fixture with ≥2 primed mirai daemons — that run **not**
       routed through `memoised()`, whose key ignores daemon state — and asserts
       `last_dispatch()` is `"parallel"`, that every fold's `.metrics` names
@@ -43,28 +43,28 @@ nothing in `R/` reads.
       serial run's under the same seed. With `metrics = metrics` replaced by
       `metrics = NULL` at the `mirai_map()` `.args` call in `R/parallel.R` the
       test fails; restored, it passes. Both outputs recorded as review evidence.
-- [ ] AC2: `test-parallel-metrics.R` is listed in `BUDGETED_FILES`, every call
+- [x] AC2: `test-parallel-metrics.R` is listed in `BUDGETED_FILES`, every call
       in it matching `BUDGETED_WAIT_CALLS` carries a `time_budget_ledger()`
       row, `test-suite-hygiene.R`'s guards pass, and a `METRICS_BUDGET_CEILING_S`
       constant with a test asserting the file's `time_budget_totals()` row
       falls under it. Any wait the six budgeted names cannot see is named in
       the work log. The combined declared worst case across `BUDGETED_FILES`
       is recorded beside its pre-milestone value of 1983.678 s.
-- [ ] AC3: `nested_tune_grid()`'s `@return` documents the `grid` and `metrics`
+- [x] AC3: `nested_tune_grid()`'s `@return` documents the `grid` and `metrics`
       attributes — what each holds, that `grid` is the argument **as given** and
       so may be a grid size rather than the candidates evaluated, and that a row
       subset carries both unchanged.
-- [ ] AC4: a test asserts `attr(res, "grid")` and `attr(res, "metrics")` are
+- [x] AC4: a test asserts `attr(res, "grid")` and `attr(res, "metrics")` are
       identical to the `grid` and a non-`NULL` `metrics` argument passed — the
       metric set bound to a name once and compared to that binding, since two
       `metric_set()` calls are never `identical()` — and that both survive a row
       subset. Deleting either assignment in `new_nested_results()` makes it
       fail; both outputs recorded as review evidence.
-- [ ] AC5: a ROADMAP candidate row records that `attr(x, "grid")` holds the
+- [x] AC5: a ROADMAP candidate row records that `attr(x, "grid")` holds the
       request rather than the candidates evaluated, leaving IP4's "the grid
       actually evaluated" clause unmet whenever a grid size is passed, with a
       falsifying promotion condition.
-- [ ] AC6: the profile's `verify` slot is clean, and `devtools::check()` passes.
+- [x] AC6: the profile's `verify` slot is clean, and `devtools::check()` passes.
 
 ## Coverage
 
@@ -107,6 +107,7 @@ nothing in `R/` reads.
 
 ## Work log
 
+- 2026-07-30: review checkpoint — PR #21 opened as draft; all six criteria verified with fresh evidence and ticked under AC fencing; consistency gate clean. Prior-review lens reported zero findings (PR-thread probe empty, archived `## Review` sections the evidence base); blame-history lens reported one (H1, on the `[.nested_results` comment's phrasing). Diff-bug lens still running, so scoring and triage are not yet done.
 - 2026-07-30: `devtools::check()` clean — 0 errors, 0 warnings, 0 notes, 3m23s; test suite 80s/130s under check. No prose-guard authored or edited this milestone, so guard-doctrine §8's fresh-context description review does not apply. Status → review.
 - 2026-07-30: T7 — AC5 candidate row added, search-first sweep over candidates, `milestones/archive/`, and `DECISIONS.md` finding no overlap. T7 extended (minor task edit) with the `NEWS.md` entry the consistency gate requires: documenting the two attributes changes the public contract, so it is user-visible.
 - 2026-07-30: T4 — `@return` now documents both attributes, stating that `grid` is the argument as given (a size, not the candidates evaluated, when a size was passed) and that `metrics` is absent rather than `NULL` when none was supplied. `devtools::document()` regenerated `man/nested_tune_grid.Rd`.
@@ -129,3 +130,47 @@ nothing in `R/` reads.
 ## Decisions
 
 ## Review
+
+### Criterion evidence (fresh, by command at review)
+
+- **AC1** — `test-parallel-metrics.R` present, 8 assertions green. Assertions
+  confirmed in source: `last_dispatch()` checked on both the serial reference
+  (:56) and the parallel run (:66); metric names per fold (:72); `.selected` and
+  `.metrics` against the serial reference (:78-79); no `memoised()` call in the
+  file. Mutation re-run fresh at review — `metrics = NULL` at the `mirai_map()`
+  `.args` site produced **5 failures**; restored, `git diff` on `R/parallel.R`
+  empty.
+- **AC2** — file listed in `BUDGETED_FILES` (`test-suite-hygiene.R:68`); one
+  ledger row (`helper-time-budget.R:208`) whose declared line 58 was verified to
+  be the `start_daemons(2)` call; `METRICS_BUDGET_CEILING_S <- 150` (`:256`) with
+  its guard (`test-suite-hygiene.R:195`); hygiene guards 16 assertions green. The
+  waits the six budgeted names cannot see — `mirai::daemons(0)` at :50 and :53 —
+  are disclosed in the ledger comment and the work log. Figures: file **120.000 s**
+  against its 150 s ceiling; combined across `BUDGETED_FILES` **2103.678 s**
+  against the pre-milestone **1983.678 s**.
+- **AC3** — `man/nested_tune_grid.Rd` carries the generated text: `grid` held
+  "as it was given ... a positive whole number, not a table of candidates,
+  whenever a grid size was passed", `metrics` "absent rather than NULL when none
+  was supplied", and "Subsetting rows carries both unchanged".
+- **AC4** — both tests present; the metric set is bound once and compared to that
+  binding. Mutations re-run fresh at review: deleting `attr(out, "grid")` gave
+  **2 failures**, deleting `attr(out, "metrics")` gave **2 failures** — each on
+  the fresh object and on the subset. Restored, no stray diff.
+- **AC5** — candidate row present in `cairn/ROADMAP.md`, naming the shortfall,
+  its reproduction (`grid = 10` storing the integer), and a falsifying promotion
+  condition.
+- **AC6** — `devtools::test()` FAIL 0 / WARN 0 / SKIP 0 / **PASS 1343**;
+  `R CMD check` **0 errors, 0 warnings, 0 notes** (3m23s).
+
+### Consistency gate
+
+- Universal: `cairn_validate` exit 0 — 12 PASS (including `coverage complete`
+  and `principles slot valid`), 8 advisories OK. No `DESIGN.md` principle text
+  changed, so `cairn_impact --changed` does not apply.
+- Toolchain (`r-package` profile `consistency-gate`): `devtools::document()`
+  produces no diff; generated `man/` regenerated, not hand-edited;
+  `pkgdown::check_pkgdown()` "No problems found"; `NEWS.md` carries the
+  user-visible entry; no `README.Rmd` in the repo, so no knit check applies;
+  the one new top-level path is `NEWS.md`, already tracked; `devtools::check()`
+  clean.
+- Returns to `in-progress` this milestone: **0**. Thrash rule does not fire.
