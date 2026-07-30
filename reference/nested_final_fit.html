@@ -70,8 +70,14 @@ for tuning with <code><a href="https://hardhat.tidymodels.org/reference/tune.htm
 
 <dt id="arg-resamples">resamples<a class="anchor" aria-label="anchor" href="#arg-resamples"></a></dt>
 <dd><p>A nested resampling design, from <code><a href="nested_resamples.html">nested_resamples()</a></code> or
-<code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>. Only its inner specification and its data are used:
-the outer folds play no part in a final fit.</p></dd>
+<code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>. Only its inner specification and its data are
+<em>used</em> — the outer folds play no part in a final fit — but the whole design
+is still checked, so a design <code><a href="nested_tune_grid.html">nested_tune_grid()</a></code> refuses is refused here
+too: its <code>splits</code> column must hold <code>rsplit</code> objects and its
+<code>inner_resamples</code> column an <code>rset</code> per outer fold. The reverse does not
+follow: this function additionally needs the design's stored inner
+specification, which the loop never re-runs, so a design with none is
+refused here and runs perfectly well there.</p></dd>
 
 
 <dt id="arg-grid">grid<a class="anchor" aria-label="anchor" href="#arg-grid"></a></dt>

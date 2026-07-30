@@ -2,6 +2,38 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  and
+  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  now refuse a malformed design before fitting anything, naming the
+  column and the position of the first offending element. A design whose
+  `splits` or `inner_resamples` column held something other than a split
+  or a resampling object used to cost a full run and come back reporting
+  that every outer fold had failed — or, on
+  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
+  fail with a message from base R that named nothing you wrote.
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  builds such a design without complaint when its `inside` argument
+  produces no `rset`, which is the usual way to arrive at one. A design
+  either function refuses, both refuse.
+
+- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  and
+  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  now also refuse a workflow that has a model but no preprocessor,
+  pointing at
+  [`workflows::add_formula()`](https://workflows.tidymodels.org/reference/add_formula.html),
+  [`add_recipe()`](https://workflows.tidymodels.org/reference/add_recipe.html),
+  and
+  [`add_variables()`](https://workflows.tidymodels.org/reference/add_variables.html).
+  This is the counterpart of the no-model refusal below, and it used to
+  fail once per outer fold with an error raised inside `workflows`.
+
+- When
+  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  cannot re-run a design’s stored inner specification, the error now
+  names your call rather than an internal function of the package.
+
 - [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
   now refuses an `inside` specification that does not produce an `rset`.
   Passing one used to build a design anyway: its `inner_resamples`

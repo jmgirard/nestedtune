@@ -31,6 +31,15 @@ nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
   [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
   or
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html).
+  Its `splits` column must hold `rsplit` objects and its
+  `inner_resamples` column an `rset` per outer fold. Both are checked
+  before anything is fitted, because
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  builds a design whatever its `inside` argument returned — so a
+  specification that produces no `rset` gives a design that cannot be
+  run, where
+  [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+  refuses one at construction.
 
 - grid:
 

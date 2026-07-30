@@ -30,8 +30,15 @@ nested_final_fit(object, resamples, grid = 10, metrics = NULL)
   [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
   or
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html).
-  Only its inner specification and its data are used: the outer folds
-  play no part in a final fit.
+  Only its inner specification and its data are *used* — the outer folds
+  play no part in a final fit — but the whole design is still checked,
+  so a design
+  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  refuses is refused here too: its `splits` column must hold `rsplit`
+  objects and its `inner_resamples` column an `rset` per outer fold. The
+  reverse does not follow: this function additionally needs the design's
+  stored inner specification, which the loop never re-runs, so a design
+  with none is refused here and runs perfectly well there.
 
 - grid:
 

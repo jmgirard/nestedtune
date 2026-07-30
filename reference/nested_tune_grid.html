@@ -75,7 +75,12 @@ for tuning with <code><a href="https://hardhat.tidymodels.org/reference/tune.htm
 
 <dt id="arg-resamples">resamples<a class="anchor" aria-label="anchor" href="#arg-resamples"></a></dt>
 <dd><p>A nested resampling design, from <code><a href="nested_resamples.html">nested_resamples()</a></code> or
-<code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>.</p></dd>
+<code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>. Its <code>splits</code> column must hold <code>rsplit</code> objects and
+its <code>inner_resamples</code> column an <code>rset</code> per outer fold. Both are checked
+before anything is fitted, because <code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code> builds a design
+whatever its <code>inside</code> argument returned — so a specification that produces
+no <code>rset</code> gives a design that cannot be run, where <code><a href="nested_resamples.html">nested_resamples()</a></code>
+refuses one at construction.</p></dd>
 
 
 <dt id="arg-grid">grid<a class="anchor" aria-label="anchor" href="#arg-grid"></a></dt>
