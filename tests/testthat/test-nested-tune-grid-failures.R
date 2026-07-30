@@ -271,7 +271,89 @@ test_that("dropping any of the per-fold columns sheds the results class", {
     inherits(res[, c(".metrics", ".selected", ".notes", ".completed")],
              "nested_results")
   )
+
+  # .grid joined that set at M21. Asserted by dropping it from an otherwise
+  # complete object rather than by listing a subset that happens to omit it, so
+  # this fails if the column stops being required rather than passing on some
+  # other column's absence.
+  expect_false(
+    inherits(res[, setdiff(names(res), ".grid")], "nested_results")
+  )
   expect_s3_class(res[1:2, ], "nested_results")
+})
+
+# What the evaluated-candidate record says when not everything ran (M21, IP4).
+#
+# The record is derived from the tuning run's metrics, so every one of these
+# cases is a different answer to "what does a fold that fell short record" --
+# and the wrong answer in either direction is an IP4 failure. Recording the
+# request would claim candidates that never ran; recording nothing for a fold
+# that did tune would deny a grid that did.
+
+test_that("a candidate that fails on every inner resample is absent from the record", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  # -5 is refused by step_pca()'s prep() on every inner split, while 1 and 2
+  # score everywhere. The fold still completes: tune_grid() returns a usable
+  # result and select_best() chooses among the survivors, which is exactly the
+  # "worked, on less than the whole design" case M03 records.
+  grid <- data.frame(num_comp = c(1L, 2L, -5L))
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d), det_nested(d), grid = grid, metrics = reg_metrics()
+  )))
+
+  expect_true(all(res$.completed))
+  for (g in res$.grid) {
+    expect_identical(nrow(g), 2L)
+    expect_identical(sort(g$num_comp), c(1L, 2L))
+  }
+
+  # The request is unchanged: the two records answer different questions, and
+  # this is the case that separates them.
+  expect_identical(attr(res, "grid"), grid)
+})
+
+test_that("a fold that failed at the outer fit keeps the grid its tuning scored", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  nested <- break_fold(det_nested(d), fold = 3L, stage = "outer fit")
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()
+  )))
+
+  # Fold 3 tuned successfully and died afterwards, so it DID evaluate a grid.
+  # Giving it a zero-row record would report a fold that searched three
+  # candidates as having searched none -- IP4 pointing the other way, and the
+  # defect M21's criteria audit caught in the plan's own wording.
+  expect_false(res$.completed[[3L]])
+  expect_identical(nrow(res$.grid[[3L]]), 3L)
+  expect_identical(sort(res$.grid[[3L]]$num_comp), 1:3)
+})
+
+test_that("a fold that scored nothing records an empty table, never NULL", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  nested <- break_fold(det_nested(d), fold = 2L, stage = "inner tuning")
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d), nested, grid = det_grid(), metrics = reg_metrics()
+  )))
+
+  empty <- res$.grid[[2L]]
+  expect_false(res$.completed[[2L]])
+  expect_false(is.null(empty))
+  expect_true(is.data.frame(empty))
+  expect_identical(nrow(empty), 0L)
+
+  # A NULL here would be indistinguishable from a column that was never filled,
+  # and would make every lapply() over `.grid` special-case one fold.
+  expect_false(any(vapply(res$.grid, is.null, logical(1))))
 })
 
 # The thrown-error branches at each stage (M03 review, F3). The fixtures above
@@ -347,4 +429,38 @@ test_that("an error while finalizing is this fold's failure, not the run's", {
   expect_false(any(res$.completed))
   expect_identical(nrow(res), 3L)
   expect_true(any(grepl("engineered finalize failure", res$.notes[[1L]]$note)))
+})
+
+test_that("bookkeeping the candidate record cannot abort a run", {
+  # The record is derived, and deriving it runs outside every tryCatch in
+  # nested_fold_fit() -- so a raise here would discard every completed fold over
+  # bookkeeping rather than over a fit, which is the one outcome M03 exists to
+  # prevent.
+  #
+  # A list-valued parameter column was the suspected raise and is not one:
+  # order() sorts it and both candidates come back. Asserted rather than
+  # dropped, because that is the fact the defensive wrapper's comment rests on,
+  # and an unasserted "we checked, it is fine" rots.
+  listy <- new_tbl(list(
+    .metrics = list(new_tbl(list(
+      cost = list(1:2, 3:4),
+      .metric = c("rmse", "rmse"),
+      .estimator = c("standard", "standard"),
+      .estimate = c(1, 2),
+      .config = c("pre1", "pre2")
+    )))
+  ))
+
+  expect_no_error(out <- scored_candidates(listy))
+  expect_true(is.data.frame(out))
+  expect_identical(nrow(out), 2L)
+  expect_identical(out$.config, c("pre1", "pre2"))
+
+  # And the wrapper is genuinely a wrapper: an input that DOES raise inside the
+  # derivation returns the empty record rather than propagating.
+  local_mocked_bindings(
+    scored_candidates_impl = function(tuned) stop("boom")
+  )
+  expect_no_error(fallback <- scored_candidates(listy))
+  expect_identical(nrow(fallback), 0L)
 })

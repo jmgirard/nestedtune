@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (M20 merged and archived; M16's row pruned under
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M21 | A run says which candidates it actually searched, fold by fold | planned | — | normal | milestones/M21-evaluated-grid-record.md |
+| M21 | A run says which candidates it actually searched, fold by fold | review | — | normal | milestones/M21-evaluated-grid-record.md |
 | M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
 | M19 | A malformed design is refused at the driver, not at the tenth fold | done | — | normal | milestones/archive/M19-driver-design-guards.md |
 | M18 | A misspecified call fails as nestedtune's own error | done | — | normal | milestones/archive/M18-argument-guards.md |

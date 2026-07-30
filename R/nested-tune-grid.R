@@ -35,17 +35,36 @@
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
 #'   (`.metrics`), the parameters chosen for it by inner tuning (`.selected`),
-#'   whether the fold finished (`.completed`), anything that went wrong
-#'   (`.notes`), and the two seeds that reproduce it (`.tuning_seed`,
-#'   `.outer_fit_seed`). Use [collect_metrics()] to summarize.
+#'   the candidates its inner tuning actually scored (`.grid`), whether the fold
+#'   finished (`.completed`), anything that went wrong (`.notes`), and the two
+#'   seeds that reproduce it (`.tuning_seed`, `.outer_fit_seed`). Use
+#'   [collect_metrics()] to summarize.
 #'
-#'   The object also carries what it was asked to run as two attributes.
-#'   `attr(x, "grid")` holds the `grid` argument **as it was given** — so it is
-#'   a positive whole number, not a table of candidates, whenever a grid size
-#'   was passed, and it is not a record of which candidates tune went on to
-#'   evaluate. `attr(x, "metrics")` holds the `metrics` argument, and is absent
-#'   rather than `NULL` when none was supplied. Subsetting rows carries both
-#'   unchanged, since they describe the call rather than the rows kept.
+#'   **Two records describe the grid, and they answer different questions.**
+#'   `attr(x, "grid")` holds the `grid` argument **as it was given** — a
+#'   positive whole number, not a table of candidates, whenever a size was
+#'   passed. The `.grid` column holds what each outer fold's inner tuning
+#'   actually scored, one table per fold with a column per tuned parameter.
+#'
+#'   The two diverge routinely, in both directions. A size is expanded by tune
+#'   and may reach fewer candidates than were asked for — a request for 20 on a
+#'   parameter with four reachable values evaluates four — and a candidate that
+#'   fails scores nothing. Folds can also differ from *each other*: expanding a
+#'   size draws from the generator, and each fold tunes under its own seed, so
+#'   a continuous parameter gives every fold its own candidates. Printing says
+#'   so when it happens.
+#'
+#'   One limit is worth stating plainly. `.grid` is derived from the tuning
+#'   run's own metrics, because that is the only place tune records candidates
+#'   at all. A candidate that failed on **every** inner resample scored nothing
+#'   and is therefore absent from `.grid` — `.notes` is where its failure is
+#'   recorded. A fold that scored no candidate at all carries a zero-row table,
+#'   never `NULL`.
+#'
+#'   `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
+#'   than `NULL` when none was supplied. Subsetting rows carries both
+#'   attributes unchanged, since they describe the call rather than the rows
+#'   kept; `.grid` is a column, so it travels with the fold it describes.
 #'
 #' @section Reproducibility:
 #'
@@ -99,6 +118,14 @@
 #' its parameters were chosen on less of the inner design than was asked for.
 #' Those notes are kept, so `.completed` being `TRUE` with a non-empty `.notes`
 #' means exactly that: it worked, on less than the whole design.
+#'
+#' A failed fold still records the candidates it got as far as scoring, whatever
+#' stage it failed at. A fold that died at the outer fit had already tuned, so
+#' its `.grid` holds the full set — and so does one that tuned successfully and
+#' then failed while selecting from the results. Only a fold that never reached
+#' a scored candidate at all — tuning itself raised, or every candidate failed —
+#' holds a zero-row table. No fold is reported as having searched a grid it did
+#' not.
 #'
 #' Subsetting rows recomputes `folds_attempted` and `folds_completed` for the
 #' rows kept, so the counts always describe the object in hand. Dropping the
@@ -316,7 +343,7 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
     error = function(cnd) cnd
   )
   if (inherits(selected, "condition")) {
-    return(failed_fold("inner tuning", selected, tuned))
+    return(failed_fold("inner tuning", selected, tuned, tuned = tuned))
   }
 
   # Finalizing and seeding sit inside the guard rather than between the two
@@ -332,7 +359,7 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
     error = function(cnd) cnd
   )
   if (inherits(fitted, "condition")) {
-    return(failed_fold("outer fit", fitted, NULL))
+    return(failed_fold("outer fit", fitted, NULL, tuned = tuned))
   }
 
   # last_fit() does not raise when the fit fails: it returns NULL metrics and
@@ -340,7 +367,7 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
   # this fold as a success carrying nothing.
   fold_metrics <- tryCatch(tune::collect_metrics(fitted), error = function(cnd) NULL)
   if (is.null(fold_metrics) || nrow(fold_metrics) == 0L) {
-    return(failed_fold("outer fit", NULL, fitted))
+    return(failed_fold("outer fit", NULL, fitted, tuned = tuned))
   }
 
   # A fold can complete and still have had trouble: tune_grid() returns a usable
@@ -352,6 +379,7 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
     completed = TRUE,
     metrics = fold_metrics,
     selected = selected,
+    grid = scored_candidates(tuned),
     notes = bind_notes(
       tune_notes(tuned, "inner tuning"),
       tune_notes(fitted, "outer fit")
@@ -359,10 +387,110 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
   )
 }
 
+# The candidates a tuning run actually scored (IP4's "the grid actually
+# evaluated").
+#
+# Derived rather than read, because there is nothing to read: a `tune_results`
+# carries only `parameters`, `metrics`, `outcomes` and `rset_info`, and none of
+# them is the expanded grid (measured at M21's plan gate, tune 2.1.0). The
+# candidates survive only in the per-resample metrics, which has one consequence
+# worth stating plainly -- a candidate that failed on EVERY inner resample left
+# no metric row anywhere and cannot be recovered here. It is absent from this
+# record and present in the fold's notes; `@return` says so.
+#
+# Unioned across the inner resamples rather than taken from the first. A
+# candidate that failed on some inner splits and scored on others did run, and
+# reading one element would keep or drop it according to which element was read.
+scored_candidates <- function(tuned) {
+  # Total by construction, because of where it is called from: both call sites
+  # sit outside every tryCatch in this file, so anything raised here would abort
+  # the whole run -- the one outcome M03 exists to prevent, and triggered by
+  # bookkeeping rather than by a fit.
+  #
+  # No raising input is known HERE, and the reason is narrower than it looks:
+  # the ordering below runs on `key[first]`, which is `.config` or a pasted
+  # string, never on a parameter column. `order()` DOES raise on a list-valued
+  # parameter column, which is why `candidate_key()` in nested-results-print.R
+  # renders rows before ordering them -- an earlier comment here claimed the
+  # opposite, having measured this function and concluded something about that
+  # one (M21 review F1, F2).
+  #
+  # So this is insurance against a shape not thought of rather than a fix for
+  # one that was, and it is worth a line because the trade is asymmetric:
+  # failing to an empty record understates one fold, while raising discards
+  # every other fold's completed work.
+  tryCatch(scored_candidates_impl(tuned), error = function(cnd) empty_candidates())
+}
+
+scored_candidates_impl <- function(tuned) {
+  frames <- scored_metric_frames(tuned)
+  if (length(frames) == 0L) {
+    return(empty_candidates())
+  }
+  pooled <- do.call(rbind, lapply(frames, as.data.frame))
+
+  # Everything tune adds per metric goes; what remains is one column per tuned
+  # parameter plus the `.config` label naming the candidate.
+  keep <- setdiff(names(pooled), c(".metric", ".estimator", ".estimate"))
+  if (length(keep) == 0L) {
+    return(empty_candidates())
+  }
+  candidates <- pooled[, keep, drop = FALSE]
+
+  # `.config` is one label per candidate, so it is the key. Falling back to the
+  # parameter values themselves keeps this working on a shape that carries no
+  # such column rather than returning every metric's row as a candidate.
+  key <- if (".config" %in% keep) {
+    candidates[[".config"]]
+  } else {
+    do.call(paste, c(unname(as.list(candidates)), list(sep = "\r")))
+  }
+  first <- !duplicated(key)
+
+  # Ordered by the key so the record does not depend on which inner resample
+  # happened to score a candidate first: a candidate missing from the first
+  # resample and present in the second would otherwise land last. tune
+  # zero-pads `.config` past nine candidates, so ordering it lexically is
+  # ordering it numerically.
+  ordered <- order(key[first])
+  new_tbl(lapply(candidates[first, , drop = FALSE], function(col) col[ordered]))
+}
+
+# The per-resample metric frames that hold at least one scored candidate.
+# Anything that is not the expected shape yields none rather than raising: this
+# runs on the failure paths, where `tuned` is whatever tune handed back before
+# giving up and may be NULL.
+scored_metric_frames <- function(tuned) {
+  metrics <- if (is.list(tuned)) tuned[[".metrics"]] else NULL
+  if (!is.list(metrics)) {
+    return(list())
+  }
+  Filter(function(m) is.data.frame(m) && nrow(m) > 0L, metrics)
+}
+
+# A fold that scored no candidate at all. Bare rather than typed: a fold that
+# failed before tuning returned has no result to read parameter names off, and
+# deriving them from the workflow would be machinery whose only job is to
+# furnish an empty record (M21 plan gate).
+empty_candidates <- function() {
+  structure(
+    list(),
+    names = character(0),
+    class = c("tbl_df", "tbl", "data.frame"),
+    row.names = integer(0)
+  )
+}
+
 # A fold that did not finish. `result` is whatever tune handed back before
 # giving up, which is where the actual cause lives -- our own note names the
 # stage, tune's notes say what happened (GP1).
-failed_fold <- function(stage, cnd, result, message = NULL) {
+#
+# `tuned` is separate from `result` because on the outer-fit path they are
+# different objects -- `result` is the last_fit() result whose notes explain the
+# failure, while the tuning run that chose the candidate is still in hand. A
+# fold that failed there DID evaluate a grid, and recording it as having
+# evaluated none would be the same IP4 error in the other direction.
+failed_fold <- function(stage, cnd, result, message = NULL, tuned = NULL) {
   # `message` is supplied only by the worker-failure path, where there is no
   # condition to read: mirai's failure values are not conditions and one of them
   # raises on conditionMessage() (M07-D2).
@@ -377,6 +505,7 @@ failed_fold <- function(stage, cnd, result, message = NULL) {
     completed = FALSE,
     metrics = empty_metrics(),
     selected = NULL,
+    grid = scored_candidates(tuned),
     notes = bind_notes(own_note(stage, message), tune_notes(result, stage))
   )
 }

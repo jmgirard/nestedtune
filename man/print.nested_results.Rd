@@ -22,6 +22,12 @@ the estimate across the folds that completed.
 The selection lines are the part nothing else in the ecosystem shows. When
 outer folds choose different parameters, the tuning procedure is unstable on
 this data — averaging the metrics hides that, so printing marks it.
+
+Printing also says when the folds were not choosing from the same menu. A
+grid given as a size is expanded per fold, under that fold's own seed, so a
+continuous parameter leaves every fold with its own candidates — which
+changes how the selection lines above should be read. The line reports each
+fold's candidate count and appears only when the sets actually differ.
 }
 \examples{
 \dontshow{if (rlang::is_installed(c("recipes", "yardstick"))) withAutoprint(\{ # examplesIf}
