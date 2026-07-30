@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (M22 planned; the `extract_`-accessor candidate 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M22 | What selection saw has a name | in-progress | — | normal | milestones/M22-final-fit-accessors.md |
+| M22 | What selection saw has a name | review | — | normal | milestones/M22-final-fit-accessors.md |
 | M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |
 | M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
 | M19 | A malformed design is refused at the driver, not at the tenth fold | done | — | normal | milestones/archive/M19-driver-design-guards.md |

@@ -1,6 +1,6 @@
 # M22: What selection saw has a name
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
