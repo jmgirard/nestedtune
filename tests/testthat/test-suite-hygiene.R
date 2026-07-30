@@ -65,7 +65,7 @@ BUDGETED_WAIT_CALLS <- c(
 BUDGETED_FILES <- c(
   "test-parallel-classify.R", "test-parallel-detection.R",
   "test-parallel-identity.R", "test-parallel-interrupt.R",
-  "helper-parallel.R"
+  "test-parallel-metrics.R", "helper-parallel.R"
 )
 
 wait_call_sites <- function(path) {
@@ -183,6 +183,16 @@ test_that("the localized file's declared worst case fits the CI budget", {
   expect_length(classify, 1L)
   expect_lt(classify, CLASSIFY_BUDGET_CEILING_S)
   expect_lte(classify, CLASSIFY_BUDGET_PRE_M16_S / 2)
+})
+
+test_that("the metrics-delivery file stays inside its own ceiling", {
+  # M20 AC2. The file was born with a ceiling rather than given one later,
+  # which is the difference between holding a bound and measuring a regression.
+  totals <- time_budget_totals()
+  metrics <- totals$seconds[totals$file == "test-parallel-metrics.R"]
+
+  expect_length(metrics, 1L)
+  expect_lt(metrics, METRICS_BUDGET_CEILING_S)
 })
 
 test_that("no test waits on a mirai result outside collect_bounded()", {

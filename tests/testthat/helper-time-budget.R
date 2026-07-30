@@ -197,6 +197,18 @@ time_budget_ledger <- function() {
     tb_row("test-parallel-identity.R", 329L, "start_daemons",
            START_DAEMONS_BOUND_S(), "the parallel branch really ran"),
 
+    # --- test-parallel-metrics.R --------------------------------------------
+    # One pool start, and that is the whole file's declared waiting. The two
+    # `mirai::daemons(0)` calls beside it (:50 teardown, :53 reset before the
+    # serial reference) are not among BUDGETED_WAIT_CALLS and get no row: M16
+    # measured `daemons(0)` returning in ~0.2 s with a live task outstanding --
+    # it orphans rather than blocks -- so there is no bound to declare. They are
+    # named here because the guard cannot see them, which is the same
+    # disclosure the option/deadline-poll gap above makes.
+    tb_row("test-parallel-metrics.R", 58L, "start_daemons",
+           START_DAEMONS_BOUND_S(),
+           "the metric set the caller gave reaches folds running on a worker"),
+
     # --- test-parallel-interrupt.R ------------------------------------------
     tb_row("test-parallel-interrupt.R", 40L, "start_daemons",
            START_DAEMONS_BOUND_S(), "an interrupted run leaves no fold executing"),
@@ -235,3 +247,10 @@ CLASSIFY_BUDGET_CEILING_S <- 480
 # What the same ledger totalled before M16 cut anything, so the reduction is a
 # measured figure rather than a remembered one.
 CLASSIFY_BUDGET_PRE_M16_S <- 1008.678
+
+# The ceiling on the file M20 added, set at the file's one pool start plus a
+# margin. M16 capped only the file its stall was localized to and recorded the
+# other three without a ceiling; a new file is cheaper to hold to a bound from
+# the start than to cut back later, and 30 s of headroom is one more bounded
+# wait before the guard asks whether it belongs.
+METRICS_BUDGET_CEILING_S <- 150

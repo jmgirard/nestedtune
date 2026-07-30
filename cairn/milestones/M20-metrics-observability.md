@@ -77,7 +77,7 @@ nothing in `R/` reads.
 
 ## Tasks
 
-- [ ] T1: write `tests/testthat/test-parallel-metrics.R` — daemon-backed
+- [x] T1: write `tests/testthat/test-parallel-metrics.R` — daemon-backed
       delivery test per AC1, built on `start_daemons()` (`helper-parallel.R`)
       and the `sep_*` fixture (`helper-orchestration.R:251-284`). Header states
       that the serial comparison pins argument plumbing and **not**
@@ -86,11 +86,11 @@ nothing in `R/` reads.
       Note also that the fixture pins its own generator triple host-side and
       `set_fold_seed()` pins all three inside the daemon, so mirai's ambient
       L'Ecuyer-CMRG streams cannot disturb the separation M18 measured.
-- [ ] T2: register the file in the budget apparatus — `BUDGETED_FILES`
+- [x] T2: register the file in the budget apparatus — `BUDGETED_FILES`
       (`test-suite-hygiene.R:65-69`), ledger rows in `helper-time-budget.R`,
       `METRICS_BUDGET_CEILING_S` beside `CLASSIFY_BUDGET_CEILING_S`, and the
       guard asserting the file stays under it. Record both budget figures.
-- [ ] T3: verify AC1 by mutation — set `metrics = NULL` at `R/parallel.R:86`,
+- [x] T3: verify AC1 by mutation — set `metrics = NULL` at `R/parallel.R:86`,
       run the new file, record red; restore, re-run, record green.
 - [ ] T4: document both attributes in `nested_tune_grid()`'s `@return`
       (`R/nested-tune-grid.R:35-40`), not in `@section When a fold fails:`,
@@ -106,6 +106,11 @@ nothing in `R/` reads.
 
 ## Work log
 
+- 2026-07-30: T1 — `test-parallel-metrics.R` added; 8 assertions green. Ran T3 ahead of T2 (minor reorder) to prove T1 immediately.
+- 2026-07-30: T3 — mutation verified. `metrics = NULL` at the `mirai_map()` `.args` site reds the file with 5 failures across all three assertion classes: metric names in each of the 3 folds, `.selected`, and `.metrics`. Restored, file green, `git diff` on `R/parallel.R` empty.
+- 2026-07-30: T2 — file registered in `BUDGETED_FILES`, one `start_daemons` ledger row (120 s), `METRICS_BUDGET_CEILING_S <- 150` with its guard. Waits the guard's six names cannot see, disclosed per AC2: the two `mirai::daemons(0)` calls at :50 and :53, which M16 measured returning in ~0.2 s (they orphan, never block), so neither has a bound to declare.
+- 2026-07-30: budget figures — `test-parallel-metrics.R` 120.000 s against its 150 s ceiling; combined across `BUDGETED_FILES` 2103.678 s, up from the pre-milestone 1983.678 s.
+- 2026-07-30: `devtools::test()` clean — FAIL 0, WARN 0, SKIP 0, PASS 1337.
 - 2026-07-30: start — status in-progress on `m20-metrics-observability`.
 - 2026-07-30: created by /milestone-plan, promoting the parallel-`metrics`-delivery candidate row (added 2026-07-30 from M18's Out list) and the unread-attribute third of the metrics-loose-ends row, which is trimmed to its remainder.
 - 2026-07-30: criteria audit ([O], fresh context) returned 22 findings; ten fixed into the criteria before the gate — missing `last_dispatch()` assertion; the fixture cache's key ignoring daemon state, which would have served the parallel test a serially-built value; `identical()` false on two `metric_set()` calls; `metrics = NULL` deleting rather than storing the attribute; "the four parallel files" excluding the file this adds; `time_budget_totals()` not summing; a non-discriminating `document()` clause; "wait-shaped" not matching the guard's six names; the serial comparison readable as an IP2 claim it cannot support; `R/nested-results.R:75-76` dead — and three routed to the gate.
