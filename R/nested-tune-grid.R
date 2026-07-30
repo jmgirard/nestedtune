@@ -314,7 +314,7 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
     {
       final_wf <- tune::finalize_workflow(object, selected)
       set_fold_seed(seeds[[2L]])
-      tune::last_fit(final_wf, split = split)
+      tune::last_fit(final_wf, split = split, metrics = metrics)
     },
     error = function(cnd) cnd
   )
