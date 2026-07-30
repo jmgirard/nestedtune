@@ -1,11 +1,11 @@
 # M21: A run says which candidates it actually searched, fold by fold
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m21-evaluated-grid-record`
 
 ## Goal
 
@@ -130,6 +130,7 @@ candidate sets.
 ## Work log
 
 - 2026-07-30: created by /milestone-plan.
+- 2026-07-30: start — status in-progress, branch `m21-evaluated-grid-record` cut from `4cc1a9e`.
 - 2026-07-30: criteria audit ([O], fresh context) returned three defects, all fixed before the gate — AC6 named `valid_fold_result()`, which does not exist (the predicate is `is_fold_record()`, `R/parallel.R:389`); AC2's "ordering by `.config`" was impossible against a request frame that has no such column, and provably wrong besides, since `tune_grid()` renumbers `.config` into ascending parameter order; AC4's failure enumeration omitted the outer-fit path, where a zero-row record would have violated IP4 by reporting a fold that did evaluate a grid as having evaluated none. It also raised GP2 (moot — two oracle types already present) and IP2 fragility in the difference assertion, which became a gate question.
 - 2026-07-30: plan gate chose reading back the candidates that scored over generating the grid ourselves, because reading back changes nothing about what runs while still closing the truncation gap; falsified by evidence that a user needs the candidates that were attempted but failed, which `.notes` records only as prose.
 - 2026-07-30: plan gate chose a bare zero-row tibble for a fold that scored nothing over a typed one, because a fold that died before tuning returned has no result to read parameter names from and typing it would need machinery built solely to furnish an empty record; falsified by a downstream binding of `.grid` across folds that needs uniform columns.
