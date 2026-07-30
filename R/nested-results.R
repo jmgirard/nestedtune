@@ -72,6 +72,12 @@ outer_scheme_label <- function(resamples) {
   if (!inherits(out, "nested_results")) {
     class(out) <- c("nested_results", class(out))
   }
+  # Belt-and-braces, not load-bearing: verified at M20 that NextMethod() above
+  # already carries both attributes through a row subset, a column subset, and
+  # logical and negative indices, under `[.tbl_df` and `[.data.frame` alike.
+  # They are kept because they say in the method what the method guarantees --
+  # the two below are the ones that must be here, since the counts describe the
+  # rows and would otherwise survive as the parent's.
   attr(out, "grid") <- attr(x, "grid")
   attr(out, "metrics") <- attr(x, "metrics")
   # The scheme label is not recomputable from the rows, and the rows kept are

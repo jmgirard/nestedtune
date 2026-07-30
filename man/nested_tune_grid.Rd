@@ -35,6 +35,14 @@ fold's split and id, the metrics scored on its assessment set
 whether the fold finished (\code{.completed}), anything that went wrong
 (\code{.notes}), and the two seeds that reproduce it (\code{.tuning_seed},
 \code{.outer_fit_seed}). Use \code{\link[=collect_metrics]{collect_metrics()}} to summarize.
+
+The object also carries what it was asked to run as two attributes.
+\code{attr(x, "grid")} holds the \code{grid} argument \strong{as it was given} — so it is
+a positive whole number, not a table of candidates, whenever a grid size
+was passed, and it is not a record of which candidates tune went on to
+evaluate. \code{attr(x, "metrics")} holds the \code{metrics} argument, and is absent
+rather than \code{NULL} when none was supplied. Subsetting rows carries both
+unchanged, since they describe the call rather than the rows kept.
 }
 \description{
 \code{nested_tune_grid()} drives the outer loop of nested cross-validation. For

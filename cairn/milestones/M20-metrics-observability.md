@@ -92,20 +92,24 @@ nothing in `R/` reads.
       guard asserting the file stays under it. Record both budget figures.
 - [x] T3: verify AC1 by mutation — set `metrics = NULL` at `R/parallel.R:86`,
       run the new file, record red; restore, re-run, record green.
-- [ ] T4: document both attributes in `nested_tune_grid()`'s `@return`
+- [x] T4: document both attributes in `nested_tune_grid()`'s `@return`
       (`R/nested-tune-grid.R:35-40`), not in `@section When a fold fails:`,
       which is where the fold counts sit and has nothing to do with these.
-- [ ] T5: add the attribute test per AC4 to `test-nested-tune-grid-results.R`,
+- [x] T5: add the attribute test per AC4 to `test-nested-tune-grid-results.R`,
       and comment `R/nested-results.R:75-76` to record that `NextMethod()`
       already carries both attributes through a subset — verified at plan time
       against row, column, logical and negative indices — so the two lines are
       belt-and-braces rather than load-bearing.
-- [ ] T6: verify AC4 by mutation — delete each assignment in
+- [x] T6: verify AC4 by mutation — delete each assignment in
       `new_nested_results()` in turn, record red for both, restore.
 - [ ] T7: add the AC5 candidate row to `cairn/ROADMAP.md`, search-first.
 
 ## Work log
 
+- 2026-07-30: T4 — `@return` now documents both attributes, stating that `grid` is the argument as given (a size, not the candidates evaluated, when a size was passed) and that `metrics` is absent rather than `NULL` when none was supplied. `devtools::document()` regenerated `man/nested_tune_grid.Rd`.
+- 2026-07-30: T5 — two tests added to `test-nested-tune-grid-results.R`: the attributes carry the caller's arguments and survive a row subset, and a `metrics = NULL` run carries no metrics attribute at all. `R/nested-results.R:75-76` commented as belt-and-braces, since `NextMethod()` supplies the survival.
+- 2026-07-30: T6 — both mutations verified. Deleting either assignment in `new_nested_results()` reds the file with 2 failures each, on the fresh object and on the subset. Restored.
+- 2026-07-30: `devtools::test()` clean — FAIL 0, WARN 0, SKIP 0, PASS 1343 (up 6).
 - 2026-07-30: T1 — `test-parallel-metrics.R` added; 8 assertions green. Ran T3 ahead of T2 (minor reorder) to prove T1 immediately.
 - 2026-07-30: T3 — mutation verified. `metrics = NULL` at the `mirai_map()` `.args` site reds the file with 5 failures across all three assertion classes: metric names in each of the 3 folds, `.selected`, and `.metrics`. Restored, file green, `git diff` on `R/parallel.R` empty.
 - 2026-07-30: T2 — file registered in `BUDGETED_FILES`, one `start_daemons` ledger row (120 s), `METRICS_BUDGET_CEILING_S <- 150` with its guard. Waits the guard's six names cannot see, disclosed per AC2: the two `mirai::daemons(0)` calls at :50 and :53, which M16 measured returning in ~0.2 s (they orphan, never block), so neither has a bound to declare.

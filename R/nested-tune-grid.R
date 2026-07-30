@@ -39,6 +39,14 @@
 #'   (`.notes`), and the two seeds that reproduce it (`.tuning_seed`,
 #'   `.outer_fit_seed`). Use [collect_metrics()] to summarize.
 #'
+#'   The object also carries what it was asked to run as two attributes.
+#'   `attr(x, "grid")` holds the `grid` argument **as it was given** — so it is
+#'   a positive whole number, not a table of candidates, whenever a grid size
+#'   was passed, and it is not a record of which candidates tune went on to
+#'   evaluate. `attr(x, "metrics")` holds the `metrics` argument, and is absent
+#'   rather than `NULL` when none was supplied. Subsetting rows carries both
+#'   unchanged, since they describe the call rather than the rows kept.
+#'
 #' @section Reproducibility:
 #'
 #' Seed the session before the call, as elsewhere in tidymodels; there is no
