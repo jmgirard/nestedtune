@@ -199,6 +199,51 @@ test_that("the object carries the grid and metrics it was asked to run", {
   expect_identical(attr(narrowed, "metrics"), metrics)
 })
 
+test_that("each fold records the candidates its inner tuning actually scored", {
+  skip_if_no_engines()
+
+  # IP4 asks for "the grid actually evaluated", which the `grid` attribute
+  # cannot supply: it holds the request, so a size request records a number and
+  # never the candidates. This column is the record, per fold because folds can
+  # genuinely disagree (measured at M21's plan gate: integer-grid expansion is
+  # stochastic for a continuous parameter, and each fold tunes under its own
+  # seed).
+  grid <- det_grid()
+  res <- example_results()
+
+  expect_true(".grid" %in% names(res))
+  expect_type(res$.grid, "list")
+  expect_length(res$.grid, 3L)
+
+  for (g in res$.grid) {
+    expect_true(is.data.frame(g))
+    expect_identical(nrow(g), nrow(grid))
+    expect_true(all(c("num_comp", ".config") %in% names(g)))
+
+    # Compared by the shared parameter column, NEVER by .config. tune renumbers
+    # .config into ascending parameter order, so a request frame given in any
+    # other order fails a .config-ordered comparison on a set that is identical
+    # (measured at M21's criteria audit, tune 2.1.0). Sorting the parameter
+    # values is the comparison that holds for any request order.
+    expect_identical(sort(g$num_comp), sort(grid$num_comp))
+  }
+})
+
+test_that("the evaluated-candidate record travels with the rows it describes", {
+  skip_if_no_engines()
+
+  # Unlike the `grid` attribute, this record describes the rows rather than the
+  # call -- so it is a column, and a row subset carries each fold's own record
+  # rather than the parent's. An attribute could not do this: M20 measured that
+  # arbitrary attributes survive a row subset untouched, which is exactly the
+  # stale-parent claim IP4 forbids.
+  res <- example_results()
+
+  subset <- res[2:3, ]
+  expect_length(subset$.grid, 2L)
+  expect_identical(subset$.grid, res$.grid[2:3])
+})
+
 test_that("a run given no metric set carries no metrics attribute", {
   skip_if_no_engines()
 

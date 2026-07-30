@@ -17,6 +17,11 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
 
   cols[[".metrics"]] <- lapply(folds, function(x) x$metrics)
   cols[[".selected"]] <- lapply(folds, function(x) x$selected)
+  # IP4's "the grid actually evaluated", per fold rather than per run: folds can
+  # genuinely search different candidate sets, so this is a column and not an
+  # attribute. An attribute would also survive a row subset as the parent's
+  # record (M20), which is the stale claim the same principle forbids.
+  cols[[".grid"]] <- lapply(folds, function(x) x$grid)
   cols[[".notes"]] <- lapply(folds, function(x) x$notes)
   cols[[".completed"]] <- completed
   cols[[".tuning_seed"]] <- seeds[seq(1L, by = 2L, length.out = n)]
@@ -104,7 +109,7 @@ outer_scheme_label <- function(resamples) {
 # column rather than naming it, because a repeated design carries `id` and
 # `id2`, so the check greps too.
 has_results_columns <- function(x) {
-  required <- c(".metrics", ".selected", ".notes", ".completed")
+  required <- c(".metrics", ".selected", ".grid", ".notes", ".completed")
   all(required %in% names(x)) && any(grepl("^id", names(x)))
 }
 

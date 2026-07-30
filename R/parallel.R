@@ -390,7 +390,7 @@ is_fold_record <- function(x) {
   is.list(x) &&
     is.logical(x$completed) &&
     length(x$completed) == 1L &&
-    all(c("metrics", "selected", "notes") %in% names(x))
+    all(c("metrics", "selected", "grid", "notes") %in% names(x))
 }
 
 worker_failure_message <- function(x) {

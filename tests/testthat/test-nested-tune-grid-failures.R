@@ -271,6 +271,14 @@ test_that("dropping any of the per-fold columns sheds the results class", {
     inherits(res[, c(".metrics", ".selected", ".notes", ".completed")],
              "nested_results")
   )
+
+  # .grid joined that set at M21. Asserted by dropping it from an otherwise
+  # complete object rather than by listing a subset that happens to omit it, so
+  # this fails if the column stops being required rather than passing on some
+  # other column's absence.
+  expect_false(
+    inherits(res[, setdiff(names(res), ".grid")], "nested_results")
+  )
   expect_s3_class(res[1:2, ], "nested_results")
 })
 

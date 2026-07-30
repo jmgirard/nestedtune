@@ -101,19 +101,19 @@ candidate sets.
 
 ## Tasks
 
-- [ ] T1: failing test first — a data-frame grid, asserting each completed fold's
+- [x] T1: failing test first — a data-frame grid, asserting each completed fold's
       `.grid` element against the frame passed in, ordered by the shared
       parameter columns. Reuses the existing orchestration fixtures
       (`tests/testthat/helper-orchestration.R`).
-- [ ] T2: `nested_fold_fit()` (`R/nested-tune-grid.R:295`) reads the scored
+- [x] T2: `nested_fold_fit()` (`R/nested-tune-grid.R:295`) reads the scored
       candidates off `tuned` and returns them; `failed_fold()`
       (`R/nested-tune-grid.R:365`) gains the same element, taking the set from
       `tuned` where there is one — the outer-fit path has one and currently
       passes `NULL` (`R/nested-tune-grid.R:335`) — and a bare zero-row tibble
       otherwise.
-- [ ] T3: `new_nested_results()` (`R/nested-results.R:8`) assembles the `.grid`
+- [x] T3: `new_nested_results()` (`R/nested-results.R:8`) assembles the `.grid`
       column; `has_results_columns()` (`R/nested-results.R:106`) requires it.
-- [ ] T4: `is_fold_record()` (`R/parallel.R:389`) requires the grid element;
+- [x] T4: `is_fold_record()` (`R/parallel.R:389`) requires the grid element;
       mutation-verify by dropping it from the required set and confirming red.
 - [ ] T5: failure-path tests — one candidate failing everywhere, an outer-fit
       failure, and a fold where every candidate failed.
@@ -131,6 +131,8 @@ candidate sets.
 
 - 2026-07-30: created by /milestone-plan.
 - 2026-07-30: start — status in-progress, branch `m21-evaluated-grid-record` cut from `4cc1a9e`.
+- 2026-07-30: implement gate — one question open (the disagreement print line's content); chose counts then the difference over the bare flag, because counts separate same-size-different-values from one fold truncating further. Everything else had one right answer and was settled inline: candidates come from the tuning run's `.metrics` (unioned across inner resamples, deduped and ordered by `.config`) because `collect_metrics()` raises when all models failed; no `BUDGETED_FILES` row is owed since nothing added waits.
+- 2026-07-30: T1-T4 — `.grid` column recorded, required by `has_results_columns()` and `is_fold_record()`. The new requirement caught two fixtures fabricating the pre-M21 shape (`test-parallel-classify.R:9`, `test-parallel-interrupt.R:20`), which is the guard working rather than breakage. Mutation-verified per guard-doctrine: dropping `"grid"` from the required set left the classify file GREEN until a test pinned it per element, so the guard was written against the measured gap, not assumed.
 - 2026-07-30: criteria audit ([O], fresh context) returned three defects, all fixed before the gate — AC6 named `valid_fold_result()`, which does not exist (the predicate is `is_fold_record()`, `R/parallel.R:389`); AC2's "ordering by `.config`" was impossible against a request frame that has no such column, and provably wrong besides, since `tune_grid()` renumbers `.config` into ascending parameter order; AC4's failure enumeration omitted the outer-fit path, where a zero-row record would have violated IP4 by reporting a fold that did evaluate a grid as having evaluated none. It also raised GP2 (moot — two oracle types already present) and IP2 fragility in the difference assertion, which became a gate question.
 - 2026-07-30: plan gate chose reading back the candidates that scored over generating the grid ourselves, because reading back changes nothing about what runs while still closing the truncation gap; falsified by evidence that a user needs the candidates that were attempted but failed, which `.notes` records only as prose.
 - 2026-07-30: plan gate chose a bare zero-row tibble for a fold that scored nothing over a typed one, because a fold that died before tuning returned has no result to read parameter names from and typing it would need machinery built solely to furnish an empty record; falsified by a downstream binding of `.grid` across folds that needs uniform columns.
