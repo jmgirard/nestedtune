@@ -1,6 +1,6 @@
 # M20: The metric set a run scored under is provable, on every path and on the object
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -107,6 +107,7 @@ nothing in `R/` reads.
 
 ## Work log
 
+- 2026-07-30: `devtools::check()` clean — 0 errors, 0 warnings, 0 notes, 3m23s; test suite 80s/130s under check. No prose-guard authored or edited this milestone, so guard-doctrine §8's fresh-context description review does not apply. Status → review.
 - 2026-07-30: T7 — AC5 candidate row added, search-first sweep over candidates, `milestones/archive/`, and `DECISIONS.md` finding no overlap. T7 extended (minor task edit) with the `NEWS.md` entry the consistency gate requires: documenting the two attributes changes the public contract, so it is user-visible.
 - 2026-07-30: T4 — `@return` now documents both attributes, stating that `grid` is the argument as given (a size, not the candidates evaluated, when a size was passed) and that `metrics` is absent rather than `NULL` when none was supplied. `devtools::document()` regenerated `man/nested_tune_grid.Rd`.
 - 2026-07-30: T5 — two tests added to `test-nested-tune-grid-results.R`: the attributes carry the caller's arguments and survive a row subset, and a `metrics = NULL` run carries no metrics attribute at all. `R/nested-results.R:75-76` commented as belt-and-braces, since `NextMethod()` supplies the survival.
