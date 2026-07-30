@@ -2,6 +2,25 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  results now record which parameter candidates each outer fold actually
+  searched, in a new `.grid` column holding one table per fold. Until
+  now the object recorded only the grid you *asked* for, and the two are
+  routinely different: a grid size is expanded by tune and can reach
+  fewer candidates than you requested — asking for 20 on a parameter
+  with four reachable values searches four — and a candidate that fails
+  scores nothing. Folds can also differ from each other, because
+  expanding a size draws from the random number generator and each fold
+  is seeded separately, so tuning a continuous parameter with
+  `grid = 10` leaves every fold searching its own candidates. Printing a
+  result now says so when it happens, reporting each fold’s candidate
+  count, which matters when you are reading the per-fold selections:
+  folds that disagree may not have been choosing from the same set. A
+  fold that failed keeps whatever it managed to score, and one that
+  scored nothing carries an empty table. A candidate that failed on
+  every inner resample is absent from `.grid` and recorded in `.notes`
+  instead — tune keeps no other record of it.
+
 - The object
   [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
   returns now documents the two attributes it has always carried.

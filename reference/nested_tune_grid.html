@@ -102,16 +102,32 @@ candidate.</p></dd>
     <p>An object of class <code>nested_results</code>: one row per outer fold, with the
 fold's split and id, the metrics scored on its assessment set
 (<code>.metrics</code>), the parameters chosen for it by inner tuning (<code>.selected</code>),
-whether the fold finished (<code>.completed</code>), anything that went wrong
-(<code>.notes</code>), and the two seeds that reproduce it (<code>.tuning_seed</code>,
-<code>.outer_fit_seed</code>). Use <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code> to summarize.</p>
-<p>The object also carries what it was asked to run as two attributes.
-<code>attr(x, "grid")</code> holds the <code>grid</code> argument <strong>as it was given</strong> — so it is
-a positive whole number, not a table of candidates, whenever a grid size
-was passed, and it is not a record of which candidates tune went on to
-evaluate. <code>attr(x, "metrics")</code> holds the <code>metrics</code> argument, and is absent
-rather than <code>NULL</code> when none was supplied. Subsetting rows carries both
-unchanged, since they describe the call rather than the rows kept.</p>
+the candidates its inner tuning actually scored (<code>.grid</code>), whether the fold
+finished (<code>.completed</code>), anything that went wrong (<code>.notes</code>), and the two
+seeds that reproduce it (<code>.tuning_seed</code>, <code>.outer_fit_seed</code>). Use
+<code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code> to summarize.</p>
+<p><strong>Two records describe the grid, and they answer different questions.</strong>
+<code>attr(x, "grid")</code> holds the <code>grid</code> argument <strong>as it was given</strong> — a
+positive whole number, not a table of candidates, whenever a size was
+passed. The <code>.grid</code> column holds what each outer fold's inner tuning
+actually scored, one table per fold with a column per tuned parameter.</p>
+<p>The two diverge routinely, in both directions. A size is expanded by tune
+and may reach fewer candidates than were asked for — a request for 20 on a
+parameter with four reachable values evaluates four — and a candidate that
+fails scores nothing. Folds can also differ from <em>each other</em>: expanding a
+size draws from the generator, and each fold tunes under its own seed, so
+a continuous parameter gives every fold its own candidates. Printing says
+so when it happens.</p>
+<p>One limit is worth stating plainly. <code>.grid</code> is derived from the tuning
+run's own metrics, because that is the only place tune records candidates
+at all. A candidate that failed on <strong>every</strong> inner resample scored nothing
+and is therefore absent from <code>.grid</code> — <code>.notes</code> is where its failure is
+recorded. A fold that scored no candidate at all carries a zero-row table,
+never <code>NULL</code>.</p>
+<p><code>attr(x, "metrics")</code> holds the <code>metrics</code> argument, and is absent rather
+than <code>NULL</code> when none was supplied. Subsetting rows carries both
+attributes unchanged, since they describe the call rather than the rows
+kept; <code>.grid</code> is a column, so it travels with the fold it describes.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -171,6 +187,13 @@ resamples fail, tuning still returns a candidate and the fold finishes, but
 its parameters were chosen on less of the inner design than was asked for.
 Those notes are kept, so <code>.completed</code> being <code>TRUE</code> with a non-empty <code>.notes</code>
 means exactly that: it worked, on less than the whole design.</p>
+<p>A failed fold still records the candidates it got as far as scoring, whatever
+stage it failed at. A fold that died at the outer fit had already tuned, so
+its <code>.grid</code> holds the full set — and so does one that tuned successfully and
+then failed while selecting from the results. Only a fold that never reached
+a scored candidate at all — tuning itself raised, or every candidate failed —
+holds a zero-row table. No fold is reported as having searched a grid it did
+not.</p>
 <p>Subsetting rows recomputes <code>folds_attempted</code> and <code>folds_completed</code> for the
 rows kept, so the counts always describe the object in hand. Dropping the
 <code>.completed</code> column drops the <code>nested_results</code> class with it.</p>
