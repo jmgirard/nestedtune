@@ -102,10 +102,12 @@ nothing in `R/` reads.
       belt-and-braces rather than load-bearing.
 - [x] T6: verify AC4 by mutation — delete each assignment in
       `new_nested_results()` in turn, record red for both, restore.
-- [ ] T7: add the AC5 candidate row to `cairn/ROADMAP.md`, search-first.
+- [x] T7: add the AC5 candidate row to `cairn/ROADMAP.md`, search-first, and
+      the `NEWS.md` entry for the newly documented attributes.
 
 ## Work log
 
+- 2026-07-30: T7 — AC5 candidate row added, search-first sweep over candidates, `milestones/archive/`, and `DECISIONS.md` finding no overlap. T7 extended (minor task edit) with the `NEWS.md` entry the consistency gate requires: documenting the two attributes changes the public contract, so it is user-visible.
 - 2026-07-30: T4 — `@return` now documents both attributes, stating that `grid` is the argument as given (a size, not the candidates evaluated, when a size was passed) and that `metrics` is absent rather than `NULL` when none was supplied. `devtools::document()` regenerated `man/nested_tune_grid.Rd`.
 - 2026-07-30: T5 — two tests added to `test-nested-tune-grid-results.R`: the attributes carry the caller's arguments and survive a row subset, and a `metrics = NULL` run carries no metrics attribute at all. `R/nested-results.R:75-76` commented as belt-and-braces, since `NextMethod()` supplies the survival.
 - 2026-07-30: T6 — both mutations verified. Deleting either assignment in `new_nested_results()` reds the file with 2 failures each, on the fresh object and on the subset. Restored.
