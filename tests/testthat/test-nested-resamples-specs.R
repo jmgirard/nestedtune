@@ -165,6 +165,83 @@ test_that("`inside` must be an expression, not an existing object", {
   )
 })
 
+# An `inside` specification that evaluates to something other than an rset used
+# to build a design silently: `inner_resamples[[1]]` held whatever the call
+# returned, and the first symptom was a crash inside pretty.default() at print
+# time. The guard sits in the per-fold evaluation, so it covers every fold --
+# checked below by a specification that turns bad only on a later one.
+
+test_that("an `inside` spec that does not produce an rset is refused", {
+  d <- make_test_data()
+
+  expect_error(
+    nested_resamples(d, outside = rsample::vfold_cv(v = 2), inside = list()),
+    "did not produce an"
+  )
+})
+
+test_that("the `inside` guard covers every outer fold, not just the first", {
+  d <- make_test_data()
+
+  # Keyed to the call count rather than to anything about the fold, so the
+  # failure lands on the third fold whatever the outer split happens to be. A
+  # guard that inspected only the first fold would return a design here.
+  seen <- 0L
+  flaky_inner <- function(data, ...) {
+    seen <<- seen + 1L
+    if (seen < 3L) rsample::vfold_cv(data, v = 2) else list()
+  }
+
+  expect_error(
+    nested_resamples(d, outside = rsample::vfold_cv(v = 3), inside = flaky_inner()),
+    "did not produce an"
+  )
+  # The first two folds evaluated cleanly, so the refusal came from the third.
+  expect_identical(seen, 3L)
+})
+
+test_that("the refusal names the user's call, not an internal one", {
+  d <- make_test_data()
+
+  cnd <- tryCatch(
+    nested_resamples(d, outside = rsample::vfold_cv(v = 2), inside = list()),
+    error = function(e) e
+  )
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_resamples"))
+})
+
+# The data used to be inlined into the calls being evaluated, so any condition
+# raised from one deparsed the whole frame into its message -- 1,194 characters
+# on a 30x2 frame, and growing with the data. Binding it to a name instead makes
+# the message a property of the specification alone.
+#
+# Both halves of the assertion are load-bearing. Equality alone passes today at
+# larger sizes, because R truncates a condition message at 8,190 bytes and two
+# truncated messages are equal; the length bound is what makes it fail.
+
+test_that("a failing spec reports a message that does not carry the data", {
+  small <- data.frame(a = rnorm(30), b = rnorm(30))
+  large <- data.frame(a = rnorm(3000), b = rnorm(3000))
+
+  msg <- function(data, which) {
+    cnd <- tryCatch(
+      if (identical(which, "outside")) {
+        nested_resamples(data, outside = nrow(), inside = rsample::vfold_cv(v = 2))
+      } else {
+        nested_resamples(data, outside = rsample::vfold_cv(v = 2), inside = nrow())
+      },
+      error = function(e) e
+    )
+    conditionMessage(cnd)
+  }
+
+  for (which in c("outside", "inside")) {
+    small_msg <- msg(small, which)
+    expect_identical(small_msg, msg(large, which))
+    expect_lt(nchar(small_msg), 500L)
+  }
+})
+
 test_that("a zero-row data frame is refused by the underlying spec", {
   empty <- make_test_data()[0, , drop = FALSE]
 

@@ -92,13 +92,13 @@ in-process call that consumes it.
 
 ## Tasks
 
-- [ ] **T1.** In `inner_resamples_from_split()` (`R/nested-resamples.R:138`),
+- [x] **T1.** In `inner_resamples_from_split()` (`R/nested-resamples.R:138`),
       evaluate `cl` with the analysis frame bound to a name in a child
       environment rather than inlined, and refuse a non-`rset` result. The guard
       inspects the **existing** per-fold evaluation — a pre-pass over fold 1
       would draw from the RNG a second time and change every design the function
       returns (`vfold_cv()` consumes the stream). Test first.
-- [ ] **T2.** Apply the same non-inlining evaluation to `outside`
+- [x] **T2.** Apply the same non-inlining evaluation to `outside`
       (`R/nested-resamples.R:70`). Test first.
 - [ ] **T3.** Add a no-model-spec branch to `check_workflow()` ahead of
       `workflows::extract_spec_parsnip()` (`R/checks.R:30`); it inherits the
@@ -125,6 +125,11 @@ in-process call that consumes it.
 - 2026-07-30: plan gate chose a purpose-built separating fixture over changing the shared `reg_metrics()` because on `make_reg_data()` every candidate metric selects alike, so the global change would re-record snapshots across ~6 files and still not catch the `tune_grid()` site; falsified by a second milestone needing the same separation from a different fixture.
 - 2026-07-30: plan chose guarding inside the existing per-fold evaluation over a construction-time pre-pass because a pre-pass draws from the RNG again and changes every design returned; falsified by evidence that a specification can produce an `rset` on fold 1 and not on a later fold at a cost the per-fold guard does not catch.
 - 2026-07-30: /milestone-implement — branch `m18-argument-guards` cut from `main` at `1c7ae56`; status `planned` → `in-progress`.
+- 2026-07-30: implement gate — one open choice, how to detect a missing model spec: `workflows` does not export `has_spec()` and `:::` fails `R CMD check`, and its error is a bare `rlang_error` with no subclass to discriminate on, so the user chose the structural check over catch-and-relabel.
+- 2026-07-30: minor amendment — T1 and T2 committed together. They are one edit region and AC2's test spans both, so neither passes the profile's verify slot on its own; task text unchanged.
+- 2026-07-30: T1+T2 — new internal `eval_spec()` binds the frame to a name instead of inlining it (both `outside` and `inside`), and the `inside` rset guard sits in the per-fold evaluation. Verified by execution that bind-by-name is byte-identical to inlining under a matched seed, fingerprint included, so no design changes.
+- 2026-07-30: T1 guard proven by inversion — disabling the rset check turned 3 tests red; restored and re-verified. The per-fold test was vacuous on first draft (keyed to frame size, and the small fold was fold 1); re-keyed to the call count and now asserts the third fold was reached.
+- 2026-07-30: T1+T2 verify slot clean — `devtools::test()` `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1255 ]`.
 
 ## Decisions
 
