@@ -218,6 +218,54 @@ unstable_workflow <- function(data) {
 
 unstable_grid <- function() data.frame(num_comp = 1:4)
 
+# A fixture on which the caller's metric set and tune's default disagree (M18).
+#
+# reg_metrics() is `metric_set(rmse, rsq)`, which IS tune's regression default,
+# so every test passing it asserts nothing about `metrics` reaching tune: drop
+# the argument anywhere and the run is identical. This fixture exists to make
+# that argument observable, and it needs two properties at once.
+#
+# The metric names must differ from the default's, so the outer `.metrics` from
+# last_fit() changes -- hence `mae`, which is not in `metric_set(rmse, rsq)`.
+# And the *selection* must differ, so `.selected` changes when the inner
+# tune_grid() loses the argument and select_best() falls back to resolving
+# `rmse` off the tuned object. That second property is not free: on
+# make_reg_data() every candidate metric picks the same number of components,
+# which is exactly why the shared fixture cannot do this job.
+#
+# Heavy-tailed noise is what earns it. mae is robust to outliers and rmse is
+# not, so the two rank candidates differently once the residuals stop being
+# Gaussian. The (data seed, design seed) pair below was found by searching that
+# space at the OUTER-FOLD level -- a whole-data proxy reports separation the
+# nested design does not have -- and separates in all three outer folds.
+# The path is still PCA and lm, so it stays RNG-free and the disagreement is
+# reproducible.
+sep_data <- function(n = 80, seed = 10, k = 6, df = 1.2) {
+  set.seed(seed)
+  d <- as.data.frame(matrix(rnorm(n * k), nrow = n, ncol = k))
+  names(d) <- paste0("x", seq_len(k))
+  d$y <- 2 * d$x1 - d$x2 + rt(n, df = df) * 3
+  d
+}
+
+sep_workflow <- unstable_workflow
+
+sep_grid <- function() data.frame(num_comp = 1:5)
+
+sep_metrics <- function() {
+  yardstick::metric_set(yardstick::mae, yardstick::rmse)
+}
+
+# Literal arguments, so nested_final_fit() can re-evaluate the stored call.
+sep_nested <- function(data, seed = 21) {
+  set.seed(seed)
+  nested_resamples(
+    data,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 3)
+  )
+}
+
 # Every outer fold broken, for the run that has nothing to report at all.
 break_every_fold <- function(nested, stage = "inner tuning") {
   for (i in seq_len(nrow(nested))) {

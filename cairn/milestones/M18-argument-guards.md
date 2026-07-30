@@ -104,14 +104,14 @@ in-process call that consumes it.
       `workflows::extract_spec_parsnip()` (`R/checks.R:30`); it inherits the
       user's call from the existing `call = rlang::caller_env()` default, so
       both entry points are covered by the one branch. Test first.
-- [ ] **T4.** Build the separating fixture in `helper-orchestration.R`:
+- [x] **T4.** Build the separating fixture in `helper-orchestration.R`:
       heavy-tailed regression data plus `metric_set(mae, rmse)`, searched at the
       **outer-fold** level (a whole-data proxy is not sufficient — it reports
       separation the nested design does not have). Generated in the helper, per
       the existing provenance pattern.
-- [ ] **T5.** Add the metric-delivery assertions for `nested_tune_grid()` and
+- [x] **T5.** Add the metric-delivery assertions for `nested_tune_grid()` and
       `nested_final_fit()` on that fixture.
-- [ ] **T6.** Run the three-site mutation inversion, one site at a time,
+- [x] **T6.** Run the three-site mutation inversion, one site at a time,
       restoring each; record the ledger.
 - [ ] **T7.** `NEWS.md` entries for the two new refusals; `devtools::document()`;
       full `devtools::check()`.
@@ -131,6 +131,14 @@ in-process call that consumes it.
 - 2026-07-30: T1 guard proven by inversion — disabling the rset check turned 3 tests red; restored and re-verified. The per-fold test was vacuous on first draft (keyed to frame size, and the small fold was fold 1); re-keyed to the call count and now asserts the third fold was reached.
 - 2026-07-30: T1+T2 verify slot clean — `devtools::test()` `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1255 ]`.
 - 2026-07-30: T3 — `check_workflow()` refuses a workflow with no model spec ahead of `extract_spec_parsnip()`, inheriting the user's call from the existing `call = rlang::caller_env()` default, so one branch covers both entry points. Proven by inversion: disabling it turned 2 tests red, restored to 0. No test depended on workflows' own wording. Verify slot clean — `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1261 ]`.
+- 2026-07-30: T4 — the criteria audit's proposed separating fixture did not reproduce (0 of 3 outer folds separated at its stated seeds), so the fixture was found by own search over (data seed × design seed) at the outer-fold level: `sep_data(seed = 10)` + `sep_nested(seed = 21)`, heavy-tailed `rt(df = 1.2)` noise, `metric_set(mae, rmse)`, separating in 3 of 3 folds. Verified through the drivers, not through hand-rolled `tune_grid()` calls.
+- 2026-07-30: T5 — `test-metrics-argument.R` leads with a test asserting the fixture still separates, so the other three cannot pass vacuously against a future tune whose defaults changed; the same vacuity trap caught in T1's per-fold test. File runs ~8 s.
+- 2026-07-30: T6 ledger row 1/3 — site `tune::tune_grid()` in `nested_fold_fit()` (`R/nested-tune-grid.R:292`); deleting `metrics` fails `test-metrics-argument.R:71` (`.selected` vs the reference loop resolving `mae`) and `:36` (fixture separation); 4 failures.
+- 2026-07-30: T6 ledger row 2/3 — site `tune::last_fit()` in `nested_fold_fit()` (`R/nested-tune-grid.R:317`); deleting `metrics` fails `test-metrics-argument.R:50` (`.metrics$.metric` equals `c("mae", "rmse")`) and `:28` (metric names differ); 4 failures.
+- 2026-07-30: T6 ledger row 3/3 — site `tune::tune_grid()` in `final_fit_worker()` (`R/nested-final-fit.R:197`); deleting `metrics` fails `test-metrics-argument.R:85` (`collect_metrics(x$tuning)$.metric`); 1 failure.
+- 2026-07-30: T6 — all three sites red one at a time, baseline restored to `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 39 ]` on the filtered set; the plan-time worry that site 1 was unobservable through `nested_results` is refuted — `.selected` catches it on a separating fixture.
+- 2026-07-30: AC5 line-number drift, logged not amended — the criterion names `R/nested-tune-grid.R:295`/`:317` and `R/nested-final-fit.R:201`; the calls actually sit at `:292`, `:317` and `:197`. Each site is identified unambiguously by function and call in the same clause, so the substance is unchanged and the plan-owned text is left alone.
+- 2026-07-30: T7 partial — `NEWS.md` carries three entries for the user-visible refusals (the metrics work is test-only and gets none); `devtools::document()` produces no diff. `devtools::check()` still running at checkpoint time, so T7 stays unticked.
 
 ## Decisions
 

@@ -1,5 +1,23 @@
 # nestedtune 0.0.0.9000
 
+* `nested_resamples()` now refuses an `inside` specification that does not
+  produce an `rset`. Passing one used to build a design anyway: its
+  `inner_resamples` column held whatever the specification returned, nothing
+  complained, and the first sign of trouble was an error from deep inside R the
+  next time the design was printed or used.
+
+* When a resampling specification fails to evaluate, the error now says which
+  specification was tried instead of printing your data. Both `outside` and
+  `inside` had the data frame written into the call being evaluated, so any
+  failure produced a message thousands of characters long that was mostly your
+  own numbers — long enough to bury the actual problem.
+
+* `nested_tune_grid()` and `nested_final_fit()` now say for themselves that a
+  workflow has no model in it, and point at `workflows::add_model()`. A
+  preprocessor-only workflow — the easiest one to build by accident — used to
+  fail with an error raised inside `workflows`, naming a call you never wrote,
+  while every other bad `object` named yours.
+
 * The documentation website now actually publishes. The job that pushes the
   built site had no copy of the repository to work in, so the first build to
   reach the default branch failed at the publishing step and no site was ever
