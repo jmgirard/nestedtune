@@ -1,10 +1,11 @@
 # M22: What selection saw has a name
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4, GP1, GP3
+- **Branch/PR:** `m22-final-fit-accessors`
 
 ## Goal
 
@@ -115,6 +116,7 @@ plan gate, recorded as D-023.
 - 2026-07-30: plan gate chose returning `.config` beside the parameters over a parameters-only table, because one shape for one concept across both classes beats a cleaner table that forks it; falsified by evidence a user reads the accessor's output as a grid to pass back to `tune_grid()`, which `.config` would break.
 - 2026-07-30: plan gate chose the known-grid proof bar over independently re-deriving tune's space-filling expansion, because M21 already oracle-verified `scored_candidates()` two ways (O3, O4) and re-deriving pins tune internals IP2 declines to promise across versions; falsified by the accessor and the `.grid` column disagreeing on a run where both are defined.
 - 2026-07-30: decided autonomously that neither accessor gets a `nested_results` method — `.grid` is that object's per-fold surface and a pooled table would assert a shared menu M21 measured false; falsified by a user needing the candidates of a results object in one table with the fold labels attached.
+- 2026-07-30: /milestone-implement started on `m22-final-fit-accessors`, cut from `main` at 017dc6e.
 
 ## Decisions
 
