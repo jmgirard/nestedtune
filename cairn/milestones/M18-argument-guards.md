@@ -71,7 +71,7 @@ in-process call that consumes it.
       asserts that `nested_tune_grid()`'s `.selected` and `.metrics`, and
       `nested_final_fit()`'s `collect_metrics(x$tuning)`, each reflect the
       caller's metric set rather than tune's default.
-- [ ] **AC5.** Deleting the `metrics` argument from each of the three
+- [x] **AC5.** Deleting the `metrics` argument from each of the three
       in-process sites that pass it — `tune::tune_grid()` at
       `R/nested-tune-grid.R:295`, `tune::last_fit()` at `:317`, and
       `tune::tune_grid()` at `R/nested-final-fit.R:201` — one at a time turns
@@ -138,6 +138,7 @@ in-process call that consumes it.
 - 2026-07-30: T6 ledger row 3/3 — site `tune::tune_grid()` in `final_fit_worker()` (`R/nested-final-fit.R:197`); deleting `metrics` fails `test-metrics-argument.R:85` (`collect_metrics(x$tuning)$.metric`); 1 failure.
 - 2026-07-30: T6 — all three sites red one at a time, baseline restored to `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 39 ]` on the filtered set; the plan-time worry that site 1 was unobservable through `nested_results` is refuted — `.selected` catches it on a separating fixture.
 - 2026-07-30: AC5 line-number drift, logged not amended — the criterion names `R/nested-tune-grid.R:295`/`:317` and `R/nested-final-fit.R:201`; the calls actually sit at `:292`, `:317` and `:197`. Each site is identified unambiguously by function and call in the same clause, so the substance is unchanged and the plan-owned text is left alone.
+- 2026-07-30: review incident — `8a3dac8` committed and pushed a review-time mutation by mistake: `git add -A` ran while the AC5 inversion was mid-flight and swept in site 2 with `metrics` deleted from `tune::last_fit()`. Restored in `d876c9a`; `R/`, `tests/` and `NEWS.md` verified byte-identical to `ca3ec82`, the tree the criterion evidence was gathered against. History left intact rather than rewritten. CI re-run on the corrected head.
 - 2026-07-30: T7 partial — `NEWS.md` carries three entries for the user-visible refusals (the metrics work is test-only and gets none); `devtools::document()` produces no diff. `devtools::check()` still running at checkpoint time, so T7 stays unticked.
 
 ## Decisions
@@ -169,3 +170,17 @@ metric names `mae, rmse` against tune's default `rmse, rsq`; caller's first metr
 `mae` is outside `{rmse, rsq}`; selections `1, 2, 2` against `3, 1, 3` — different in
 all 3 of 3 outer folds. `nested_final_fit()`'s `collect_metrics(x$tuning)` carries
 `mae, rmse`.
+
+**AC5 — verified.** Mutation inversion re-run fresh at review, one site at a
+time, each restored before the next. Ledger:
+
+| site | failures | caught by |
+|---|---|---|
+| `tune::tune_grid()` in `nested_fold_fit()` | 4 | `test-metrics-argument.R:71` (`.selected` vs the reference loop resolving `mae`), `:36` (fixture separation) |
+| `tune::last_fit()` in `nested_fold_fit()` | 4 | `test-metrics-argument.R:50` (`.metrics$.metric` equals `c("mae", "rmse")`), `:28` (metric names differ) |
+| `tune::tune_grid()` in `final_fit_worker()` | 1 | `test-metrics-argument.R:85` (`collect_metrics(x$tuning)$.metric`) |
+
+Baseline with all three restored: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 39 ]` on the
+filtered set. The plan-time concern that site 1 was unobservable through
+`nested_results` — which retains no inner tuning run — is refuted: `.selected`
+catches it on a separating fixture.
