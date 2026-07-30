@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-27 (audit pass with nothing in flight since M13's merge — 16 checks and 8 advisories green, both GitHub inboxes empty, tree clean, no work to reconcile; one reported gap: CLAUDE.md's cairn section is read at every session start but is not covered by the rulebook's always-read worked table)_
+_Last hygiene check: 2026-07-30 (nothing in flight; 16 checks and 8 advisories green, both GitHub inboxes empty, no open RB. Reconciled `8ab62e8`, a post-archive wording pass on M13's draft rsample#283 comment. Two items carried unchanged: M13's handoff — that comment is still unposted upstream — and CLAUDE.md's cairn section still outside the rulebook's always-read worked table)_
 
 ## Milestones
 
