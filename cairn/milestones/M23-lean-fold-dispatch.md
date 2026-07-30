@@ -1,11 +1,11 @@
 # M23: A worker is sent the fold, not six copies of the data
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP2, GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m23-lean-fold-dispatch`
 
 ## Goal
 

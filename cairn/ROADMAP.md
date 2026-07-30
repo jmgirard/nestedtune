@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (M22 merged and archived; M14's row pruned under
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M23 | A worker is sent the fold, not six copies of the data | planned | — | normal | milestones/M23-lean-fold-dispatch.md |
+| M23 | A worker is sent the fold, not six copies of the data | in-progress | — | normal | milestones/M23-lean-fold-dispatch.md |
 | M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |
 | M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |
 | M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
