@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M19: A malformed design is refused at the driver, not at the tenth fold
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -135,7 +135,7 @@ All baselines below were verified by execution 2026-07-30.
       binding, assert absence after).
 - [x] **T7.** Roxygen on both `@param resamples`, the rewritten
       `nested_final_fit()` sentence, `NEWS.md`, and `devtools::document()`.
-- [ ] **T8.** Full `devtools::check()`; confirm no new NOTE and no suite-time
+- [x] **T8.** Full `devtools::check()`; confirm no new NOTE and no suite-time
       regression.
 
 ## Work log
@@ -150,6 +150,9 @@ All baselines below were verified by execution 2026-07-30.
 - 2026-07-30: discovered fallout — `test-nested-tune-grid-failures.R:305` used a non-`rsplit` `splits` element as the vehicle for 'an error raised by last_fit() is recorded against the outer fit', which AC1 now refuses at the call. Vehicle changed to an `rsplit` whose `in_id` indexes a row past the end: still an `rsplit`, `last_fit()` still raises, same `.completed` pattern. What the test pins is unchanged.
 - 2026-07-30: guards verified by mutation, all three red when inverted — moving `check_nested()` after the `sample.int()` draw reddens the AC4 placement test specifically, which is the failure mode the plan-gate audit found the original `.Random.seed` identity formulation could not produce.
 - 2026-07-30: `@param resamples` first linked `[rsample::rsplit()]`, an undocumented topic that `document()` flagged; changed to plain code font, matching how the package already names `rset`.
+- 2026-07-30: AC4's teardown first used `withr::defer()`, which `R CMD check` flagged as an undeclared dependency; replaced with `on.exit(add = TRUE)` inside the `test_that()` block rather than adding a dependency, following the standing choice recorded at `teardown-fixture-cache.R:4`. Mutation re-verified after the change — the placement test still reddens.
+- 2026-07-30: `devtools::check()` clean (0 errors, 0 warnings, 0 notes); `devtools::test()` 1303 passing, 0 failures, 0 skips; tests leg 75s/123s, no suite-time regression. Status → review.
+- 2026-07-30: no prose-guard authored or edited — the new assertions pin `cli_abort()` message content, which the profile's test-doctrine requires of every abort branch, not wording in a skill, rulebook or template; so guard-doctrine §8's fresh-reader step does not apply.
 - 2026-07-30: plan gate chose refusing at both drivers over checking only what each driver reads, because one definition of a valid design beats two; falsified by a real design whose broken `inner_resamples` a user legitimately wants the final fit to ignore.
 - 2026-07-30: plan gate chose refusing outright over warning-and-continuing, because a design that cannot execute should not cost a full fitting run first (GP3, D-003 waives the deprecation cycle); falsified by evidence that partially-malformed designs are common enough that the surviving folds are worth returning.
 - 2026-07-30: plan chose checking every element of both columns over checking only the first, decided autonomously since it is class inspection with no RNG and no fitting; falsified by a measured cost on a design large enough for the sweep to matter.

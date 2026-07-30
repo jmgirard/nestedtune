@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (M19 planned, absorbing M18 review's driver-guar
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M19 | A malformed design is refused at the driver, not at the tenth fold | in-progress | — | normal | milestones/M19-driver-design-guards.md |
+| M19 | A malformed design is refused at the driver, not at the tenth fold | review | — | normal | milestones/M19-driver-design-guards.md |
 | M18 | A misspecified call fails as nestedtune's own error | done | — | normal | milestones/archive/M18-argument-guards.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |

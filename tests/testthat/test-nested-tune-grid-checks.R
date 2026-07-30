@@ -395,14 +395,18 @@ test_that("the new refusals fire before the RNG is drawn from", {
     }
   )
 
+  # Restored with on.exit() rather than withr::defer(): test_that() evaluates
+  # its block as a function body, so on.exit() fires at the end of it, and withr
+  # is deliberately not a dependency of this package (teardown-fixture-cache.R).
   had <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
   old <- if (had) get(".Random.seed", envir = globalenv())
-  withr::defer(
+  on.exit(
     if (had) {
       assign(".Random.seed", old, envir = globalenv())
     } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
       rm(".Random.seed", envir = globalenv())
-    }
+    },
+    add = TRUE
   )
 
   for (refuse in refused) {
