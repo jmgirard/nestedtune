@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-30 (M19 merged and archived; M17's row pruned under terminal-row retention. One lesson captured, one folded into M09's cannot-fail family; nothing met the retirement bar, so D-015's last resort pruned M01's `make_splits()` line, now carried by `R/nested-resamples.R:161-175` and its tests. Carried: M13's rsample#283 comment, CLAUDE.md's cairn section)_
+_Last hygiene check: 2026-07-30 (M20 merged and archived; M16's row pruned under terminal-row retention. Two lessons extended rather than added — M03's, with the `[.tbl_df` vs `[.data.frame` split M20 measured, and M12's, with what the fixture cache's key omits. Nothing met the retirement bar; consolidating the second kept LESSONS under its cap without D-015's prune)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M20 | The metric set a run scored under is provable, on every path and on the object | review | — | normal | milestones/M20-metrics-observability.md |
+| M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
 | M19 | A malformed design is refused at the driver, not at the tenth fold | done | — | normal | milestones/archive/M19-driver-design-guards.md |
 | M18 | A misspecified call fails as nestedtune's own error | done | — | normal | milestones/archive/M18-argument-guards.md |
 | M14 | A hang says where it happened | done | — | high | milestones/archive/M14-hang-localization.md |
 | M15 | An interrupted run stops the work it started | done | — | normal | milestones/archive/M15-interrupt-leaves-no-work.md |
-| M16 | The suite's worst case fits inside the CI budget | done | — | high | milestones/archive/M16-suite-worst-case-budget.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
