@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2, GP3
-- **Branch/PR:** `m18-argument-guards`
+- **Branch/PR:** `m18-argument-guards` · https://github.com/jmgirard/nestedtune/pull/19
 
 ## Goal
 
@@ -44,27 +44,27 @@ in-process call that consumes it.
 
 ## Acceptance criteria
 
-- [ ] **AC1.** `nested_resamples()` refuses an `inside` specification that
+- [x] **AC1.** `nested_resamples()` refuses an `inside` specification that
       evaluates to something other than an `rset`, on **every** outer fold, via
       `cli::cli_abort()` naming the attempted call; the raised condition's
       `conditionCall()` is the user's `nested_resamples()` call. Baseline:
       `inside = list()` returns a `nested_resamples` object whose
       `inner_resamples[[1]]` has class `list` and errors only at print
       (`'list' object cannot be coerced to type 'double'`, `pretty.default`).
-- [ ] **AC2.** A failure raised *during* evaluation of `outside` or `inside`
+- [x] **AC2.** A failure raised *during* evaluation of `outside` or `inside`
       reports a message carrying no value from the frame: the same failure
       raised on a 30-row and a 3,000-row frame of identical shape produces
       identical messages, **each under 500 characters**. The length bound is
       part of the criterion — R truncates conditions at 8,190 bytes, so
       equality alone is satisfiable today with no fix. Baseline:
       `outside = nrow()` on a 30×2 frame gives 1,194 characters of deparsed data.
-- [ ] **AC3.** `nested_tune_grid()` and `nested_final_fit()` refuse a workflow
+- [x] **AC3.** `nested_tune_grid()` and `nested_final_fit()` refuse a workflow
       carrying no model spec with a message naming `{.arg object}` and an `i`
       bullet **stating the remedy**, as every other check in `R/checks.R` does;
       the raised condition's `conditionCall()` is the user's call. Baseline:
       both raise workflows' "The workflow does not have a model spec." with
       `conditionCall()` equal to `workflows::extract_spec_parsnip(object)`.
-- [ ] **AC4.** A fixture exists on which the caller's metric set and **tune's
+- [x] **AC4.** A fixture exists on which the caller's metric set and **tune's
       default metric set's first metric** (`rmse` for regression) select
       different candidates in every outer fold, with the caller's first metric
       outside `{rmse, rsq}` (`mae`) so the metric *names* differ too. A test
@@ -143,3 +143,29 @@ in-process call that consumes it.
 ## Decisions
 
 ## Review
+
+_2026-07-30. PR #19. Every criterion executed fresh against the loaded package,
+never recalled from the implementation run._
+
+**AC1 — verified.** `nested_resamples(d, outside = vfold_cv(v = 2), inside = list())`
+raises ``​`inside` did not produce an <rset>.`` with `✖ `list()` gave a list.` and an
+`i` bullet naming the per-fold requirement; `conditionCall()[[1]]` is
+`nested_resamples`. Every-fold coverage is pinned by
+`test-nested-resamples-specs.R` keyed to call count, asserting the third fold was
+reached; disabling the guard turns 3 tests red.
+
+**AC2 — verified.** Same failure at 30 and 3,000 rows, identical frame shape:
+`outside = nrow()` gives byte-identical messages at 131 characters, `inside = nrow()`
+at 130. Both identical and both under the 500-character bound (baseline 1,194).
+
+**AC3 — verified.** Both entry points raise ``​`object` has no model specification.``
+with `✖ The workflow carries a preprocessor only.` and
+`i Add one with `workflows::add_model()`.`; `conditionCall()[[1]]` is
+`nested_tune_grid` and `nested_final_fit` respectively, not
+`workflows::extract_spec_parsnip`. Disabling the branch turns 2 tests red.
+
+**AC4 — verified.** On `sep_data(seed = 10)` / `sep_nested(seed = 21)`: caller's
+metric names `mae, rmse` against tune's default `rmse, rsq`; caller's first metric
+`mae` is outside `{rmse, rsq}`; selections `1, 2, 2` against `3, 1, 3` — different in
+all 3 of 3 outer folds. `nested_final_fit()`'s `collect_metrics(x$tuning)` carries
+`mae, rmse`.
