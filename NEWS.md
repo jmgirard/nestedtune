@@ -1,5 +1,13 @@
 # nestedtune 0.0.0.9000
 
+* The object `nested_tune_grid()` returns now documents the two attributes it
+  has always carried. `attr(x, "grid")` and `attr(x, "metrics")` record what
+  the run was asked to do: `grid` holds the argument as you gave it, so it is
+  a grid size rather than a table of candidates whenever you passed a size,
+  and it is not a record of which candidates were evaluated; `metrics` is
+  absent rather than `NULL` when you passed no metric set. Subsetting rows
+  leaves both unchanged.
+
 * `nested_tune_grid()` and `nested_final_fit()` now refuse a malformed design
   before fitting anything, naming the column and the position of the first
   offending element. A design whose `splits` or `inner_resamples` column held

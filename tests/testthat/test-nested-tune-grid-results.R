@@ -146,3 +146,68 @@ test_that("metrics = NULL falls back to tune's defaults", {
 
   expect_setequal(summarized$.metric, c("rmse", "rsq"))
 })
+
+test_that("the object carries the grid and metrics it was asked to run", {
+  skip_if_no_engines()
+
+  # IP4: the object records what was asked for, positively, rather than leaving
+  # it to be inferred. Until M20 both attributes were written by
+  # new_nested_results() and read by nothing, so either could be dropped
+  # without a test noticing.
+  #
+  # The metric set is bound ONCE and compared to that binding. Two
+  # metric_set() calls are never identical() -- the closure environment refers
+  # to itself and identical() compares environments by reference, the same
+  # cycle helper-orchestration.R's canonical_form() exists to cut -- so
+  # comparing against a second reg_metrics() call fails against correct code.
+  metrics <- reg_metrics()
+  grid <- det_grid()
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  set.seed(1)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 3)
+  )
+  set.seed(55)
+  res <- nested_tune_grid(wf, folds, grid = grid, metrics = metrics)
+
+  expect_identical(attr(res, "grid"), grid)
+  expect_identical(attr(res, "metrics"), metrics)
+
+  # Both describe the call, not the rows, so a subset keeps them as they are --
+  # unlike folds_attempted/folds_completed, which are recomputed because they
+  # DO describe the rows. Note this survival is supplied by NextMethod() rather
+  # than by the explicit re-assignments in `[.nested_results`; see the comment
+  # there.
+  subset <- res[1:2, ]
+  expect_identical(attr(subset, "grid"), grid)
+  expect_identical(attr(subset, "metrics"), metrics)
+
+  # A column subset too, and not because it is symmetry. `[.data.frame` drops
+  # arbitrary attributes on a column subset while `[.tbl_df` keeps them
+  # (measured at M20 review), so this is the one subset shape whose outcome
+  # depends on which method `[.nested_results`'s NextMethod() reaches. Pinning
+  # it here holds the documented promise to the class rather than to tibble's
+  # current `[`. Dropping the two seed columns keeps every column
+  # has_results_columns() requires, so the result is still a nested_results.
+  cols <- setdiff(names(res), c(".tuning_seed", ".outer_fit_seed"))
+  narrowed <- res[, cols]
+  expect_s3_class(narrowed, "nested_results")
+  expect_identical(attr(narrowed, "grid"), grid)
+  expect_identical(attr(narrowed, "metrics"), metrics)
+})
+
+test_that("a run given no metric set carries no metrics attribute", {
+  skip_if_no_engines()
+
+  # `attr(x, "metrics") <- NULL` DELETES the attribute rather than storing a
+  # NULL, so the default run is the case where the attribute is absent. Pinned
+  # so the test above cannot be weakened into passing on a NULL-metrics run,
+  # where every assertion in it holds vacuously.
+  res <- example_results(metrics = NULL)
+
+  expect_false("metrics" %in% names(attributes(res)))
+  expect_null(attr(res, "metrics"))
+})
