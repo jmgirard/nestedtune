@@ -627,6 +627,51 @@ document shipped in the package, nor the diagnosis of the suite, but the
 publication of documentation the package already contains. D-018's no-knob line
 is not engaged — nothing here reaches an exported signature.
 
+### D-023 (2026-07-30): The stored tuning run and the candidates it scored are reached by two new `extract_`-family generics, `extract_tune_results()` and `extract_scored_candidates()` — takes up the accessor D-014 left as a documented slot, and answers RR02 rec 11
+
+**Context:** `nested_final_fit` has carried its tuning run since M05 as an
+undocumented list slot; D-014 recorded `extract_workflow()` as the door and
+shipped nothing else, and RR02 Q7 (`cairn/reviews/archive/RR02-final-fit-path.md:320-324`)
+rated an accessor "Consider" — "a documented slot is enough, and if an accessor
+is added later it should be named for what the object is (an `extract_`-family
+verb), not a euphemism". M21 then gave `nested_results` a `.grid` column naming
+the candidates each outer fold scored, and the final fit gained no equivalent
+even though `scored_candidates()` derives one from the slot it already holds.
+Neither `tune` nor `hardhat` exports a generic for either quantity (verified
+2026-07-30 against tune 2.1.0), so registering a method on an upstream generic
+is not available and a new generic is the only route.
+
+**Decision:** Two exported S3 generics, `extract_tune_results()` and
+`extract_scored_candidates()`, each with a `nested_final_fit` method and a
+default method that aborts as a classed nestedtune condition rather than letting
+R's "no applicable method" reach the user. The candidates accessor returns
+`scored_candidates()`'s table unchanged — parameters plus tune's `.config`
+label — so one shape describes one concept on both classes. Considered and
+rejected at the M22 plan gate: `extract_tuning()`/`extract_grid()` (shorter, but
+`grid` already names the *request* stored at `attr(x, "grid")` on
+`nested_results`, and reusing it for the candidates actually scored re-merges
+the distinction M20 and M21 were spent separating); `extract_tuning_run()`/
+`extract_candidates()` (reads better in prose, but hardhat's family names the
+returned class — `extract_workflow()` returns a `workflow` — so a user guessing
+from that idiom would not land here); a parameters-only candidate table
+(cleaner, but forks the shape of a thing that already exists on `nested_results`
+and drops the label that cross-references a row back into the tuning run);
+plain non-generic functions (no dispatch machinery, but the whole `extract_*`
+family is generic across tidymodels and a non-generic leaves no room for a
+second class to answer).
+
+**Consequences:** The package's export list gains two names and its namespace
+gains two generics it owns rather than borrows — the first generics nestedtune
+defines, where `collect_metrics()`, `extract_workflow()`, and `autoplot()` were
+all methods on someone else's. Should hardhat or tune later define either name,
+the collision is a masking conflict resolved by dropping ours; pre-1.0 that
+costs no deprecation cycle (D-003). D-010's and D-014's refusals are untouched:
+`collect_metrics()`, `show_best()`, and `select_best()` still have no method for
+either class, and RR02 BC4's mitigation extends rather than relaxes — the
+accessor that hands the tuning run over carries the same bias caution the print
+method does. `nested_results` gets no method for either generic; the `.grid`
+column stays its per-fold surface.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
