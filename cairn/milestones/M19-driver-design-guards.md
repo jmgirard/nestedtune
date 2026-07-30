@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M19: A malformed design is refused at the driver, not at the tenth fold
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m19-driver-design-guards`
 
 ## Goal
 
@@ -143,6 +143,7 @@ All baselines below were verified by execution 2026-07-30.
 - 2026-07-30: created by /milestone-plan.
 - 2026-07-30: criteria audit ([O], fresh context) returned six findings over six drafted criteria (draft numbering, since renumbered) — the `inner_resamples` baseline was wrong about the final-fit half, the workflow criterion carried a false claim about `R/checks.R`, the RNG criterion could not fail, the docs criterion was vague and partly vacuous; the `splits` criterion was clean; the two-driver-symmetry criterion's biconditional was unsatisfiable against `check_inside_spec()`. Four fixed autonomously, the symmetry residue taken to the gate.
 - 2026-07-30: eight drafted criteria hit the >7 sizing tripwire; the two element-class criteria merged into AC1 rather than splitting the milestone — one check over the two columns of one object, nothing dropped.
+- 2026-07-30: /milestone-implement started on branch `m19-driver-design-guards`, cut from `main` at 9510f6f.
 - 2026-07-30: plan gate chose refusing at both drivers over checking only what each driver reads, because one definition of a valid design beats two; falsified by a real design whose broken `inner_resamples` a user legitimately wants the final fit to ignore.
 - 2026-07-30: plan gate chose refusing outright over warning-and-continuing, because a design that cannot execute should not cost a full fitting run first (GP3, D-003 waives the deprecation cycle); falsified by evidence that partially-malformed designs are common enough that the surviving folds are worth returning.
 - 2026-07-30: plan chose checking every element of both columns over checking only the first, decided autonomously since it is class inspection with no RNG and no fitting; falsified by a measured cost on a design large enough for the sweep to matter.
