@@ -134,10 +134,13 @@ its parameters were chosen on less of the inner design than was asked for.
 Those notes are kept, so \code{.completed} being \code{TRUE} with a non-empty \code{.notes}
 means exactly that: it worked, on less than the whole design.
 
-A failed fold still records the candidates it got as far as scoring. One that
-died at the outer fit had already tuned, so its \code{.grid} holds the full set;
-one whose inner tuning failed outright holds a zero-row table. Neither is
-reported as having searched a grid it did not.
+A failed fold still records the candidates it got as far as scoring, whatever
+stage it failed at. A fold that died at the outer fit had already tuned, so
+its \code{.grid} holds the full set — and so does one that tuned successfully and
+then failed while selecting from the results. Only a fold that never reached
+a scored candidate at all — tuning itself raised, or every candidate failed —
+holds a zero-row table. No fold is reported as having searched a grid it did
+not.
 
 Subsetting rows recomputes \code{folds_attempted} and \code{folds_completed} for the
 rows kept, so the counts always describe the object in hand. Dropping the

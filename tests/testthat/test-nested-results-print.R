@@ -328,6 +328,37 @@ test_that("the candidate-set comparison ignores order and tune's config labels",
   expect_false(same_candidates(list(a, d1)))
 })
 
+test_that("printing survives a list-valued parameter column (M21 review F1)", {
+  # Regression. `candidate_key()` normalised row order with
+  # `do.call(order, values)`, and order() RAISES on a list column
+  # ("unimplemented type 'list' in 'orderVector1'") -- so a `.grid` carrying one
+  # aborted a method whose header promises it never raises. The shape is
+  # producible: test-nested-tune-grid-failures.R asserts scored_candidates()
+  # returns exactly such a record.
+  #
+  # Asserted on same_candidates() rather than only through print(), because the
+  # raise is in the comparison and a print-only test would pass the day the
+  # call moved.
+  listy <- data.frame(.config = c("pre1", "pre2"))
+  listy$cost <- list(1:2, 3:4)
+
+  expect_no_error(same_candidates(list(listy, listy)))
+  expect_true(same_candidates(list(listy, listy)))
+
+  # Two folds whose list-valued candidates genuinely differ are a difference,
+  # not an error and not a false agreement.
+  other <- data.frame(.config = c("pre1", "pre2"))
+  other$cost <- list(1:2, 5:6)
+  expect_no_error(same_candidates(list(listy, other)))
+  expect_false(same_candidates(list(listy, other)))
+
+  # Row order still normalises away for a list column, as it does for an atomic
+  # one -- the rendering that replaced order() must not lose that.
+  reordered <- data.frame(.config = c("pre9", "pre8"))
+  reordered$cost <- list(3:4, 1:2)
+  expect_true(same_candidates(list(listy, reordered)))
+})
+
 test_that("printed output holds its shape", {
   skip_if_no_engines()
   d <- make_reg_data()

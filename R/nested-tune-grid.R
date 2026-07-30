@@ -119,10 +119,13 @@
 #' Those notes are kept, so `.completed` being `TRUE` with a non-empty `.notes`
 #' means exactly that: it worked, on less than the whole design.
 #'
-#' A failed fold still records the candidates it got as far as scoring. One that
-#' died at the outer fit had already tuned, so its `.grid` holds the full set;
-#' one whose inner tuning failed outright holds a zero-row table. Neither is
-#' reported as having searched a grid it did not.
+#' A failed fold still records the candidates it got as far as scoring, whatever
+#' stage it failed at. A fold that died at the outer fit had already tuned, so
+#' its `.grid` holds the full set — and so does one that tuned successfully and
+#' then failed while selecting from the results. Only a fold that never reached
+#' a scored candidate at all — tuning itself raised, or every candidate failed —
+#' holds a zero-row table. No fold is reported as having searched a grid it did
+#' not.
 #'
 #' Subsetting rows recomputes `folds_attempted` and `folds_completed` for the
 #' rows kept, so the counts always describe the object in hand. Dropping the
@@ -402,13 +405,20 @@ scored_candidates <- function(tuned) {
   # Total by construction, because of where it is called from: both call sites
   # sit outside every tryCatch in this file, so anything raised here would abort
   # the whole run -- the one outcome M03 exists to prevent, and triggered by
-  # bookkeeping rather than by a fit. No raising input is known: the obvious
-  # candidate, `order()` on a list-valued parameter column, was tried at M21 and
-  # does NOT raise (it sorts and returns both candidates, asserted below in
-  # test-nested-tune-grid-failures.R). This is insurance against a shape not
-  # thought of rather than a fix for one that was, and it is worth a line
-  # because the trade is asymmetric: failing to an empty record understates one
-  # fold, while raising discards every other fold's completed work.
+  # bookkeeping rather than by a fit.
+  #
+  # No raising input is known HERE, and the reason is narrower than it looks:
+  # the ordering below runs on `key[first]`, which is `.config` or a pasted
+  # string, never on a parameter column. `order()` DOES raise on a list-valued
+  # parameter column, which is why `candidate_key()` in nested-results-print.R
+  # renders rows before ordering them -- an earlier comment here claimed the
+  # opposite, having measured this function and concluded something about that
+  # one (M21 review F1, F2).
+  #
+  # So this is insurance against a shape not thought of rather than a fix for
+  # one that was, and it is worth a line because the trade is asymmetric:
+  # failing to an empty record understates one fold, while raising discards
+  # every other fold's completed work.
   tryCatch(scored_candidates_impl(tuned), error = function(cnd) empty_candidates())
 }
 

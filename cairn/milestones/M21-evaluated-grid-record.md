@@ -145,6 +145,8 @@ candidate sets.
 - 2026-07-30: T8 — docs, NEWS, `document()` clean, `check()` clean (0 errors, 0 warnings, 0 notes; 3m48s). Two corrections on the way there. A defensive `tryCatch` around the derivation was added because both call sites sit outside every tryCatch in the file, and its first comment claimed `order()` on a list-valued parameter column as the reachable raise — measured false (it sorts and returns both candidates), so the comment now says no raising input is known and a test asserts the list-column case plus, via a mocked binding, that the wrapper is not decorative. And `check()` WARNed on a non-ASCII em dash in the cli string: comments tolerate one, a code string does not, so it is now `\u2014` and the snapshot is byte-identical.
 - 2026-07-30: status review — all ten criteria have evidence, suite and check clean on the shipped tree.
 - 2026-07-30: review — all ten criteria executed fresh and ticked against recorded evidence; AC6 and AC7 re-mutated at review (1 and 3 failures respectively, both restored). Consistency gate clean: `cairn_validate` exit 0, `pkgdown::check_pkgdown()` no problems, `document()` no diff, `check()` Status OK. Draft PR #22 opened; blame-history and prior-review lenses returned zero findings each.
+- 2026-07-30: review returned the milestone to in-progress (return 1). AC8 fails as written: the diff-bug lens found, and I reproduced, that `print.nested_results()` RAISES on a `.grid` carrying a list-valued parameter column — `do.call(order, values)` in `candidate_key()` errors with "unimplemented type 'list' in 'orderVector1'", against the method's documented "never raises" contract. Correcting a work-log claim above: the T8 line says `order()` on a list column was measured not to raise. That measurement was invalid — `scored_candidates_impl()` orders `key[first]`, a character vector, never a parameter column, so the passing test exercised a different path. The shipped comment repeating the claim is false and goes with the fix. Also actioning finding 9 (82): the failure-section doc claims a fold whose inner tuning failed holds a zero-row table, but the inner-tuning guard wraps `select_best()` and `.get_tune_metric_names()` too, so a fold that tuned and then failed selection keeps what it scored.
+- 2026-07-30: F1/F2/F9 fixed and AC8 re-verified; status back to review. `candidate_key()` now takes its row-order permutation from a rendered key instead of `order()` over the parameter columns, which is where the raise lived. Rendering decides ROW ORDER ONLY — the values compared are still the originals, so all three comparison properties re-measured green: order-insensitive TRUE, a 1e-12 difference FALSE, a different parameter FALSE. Regression test asserts `same_candidates()` on a list column, in both the agreeing and differing directions, and that row order still normalises away for one. Suite 254 tests / 0 failures; `check()` Status OK; `document()` idempotent.
 
 ## Decisions
 
@@ -229,3 +231,48 @@ rather than passing silently.
 - **[S] prior-review record:** zero findings. Read the archived `## Review`
   sections for M03, M04, M07, M09, M15, M16, M18, M19 and M20. The GitHub
   inline-comment probe returned empty, so that surface was correctly skipped.
+
+### Independent review — findings and triage
+
+Three lenses reported; every finding was scored 0–100 by a fresh Sonnet scorer
+that generated none of them and held the diff and the milestone file.
+**18 findings, 2 at or above the 80 threshold, plus one actioned below it.**
+
+Actioned:
+
+- **F1 (90) — `print.nested_results()` raises on a `.grid` with a list-valued
+  parameter column.** `do.call(order, values)` in `candidate_key()` errors with
+  "unimplemented type 'list' in 'orderVector1'", against the method's documented
+  "never raises" contract and AC8. Reproduced independently before acting.
+  **Fixed**: the permutation now comes from a rendered row key; values compared
+  are still the originals. Regression-tested.
+- **F9 (82) — the failure-section doc is wrong for a fold that scored and then
+  failed selection.** The inner-tuning guard wraps `select_best()` and
+  `.get_tune_metric_names()` too, so such a fold keeps its scored candidates
+  rather than holding a zero-row table as documented. **Fixed** in the roxygen.
+- **F2 (78, actioned below threshold) — the defensive wrapper's comment cited a
+  measurement that does not support it.** `scored_candidates_impl()` orders
+  `key[first]` (character), never a parameter column, so the test cited as
+  proof exercised a different path. Actioned because it is a false statement in
+  shipped code, independently verified, and F1's fix lands in the same place.
+  **Fixed**; the work log carries a correction rather than an edit.
+
+Logged, below threshold, not actioned (16):
+F6 (72) `is_fold_record()` accepts an explicit `grid = NULL`, since it tests
+name membership — unreachable from this package's own paths, which always build
+a table · F8 (68) NEWS and `@return` state tune's expansion behaviour more
+firmly than the plan gate agreed to assert · F14 (65) the new print fixture is
+built un-memoised where siblings are memoised · F3 (55) the line says "searched"
+of a scored-only record · F5 (52) the empty record is zero-column, not just
+zero-row, and no doc says so · F4 (50) `.eval_time` would be kept as if a
+parameter for survival metrics — no survival support exists · F17 (45) the
+counts read oddly in the same-size case · F10 (42) the derivation degrades
+silently with no note · F13 (42) the `.config`-absent fallback orders lexically
+and is untested · F12 (35) the line is unreachable when no fold has selected
+parameters · F16 (30) daemon/driver version skew reports opaquely · F18 (25)
+`failed_fold(..., tuned = tuned)` reads as duplication · F7 (20) and F15 (20)
+and F11 (12) judged inaccurate or out of scope on inspection.
+
+Codecov reports 93.75% of the diff hit against a 98.44% target (project 98.18%,
+−0.27%). Not a required check — `main` is unprotected — and the uncovered lines
+are the defensive branches F10 and F13 name.

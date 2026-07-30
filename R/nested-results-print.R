@@ -193,10 +193,38 @@ candidate_key <- function(g) {
   # Row order is not part of the candidate set, so it is normalised away before
   # comparison; the names travel too, so a fold carrying a different parameter
   # entirely is a difference rather than a coincidence of values.
-  ord <- do.call(order, values)
+  #
+  # The permutation comes from a rendered key rather than from `order()` over
+  # the columns themselves. `order()` RAISES on a list column -- "unimplemented
+  # type 'list' in 'orderVector1'" -- and this method promises never to raise
+  # (M21 review F1; the earlier claim that it does not raise was measured
+  # against `scored_candidates_impl()`, which orders `.config` and never a
+  # parameter column, so it tested a different path).
+  #
+  # Rendering decides ROW ORDER ONLY. What is returned and compared is the
+  # original values, so two candidates differing below print precision are
+  # still different -- rendering them alike merely puts them in the same
+  # position for a comparison that then fails on the values.
+  ord <- order(rendered_rows(values, nrow(g)))
   sorted <- lapply(values, function(v) v[ord])
   names(sorted) <- params
   sorted
+}
+
+# One string per candidate row, total over any column type a parameter can be.
+rendered_rows <- function(values, n) {
+  vapply(
+    seq_len(n),
+    function(i) {
+      cells <- vapply(
+        values,
+        function(v) paste0(format(v[[i]]), collapse = "\r"),
+        character(1)
+      )
+      paste0(cells, collapse = "\v")
+    },
+    character(1)
+  )
 }
 
 # Every column any completed fold chose a value for, less tune's bookkeeping.
