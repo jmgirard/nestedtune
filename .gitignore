@@ -22,6 +22,12 @@ tests/testthat/_snaps/**/*.new.*
 # `.Rbuildignore` already keeps it out of the tarball; this keeps it out of git.
 docs/
 
+# macOS drops a .DS_Store into any directory the Finder has displayed, so it
+# appears wherever the maintainer has browsed rather than where work happened.
+# `R CMD build` already excludes it from the tarball; this keeps it out of git.
+.DS_Store
+**/.DS_Store
+
 # Python bytecode, from running .github/ci-usage.py
 __pycache__/
 *.pyc
