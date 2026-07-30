@@ -24,8 +24,14 @@
 #'   for tuning with [tune::tune()]. Ordinarily the same workflow passed to
 #'   [nested_tune_grid()].
 #' @param resamples A nested resampling design, from [nested_resamples()] or
-#'   [rsample::nested_cv()]. Only its inner specification and its data are used:
-#'   the outer folds play no part in a final fit.
+#'   [rsample::nested_cv()]. Only its inner specification and its data are
+#'   *used* — the outer folds play no part in a final fit — but the whole design
+#'   is still checked, so a design [nested_tune_grid()] refuses is refused here
+#'   too: its `splits` column must hold `rsplit` objects and its
+#'   `inner_resamples` column an `rset` per outer fold. The reverse does not
+#'   follow: this function additionally needs the design's stored inner
+#'   specification, which the loop never re-runs, so a design with none is
+#'   refused here and runs perfectly well there.
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
 #'   [tune::tune_grid()].
@@ -174,7 +180,10 @@ nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
 
   seeds <- sample.int(.Machine$integer.max, 2L)
 
-  final_fit_worker(inside, data, env, seeds, object, grid, metrics)
+  final_fit_worker(
+    inside, data, env, seeds, object, grid, metrics,
+    call = rlang::current_env()
+  )
 }
 
 # The final fit itself, once the seeds exist.
@@ -185,7 +194,12 @@ nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
 # property testable -- from a user-visible seed it is not, because the entry
 # draw above reads the caller's stream and that draw is itself kind-dependent
 # (M05, deviating from RR02's BC6 as literally written).
-final_fit_worker <- function(inside, data, env, seeds, object, grid, metrics) {
+# `call` is threaded through rather than defaulted at the abort site: the
+# specification is re-evaluated here, two frames below the function the user
+# called, so an abort left to name its own caller named this worker -- an
+# internal frame -- where every other check on this path names their call.
+final_fit_worker <- function(inside, data, env, seeds, object, grid, metrics,
+                             call = rlang::caller_env()) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
   # the specification is evaluated *after* the seed is set. Building an rset
   # draws from the RNG, and a draw made outside this scope would leave the run
@@ -193,7 +207,7 @@ final_fit_worker <- function(inside, data, env, seeds, object, grid, metrics) {
   # property the seeds exist to provide -- while every same-seed test went on
   # passing.
   set_fold_seed(seeds[[1L]])
-  inner <- eval_inside_spec(inside, data, env)
+  inner <- eval_inside_spec(inside, data, env, call = call)
   tuned <- tune::tune_grid(
     object,
     resamples = inner,

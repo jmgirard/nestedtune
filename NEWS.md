@@ -1,5 +1,25 @@
 # nestedtune 0.0.0.9000
 
+* `nested_tune_grid()` and `nested_final_fit()` now refuse a malformed design
+  before fitting anything, naming the column and the position of the first
+  offending element. A design whose `splits` or `inner_resamples` column held
+  something other than a split or a resampling object used to cost a full run
+  and come back reporting that every outer fold had failed — or, on
+  `nested_final_fit()`, fail with a message from base R that named nothing you
+  wrote. `rsample::nested_cv()` builds such a design without complaint when its
+  `inside` argument produces no `rset`, which is the usual way to arrive at one.
+  A design either function refuses, both refuse.
+
+* `nested_tune_grid()` and `nested_final_fit()` now also refuse a workflow that
+  has a model but no preprocessor, pointing at `workflows::add_formula()`,
+  `add_recipe()`, and `add_variables()`. This is the counterpart of the
+  no-model refusal below, and it used to fail once per outer fold with an error
+  raised inside `workflows`.
+
+* When `nested_final_fit()` cannot re-run a design's stored inner
+  specification, the error now names your call rather than an internal
+  function of the package.
+
 * `nested_resamples()` now refuses an `inside` specification that does not
   produce an `rset`. Passing one used to build a design anyway: its
   `inner_resamples` column held whatever the specification returned, nothing

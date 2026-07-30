@@ -259,3 +259,239 @@ test_that("the grid check fires before any fitting happens", {
   expect_error(nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2)))
   expect_identical(.Random.seed, before)
 })
+
+# The two list columns are checked element by element (M19). Before this, a bad
+# element was not a call error at all: tune raised it once per fold, so the run
+# cost a full pass and came back as an all-folds-failed object carrying tune's
+# message rather than ours -- the shape check_grid_params() already prevents for
+# a malformed grid.
+
+test_that("a non-rset element of inner_resamples is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  bad <- valid_folds(d)
+  bad$inner_resamples[[2]] <- "not an rset"
+
+  expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "inner_resamples")
+  cnd <- tryCatch(nested_tune_grid(wf, bad, grid = det_grid()),
+                  error = function(e) e)
+  # The position, so a design with many folds says which one to look at.
+  expect_match(conditionMessage(cnd), "Element 2")
+  expect_match(conditionMessage(cnd), "rset")
+  expect_match(conditionMessage(cnd), "`resamples`")
+  # What it holds instead, so the reader is not left guessing.
+  expect_match(conditionMessage(cnd), "string")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+})
+
+test_that("a non-rsplit element of splits is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  bad <- valid_folds(d)
+  bad$splits[[1]] <- "not an rsplit"
+
+  expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "splits")
+  cnd <- tryCatch(nested_tune_grid(wf, bad, grid = det_grid()),
+                  error = function(e) e)
+  expect_match(conditionMessage(cnd), "rsplit")
+  expect_match(conditionMessage(cnd), "Element 1")
+  expect_match(conditionMessage(cnd), "`resamples`")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+})
+
+# The reachable route to such a design is not hand-editing: rsample's own
+# constructor admits an `inside` that produces no rset, where nested_resamples()
+# refuses it at construction (M18).
+
+test_that("an rsample design whose inside produced no rset is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  set.seed(1)
+  bad <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = list()
+  )
+
+  expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "inner_resamples")
+
+  # And at the final fit, which used to abort further in -- from
+  # eval_inside_spec(), only because re-evaluating `inside` also failed, naming
+  # final_fit_worker() rather than the user's call.
+  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
+                  error = function(e) e)
+  expect_match(conditionMessage(cnd), "malformed")
+  expect_match(conditionMessage(cnd), "inner_resamples")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})
+
+# The negative half of the same rule: what the loop does not need, it does not
+# check. A design carrying no `inside` attribute cannot be re-run by the final
+# fit, and the loop is indifferent to that -- it never re-evaluates anything.
+
+test_that("the loop still accepts a design with no inner specification", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+  attr(folds, "inside") <- NULL
+
+  res <- memoised(nested_tune_grid(wf, folds, grid = det_grid()))
+  expect_identical(res$.completed, c(TRUE, TRUE))
+})
+
+test_that("a workflow with a model but no preprocessor is refused", {
+  skip_if_no_engines(stochastic = TRUE)
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = 10),
+      "ranger",
+      num.threads = 1
+    ),
+    "regression"
+  )
+  model_only <- workflows::add_model(workflows::workflow(), spec)
+
+  expect_error(
+    nested_tune_grid(model_only, folds, grid = data.frame(min_n = c(2L, 10L))),
+    "no preprocessor"
+  )
+  cnd <- tryCatch(
+    nested_tune_grid(model_only, folds, grid = data.frame(min_n = c(2L, 10L))),
+    error = function(e) e
+  )
+  # The remedy, as the neighbouring `object` checks give one.
+  expect_match(conditionMessage(cnd), "add_formula|add_recipe|add_variables")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+})
+
+# `pre$actions` is not the same question as "has a preprocessor":
+# workflows::add_case_weights() files an action there too. Counting them let a
+# workflow with a model and case weights but no formula, recipe or variables
+# slip the guard and fail once per outer fold -- and described that same
+# workflow as carrying "a preprocessor only" when it had no model either.
+
+test_that("case weights are not mistaken for a preprocessor", {
+  skip_if_no_engines(stochastic = TRUE)
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = 10),
+      "ranger",
+      num.threads = 1
+    ),
+    "regression"
+  )
+  grid <- data.frame(min_n = c(2L, 10L))
+
+  # The `case_weights` entry is added by hand rather than through
+  # workflows::add_case_weights(), which would need a case-weights vector from
+  # hardhat and so a dependency this package does not declare. What the check
+  # reads is names(object$pre$actions), and that is what is staged here -- with
+  # the weakness that comes with it: if workflows ever renamed the slot, this
+  # test would keep passing while the real hole reopened. The end-to-end shape
+  # was verified against a genuine add_case_weights() workflow at M19 review.
+  weights_only <- workflows::add_model(workflows::workflow(), spec)
+  weights_only$pre$actions$case_weights <- TRUE
+
+  expect_false(has_preprocessor(weights_only))
+  expect_error(
+    nested_tune_grid(weights_only, folds, grid = grid),
+    "no preprocessor"
+  )
+
+  # And the no-model bullet describes what is actually there: case weights are
+  # not a preprocessor, so this workflow is empty of both.
+  no_model <- workflows::workflow()
+  no_model$pre$actions$case_weights <- TRUE
+  cnd <- tryCatch(nested_tune_grid(no_model, folds, grid = grid),
+                  error = function(e) e)
+  expect_match(conditionMessage(cnd), "no model specification")
+  expect_match(conditionMessage(cnd), "is empty")
+
+  # The predicate says yes to each of the three things that really preprocess.
+  expect_true(has_preprocessor(workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)))
+  expect_true(has_preprocessor(
+    workflows::workflow(recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d), spec)
+  ))
+})
+
+# Every refusal added here fires before the entry sample.int() draw. Seed
+# *identity* cannot show this: both drivers install their restoring on.exit()
+# before drawing, so .Random.seed is put back on every exit path including one
+# that already drew and re-seeded. What discriminates is existence -- a session
+# that has never drawn has no .Random.seed, and restore_rng() deliberately
+# leaves in place any state it created.
+
+test_that("the new refusals fire before the RNG is drawn from", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  refused <- list(
+    function() {
+      bad <- folds
+      bad$inner_resamples[[2]] <- "not an rset"
+      nested_tune_grid(wf, bad, grid = det_grid())
+    },
+    function() {
+      bad <- folds
+      bad$splits[[1]] <- "not an rsplit"
+      nested_tune_grid(wf, bad, grid = det_grid())
+    },
+    function() {
+      bad <- folds
+      bad$inner_resamples[[2]] <- "not an rset"
+      nested_final_fit(wf, bad, grid = det_grid())
+    },
+    function() {
+      bad <- folds
+      bad$splits[[1]] <- "not an rsplit"
+      nested_final_fit(wf, bad, grid = det_grid())
+    },
+    function() {
+      no_pre <- workflows::add_model(workflows::workflow(), parsnip::linear_reg())
+      nested_tune_grid(no_pre, folds, grid = det_grid())
+    },
+    function() {
+      no_pre <- workflows::add_model(workflows::workflow(), parsnip::linear_reg())
+      nested_final_fit(no_pre, folds, grid = det_grid())
+    }
+  )
+
+  # Restored with on.exit() rather than withr::defer(): test_that() evaluates
+  # its block as a function body, so on.exit() fires at the end of it, and withr
+  # is deliberately not a dependency of this package (teardown-fixture-cache.R).
+  had <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  old <- if (had) get(".Random.seed", envir = globalenv())
+  on.exit(
+    if (had) {
+      assign(".Random.seed", old, envir = globalenv())
+    } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    },
+    add = TRUE
+  )
+
+  for (refuse in refused) {
+    if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    }
+    expect_error(refuse())
+    expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+  }
+})

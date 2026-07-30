@@ -182,3 +182,106 @@ test_that("an inner specification that is not an rset is refused", {
 
   expect_error(nested_final_fit(wf, folds), "did not produce an")
 })
+
+# The design-column checks reach the final fit too (M19).
+#
+# The final fit reads only `splits[[1]]$data` and never touches
+# `inner_resamples` at all, so neither of these refusals is needed to make it
+# work. They are here because "is this design valid" gets one answer, not one
+# per entry point: a user who saw every outer fold fail should not then be
+# handed a model built from the same object. What stays final-fit-only is the
+# check the loop genuinely has no use for -- `check_inside_spec()`.
+
+test_that("a non-rset element of inner_resamples is refused by the final fit", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  bad <- valid_folds(d)
+  bad$inner_resamples[[2]] <- "not an rset"
+
+  expect_error(nested_final_fit(wf, bad, grid = det_grid()), "inner_resamples")
+  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
+                  error = function(e) e)
+  # The position and the type held, asserted here and not only through the
+  # loop's suite: a wrong index or a dropped type reddens both drivers or
+  # neither, and only the loop's copy would have caught it.
+  expect_match(conditionMessage(cnd), "Element 2")
+  expect_match(conditionMessage(cnd), "string")
+  expect_match(conditionMessage(cnd), "`resamples`")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})
+
+test_that("a non-rsplit element of splits is refused by the final fit", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  bad <- valid_folds(d)
+  bad$splits[[1]] <- "not an rsplit"
+
+  # Before this the final fit reached split_data() and died in base R:
+  # "$ operator is invalid for atomic vectors", naming no argument of ours.
+  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
+                  error = function(e) e)
+  expect_match(conditionMessage(cnd), "rsplit")
+  expect_match(conditionMessage(cnd), "Element 1")
+  expect_match(conditionMessage(cnd), "string")
+  expect_match(conditionMessage(cnd), "`resamples`")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})
+
+test_that("a workflow with a model but no preprocessor is refused by the final fit", {
+  skip_if_no_engines(stochastic = TRUE)
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = 10),
+      "ranger",
+      num.threads = 1
+    ),
+    "regression"
+  )
+  model_only <- workflows::add_model(workflows::workflow(), spec)
+
+  cnd <- tryCatch(
+    nested_final_fit(model_only, folds, grid = data.frame(min_n = c(2L, 10L))),
+    error = function(e) e
+  )
+  expect_match(conditionMessage(cnd), "no preprocessor")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})
+
+# eval_inside_spec()'s two aborts named final_fit_worker() -- an internal frame
+# the user never wrote -- where check_inside_spec() beside it already named the
+# user's call. Same defect class M18 removed from check_workflow().
+
+test_that("the inner-specification aborts name the user's call", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  # Could not be re-evaluated: `v` is gone by the time the design is re-run.
+  gone <- local({
+    v <- 3
+    set.seed(1)
+    nested_resamples(
+      d,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = v)
+    )
+  })
+  cnd <- tryCatch(nested_final_fit(wf, gone), error = function(e) e)
+  expect_match(conditionMessage(cnd), "could not be\\s+re-evaluated")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+
+  # Evaluated cleanly, produced something that is not an rset.
+  not_rset <- valid_folds(d)
+  attr(not_rset, "inside") <- quote(data.frame())
+  cnd <- tryCatch(nested_final_fit(wf, not_rset), error = function(e) e)
+  expect_match(conditionMessage(cnd), "did not produce an")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})

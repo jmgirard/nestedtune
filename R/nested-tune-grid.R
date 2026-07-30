@@ -17,7 +17,12 @@
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
 #' @param resamples A nested resampling design, from [nested_resamples()] or
-#'   [rsample::nested_cv()].
+#'   [rsample::nested_cv()]. Its `splits` column must hold `rsplit` objects and
+#'   its `inner_resamples` column an `rset` per outer fold. Both are checked
+#'   before anything is fitted, because [rsample::nested_cv()] builds a design
+#'   whatever its `inside` argument returned — so a specification that produces
+#'   no `rset` gives a design that cannot be run, where [nested_resamples()]
+#'   refuses one at construction.
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
 #'   [tune::tune_grid()]. A data frame is checked against the workflow before
