@@ -1,10 +1,11 @@
 # M22: What selection saw has a name
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4, GP1, GP3
+- **Branch/PR:** `m22-final-fit-accessors` · https://github.com/jmgirard/nestedtune/pull/23
 
 ## Goal
 
@@ -43,35 +44,35 @@ plan gate, recorded as D-023.
 
 ## Acceptance criteria
 
-- [ ] AC1: `extract_tune_results()` on a `nested_final_fit` returns the stored
+- [x] AC1: `extract_tune_results()` on a `nested_final_fit` returns the stored
       tuning run unreduced — `expect_identical()` against `fit$tuning` on a fit
       built in the test, and `tune::collect_metrics()` on the returned value
       succeeds, which is the leg that establishes a live `tune_results` came
       back rather than a copy.
-- [ ] AC2: `extract_scored_candidates()` on a `nested_final_fit` returns one row
+- [x] AC2: `extract_scored_candidates()` on a `nested_final_fit` returns one row
       per candidate the stored run actually scored, carrying one column per
       tuned parameter plus tune's `.config` label — the same shape
       `nested_results$.grid` carries. On a fit built with `grid` a data frame of
       k candidates all of which score, it has exactly k rows and its parameter
       values equal the supplied grid's as a set, asserted for k = 3 and for a
       k > 9 grid where tune zero-pads `.config`.
-- [ ] AC3: Each accessor's default method aborts as a classed nestedtune
+- [x] AC3: Each accessor's default method aborts as a classed nestedtune
       condition naming both the object it was handed and the class that answers;
       fired in tests for a `nested_results` and for a bare list, message
       snapshotted. R's "no applicable method" reaches the user on neither
       accessor.
-- [ ] AC4: `extract_tune_results()`'s help page states that any metric reachable
+- [x] AC4: `extract_tune_results()`'s help page states that any metric reachable
       through the returned object is a selection-time quantity, optimistically
       biased as a claim about this model, and names `collect_metrics()` on the
       `nested_tune_grid()` result as the number to report instead (IP3; extends
       RR02 BC4 from the print method to the accessor that hands the run over).
-- [ ] AC5: `print.nested_final_fit()` names both accessors and carries that same
+- [x] AC5: `print.nested_final_fit()` names both accessors and carries that same
       caution adjacent to the `extract_tune_results()` pointer, and still shows
       no number derived from `x$tuning` — the existing assertion at
       `tests/testthat/test-nested-final-fit-print.R:35-47` (over `mean` and
       `std_err`, digits 3:6, non-emptiness guarded) extended to the new lines
       rather than replaced by a weaker one.
-- [ ] AC6: The profile's `verify` slot is clean — `devtools::document()` run
+- [x] AC6: The profile's `verify` slot is clean — `devtools::document()` run
       after the roxygen changes, `devtools::test()` passing — and
       `devtools::check()` is clean at 0 errors and 0 warnings.
 
@@ -86,24 +87,24 @@ plan gate, recorded as D-023.
 
 ## Tasks
 
-- [ ] T1: `extract_tune_results()` — generic, `nested_final_fit` method
+- [x] T1: `extract_tune_results()` — generic, `nested_final_fit` method
       returning `x$tuning`, and a default method aborting per AC3. Roxygen
       carrying AC4's caution. New file `R/nested-final-fit-extract.R`; the
       generic pattern to follow is `extract_workflow.nested_final_fit()` at
       `R/nested-final-fit.R:252-256`, and the `.default`-aborts convention is
       M06's lesson about `tune::show_best()`.
-- [ ] T2: `extract_scored_candidates()` — generic, `nested_final_fit` method
+- [x] T2: `extract_scored_candidates()` — generic, `nested_final_fit` method
       delegating to `scored_candidates(x$tuning)`, default method per AC3.
       Roxygen naming the M21 limit (a candidate that failed on every inner
       resample is absent) by cross-reference, never restated.
-- [ ] T3: `print.nested_final_fit()` (`R/nested-final-fit-print.R:28-41`) gains
+- [x] T3: `print.nested_final_fit()` (`R/nested-final-fit-print.R:28-41`) gains
       the two pointers with the caution beside the tuning-run one; extend the
       no-number assertion at `test-nested-final-fit-print.R:35-47` to cover the
       added lines and re-record the snapshot.
-- [ ] T4: `tests/testthat/test-nested-final-fit-extract.R` — AC1's two legs,
+- [x] T4: `tests/testthat/test-nested-final-fit-extract.R` — AC1's two legs,
       AC2's two grid sizes, AC3's four aborts. Not a budgeted file, so no
       `helper-time-budget.R` row is owed.
-- [ ] T5: `devtools::document()`, a `_pkgdown.yml` reference row per new export
+- [x] T5: `devtools::document()`, a `_pkgdown.yml` reference row per new export
       (profile `test-doctrine`), a NEWS.md entry naming both accessors in
       user-facing words, then `devtools::test()` and `devtools::check()`.
 
@@ -115,7 +116,119 @@ plan gate, recorded as D-023.
 - 2026-07-30: plan gate chose returning `.config` beside the parameters over a parameters-only table, because one shape for one concept across both classes beats a cleaner table that forks it; falsified by evidence a user reads the accessor's output as a grid to pass back to `tune_grid()`, which `.config` would break.
 - 2026-07-30: plan gate chose the known-grid proof bar over independently re-deriving tune's space-filling expansion, because M21 already oracle-verified `scored_candidates()` two ways (O3, O4) and re-deriving pins tune internals IP2 declines to promise across versions; falsified by the accessor and the `.grid` column disagreeing on a run where both are defined.
 - 2026-07-30: decided autonomously that neither accessor gets a `nested_results` method — `.grid` is that object's per-fold surface and a pooled table would assert a shared menu M21 measured false; falsified by a user needing the candidates of a results object in one table with the fold labels attached.
+- 2026-07-30: /milestone-implement started on `m22-final-fit-accessors`, cut from `main` at 017dc6e.
+- 2026-07-30: no implementation question gate — names, table shape and proof bar were all settled at the plan gate and recorded as D-023, and the user declined escalation on the `irreversible-api` decision at the plan routing chip.
+- 2026-07-30: T1 and T2 landed in one checkpoint (minor amendment): T1's `@seealso` forward-references T2's function, so a T1-only commit would have carried a `document()` link warning as its checked-in state.
+- 2026-07-30: `rlang::current_env()` and not `caller_env()` in both default methods — verified by execution that inside a UseMethod-dispatched method the former renders the generic's own call (`extract_tune_results(1:3)`) while the latter renders one frame further out, naming whatever function the user was inside.
+- 2026-07-30: T1-T5 done. `devtools::document()` no diff on re-run, `devtools::test()` 1447 pass / 0 fail / 0 warn / 0 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes (4m39s), `pkgdown::check_pkgdown()` no problems.
+
+- 2026-07-30: review found 15 findings across three lenses (diff-bug 15, blame 0, prior-review 0); two scored >=80 and were fixed on the branch (P1 82, a false doc cross-reference to a `.notes` column this class lacks; T3 80, an agreement test comparing only `names()`, which could not fail). Thirteen logged below threshold.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-07-30 against PR #23. `origin/main` had not moved since the branch
+was cut (0 behind, 3 ahead), so no merge-and-retest was owed.
+
+### Acceptance criteria — fresh evidence
+
+- AC1: `test-nested-final-fit-extract.R` "the tuning-run accessor returns the
+  stored run, unreduced" passes — `expect_identical()` against `fit$tuning`,
+  plus the non-circular leg: the returned value is an S3 `tune_results` and
+  `tune::collect_metrics()` on it yields a data frame of >0 rows. Re-run in
+  isolation 2026-07-30, file green at 21 assertions.
+- AC2: same file, two blocks. On `det_grid()` (k=3, all scoring) the result has
+  3 rows, `num_comp` set-equal to the supplied grid, and columns exactly
+  `num_comp` + `.config`. On an 11-candidate continuous grid it has 11 rows,
+  `threshold` set-equal to the supplied grid, and at least one `.config`
+  matching `^pre1[0-9]_`, so the zero-padding case past nine candidates is
+  exercised. A fourth block asserts the column names equal those of
+  `nested_tune_grid()`'s `.grid[[1]]`, which is the shape claim the `@return`
+  makes.
+- AC3: same file, two blocks. Both accessors raise
+  `nestedtune_no_extract_method` for a `nested_results`, a bare list, and an
+  integer vector; the message is snapshotted for both
+  (`_snaps/nested-final-fit-extract.md`). A separate assertion checks the
+  message does not match "applicable method", so R's bare dispatch failure is
+  positively excluded rather than assumed absent.
+- AC4: `man/extract_tune_results.Rd:23-38` carries the section verbatim — every
+  metric is a "selection-time quantity… optimistically biased as a claim about
+  the model this final fit produced", and "Report the nested estimate instead —
+  `collect_metrics()` on the `nested_tune_grid()` result". Verified by reading
+  the generated `.Rd`, not the roxygen source.
+- AC5: `test-nested-final-fit-print.R` green at 58 assertions. The no-number
+  block was left unmodified and still passes over the added lines — it scans the
+  whole rendered output against every `mean`/`std_err` from
+  `collect_metrics(x$tuning)` at digits 3:6, so it covers the new bullet without
+  edit; confirmed independently by the blame lens. The snapshot diff is
+  additive-only: the `Selected:` line and both prior bullets are byte-identical
+  to `main`.
+- AC6: `devtools::document()` leaves NAMESPACE and `man/` with no diff on
+  re-run; `devtools::test()` 1447 pass / 0 fail / 0 warn / 0 skip;
+  `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes (3m48s).
+
+### Consistency gate
+
+`cairn_validate` exit 0 — 16 PASS, 8 advisories OK. No `DESIGN.md` principle
+changed, so `cairn_impact` was skipped. Profile `consistency-gate` slot:
+`document()` no diff · generated files not hand-edited · no `README.Rmd` in this
+repo, so the knit check is n/a · `pkgdown::check_pkgdown()` "No problems found"
+with both new exports carried in `_pkgdown.yml` · `NEWS.md` entry present and
+free of milestone numbers · no new top-level files, so no `.Rbuildignore` entry
+owed · full `check()` clean. First review pass; no prior returns, so neither
+thrash trigger applies.
+
+### Independent review — three lenses, then a scorer
+
+[O] diff-bug 15 findings, [S] blame-history 0, [S] prior-review 0 (its
+PR-comment probe returned empty, so archived `## Review` sections were the whole
+evidence base). Scored by a fresh [S] agent holding the diff and the milestone
+file; two cleared 80 and both were fixed.
+
+- P1 (82), fixed: the candidates accessor's `@return` sent a reader to the
+  `.grid` discussion saying it "applies here unchanged", but that discussion
+  resolves the missing-candidate limit via a `.notes` column a
+  `nested_final_fit` does not have. The clause now says which pointer does not
+  carry over and names `tune::collect_notes(extract_tune_results(x))` instead
+  (verified exported, tune 2.1.0).
+- T3 (80), fixed: the accessor-vs-loop agreement test compared `names()` only —
+  both sides come from `scored_candidates()` over the same deterministic grid,
+  so it could not fail. It now also compares `num_comp` and `.config` values,
+  which is what the plan gate's recorded falsifier actually named.
+
+Thirteen logged below threshold, none actioned:
+
+- T2 (78) the zero-padding assertion `^pre1[0-9]_` matches an unpadded scheme
+  too, so it adds nothing beyond the already-asserted row count.
+- T1 (76) the >9-candidate block's three assertions are all order-insensitive,
+  so it cannot catch the ordering its own comment names; ordering is unasserted
+  suite-wide, M21's oracle sorting before comparing.
+- T7 (74) `skip_if_no_engines()` on the snapshot-only block, which builds
+  nothing — on a machine without recipes/yardstick the milestone's only error
+  snapshot silently does not run.
+- T5 (70) no zero-row edge test for the candidates accessor, which the profile's
+  `test-doctrine` names for every export.
+- D2 (58) DESIGN.md's Function Families and Architecture text still describe
+  `extract_workflow()` as the only door; outside this milestone's In scope.
+- P3 (55) the refusal does not tell a `nested_results` holder their object
+  already carries `.grid`.
+- C3 (45) `empty_candidates()` returns a 0x0 tibble where `@return` promises
+  named columns; reachable only via C2.
+- C2 (42) the accessor inherits `scored_candidates()`'s error-swallowing
+  `tryCatch`, whose "don't discard other folds' work" rationale does not apply
+  off the loop; changing that function is out of scope by plan.
+- T4 (38) AC3's "message snapshotted" read as demanding a per-class snapshot.
+- D1 (30) NEWS phrases the refusal as a change to shipped behaviour.
+- C1 (25) `x$tuning` could partial-match `tuning_seed` — but `$` resolves the
+  exact match first and the constructor always sets `tuning`, so it needs a
+  future slot rename to bite.
+- T6 (22) task T3's text promised an edit to `test-nested-final-fit-print.R`
+  that the diff does not contain; the criterion is met regardless, `print_text()`
+  capturing the whole output so the existing loop covers the new lines.
+- C4 (18) `...` accepted and discarded, matching `extract_workflow()`'s existing
+  behaviour rather than departing from it.
+
+Post-fix re-verification: `devtools::test()` 1449 pass / 0 fail / 0 warn /
+0 skip (two assertions added by the T3 fix); `devtools::check()` 0 errors,
+0 warnings, 0 notes (3m42s); `document()` no diff.

@@ -1,5 +1,20 @@
 # nestedtune 0.0.0.9000
 
+* The object `nested_final_fit()` returns now has two named accessors for the
+  tuning run behind it. `extract_tune_results()` returns that run — the record
+  of what parameter selection actually saw when the procedure was re-run on
+  your whole dataset — and `extract_scored_candidates()` returns the candidate
+  settings it scored, in the same shape as the per-fold `.grid` tables on a
+  `nested_tune_grid()` result, so the two can be compared directly. Both were
+  reachable before only by reaching into the object's internals. Note what the
+  first one's numbers are worth: every metric inside that tuning run was
+  computed on the resamples that chose the candidate it describes, so it
+  flatters this model and is not its performance. The nested estimate from
+  `collect_metrics()` on the `nested_tune_grid()` result remains the number to
+  report. Handing either accessor an object it cannot answer for — a
+  `nested_tune_grid()` result, say — now produces an error saying so, rather
+  than R's bare "no applicable method".
+
 * `nested_tune_grid()` results now record which parameter candidates each outer
   fold actually searched, in a new `.grid` column holding one table per fold.
   Until now the object recorded only the grid you *asked* for, and the two are
