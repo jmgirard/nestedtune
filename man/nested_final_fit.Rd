@@ -12,8 +12,12 @@ for tuning with \code{\link[tune:tune]{tune::tune()}}. Ordinarily the same workf
 \code{\link[=nested_tune_grid]{nested_tune_grid()}}.}
 
 \item{resamples}{A nested resampling design, from \code{\link[=nested_resamples]{nested_resamples()}} or
-\code{\link[rsample:nested_cv]{rsample::nested_cv()}}. Only its inner specification and its data are used:
-the outer folds play no part in a final fit.}
+\code{\link[rsample:nested_cv]{rsample::nested_cv()}}. Only its inner specification and its data are
+\emph{used} — the outer folds play no part in a final fit — but the whole design
+is still checked, so a design \code{\link[=nested_tune_grid]{nested_tune_grid()}} refuses is refused here
+too: its \code{splits} column must hold \code{rsplit} objects and its
+\code{inner_resamples} column an \code{rset} per outer fold. Whether a design is
+valid has one answer, not one per function.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to

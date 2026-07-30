@@ -11,7 +11,11 @@ nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
 for tuning with \code{\link[tune:tune]{tune::tune()}}.}
 
 \item{resamples}{A nested resampling design, from \code{\link[=nested_resamples]{nested_resamples()}} or
-\code{\link[rsample:nested_cv]{rsample::nested_cv()}}.}
+\code{\link[rsample:nested_cv]{rsample::nested_cv()}}. Its \code{splits} column must hold \code{rsplit} objects and
+its \code{inner_resamples} column an \code{rset} per outer fold. Both are
+checked before anything is fitted: \code{\link[rsample:nested_cv]{rsample::nested_cv()}} will build a
+design whose inner specification produced neither, and such a design cannot
+be run.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to

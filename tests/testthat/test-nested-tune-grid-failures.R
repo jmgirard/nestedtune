@@ -306,10 +306,14 @@ test_that("an error raised by last_fit() is recorded against the outer fit", {
   skip_if_no_engines()
   d <- make_reg_data()
 
-  # A split that is not an rsplit: tuning succeeds, and last_fit() raises rather
-  # than filing the problem in its notes as a foreign-but-valid split would.
+  # An rsplit indexing a row that does not exist: tuning succeeds, and last_fit()
+  # raises rather than filing the problem in its notes as a foreign-but-valid
+  # split would. The vehicle used to be a `splits` element that was not an
+  # rsplit at all, which M19 now refuses at the call -- so it could no longer
+  # reach the loop, and what this test is about is the loop's handling of a
+  # raising last_fit(), not the class of the split.
   nested <- det_nested(d)
-  nested$splits[[2L]] <- list(not = "a split")
+  nested$splits[[2L]]$in_id <- c(1L, 999999L)
 
   set.seed(2)
   res <- suppressWarnings(
@@ -318,7 +322,7 @@ test_that("an error raised by last_fit() is recorded against the outer fit", {
 
   expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
   expect_identical(res$.notes[[2L]]$location[[1L]], "outer fit")
-  expect_true(any(grepl("rsplit", res$.notes[[2L]]$note)))
+  expect_true(any(grepl("past the end", res$.notes[[2L]]$note)))
 })
 
 test_that("an error while finalizing is this fold's failure, not the run's", {

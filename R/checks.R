@@ -51,6 +51,21 @@ check_workflow <- function(object, call = rlang::caller_env()) {
       call = call
     )
   }
+  # The sibling of the branch above. A workflow needs both halves before it can
+  # be fitted, and workflows raises for a missing preprocessor only once a fit
+  # is attempted -- which here is inside a fold, so every fold failed alike and
+  # the message was workflows', from a call the user never wrote.
+  if (length(object$pre$actions) == 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg object} has no preprocessor.",
+        x = "The workflow carries a model specification only.",
+        i = "Add one with {.fn workflows::add_formula}, \\
+             {.fn workflows::add_recipe}, or {.fn workflows::add_variables}."
+      ),
+      call = call
+    )
+  }
   check_model_spec(workflows::extract_spec_parsnip(object), call = call)
   invisible(object)
 }
@@ -122,7 +137,41 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
       call = call
     )
   }
+  # Last, because the checks above judge the whole object and these judge it
+  # element by element. Neither column is checked by anything upstream: a
+  # design whose `inside` produced no rset is refused by nested_resamples()
+  # (M18) but built without complaint by rsample::nested_cv(), and nothing at
+  # all guards `splits`. Left to the drivers, both shapes cost a full run and
+  # come back as tune's per-fold notes rather than as the call error they are
+  # -- the same reason check_grid_params() refuses a malformed grid (GP3).
+  check_column_class(resamples, "splits", "rsplit", call = call)
+  check_column_class(resamples, "inner_resamples", "rset", call = call)
   invisible(resamples)
+}
+
+# One list column, every element, reporting the first that is wrong.
+#
+# The first rather than all of them: no observed design has more than one
+# offending element, and a caller who fixes the named one gets told about the
+# next on the following call. Class inspection only -- nothing here evaluates
+# or draws, so it stays safe to run before the seeds are taken.
+check_column_class <- function(resamples, column, class, call) {
+  elements <- resamples[[column]]
+  ok <- vapply(elements, inherits, logical(1), class)
+  if (all(ok)) {
+    return(invisible(resamples))
+  }
+  i <- which(!ok)[[1L]]
+  cli::cli_abort(
+    c(
+      "{.arg resamples} has a malformed {.field {column}} column.",
+      x = "Element {i} is {.obj_type_friendly {elements[[i]]}}, not \\
+           {.cls {class}}.",
+      i = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
+           carry one {.cls {class}} per outer fold."
+    ),
+    call = call
+  )
 }
 
 check_grid <- function(grid, call = rlang::caller_env()) {

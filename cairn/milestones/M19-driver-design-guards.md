@@ -114,26 +114,26 @@ All baselines below were verified by execution 2026-07-30.
 
 ## Tasks
 
-- [ ] **T1.** Regression tests in `test-nested-tune-grid-checks.R` and
+- [x] **T1.** Regression tests in `test-nested-tune-grid-checks.R` and
       `test-nested-final-fit-checks.R` for a non-`rset` `inner_resamples`
       element and a non-`rsplit` `splits` element, at both drivers, asserting
       message and `conditionCall()`. Red first — AC1's three baselines are what
       they currently produce. Cover AC2's negative half too: a design with no
       `inside` attribute still runs under `nested_tune_grid()`.
-- [ ] **T2.** Add the two element-class checks to `check_nested()`
+- [x] **T2.** Add the two element-class checks to `check_nested()`
       (`R/checks.R:80`), after the existing `id`/bootstrap branches so the
       cheaper whole-object checks still fire first.
-- [ ] **T3.** Regression test for the preprocessor-less workflow at both
+- [x] **T3.** Regression test for the preprocessor-less workflow at both
       drivers, asserting the `i` bullet and `conditionCall()`.
-- [ ] **T4.** Add the branch to `check_workflow()` (`R/checks.R:7`), beside the
+- [x] **T4.** Add the branch to `check_workflow()` (`R/checks.R:7`), beside the
       missing-model branch at `:37`.
-- [ ] **T5.** Thread the driver's call into `eval_inside_spec()`
+- [x] **T5.** Thread the driver's call into `eval_inside_spec()`
       (`R/nested-final-fit.R:196` → `R/checks.R:236`), with a test asserting
       both branches' `conditionCall()`.
-- [ ] **T6.** The `exists(".Random.seed")` placement test of AC4, over every
+- [x] **T6.** The `exists(".Random.seed")` placement test of AC4, over every
       refusal added here, in a `callr`-free fresh-state harness (`rm()` the
       binding, assert absence after).
-- [ ] **T7.** Roxygen on both `@param resamples`, the rewritten
+- [x] **T7.** Roxygen on both `@param resamples`, the rewritten
       `nested_final_fit()` sentence, `NEWS.md`, and `devtools::document()`.
 - [ ] **T8.** Full `devtools::check()`; confirm no new NOTE and no suite-time
       regression.
@@ -144,6 +144,12 @@ All baselines below were verified by execution 2026-07-30.
 - 2026-07-30: criteria audit ([O], fresh context) returned six findings over six drafted criteria (draft numbering, since renumbered) — the `inner_resamples` baseline was wrong about the final-fit half, the workflow criterion carried a false claim about `R/checks.R`, the RNG criterion could not fail, the docs criterion was vague and partly vacuous; the `splits` criterion was clean; the two-driver-symmetry criterion's biconditional was unsatisfiable against `check_inside_spec()`. Four fixed autonomously, the symmetry residue taken to the gate.
 - 2026-07-30: eight drafted criteria hit the >7 sizing tripwire; the two element-class criteria merged into AC1 rather than splitting the milestone — one check over the two columns of one object, nothing dropped.
 - 2026-07-30: /milestone-implement started on branch `m19-driver-design-guards`, cut from `main` at 9510f6f.
+- 2026-07-30: no implementation question gate — the plan fixed the API shape (no new arguments, exports or dependencies), the gate settled the three behavioural calls, and the message idiom is set by the six existing checks in `R/checks.R`.
+- 2026-07-30: T1-T7 landed in one checkpoint rather than per-task, because the tests for all three areas were written into two files in a single tests-first pass and no intermediate subset leaves `devtools::test()` clean.
+- 2026-07-30: `check_nested()` gained `check_column_class()`, one helper over both columns, reporting the first offending element; the every-position variant stays the ROADMAP row M19 Out records.
+- 2026-07-30: discovered fallout — `test-nested-tune-grid-failures.R:305` used a non-`rsplit` `splits` element as the vehicle for 'an error raised by last_fit() is recorded against the outer fit', which AC1 now refuses at the call. Vehicle changed to an `rsplit` whose `in_id` indexes a row past the end: still an `rsplit`, `last_fit()` still raises, same `.completed` pattern. What the test pins is unchanged.
+- 2026-07-30: guards verified by mutation, all three red when inverted — moving `check_nested()` after the `sample.int()` draw reddens the AC4 placement test specifically, which is the failure mode the plan-gate audit found the original `.Random.seed` identity formulation could not produce.
+- 2026-07-30: `@param resamples` first linked `[rsample::rsplit()]`, an undocumented topic that `document()` flagged; changed to plain code font, matching how the package already names `rset`.
 - 2026-07-30: plan gate chose refusing at both drivers over checking only what each driver reads, because one definition of a valid design beats two; falsified by a real design whose broken `inner_resamples` a user legitimately wants the final fit to ignore.
 - 2026-07-30: plan gate chose refusing outright over warning-and-continuing, because a design that cannot execute should not cost a full fitting run first (GP3, D-003 waives the deprecation cycle); falsified by evidence that partially-malformed designs are common enough that the surviving folds are worth returning.
 - 2026-07-30: plan chose checking every element of both columns over checking only the first, decided autonomously since it is class inspection with no RNG and no fitting; falsified by a measured cost on a design large enough for the sweep to matter.
