@@ -21,8 +21,14 @@ This is what was \strong{scored}, not what was \strong{asked for}. A \code{grid}
 a size is expanded by tune and may reach fewer candidates than the number
 requested; a candidate that failed everywhere scored nothing. See the
 \code{.grid} discussion in \code{\link[=nested_tune_grid]{nested_tune_grid()}} for the full account of how the
-two records diverge and what each one can and cannot tell you — it applies
-here unchanged, this record being derived the same way.
+two records diverge, which holds here too — this record is derived the same
+way.
+
+One pointer there does \strong{not} carry over. A candidate that failed on every
+inner resample is missing from this table, and on a \code{nested_tune_grid()}
+result its failure is recorded in that object's \code{.notes} column. A
+\code{nested_final_fit} has no such column. Look instead inside the tuning run
+itself — \code{tune::collect_notes(extract_tune_results(x))}.
 }
 \description{
 Returns the candidate parameter settings that \code{\link[=nested_final_fit]{nested_final_fit()}}'s tuning

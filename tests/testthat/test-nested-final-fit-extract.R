@@ -90,10 +90,19 @@ test_that("what the accessors return agrees with what the loop records", {
   set.seed(22)
   res <- memoised(nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics()))
 
-  expect_identical(
-    names(extract_scored_candidates(final)),
-    names(res$.grid[[1L]])
-  )
+  from_fit <- extract_scored_candidates(final)
+  from_loop <- res$.grid[[1L]]
+
+  expect_identical(names(from_fit), names(from_loop))
+
+  # Names alone cannot fail here: both sides come from `scored_candidates()`
+  # over the same deterministic grid, so they agree by construction. The plan
+  # gate's recorded falsifier for this milestone's shape choice was "the
+  # accessor and the `.grid` column disagreeing on a run where both are
+  # defined", and disagreement in VALUES is what that names -- so the values
+  # are what has to be compared.
+  expect_setequal(from_fit$num_comp, from_loop$num_comp)
+  expect_setequal(from_fit$.config, from_loop$.config)
 })
 
 test_that("both accessors refuse an object they cannot answer for", {

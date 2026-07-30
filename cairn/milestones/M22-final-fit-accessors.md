@@ -122,6 +122,8 @@ plan gate, recorded as D-023.
 - 2026-07-30: `rlang::current_env()` and not `caller_env()` in both default methods — verified by execution that inside a UseMethod-dispatched method the former renders the generic's own call (`extract_tune_results(1:3)`) while the latter renders one frame further out, naming whatever function the user was inside.
 - 2026-07-30: T1-T5 done. `devtools::document()` no diff on re-run, `devtools::test()` 1447 pass / 0 fail / 0 warn / 0 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes (4m39s), `pkgdown::check_pkgdown()` no problems.
 
+- 2026-07-30: review found 15 findings across three lenses (diff-bug 15, blame 0, prior-review 0); two scored >=80 and were fixed on the branch (P1 82, a false doc cross-reference to a `.notes` column this class lacks; T3 80, an agreement test comparing only `names()`, which could not fail). Thirteen logged below threshold.
+
 ## Decisions
 
 ## Review
@@ -176,3 +178,57 @@ with both new exports carried in `_pkgdown.yml` · `NEWS.md` entry present and
 free of milestone numbers · no new top-level files, so no `.Rbuildignore` entry
 owed · full `check()` clean. First review pass; no prior returns, so neither
 thrash trigger applies.
+
+### Independent review — three lenses, then a scorer
+
+[O] diff-bug 15 findings, [S] blame-history 0, [S] prior-review 0 (its
+PR-comment probe returned empty, so archived `## Review` sections were the whole
+evidence base). Scored by a fresh [S] agent holding the diff and the milestone
+file; two cleared 80 and both were fixed.
+
+- P1 (82), fixed: the candidates accessor's `@return` sent a reader to the
+  `.grid` discussion saying it "applies here unchanged", but that discussion
+  resolves the missing-candidate limit via a `.notes` column a
+  `nested_final_fit` does not have. The clause now says which pointer does not
+  carry over and names `tune::collect_notes(extract_tune_results(x))` instead
+  (verified exported, tune 2.1.0).
+- T3 (80), fixed: the accessor-vs-loop agreement test compared `names()` only —
+  both sides come from `scored_candidates()` over the same deterministic grid,
+  so it could not fail. It now also compares `num_comp` and `.config` values,
+  which is what the plan gate's recorded falsifier actually named.
+
+Thirteen logged below threshold, none actioned:
+
+- T2 (78) the zero-padding assertion `^pre1[0-9]_` matches an unpadded scheme
+  too, so it adds nothing beyond the already-asserted row count.
+- T1 (76) the >9-candidate block's three assertions are all order-insensitive,
+  so it cannot catch the ordering its own comment names; ordering is unasserted
+  suite-wide, M21's oracle sorting before comparing.
+- T7 (74) `skip_if_no_engines()` on the snapshot-only block, which builds
+  nothing — on a machine without recipes/yardstick the milestone's only error
+  snapshot silently does not run.
+- T5 (70) no zero-row edge test for the candidates accessor, which the profile's
+  `test-doctrine` names for every export.
+- D2 (58) DESIGN.md's Function Families and Architecture text still describe
+  `extract_workflow()` as the only door; outside this milestone's In scope.
+- P3 (55) the refusal does not tell a `nested_results` holder their object
+  already carries `.grid`.
+- C3 (45) `empty_candidates()` returns a 0x0 tibble where `@return` promises
+  named columns; reachable only via C2.
+- C2 (42) the accessor inherits `scored_candidates()`'s error-swallowing
+  `tryCatch`, whose "don't discard other folds' work" rationale does not apply
+  off the loop; changing that function is out of scope by plan.
+- T4 (38) AC3's "message snapshotted" read as demanding a per-class snapshot.
+- D1 (30) NEWS phrases the refusal as a change to shipped behaviour.
+- C1 (25) `x$tuning` could partial-match `tuning_seed` — but `$` resolves the
+  exact match first and the constructor always sets `tuning`, so it needs a
+  future slot rename to bite.
+- T6 (22) task T3's text promised an edit to `test-nested-final-fit-print.R`
+  that the diff does not contain; the criterion is met regardless, `print_text()`
+  capturing the whole output so the existing loop covers the new lines.
+- C4 (18) `...` accepted and discarded, matching `extract_workflow()`'s existing
+  behaviour rather than departing from it.
+
+Post-fix re-verification: `devtools::test()` 1449 pass / 0 fail / 0 warn /
+0 skip (two assertions added by the T3 fix); `devtools::check()` 0 errors,
+0 warnings, 0 notes (3m42s); `document()` no diff.

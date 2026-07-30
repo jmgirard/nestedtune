@@ -108,8 +108,14 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #'   a size is expanded by tune and may reach fewer candidates than the number
 #'   requested; a candidate that failed everywhere scored nothing. See the
 #'   `.grid` discussion in [nested_tune_grid()] for the full account of how the
-#'   two records diverge and what each one can and cannot tell you — it applies
-#'   here unchanged, this record being derived the same way.
+#'   two records diverge, which holds here too — this record is derived the same
+#'   way.
+#'
+#'   One pointer there does **not** carry over. A candidate that failed on every
+#'   inner resample is missing from this table, and on a `nested_tune_grid()`
+#'   result its failure is recorded in that object's `.notes` column. A
+#'   `nested_final_fit` has no such column. Look instead inside the tuning run
+#'   itself — `tune::collect_notes(extract_tune_results(x))`.
 #'
 #' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
 #' data(mtcars)
