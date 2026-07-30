@@ -10,8 +10,9 @@
 #' Print a final fit
 #'
 #' @description
-#' Reports which parameters the full-data tuning run selected, and says where
-#' this model's performance estimate actually comes from.
+#' Reports which parameters the full-data tuning run selected, says where this
+#' model's performance estimate actually comes from, and names the accessors
+#' that reach what selection saw.
 #'
 #' No performance number is shown. The tuning run stored on the object has
 #' metrics, but they were consumed by selection and are optimistically biased as
@@ -23,7 +24,8 @@
 #'
 #' @return `x`, invisibly.
 #'
-#' @seealso [nested_final_fit()], [nested_tune_grid()]
+#' @seealso [nested_final_fit()], [nested_tune_grid()],
+#'   [extract_tune_results()], [extract_scored_candidates()]
 #' @export
 print.nested_final_fit <- function(x, ...) {
   cli::cli_h1("Nested cross-validation final fit")
@@ -35,7 +37,14 @@ print.nested_final_fit <- function(x, ...) {
          result, which describes the procedure that produced it.",
     i = "Compare the parameters above with {.code .selected} from that run. \\
          Outer folds choosing differently is selection instability, and it is \\
-         information about the procedure rather than noise."
+         information about the procedure rather than noise.",
+    # The caution travels with the pointer rather than living only on the help
+    # page: this line is where a user first learns the run is reachable, so it
+    # is where naming what its numbers are worth costs them nothing to read.
+    i = "{.fn extract_tune_results} returns the tuning run selection came \\
+         from, and {.fn extract_scored_candidates} the candidates it scored. \\
+         Any metric reachable through the first is a selection-time quantity, \\
+         optimistically biased as a claim about this model."
   ))
   invisible(x)
 }

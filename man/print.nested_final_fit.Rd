@@ -15,8 +15,9 @@
 \code{x}, invisibly.
 }
 \description{
-Reports which parameters the full-data tuning run selected, and says where
-this model's performance estimate actually comes from.
+Reports which parameters the full-data tuning run selected, says where this
+model's performance estimate actually comes from, and names the accessors
+that reach what selection saw.
 
 No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically biased as
@@ -24,5 +25,6 @@ a claim about this model; the nested estimate from \code{\link[=nested_tune_grid
 the one to report (IP3).
 }
 \seealso{
-\code{\link[=nested_final_fit]{nested_final_fit()}}, \code{\link[=nested_tune_grid]{nested_tune_grid()}}
+\code{\link[=nested_final_fit]{nested_final_fit()}}, \code{\link[=nested_tune_grid]{nested_tune_grid()}},
+\code{\link[=extract_tune_results]{extract_tune_results()}}, \code{\link[=extract_scored_candidates]{extract_scored_candidates()}}
 }

@@ -87,24 +87,24 @@ plan gate, recorded as D-023.
 
 ## Tasks
 
-- [ ] T1: `extract_tune_results()` — generic, `nested_final_fit` method
+- [x] T1: `extract_tune_results()` — generic, `nested_final_fit` method
       returning `x$tuning`, and a default method aborting per AC3. Roxygen
       carrying AC4's caution. New file `R/nested-final-fit-extract.R`; the
       generic pattern to follow is `extract_workflow.nested_final_fit()` at
       `R/nested-final-fit.R:252-256`, and the `.default`-aborts convention is
       M06's lesson about `tune::show_best()`.
-- [ ] T2: `extract_scored_candidates()` — generic, `nested_final_fit` method
+- [x] T2: `extract_scored_candidates()` — generic, `nested_final_fit` method
       delegating to `scored_candidates(x$tuning)`, default method per AC3.
       Roxygen naming the M21 limit (a candidate that failed on every inner
       resample is absent) by cross-reference, never restated.
-- [ ] T3: `print.nested_final_fit()` (`R/nested-final-fit-print.R:28-41`) gains
+- [x] T3: `print.nested_final_fit()` (`R/nested-final-fit-print.R:28-41`) gains
       the two pointers with the caution beside the tuning-run one; extend the
       no-number assertion at `test-nested-final-fit-print.R:35-47` to cover the
       added lines and re-record the snapshot.
-- [ ] T4: `tests/testthat/test-nested-final-fit-extract.R` — AC1's two legs,
+- [x] T4: `tests/testthat/test-nested-final-fit-extract.R` — AC1's two legs,
       AC2's two grid sizes, AC3's four aborts. Not a budgeted file, so no
       `helper-time-budget.R` row is owed.
-- [ ] T5: `devtools::document()`, a `_pkgdown.yml` reference row per new export
+- [x] T5: `devtools::document()`, a `_pkgdown.yml` reference row per new export
       (profile `test-doctrine`), a NEWS.md entry naming both accessors in
       user-facing words, then `devtools::test()` and `devtools::check()`.
 
@@ -117,6 +117,10 @@ plan gate, recorded as D-023.
 - 2026-07-30: plan gate chose the known-grid proof bar over independently re-deriving tune's space-filling expansion, because M21 already oracle-verified `scored_candidates()` two ways (O3, O4) and re-deriving pins tune internals IP2 declines to promise across versions; falsified by the accessor and the `.grid` column disagreeing on a run where both are defined.
 - 2026-07-30: decided autonomously that neither accessor gets a `nested_results` method — `.grid` is that object's per-fold surface and a pooled table would assert a shared menu M21 measured false; falsified by a user needing the candidates of a results object in one table with the fold labels attached.
 - 2026-07-30: /milestone-implement started on `m22-final-fit-accessors`, cut from `main` at 017dc6e.
+- 2026-07-30: no implementation question gate — names, table shape and proof bar were all settled at the plan gate and recorded as D-023, and the user declined escalation on the `irreversible-api` decision at the plan routing chip.
+- 2026-07-30: T1 and T2 landed in one checkpoint (minor amendment): T1's `@seealso` forward-references T2's function, so a T1-only commit would have carried a `document()` link warning as its checked-in state.
+- 2026-07-30: `rlang::current_env()` and not `caller_env()` in both default methods — verified by execution that inside a UseMethod-dispatched method the former renders the generic's own call (`extract_tune_results(1:3)`) while the latter renders one frame further out, naming whatever function the user was inside.
+- 2026-07-30: T1-T5 done. `devtools::document()` no diff on re-run, `devtools::test()` 1447 pass / 0 fail / 0 warn / 0 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes (4m39s), `pkgdown::check_pkgdown()` no problems.
 
 ## Decisions
 
