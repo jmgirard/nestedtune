@@ -278,8 +278,9 @@ test_that("a non-rset element of inner_resamples is refused", {
   cnd <- tryCatch(nested_tune_grid(wf, bad, grid = det_grid()),
                   error = function(e) e)
   # The position, so a design with many folds says which one to look at.
-  expect_match(conditionMessage(cnd), "2")
+  expect_match(conditionMessage(cnd), "Element 2")
   expect_match(conditionMessage(cnd), "rset")
+  expect_match(conditionMessage(cnd), "`resamples`")
   # What it holds instead, so the reader is not left guessing.
   expect_match(conditionMessage(cnd), "string")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
@@ -297,6 +298,8 @@ test_that("a non-rsplit element of splits is refused", {
   cnd <- tryCatch(nested_tune_grid(wf, bad, grid = det_grid()),
                   error = function(e) e)
   expect_match(conditionMessage(cnd), "rsplit")
+  expect_match(conditionMessage(cnd), "Element 1")
+  expect_match(conditionMessage(cnd), "`resamples`")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
 })
 
@@ -317,6 +320,15 @@ test_that("an rsample design whose inside produced no rset is refused", {
   )
 
   expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "inner_resamples")
+
+  # And at the final fit, which used to abort further in -- from
+  # eval_inside_spec(), only because re-evaluating `inside` also failed, naming
+  # final_fit_worker() rather than the user's call.
+  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
+                  error = function(e) e)
+  expect_match(conditionMessage(cnd), "malformed")
+  expect_match(conditionMessage(cnd), "inner_resamples")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
 })
 
 # The negative half of the same rule: what the loop does not need, it does not
@@ -332,7 +344,7 @@ test_that("the loop still accepts a design with no inner specification", {
   attr(folds, "inside") <- NULL
 
   res <- memoised(nested_tune_grid(wf, folds, grid = det_grid()))
-  expect_true(all(res$.completed))
+  expect_identical(res$.completed, c(TRUE, TRUE))
 })
 
 test_that("a workflow with a model but no preprocessor is refused", {
@@ -361,6 +373,59 @@ test_that("a workflow with a model but no preprocessor is refused", {
   # The remedy, as the neighbouring `object` checks give one.
   expect_match(conditionMessage(cnd), "add_formula|add_recipe|add_variables")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+})
+
+# `pre$actions` is not the same question as "has a preprocessor":
+# workflows::add_case_weights() files an action there too. Counting them let a
+# workflow with a model and case weights but no formula, recipe or variables
+# slip the guard and fail once per outer fold -- and described that same
+# workflow as carrying "a preprocessor only" when it had no model either.
+
+test_that("case weights are not mistaken for a preprocessor", {
+  skip_if_no_engines(stochastic = TRUE)
+
+  d <- make_reg_data()
+  folds <- valid_folds(d)
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = 10),
+      "ranger",
+      num.threads = 1
+    ),
+    "regression"
+  )
+  grid <- data.frame(min_n = c(2L, 10L))
+
+  # The `case_weights` entry is added by hand rather than through
+  # workflows::add_case_weights(), which would need a case-weights vector from
+  # hardhat and so a dependency this package does not declare. What the check
+  # reads is names(object$pre$actions), and that is what is staged here -- with
+  # the weakness that comes with it: if workflows ever renamed the slot, this
+  # test would keep passing while the real hole reopened. The end-to-end shape
+  # was verified against a genuine add_case_weights() workflow at M19 review.
+  weights_only <- workflows::add_model(workflows::workflow(), spec)
+  weights_only$pre$actions$case_weights <- TRUE
+
+  expect_false(has_preprocessor(weights_only))
+  expect_error(
+    nested_tune_grid(weights_only, folds, grid = grid),
+    "no preprocessor"
+  )
+
+  # And the no-model bullet describes what is actually there: case weights are
+  # not a preprocessor, so this workflow is empty of both.
+  no_model <- workflows::workflow()
+  no_model$pre$actions$case_weights <- TRUE
+  cnd <- tryCatch(nested_tune_grid(no_model, folds, grid = grid),
+                  error = function(e) e)
+  expect_match(conditionMessage(cnd), "no model specification")
+  expect_match(conditionMessage(cnd), "is empty")
+
+  # The predicate says yes to each of the three things that really preprocess.
+  expect_true(has_preprocessor(workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)))
+  expect_true(has_preprocessor(
+    workflows::workflow(recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d), spec)
+  ))
 })
 
 # Every refusal added here fires before the entry sample.int() draw. Seed
@@ -392,6 +457,19 @@ test_that("the new refusals fire before the RNG is drawn from", {
       bad <- folds
       bad$inner_resamples[[2]] <- "not an rset"
       nested_final_fit(wf, bad, grid = det_grid())
+    },
+    function() {
+      bad <- folds
+      bad$splits[[1]] <- "not an rsplit"
+      nested_final_fit(wf, bad, grid = det_grid())
+    },
+    function() {
+      no_pre <- workflows::add_model(workflows::workflow(), parsnip::linear_reg())
+      nested_tune_grid(no_pre, folds, grid = det_grid())
+    },
+    function() {
+      no_pre <- workflows::add_model(workflows::workflow(), parsnip::linear_reg())
+      nested_final_fit(no_pre, folds, grid = det_grid())
     }
   )
 

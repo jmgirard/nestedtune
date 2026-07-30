@@ -16,8 +16,10 @@ for tuning with \code{\link[tune:tune]{tune::tune()}}. Ordinarily the same workf
 \emph{used} — the outer folds play no part in a final fit — but the whole design
 is still checked, so a design \code{\link[=nested_tune_grid]{nested_tune_grid()}} refuses is refused here
 too: its \code{splits} column must hold \code{rsplit} objects and its
-\code{inner_resamples} column an \code{rset} per outer fold. Whether a design is
-valid has one answer, not one per function.}
+\code{inner_resamples} column an \code{rset} per outer fold. The reverse does not
+follow: this function additionally needs the design's stored inner
+specification, which the loop never re-runs, so a design with none is
+refused here and runs perfectly well there.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to

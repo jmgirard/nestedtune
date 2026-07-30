@@ -41,7 +41,7 @@ check_workflow <- function(object, call = rlang::caller_env()) {
         # An empty workflow carries no preprocessor either, so the bullet says
         # which of the two shapes was actually handed over rather than assuming
         # the commoner one.
-        x = if (length(object$pre$actions) > 0L) {
+        x = if (has_preprocessor(object)) {
           "The workflow carries a preprocessor only."
         } else {
           "The workflow is empty."
@@ -55,7 +55,7 @@ check_workflow <- function(object, call = rlang::caller_env()) {
   # be fitted, and workflows raises for a missing preprocessor only once a fit
   # is attempted -- which here is inside a fold, so every fold failed alike and
   # the message was workflows', from a call the user never wrote.
-  if (length(object$pre$actions) == 0L) {
+  if (!has_preprocessor(object)) {
     cli::cli_abort(
       c(
         "{.arg object} has no preprocessor.",
@@ -68,6 +68,19 @@ check_workflow <- function(object, call = rlang::caller_env()) {
   }
   check_model_spec(workflows::extract_spec_parsnip(object), call = call)
   invisible(object)
+}
+
+# Does the workflow carry one of the three things that can preprocess?
+#
+# Asked by name rather than as `length(object$pre$actions) > 0L`, which is not
+# the same question: `workflows::add_case_weights()` also files an action under
+# `pre`, so a workflow carrying a model and case weights but no formula, recipe
+# or variables has a non-empty `pre$actions` and still cannot be fitted -- it
+# slipped the guard below and every outer fold failed alike, the exact
+# degradation that guard exists to prevent. The counting form also described
+# such a workflow as carrying "a preprocessor only" in the branch above.
+has_preprocessor <- function(object) {
+  any(c("formula", "recipe", "variables") %in% names(object$pre$actions))
 }
 
 # A missing engine package would surface anyway, but only once the first fold
@@ -144,8 +157,22 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
   # all guards `splits`. Left to the drivers, both shapes cost a full run and
   # come back as tune's per-fold notes rather than as the call error they are
   # -- the same reason check_grid_params() refuses a malformed grid (GP3).
-  check_column_class(resamples, "splits", "rsplit", call = call)
-  check_column_class(resamples, "inner_resamples", "rset", call = call)
+  check_column_class(
+    resamples, "splits", "rsplit",
+    hint = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
+            carry one {.cls rsplit} per outer fold.",
+    call = call
+  )
+  # A different hint, because the parallel sentence would be false here for the
+  # commonest way of reaching this error: rsample builds the design whatever
+  # `inside` returned. Only nestedtune's own constructor refuses it (M18).
+  check_column_class(
+    resamples, "inner_resamples", "rset",
+    hint = "{.fn rsample::nested_cv} builds the design whatever its \\
+            {.arg inside} argument returned; {.fn nested_resamples} refuses an \\
+            {.arg inside} that produces no {.cls rset} when the design is built.",
+    call = call
+  )
   invisible(resamples)
 }
 
@@ -155,7 +182,8 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
 # offending element, and a caller who fixes the named one gets told about the
 # next on the following call. Class inspection only -- nothing here evaluates
 # or draws, so it stays safe to run before the seeds are taken.
-check_column_class <- function(resamples, column, class, call) {
+check_column_class <- function(resamples, column, class, hint,
+                               call = rlang::caller_env()) {
   elements <- resamples[[column]]
   ok <- vapply(elements, inherits, logical(1), class)
   if (all(ok)) {
@@ -167,8 +195,7 @@ check_column_class <- function(resamples, column, class, call) {
       "{.arg resamples} has a malformed {.field {column}} column.",
       x = "Element {i} is {.obj_type_friendly {elements[[i]]}}, not \\
            {.cls {class}}.",
-      i = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
-           carry one {.cls {class}} per outer fold."
+      i = hint
     ),
     call = call
   )

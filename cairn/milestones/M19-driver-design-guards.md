@@ -157,6 +157,7 @@ All baselines below were verified by execution 2026-07-30.
 - 2026-07-30: plan gate chose refusing outright over warning-and-continuing, because a design that cannot execute should not cost a full fitting run first (GP3, D-003 waives the deprecation cycle); falsified by evidence that partially-malformed designs are common enough that the surviving folds are worth returning.
 - 2026-07-30: plan chose checking every element of both columns over checking only the first, decided autonomously since it is class inspection with no RNG and no fitting; falsified by a measured cost on a design large enough for the sweep to matter.
 - 2026-07-30: plan gate chose absorbing the `eval_inside_spec()` call fix over leaving it a candidate row, because it is the same defect class in the same file; falsified by the fix proving to need more than threading an argument.
+- 2026-07-30: review fan-out — 14 findings from the diff-bug lens, zero from the other two; three scored >= 80 and were fixed, five sub-threshold ones fixed anyway (two false doc sentences, three assertion tightenings) and six left logged. Return count for this milestone: 0 (fixed in place at review, status never left `review`).
 
 ## Decisions
 
@@ -210,3 +211,62 @@ hand-edited (covered by that); no `README.Rmd` in this repo; `check_pkgdown()`
 "No problems found."; `NEWS.md` carries the user-visible entries with no
 milestone numbers; no new top-level files, so no `.Rbuildignore` additions
 owed; full `check()` clean as above.
+
+### Independent review
+
+Three fresh-context lenses. **[S] blame-history:** zero findings — "No
+regressions against history were found"; it traced the retargeted test to its
+M03 origin (`6ff3f08`) and confirmed by execution that the replacement vehicle
+still exercises the raising branch. **[S] prior-review:** zero findings; the
+GitHub probe returned `[]` (no real inline PR comments in this repo), so it
+worked from the archived `## Review` sections and RB02/RR02. **[O] diff-bug:**
+14 findings, scored by a fresh [S] scorer holding the diff and the plan.
+
+Actioned (scored >= 80), all three fixed and mutation-verified:
+
+- **F1 (92)** — `check_workflow()`'s new guard asked `length(object$pre$actions)
+  == 0L`, which is not "has no preprocessor": `workflows::add_case_weights()`
+  files an action under `pre` too, so a workflow with a model and case weights
+  but no formula/recipe/variables slipped the guard and degraded to "2 of 2
+  outer folds failed" — the exact failure AC3 exists to remove. The same
+  imprecision made M18's neighbouring bullet call such a workflow "a
+  preprocessor only". Fixed with a `has_preprocessor()` helper asking for the
+  three preprocessor slots by name, used by both branches. Verified end-to-end
+  against a genuine `add_case_weights()` workflow at review.
+- **F2 (84)** — the new check's `i` bullet claimed designs from
+  `rsample::nested_cv()` "carry one `<rset>` per outer fold", which is false for
+  the very design it fires on and contradicts this milestone's own `NEWS.md`.
+  The hint is now a parameter of `check_column_class()`; the `inner_resamples`
+  hint says rsample builds the design whatever `inside` returned.
+- **F6 (80)** — the two final-fit element-class tests asserted only a column/class
+  substring and `conditionCall()`, so forcing `i <- 1L` reddened the loop's tests
+  and left theirs green. They now assert the position and the type held.
+
+Logged, below the action threshold (11): F3 (22) `check_column_class()` had no
+`call` default — fixed incidentally while adding the `hint` parameter; F4 (15)
+the `class` parameter shadows `base::class`, no failure today; F5 (62) AC4's
+placement test covered 3 of 6 refusal paths — **extended to all 6 rather than
+reinterpreting AC4's "every refusal added here"**; F7 (55) no test pinned the
+`{.arg resamples}` prefix AC1 requires — **fixed**, mutation-verified; F8 (52)
+AC1(a)'s final-fit half untested — **fixed**; F9 (78) the new `@param resamples`
+closed with "Whether a design is valid has one answer, not one per function", a
+biconditional AC2 deliberately does not honour — **fixed**, since it is a false
+sentence this diff added to shipped documentation; F10 (66) the other `@param`
+attributed a malformed `splits` column to `rsample::nested_cv()`, which always
+produces proper `rsplit`s — **fixed**, same reason; F11 (35) an unanchored `"2"`
+match — tightened to `"Element 2"`; F12 (18) `all(res$.completed)` vacuous on
+zero rows — tightened to an identity; F13 (18) the retargeted test cannot
+distinguish the raising from the non-raising branch, a weakness the old vehicle
+shared — not actioned, no regression; F14 (28) the NEWS bullet describes one of
+`eval_inside_spec()`'s two branches — not actioned.
+
+Deviation logged: findings below 80 are normally logged and not actioned. F7,
+F9, F10, F11 and F12 were fixed anyway — F9 and F10 because they are factually
+false sentences this diff added to user-facing documentation, and the rest
+because they were one-line assertion tightenings in the code the F6 fix was
+already editing. F5 and F8 were fixed because AC4 and AC1 as written demand the
+coverage, and a criterion is never reinterpreted at review.
+
+Post-fix: `devtools::test()` 1327 passing, 0 failures, 0 skips;
+`devtools::check()` 0 errors / 0 warnings / 0 notes; all AC evidence above
+re-executed and unchanged apart from the corrected `inner_resamples` hint text.

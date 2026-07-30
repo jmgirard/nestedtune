@@ -12,10 +12,11 @@ for tuning with \code{\link[tune:tune]{tune::tune()}}.}
 
 \item{resamples}{A nested resampling design, from \code{\link[=nested_resamples]{nested_resamples()}} or
 \code{\link[rsample:nested_cv]{rsample::nested_cv()}}. Its \code{splits} column must hold \code{rsplit} objects and
-its \code{inner_resamples} column an \code{rset} per outer fold. Both are
-checked before anything is fitted: \code{\link[rsample:nested_cv]{rsample::nested_cv()}} will build a
-design whose inner specification produced neither, and such a design cannot
-be run.}
+its \code{inner_resamples} column an \code{rset} per outer fold. Both are checked
+before anything is fitted, because \code{\link[rsample:nested_cv]{rsample::nested_cv()}} builds a design
+whatever its \code{inside} argument returned — so a specification that produces
+no \code{rset} gives a design that cannot be run, where \code{\link[=nested_resamples]{nested_resamples()}}
+refuses one at construction.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to
