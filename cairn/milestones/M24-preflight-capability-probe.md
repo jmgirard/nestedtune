@@ -36,7 +36,7 @@ cancelled says so once.
       positively by shape the way `is_fold_record()` is — a length-1 character
       vector is rejected as a non-answer, because a `miraiError` is exactly
       that shape and must never be read as a capability report.
-- [ ] AC2: `preflight_outcome()` gains a fourth outcome for a pool whose
+- [x] AC2: `preflight_outcome()` gains a fourth outcome for a pool whose
       daemons load the package but lack a required symbol, ranked *below*
       `cannot_load` in the existing ladder, so a pool failing both ways still
       takes the load failure's class (M10-D1). A unit test drives
@@ -83,7 +83,7 @@ cancelled says so once.
       (`R/parallel.R:380-382`); amend the contract test at
       `tests/testthat/test-parallel-classify.R:503`, which encodes the answer
       shape this changes.
-- [ ] T2: extend `preflight_outcome()`'s ladder (`R/parallel.R:390-411`) with
+- [x] T2: extend `preflight_outcome()`'s ladder (`R/parallel.R:390-411`) with
       the new outcome below `cannot_load`; test all four plus the mixed pool.
 - [ ] T3: carry the new fields on the status record and add the abort branch to
       `check_daemons_can_load()` (`R/parallel.R:419-475`); snapshot the message.
@@ -104,6 +104,7 @@ cancelled says so once.
 - 2026-07-30: plan gate chose proving the probe against a live pool with an absent symbol over installing a stubbed package into a scratch library, because priming a daemon reaches every daemon and erases the heterogeneity such a fixture exists to create (`test-parallel-detection.R:86-88`); falsified by a failure mode that only a genuinely mixed pool exhibits.
 - 2026-07-30: plan gate chose warning on a `dispatcher = FALSE` pool over refusing it, because the pool computes correct results and only cancellation is unavailable, so GP3's refuse-don't-warn stance does not reach it; falsified by evidence that an uncancellable pool produces a wrong result rather than an uninterruptible one.
 - 2026-07-30: T1 done. Probe returns a per-daemon record; `daemon_report()` replaces `loaded_answer()`. `preflight_outcome()`'s new `incompatible` branch landed here too (same function), so T2 is code-complete and awaits its own tests. Three test call sites built bare logicals; a `reports()` helper builds records in place so no line moved. Missed one at `test-parallel-identity.R:112` — a mock fabricating `FALSE` silently reclassified from cannot_load to no_response, caught by the full suite. Ledger rows 520/527/528 shifted 37 lines and were repaired (the M16/M21 drift trap).
+- 2026-07-30: T2 done. Five ladder tests: incompatible classified, missing symbols unioned across the pool, `cannot_load` still outranks it, it outranks `no_response`, and all four outcomes asserted distinct in one place so a future branch cannot absorb its neighbour. The 73 inserted lines shifted 10 ledger rows; repaired by offset.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions

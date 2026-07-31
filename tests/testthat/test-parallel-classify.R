@@ -382,6 +382,79 @@ test_that("both causes answer to one shared class", {
   }
 })
 
+# --- A daemon that loads the package but cannot run the fold (M24) ----------
+#
+# `requireNamespace()` answers a weaker question than dispatch asks. A daemon
+# holding an older install loads the package and reports TRUE, then dies on
+# every fold at `ns$rehydrate_payload` -- the symbol M23 added and no pre-flight
+# noticed. The probe now carries the host's namespace manifest and each daemon
+# reports what it lacks, so the gap is classified rather than discovered a fold
+# at a time.
+
+test_that("a daemon that loads but lacks a symbol is incompatible, not ok", {
+  status <- preflight_outcome(
+    reports(TRUE, TRUE, missing = list(NULL, "rehydrate_payload"))
+  )
+  expect_identical(status$outcome, "incompatible")
+  expect_identical(status$incompatible, 1L)
+  expect_identical(status$cannot_load, 0L)
+  expect_identical(status$no_answer, 0L)
+  expect_identical(status$total, 2L)
+})
+
+test_that("the missing symbols are the union across the pool", {
+  # Two daemons short of different things is one pool short of both, and the
+  # message names the set rather than whichever daemon answered first.
+  status <- preflight_outcome(
+    reports(TRUE, TRUE, missing = list("nested_fold_fit", "rehydrate_payload"))
+  )
+  expect_identical(status$incompatible, 2L)
+  expect_identical(
+    status$missing_symbols, c("nested_fold_fit", "rehydrate_payload")
+  )
+})
+
+test_that("a load failure still outranks an incompatible daemon", {
+  # The ladder extends M10-D1 rather than reordering it: installing the package
+  # is a stronger instruction than reinstalling it, so a pool failing both ways
+  # is still told to install.
+  status <- preflight_outcome(
+    reports(FALSE, TRUE, missing = list(NULL, "rehydrate_payload"))
+  )
+  expect_identical(status$outcome, "cannot_load")
+  expect_identical(status$cannot_load, 1L)
+  expect_identical(status$incompatible, 1L)
+})
+
+test_that("an incompatible daemon outranks one that never answered", {
+  # The other side of the same ladder. A daemon that said nothing names no fix;
+  # one that named a missing symbol does, so it takes the class.
+  status <- preflight_outcome(
+    reports(NA, TRUE, missing = list(NULL, "rehydrate_payload"))
+  )
+  expect_identical(status$outcome, "incompatible")
+  expect_identical(status$no_answer, 1L)
+  expect_identical(status$incompatible, 1L)
+})
+
+test_that("every outcome the ladder can produce is reachable and distinct", {
+  # All four in one place, so a future branch added above or below any of them
+  # cannot quietly absorb its neighbour.
+  outcomes <- vapply(
+    list(
+      reports(TRUE, TRUE),
+      reports(TRUE, TRUE, missing = list(NULL, "rehydrate_payload")),
+      reports(TRUE, NA),
+      reports(TRUE, FALSE)
+    ),
+    function(answers) preflight_outcome(answers)$outcome,
+    character(1)
+  )
+  expect_identical(
+    outcomes, c("ok", "incompatible", "no_response", "cannot_load")
+  )
+})
+
 # --- The bound is an option, not an argument (D-020, M10-D2) ----------------
 
 test_that("an unset option yields the documented 30 seconds", {
