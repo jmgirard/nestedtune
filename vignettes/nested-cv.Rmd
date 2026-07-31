@@ -80,10 +80,11 @@ which is what the tuning for that fold gets to see.
 folds$inner_resamples[[1]]
 ```
 
-`mtcars` has `r nrow(mtcars)` rows, which keeps this page fast to build. It is
-also, honestly, the situation where nested cross-validation earns its cost:
-with little data the tuning step is unstable, and the optimism it introduces is
-largest.
+`mtcars` has `r nrow(mtcars)` rows, which keeps this page fast to build. With
+that little data the tuning step is genuinely unstable, and the fold-to-fold
+selections further down show it directly. It is not, however, the case where
+nesting removes the most — that is wide data searched hard, and a section near
+the end of this guide says why.
 
 ## The model and the grid
 
@@ -350,6 +351,51 @@ tune::show_best(res, metric = "rmse")
 ```{r refusals-final, error = TRUE}
 tune::select_best(final, metric = "rmse")
 ```
+
+## When this is worth the cost
+
+Nesting is expensive, and it is not always worth it. What decides is how much
+room the selection step had to overfit in the first place — if there was little,
+there is little for the outer loop to remove.
+
+**It removes most when the search is large relative to the data.** Tibshirani
+and Tibshirani (2009) measured the optimism of a tuned cross-validation score
+across two regimes and found it material only when the features outnumber the
+observations: with 400 observations and 100 features, the worst optimism they
+saw on pure noise was under 3 points, while at 40 observations and 1000
+features the same classifier's own score read 0.384 where the truth was 0.5.
+Wide data, a big grid, and a preprocessing step that the loop has to redo are
+where the money is.
+
+**It removes little when the data is tall and the search is small.** Wilimitis
+and Walsh (2023) ran exactly that case — 41,121 hospital visits, a modest
+parameter grid — and nested cross-validation came back *marginally worse* than
+the flat methods they compared it against, at a cost that grew quadratically in
+the fold count. They are explicit about why: with far more observations than
+features and a small search, there was almost no selection bias present to
+remove. Their recommendation, and this guide's, is to nest when the feature
+space is wide relative to the sample, when many algorithms and parameters are
+in play, and when the compute is affordable.
+
+**Do not read that as "small data is fine without it".** Vabalas et al. (2019)
+simulated pure noise, where the honest accuracy is 50%, and found flat
+cross-validation still reporting better than chance at a sample size of 1000,
+while nested cross-validation sat at chance across the whole range they tested.
+The bias thins with sample size; it does not conveniently disappear.
+
+One caveat about this package's own scope, from the same paper. Vabalas et al.
+compared leaving *feature selection* outside the loop against leaving
+*parameter tuning* outside it, and the first was far more damaging — nesting
+the tuning alone did not rescue the estimate. `nested_tune_grid()` orchestrates
+tuning, so if your pipeline selects features, put that step in the `recipe`
+inside the `workflow` you hand it. Everything in the workflow is re-estimated
+inside every fold; anything you did to the data *before* calling this package
+is not, and no result here can tell you that happened.
+
+By those lights the example on this page sits at the modest end: `mtcars` has
+more rows than columns, the grid has `r nrow(grid)` points, and there is no
+feature selection at all. It is here because it builds in seconds, not because
+it is where nesting pays best.
 
 ## Reproducibility
 
