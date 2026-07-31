@@ -2,6 +2,28 @@
 
 ## nestedtune 0.0.0.9000
 
+- A parallel run now refuses to start when a worker is holding an older
+  install of nestedtune, instead of failing every fold with an opaque
+  error. Workers are separate R processes, and the outer loop reaches
+  into each one’s own copy of the package by name — so a worker whose
+  copy predates a function the loop needs loads the package quite
+  happily and then dies on every fold. The startup check now asks each
+  worker which of this session’s internal functions its copy is missing,
+  and the error names them, along with the fix: reinstall, then restart
+  the pool. The restart matters — a running worker keeps the version it
+  has already loaded, so reinstalling underneath one changes nothing.
+
+- A parallel run started on a worker pool that cannot be cancelled now
+  says so, once, at the start of the run. `mirai::daemons(n)` gives you
+  a pool that stops when you interrupt;
+  `mirai::daemons(n, dispatcher = FALSE)` gives you one that does not,
+  and the two are indistinguishable from the outside. On the second
+  kind, interrupting a run hands you back your prompt while the outer
+  folds carry on computing results nobody will read. Previously only the
+  documentation mentioned this. The pool is not refused — its results
+  are correct, and only the ability to stop it is missing — so this is a
+  warning, of class `nestedtune_pool_not_cancellable`.
+
 - Running the outer folds in parallel now sends each fold one copy of
   your data instead of one copy per inner resample. A split carries the
   whole frame it indexes, and sending a fold to a worker serializes it,
