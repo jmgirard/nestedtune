@@ -31,7 +31,7 @@ cancelled says so once.
 
 ## Acceptance criteria
 
-- [ ] AC1: the pre-flight probe returns one record per daemon carrying the
+- [x] AC1: the pre-flight probe returns one record per daemon carrying the
       symbols it was asked for and which of them it could not find, validated
       positively by shape the way `is_fold_record()` is — a length-1 character
       vector is rejected as a non-answer, because a `miraiError` is exactly
@@ -78,7 +78,7 @@ cancelled says so once.
 
 ## Tasks
 
-- [ ] T1: replace the probe's logical answer with a per-daemon record and its
+- [x] T1: replace the probe's logical answer with a per-daemon record and its
       positive validator, superseding `loaded_answer()`
       (`R/parallel.R:380-382`); amend the contract test at
       `tests/testthat/test-parallel-classify.R:503`, which encodes the answer
@@ -103,8 +103,33 @@ cancelled says so once.
 - 2026-07-30: plan gate chose a symbol-capability probe over comparing the daemon's package version because `DESCRIPTION`'s `Version:` has read `0.0.0.9000` since M01 (`fafb31f`, the only commit touching it in 23 milestones), so a stale daemon reports the host's own string and a version check cannot fire; falsified by a daemon whose symbols are all present while its code differs, which is the build-hash candidate this leaves in Out.
 - 2026-07-30: plan gate chose proving the probe against a live pool with an absent symbol over installing a stubbed package into a scratch library, because priming a daemon reaches every daemon and erases the heterogeneity such a fixture exists to create (`test-parallel-detection.R:86-88`); falsified by a failure mode that only a genuinely mixed pool exhibits.
 - 2026-07-30: plan gate chose warning on a `dispatcher = FALSE` pool over refusing it, because the pool computes correct results and only cancellation is unavailable, so GP3's refuse-don't-warn stance does not reach it; falsified by evidence that an uncancellable pool produces a wrong result rather than an uninterruptible one.
+- 2026-07-30: T1 done. Probe returns a per-daemon record; `daemon_report()` replaces `loaded_answer()`. `preflight_outcome()`'s new `incompatible` branch landed here too (same function), so T2 is code-complete and awaits its own tests. Three test call sites built bare logicals; a `reports()` helper builds records in place so no line moved. Missed one at `test-parallel-identity.R:112` — a mock fabricating `FALSE` silently reclassified from cannot_load to no_response, caught by the full suite. Ledger rows 520/527/528 shifted 37 lines and were repaired (the M16/M21 drift trap).
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions
+
+### 2026-07-30 (T1): the probe asks for the host's whole namespace, not the two symbols the worker calls
+
+The dispatch path resolves exactly two names through the daemon's namespace —
+`rehydrate_payload` (`R/parallel.R:232`) and `nested_fold_fit` (`R/parallel.R:585`)
+— so a two-name check is the precise test of "can this daemon run this fold".
+The probe instead sends `ls(asNamespace("nestedtune"))`, all 106 names, and each
+daemon reports which it lacks. Measured at 2,627 B serialized, against a per-fold
+payload already in the megabytes, so the width is free.
+
+Chosen at the implementation gate because a hand-maintained list is the defect
+being fixed: M23 added the second name and nothing made the pre-flight notice. A
+source-scanning drift test was the runner-up and would have kept the precision,
+but it guards a list that exists only to be guarded. Deliberately stricter than
+"can run this fold": a daemon missing a symbol this run does not reach is still
+running different code, which is the IP2 hazard the build-hash candidate holds.
+
+`ls()` rather than `names()` because a namespace carries dotted bookkeeping
+objects that differ between an installed package and one under pkgload, which
+would report every daemon as incompatible. Host and daemons are symmetric under
+both — primed by `load_all()` in the suite, installed under `R CMD check`.
+
+Falsified by a legitimate pool this refuses — a daemon whose namespace differs
+for a reason unrelated to which build it is running.
 
 ## Review

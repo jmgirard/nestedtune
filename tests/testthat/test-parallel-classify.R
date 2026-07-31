@@ -183,7 +183,7 @@ test_that("dispatch refuses daemons that cannot load the package", {
   # AC1 asks for is built in test-parallel-detection.R, where the scratch
   # library keeps mirai and drops only the target.
   expect_error(
-    check_daemons_can_load(preflight_outcome(FALSE)),
+    check_daemons_can_load(preflight_outcome(reports(FALSE))),
     class = "nestedtune_daemons_cannot_load"
   )
 })
@@ -290,7 +290,7 @@ test_that("a pool with no daemon at all is a non-response, not a load failure", 
 # TRUE loaded, FALSE could not load, NA never answered.
 
 test_that("a pool where every daemon loaded passes", {
-  status <- preflight_outcome(c(TRUE, TRUE, TRUE))
+  status <- preflight_outcome(reports(TRUE, TRUE, TRUE))
   expect_identical(status$outcome, "ok")
   expect_identical(status$total, 3L)
   expect_true(check_daemons_can_load(status))
@@ -299,7 +299,7 @@ test_that("a pool where every daemon loaded passes", {
 test_that("one loadable daemon no longer passes the check for the whole pool", {
   # The regression proper. Under M07's single-task probe this pool answered
   # TRUE and dispatched; every fold landing on daemon 2 then failed opaquely.
-  status <- preflight_outcome(c(TRUE, FALSE, TRUE))
+  status <- preflight_outcome(reports(TRUE, FALSE, TRUE))
   expect_identical(status$outcome, "cannot_load")
   expect_identical(status$cannot_load, 1L)
   expect_identical(status$total, 3L)
@@ -312,7 +312,7 @@ test_that("one loadable daemon no longer passes the check for the whole pool", {
 })
 
 test_that("a load failure keeps the install and prime remedies", {
-  err <- expect_error(check_daemons_can_load(preflight_outcome(c(FALSE, FALSE))))
+  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(FALSE, FALSE))))
   msg <- conditionMessage(err)
   expect_match(msg, "Install the package")
   expect_match(msg, "pkgload::load_all")
@@ -322,7 +322,7 @@ test_that("a timeout is not reported as a package that cannot be loaded", {
   # The second M07 defect: one message covered both outcomes, so a daemon that
   # was merely slow was reported with install-and-prime remedies -- telling a
   # user to install what they already have.
-  status <- preflight_outcome(c(TRUE, NA), timeout = 1500)
+  status <- preflight_outcome(reports(TRUE, NA), timeout = 1500)
   expect_identical(status$outcome, "no_response")
   expect_identical(status$no_answer, 1L)
 
@@ -339,7 +339,7 @@ test_that("a timeout is not reported as a package that cannot be loaded", {
 })
 
 test_that("the timeout message points at the option that raises the bound", {
-  err <- expect_error(check_daemons_can_load(preflight_outcome(c(NA, NA), timeout = 250)))
+  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(NA, NA), timeout = 250)))
   expect_match(conditionMessage(err), "nestedtune.preflight_timeout")
 })
 
@@ -347,7 +347,7 @@ test_that("a raised bound is reported as a number, not in scientific notation", 
   # cli renders an interpolated numeric through as.character(), which turns
   # 300000 into "3e+05" -- in the very bullet telling the user to raise that
   # number. Every bound the earlier tests use is small enough to miss this.
-  err <- expect_error(check_daemons_can_load(preflight_outcome(NA, timeout = 300000)))
+  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(NA), timeout = 300000)))
   msg <- conditionMessage(err)
   expect_match(msg, "300000")
   expect_false(grepl("e+0", msg, fixed = TRUE))
@@ -357,7 +357,7 @@ test_that("a pool failing both ways names both facts", {
   # M10-D1: installing is the actionable fix, so the load failure carries the
   # class -- but staying silent on the non-answer would only make the user
   # rediscover it on the next run.
-  status <- preflight_outcome(c(TRUE, FALSE, NA), timeout = 2000)
+  status <- preflight_outcome(reports(TRUE, FALSE, NA), timeout = 2000)
   expect_identical(status$outcome, "cannot_load")
   expect_identical(status$cannot_load, 1L)
   expect_identical(status$no_answer, 1L)
@@ -374,7 +374,7 @@ test_that("a pool failing both ways names both facts", {
 test_that("both causes answer to one shared class", {
   # M10-D1: a handler that only cares that the startup check failed catches
   # either, without having to list both names.
-  for (status in list(preflight_outcome(FALSE), preflight_outcome(NA))) {
+  for (status in list(preflight_outcome(reports(FALSE)), preflight_outcome(reports(NA)))) {
     expect_error(
       check_daemons_can_load(status),
       class = "nestedtune_daemons_unusable"
@@ -483,7 +483,7 @@ test_that("the abort names the package actually probed", {
   # The probe takes a `package` argument, so a message hard-coding nestedtune
   # is false whenever it is used -- as the real mixed-pool test does, probing
   # for ranger.
-  status <- preflight_outcome(c(TRUE, FALSE), package = "ranger")
+  status <- preflight_outcome(reports(TRUE, FALSE), package = "ranger")
   err <- expect_error(check_daemons_can_load(status))
   expect_match(conditionMessage(err), "ranger")
 })
@@ -500,15 +500,52 @@ test_that("the option, not an argument, is what carries the bound", {
   )
 })
 
-test_that("a daemon answering something other than TRUE or FALSE counts as silent", {
+test_that("a daemon answering something other than a report counts as silent", {
   # stop_mirai() resolves an unanswered probe to errorValue 20, and a daemon
-  # that died mid-probe yields some other non-logical. Neither is an answer, so
+  # that died mid-probe yields some other non-record. Neither is an answer, so
   # both classify as non-response rather than as a load failure -- the same
   # positive-shape discipline classify_fold_result() rests on.
-  answers <- list(TRUE, structure(20L, class = c("errorValue", "try-error")))
+  answers <- list(
+    list(loaded = TRUE, missing = character()),
+    structure(20L, class = c("errorValue", "try-error"))
+  )
   status <- preflight_outcome(answers)
   expect_identical(status$outcome, "no_response")
   expect_identical(status$no_answer, 1L)
+})
+
+test_that("a miraiError is never read as a capability report", {
+  # The shape that makes is.list() load-bearing rather than incidental: a
+  # miraiError is a length-1 CHARACTER vector carrying the task's own error
+  # message, so a validator admitting a bare string would read a daemon's error
+  # text as the list of symbols it is missing -- reporting a mismatch that the
+  # daemon never claimed, and hiding the real failure.
+  fake <- structure(
+    "Error in requireNamespace(): no such package",
+    class = c("miraiError", "errorValue", "try-error")
+  )
+  expect_null(daemon_report(fake))
+
+  status <- preflight_outcome(list(fake))
+  expect_identical(status$outcome, "no_response")
+  expect_identical(status$no_answer, 1L)
+  expect_identical(status$incompatible, 0L)
+})
+
+test_that("a report is rejected unless every field has the right shape", {
+  # Positive validation means each field is checked, not just the names: a
+  # record whose `missing` came back as something other than a character vector
+  # is a malformed answer, not a daemon with nothing missing.
+  expect_null(daemon_report(list(loaded = TRUE)))
+  expect_null(daemon_report(list(loaded = NA, missing = character())))
+  expect_null(daemon_report(list(loaded = "yes", missing = character())))
+  expect_null(daemon_report(list(loaded = TRUE, missing = 1L)))
+  expect_null(daemon_report(list(loaded = TRUE, missing = NA_character_)))
+  expect_null(daemon_report(list(loaded = c(TRUE, TRUE), missing = character())))
+  expect_identical(
+    daemon_report(list(loaded = TRUE, missing = "fold_task")),
+    list(loaded = TRUE, missing = "fold_task")
+  )
 })
 
 test_that("dispatch accepts daemons primed with the package", {

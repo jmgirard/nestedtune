@@ -346,17 +346,43 @@ preflight_timeout <- function(call = rlang::caller_env()) {
 # general: a version whose send blocked on a saturated pool would hang here, and
 # no R-side bound could break it, setTimeLimit() not reaching a blocked mirai
 # call (M14).
+# What the host expects a daemon's copy of the package to contain.
+#
+# `ls()` rather than `names()`: it drops the dotted internals a namespace
+# carries for its own bookkeeping, which differ between an installed package and
+# one under pkgload and would report every daemon as incompatible.
+#
+# The whole namespace rather than the two symbols dispatch_folds() actually
+# resolves by name (`rehydrate_payload` at :232, `nested_fold_fit` at :585).
+# A hand-maintained list of those two is the defect this check exists to
+# catch -- M23 added the second and nothing made the pre-flight notice -- so the
+# manifest is derived, never written down. It costs 2,627 B serialized for 106
+# names against a per-fold payload already in the megabytes.
+daemon_symbol_manifest <- function(package = "nestedtune") {
+  ls(asNamespace(package))
+}
+
 daemons_load_status <- function(package = "nestedtune",
                                 timeout = preflight_timeout(call = call),
+                                symbols = daemon_symbol_manifest(package),
                                 call = rlang::caller_env()) {
   # Forced before anything is dispatched. Left lazy, the bound is not read until
   # after everywhere() has already sent the probe, so a typo in the option costs
   # a full cold load on every daemon before the user is told the option is bad.
   force(timeout)
 
+  # One round trip answers both questions. The symbol check is nested inside the
+  # load branch because asNamespace() on a package that will not load raises,
+  # and a raised probe comes back as a miraiError -- a length-1 CHARACTER vector,
+  # which daemon_report() rejects, turning a clean "cannot load" into a silent
+  # daemon and losing the actionable message.
   probe <- mirai::everywhere(
-    requireNamespace(package, quietly = TRUE),
-    .args = list(package = package)
+    if (requireNamespace(package, quietly = TRUE)) {
+      list(loaded = TRUE, missing = setdiff(symbols, ls(asNamespace(package))))
+    } else {
+      list(loaded = FALSE, missing = character())
+    },
+    .args = list(package = package, symbols = symbols)
   )
   deadline <- Sys.time() + timeout / 1000
   while (mirai::unresolved(probe) && Sys.time() < deadline) {
@@ -373,12 +399,31 @@ daemons_load_status <- function(package = "nestedtune",
 #
 # Same discipline as classify_fold_result(): recognise the expected shape and
 # treat everything else as a non-answer, rather than trying to enumerate the
-# ways mirai can hand back something that is not a logical. A stopped probe
+# ways mirai can hand back something that is not a report. A stopped probe
 # yields errorValue 20; a daemon that died mid-probe yields something else
 # again. Neither is a report that the package is missing, so neither may be
 # reported as one.
-loaded_answer <- function(x) {
-  if (is.logical(x) && length(x) == 1L && !is.na(x)) as.logical(x) else NA
+#
+# `is.list()` is what keeps mirai's failure shapes out, and it is load-bearing
+# rather than incidental: a miraiError is a length-1 character vector carrying
+# the task's message, so any validator admitting a bare string would read a
+# daemon's error text as a capability report. `[[` and `%in% names(x)` rather
+# than `$` for the reason given at the top of this file -- `$` partial-matches
+# on a plain list, so `x$loaded` would answer a list carrying `loaded_at`.
+#
+# Returns NULL for a non-answer rather than NA, so the caller distinguishes
+# "this daemon said nothing" from any value a daemon could legitimately report.
+daemon_report <- function(x) {
+  if (!is.list(x) || !all(c("loaded", "missing") %in% names(x))) {
+    return(NULL)
+  }
+  loaded <- x[["loaded"]]
+  missing <- x[["missing"]]
+  if (!is.logical(loaded) || length(loaded) != 1L || is.na(loaded) ||
+        !is.character(missing) || anyNA(missing)) {
+    return(NULL)
+  }
+  list(loaded = loaded, missing = missing)
 }
 
 # The three-way outcome, kept separate from both the probing and the message so
@@ -389,12 +434,27 @@ loaded_answer <- function(x) {
 # actionable fix, and the message still names the non-answers (M10-D1).
 preflight_outcome <- function(answers, timeout = NA_real_,
                               package = "nestedtune") {
-  answers <- vapply(as.list(answers), loaded_answer, logical(1))
-  total <- length(answers)
-  cannot_load <- sum(!answers, na.rm = TRUE)
-  no_answer <- sum(is.na(answers))
+  reports <- lapply(as.list(answers), daemon_report)
+  answered <- !vapply(reports, is.null, logical(1))
+  loaded <- vapply(
+    reports, function(r) !is.null(r) && r[["loaded"]], logical(1)
+  )
+  absent <- lapply(reports[loaded], function(r) r[["missing"]])
+
+  total <- length(reports)
+  cannot_load <- sum(answered & !loaded)
+  incompatible <- sum(lengths(absent) > 0L)
+  no_answer <- sum(!answered)
+  missing_symbols <- sort(unique(unlist(absent, use.names = FALSE)))
+
+  # `incompatible` sits below `cannot_load` and above `no_response`, extending
+  # rather than reordering M10-D1's ladder: the class goes to whichever failure
+  # names the most actionable fix. Installing beats reinstalling, and both beat
+  # "some daemon said nothing", which names no fix at all.
   outcome <- if (cannot_load > 0L) {
     "cannot_load"
+  } else if (incompatible > 0L) {
+    "incompatible"
   } else if (no_answer > 0L || total == 0L) {
     "no_response"
   } else {
@@ -404,6 +464,8 @@ preflight_outcome <- function(answers, timeout = NA_real_,
     outcome = outcome,
     total = total,
     cannot_load = cannot_load,
+    incompatible = incompatible,
+    missing_symbols = if (is.null(missing_symbols)) character() else missing_symbols,
     no_answer = no_answer,
     timeout = timeout,
     package = package
