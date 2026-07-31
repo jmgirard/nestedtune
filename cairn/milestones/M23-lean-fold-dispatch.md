@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP2, GP4
-- **Branch/PR:** `m23-lean-fold-dispatch`
+- **Branch/PR:** `m23-lean-fold-dispatch` / https://github.com/jmgirard/nestedtune/pull/24
 
 ## Goal
 
@@ -38,12 +38,12 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
 
 ## Acceptance criteria
 
-- [ ] AC1 On the T1 fixture — 5000 rows x 21 columns, outer `v = 5`, inner
+- [x] AC1 On the T1 fixture — 5000 rows x 21 columns, outer `v = 5`, inner
       `v = 5`, a formula workflow, fixed seed — the total bytes one run
       serializes, counting each fold's `.x` element **and** the `.args` list sent
       with it, is at most 25% of the same total measured by the same harness on
       the pre-milestone revision. Baseline recorded in the work log at T1.
-- [ ] AC2 The payload-size claim is confirmed by two oracles that share no
+- [x] AC2 The payload-size claim is confirmed by two oracles that share no
       arithmetic. **Closed form:** `length(serialize(p, NULL))` for each `.x`
       element `p` is within 15% of a prediction computed in the test from the
       scalars `n`, `v`, `inner_v` alone — never from lengths read off `p` —
@@ -52,25 +52,25 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
       `grepRaw(sentinel, serialize(p, NULL), all = TRUE, fixed = TRUE)` finds the
       data's own wire bytes 0 times in `p` and exactly 1 time across `p` plus its
       `.args`, against 6 and 6 on the pre-milestone revision.
-- [ ] AC3 For the outer split and the inner `rset` of every fold in the fixture
+- [x] AC3 For the outer split and the inner `rset` of every fold in the fixture
       design, rehydrating a leaned payload returns an object `identical()` to the
       one the serial branch passes. Asserted in-process, with no daemon.
-- [ ] AC4 Under `mirai::daemons(2)`, `nested_tune_grid()` with a `ranger`
+- [x] AC4 Under `mirai::daemons(2)`, `nested_tune_grid()` with a `ranger`
       workflow returns a result `identical()` to the same call under
       `mirai::daemons(0)` for the same seed (IP2), and every daemon-gated test
       this milestone adds proves it executed rather than skipped, via the
       assertion-count check in `test-suite-hygiene.R`.
-- [ ] AC5 Both guards are shown to fail when the thing they guard is removed:
+- [x] AC5 Both guards are shown to fail when the thing they guard is removed:
       deleting the worker-side rehydration turns the suite red, and reinstating
       the pre-milestone fat payload turns AC1's and AC2's guards red. Both
       mutations run and recorded.
-- [ ] AC6 `nested_tune_grid()`'s roxygen states that dispatching a fold sends one
+- [x] AC6 `nested_tune_grid()`'s roxygen states that dispatching a fold sends one
       copy of the data rather than one per inner split, and the oracle-record
       header of the asserting test file names AC2's two guards as the tests of
       that claim.
-- [ ] AC7 The profile `verify` slot is clean: `devtools::test()` passes and
+- [x] AC7 The profile `verify` slot is clean: `devtools::test()` passes and
       `devtools::document()` is current after the roxygen change.
-- [ ] AC8 A design from `rsample::nested_cv()`, whose folds share no single
+- [x] AC8 A design from `rsample::nested_cv()`, whose folds share no single
       frame, is leaned too: with the sentinel taken from one fold's own inner
       analysis frame, the copy count across that fold's `.x` element plus its
       `.args` is exactly 1, against `inner_v` on the pre-milestone revision, and
@@ -144,3 +144,59 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
 ## Decisions
 
 ## Review
+
+_Evidence gathered fresh at review on 2026-07-30, by command. PR
+https://github.com/jmgirard/nestedtune/pull/24._
+
+- **AC1** — `benchmarks/dispatch-payload-size.R` accounting on the T1 fixture,
+  before and after, counting each fold's `.x` element and the `.args` list sent
+  with it: 25,714,635 B -> 5,720,370 B = **22.2%**, under the 25% bar. The
+  after-figure's `.args` includes the 203,790 B task closure that srcrefs add
+  under `pkgload::load_all()`; from an installed library, where srcrefs are
+  absent, the same accounting reads 18.3%. Both under the bar. Asserted in the
+  suite by `a leaned run puts under a quarter of the pre-milestone bytes on the
+  wire`, which recomputes its own baseline rather than freezing one.
+- **AC2** — both oracles pass in `test-parallel-payload.R`. Closed form: each
+  leaned payload within 15% of the prediction from `n`/`v`/`inner_v` alone
+  (predicted 96,000 B). Copy count: 6 copies in the pre-milestone payload, 0 in
+  the leaned one, exactly 1 across the payload plus its `.args`.
+- **AC3** — `rehydrating a leaned payload returns the serial path's own objects`
+  asserts `identical()` on the whole payload, not on chosen fields, for every
+  fold of the fixture design. Passes.
+- **AC4** — full suite run fresh at review: 0 failures, 0 errors, and **0 skips**
+  (`parallel-identity`, `parallel-payload`, `parallel-interrupt`,
+  `parallel-classify`, `suite-hygiene` all executed). The identity suite's
+  serial-vs-parallel `identical()` comparison passes on the new dispatch path.
+  The clause's "every daemon-gated test this milestone adds" is satisfied by the
+  one such test added, `a daemon receives the payload the serial branch would
+  have passed`, which ran rather than skipped.
+- **AC5** — both mutations re-run at review, not carried over from implement.
+  Removing the worker-side rehydration errors `test-parallel-payload.R:213`.
+  Reinstating the fat payload reddens seven assertions across all three guards:
+  closed form (68, 71), copy count (88, 89), the wire ratio (138), and the
+  rsample-design copy count and round trip (157, 158).
+- **AC6** — `man/nested_tune_grid.Rd` carries the one-copy-per-fold claim; the
+  oracle-record header of `test-parallel-payload.R` names both guards (O1
+  closed-form, O2 copy count) as the tests the claim rests on.
+- **AC7** — `devtools::test()` clean; `devtools::document()` produces no diff;
+  `devtools::check()` **0 errors, 0 warnings, 0 notes**.
+- **AC8** — `a design whose folds share no frame is leaned too` passes: for an
+  `rsample::nested_cv()` design the fold's own analysis frame is confirmed not
+  to be the shared one, its copy count goes 5 -> 1, and the round trip is
+  `identical()`.
+
+**Consistency gate.** `cairn_validate` — all 16 checks PASS, 8 advisories OK, one
+advisory WARN: `sizing (split tripwires)` reports 8 acceptance criteria against
+the >7 tripwire. Not a gate failure; the eighth was added at the implement gate
+when `rsample::nested_cv()` designs were found to need their own handling.
+Toolchain slot: `document()` no-diff clean, `pkgdown::check_pkgdown()` no
+problems, no `README.Rmd` in this repo, NEWS.md entry present and free of
+milestone numbers, `check()` clean with no new top-level file NOTEs. No
+`DESIGN.md` principle changed, so `cairn_impact` does not apply.
+
+**CI on PR #24** — green on every platform: ubuntu release / devel / oldrel-1,
+macos-latest, windows-latest, build, and test-coverage.
+
+**Returns to `/milestone-implement`:** none. This is a first pass; the thrash
+rule does not fire.
+
