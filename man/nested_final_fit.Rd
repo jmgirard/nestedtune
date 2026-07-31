@@ -57,10 +57,14 @@ instability those selections reveal, and not to this model.
 
 
 Report the estimate from \code{\link[=collect_metrics]{collect_metrics()}} on the \code{\link[=nested_tune_grid]{nested_tune_grid()}}
-result as this model's performance. That number is an approximately
-unbiased — if anything slightly conservative — estimate of how the whole
-tune-and-fit procedure that produced this model performs on new data from the
-same population, measured on data no part of the procedure ever touched.
+result as this model's performance. That number estimates the k-fold test
+error of the whole tune-and-fit procedure that produced this model, measured
+on data no part of the procedure ever touched. Expect it to run slightly
+pessimistic: each outer fold trains on its analysis rows alone, so every
+model it scores is built on less data than this one. Varma and Simon (2006)
+measured a 4.2-point overshoot from that effect at n = 40, and Wilimitis and
+Walsh (2023) about 1-2\% of AUROC on 41,121 records. The offset shrinks with
+fold size and is not a correction to apply.
 
 The model in hand has no honest number of its own. Everything computable from
 its training data was consumed by selection or by fitting, \strong{including the
@@ -161,6 +165,14 @@ final
 
 predict(extract_workflow(final), new_data = mtcars[1:3, ])
 \dontshow{\}) # examplesIf}
+}
+\references{
+Varma, S., & Simon, R. (2006). Bias in error estimation when using
+cross-validation for model selection. \emph{BMC Bioinformatics}, 7, 91.
+
+Wilimitis, D., & Walsh, C. G. (2023). Practical considerations and applied
+examples of cross-validation for model development and evaluation in health
+care: Tutorial. \emph{JMIR AI}, 2, e49023.
 }
 \seealso{
 \code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=extract_workflow]{extract_workflow()}}
