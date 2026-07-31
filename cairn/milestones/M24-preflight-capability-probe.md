@@ -1,6 +1,6 @@
 # M24: The pre-flight tells the truth about the pool
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -111,7 +111,7 @@ cancelled says so once.
       Amended 2026-07-30: pointing the row at the `timeout = 30000` line, as
       planned, would break both accounting guards, which key on the line
       carrying the call's name.
-- [ ] T12: re-run the full gate — suite, `check()`, and CI green on every leg
+- [x] T12: re-run the full gate — suite, `check()`, and CI green on every leg
       including `test-coverage` — before returning to review.
 
 ## Work log
@@ -137,6 +137,9 @@ cancelled says so once.
 - 2026-07-30: T10 done. `daemon_symbol_manifest()` returns `character()` when the host has no copy of the probed package, restoring what the `package` argument is for. Unreachable for the package's own probe, so it cannot weaken the real check. Question gate chose this over a classified refusal, which would have removed the capability rather than restored it.
 - 2026-07-30: T8, T10 and T11 landed in one checkpoint: all three move `helper-time-budget.R`'s ledger, and splitting them would have produced commits whose verify slot could not pass.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
+
+- 2026-07-30: T12 done. Full gate re-run: suite 1593 pass / 0 fail, `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 57s), `document()` no diff. CI green on both gating workflows at `de4e31f` -- and the coverage job now RUNS the heterogeneous-pool test rather than failing it (1.4 s, FAIL 0), which is the evidence F15 is actually fixed rather than hidden. Four guard inversions, one red test each: dropping `vec-sep2`, dropping `qty()`, making the manifest raise again, and adding a call to the sent expression.
+- 2026-07-30: all send-back tasks done, verify slot clean, CI green; status review. Return count 1.
 
 ## Decisions
 
