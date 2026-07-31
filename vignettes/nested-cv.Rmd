@@ -159,14 +159,17 @@ Expect that number to run slightly **pessimistic** — to look a little worse
 than the procedure deserves. The reason is arithmetic rather than statistical:
 every outer fold trains on its analysis rows only, so every model scored is
 built on less data than the model you finally deploy, and less data usually
-means worse predictions. Two measurements bracket the size of it. Varma and
-Simon (2006) found a nested estimate of 54.2% against a true 50.0% on
-deliberately null data with 40 samples — a 4.2-point overshoot they attribute
-directly to training on 39 rows rather than 40. Wilimitis and Walsh (2023),
-working on 41,121 hospital visits, found nested cross-validation the most
-pessimistic of every method they compared, by roughly 1–2% of AUROC and 5–9%
-of AUPR against a held-out benchmark. The offset therefore shrinks as folds
-get larger, but it does not vanish, and it points the same way in both.
+means worse predictions. Published measurements put the size of it at the two
+ends of the sample-size range. Varma and Simon (2006) found a nested estimate
+of 54.2% against a true 50.0% on deliberately null data with 40 samples — a
+4.2-point overshoot they attribute directly to training on 39 rows rather than
+40. Wilimitis and Walsh (2023), working on 41,121 hospital visits, found nested
+cross-validation the most pessimistic of every method they compared, by roughly
+1–2% of AUROC and 5–9% of AUPR against a held-out benchmark; on the regression
+half of the same study, their nested mean absolute error came in at 2.39 where
+the non-nested methods gave 2.38. So the offset shrinks sharply as the training
+sets grow — from percentage points at n = 40 to the third decimal at n = 41,121
+— but it points the same way throughout.
 
 Two cautions on reading that. The gap is a property of the estimator, not a
 prediction about any one run: at the sample size on this page it is small next
@@ -363,17 +366,19 @@ and Tibshirani (2009) measured the optimism of a tuned cross-validation score
 across two regimes and found it material only when the features outnumber the
 observations: with 400 observations and 100 features, the worst optimism they
 saw on pure noise was under 3 points, while at 40 observations and 1000
-features the same classifier's own score read 0.384 where the truth was 0.5.
+features a shrunken-centroid classifier's own score read 0.384 where the truth
+was 0.5.
 Wide data, a big grid, and a preprocessing step that the loop has to redo are
 where the money is.
 
 **It removes little when the data is tall and the search is small.** Wilimitis
 and Walsh (2023) ran exactly that case — 41,121 hospital visits, a modest
-parameter grid — and nested cross-validation came back *marginally worse* than
-the flat methods they compared it against, at a cost that grew quadratically in
-the fold count. They are explicit about why: with far more observations than
-features and a small search, there was almost no selection bias present to
-remove. Their recommendation, and this guide's, is to nest when the feature
+parameter grid — and nesting bought nothing: its reported score was fractionally
+more conservative than the flat methods they compared it against, which is the
+pessimism above rather than a correction, and it cost time that grew
+quadratically in the fold count. They are explicit about why: with far more
+observations than features and a small search, there was almost no selection
+bias present to remove. Their recommendation, and this guide's, is to nest when the feature
 space is wide relative to the sample, when many algorithms and parameters are
 in play, and when the compute is affordable.
 

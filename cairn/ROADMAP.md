@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 19 of 24 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M25 | The number has a name, and the docs say which | in-progress | — | normal | milestones/M25-estimand-documented.md |
+| M25 | The number has a name, and the docs say which | review | — | normal | milestones/M25-estimand-documented.md |
 | M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |
 | M23 | A worker is sent the fold, not six copies of the data | done | — | normal | milestones/archive/M23-lean-fold-dispatch.md |
 | M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |

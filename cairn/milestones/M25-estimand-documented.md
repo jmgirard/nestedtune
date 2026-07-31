@@ -1,6 +1,6 @@
 # M25: The number has a name, and the docs say which
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -118,7 +118,7 @@ internal.
 - [x] T6: Add the `std_err` caveat to `collect_metrics.nested_results()`'s
       roxygen (`R/nested-results.R:127-146`); `devtools::document()`.
 - [x] T7: Write the citation-resolution test.
-- [ ] T8: Render the vignette and read it end to end as a reader would
+- [x] T8: Render the vignette and read it end to end as a reader would
       (LESSONS, M08: assertions on a built object cannot see the part a reader
       meets); NEWS.md entry; full `devtools::check()` and
       `pkgdown::check_pkgdown()`.
@@ -141,6 +141,9 @@ internal.
 - 2026-07-31: guard rework — parenthetical and comma-list author forms now match (`Gauran, Ombao and Yu (2025)` was building a key from the second surname); inline `r` spans stripped like fenced chunks, which the header's own rationale already covered; shelf resolution now opens the page and requires its `**Citation.**` paragraph to name the surname and year, so an emptied or repurposed page fails; `R/` roxygen citations added to the sweep; particle surnames (`van der Laan`) parse whole; unparseable entries get their own assertion rather than being misreported under resolution; direction 1's skip replaced by an assertion that citations exist at all.
 - 2026-07-31: the reworked guard found two defects in itself before I did — the three-author narrative form, and a fixed 7-line citation window that overran into `**Provenance.**`, whose `sources/<citekey>.pdf` path contains the surname, so every page matched its own key regardless of what its citation said. Bounded to the citation paragraph. Re-verified by inversion across eight cases: parenthetical-with-no-entry, emptied page, repurposed page, roxygen citation with no page, heading rename, narrative-with-no-entry, uncited entry all red; inline `r` correctly does not fire. Tree restored clean after each.
 - 2026-07-31: two [O] findings accepted rather than fixed, and disclosed in the guard's header — the matcher over-fires on any capitalized token before a parenthesized year (`Appendix (2019)`), chosen deliberately since a false red is a reword and the opposite error is a citation losing its evidence; and roxygen `@references` entries are not parsed as entries, so an orphaned one is not detected. Scope note: AC6 asks only for the vignette's References section, and the guard now also covers `R/` roxygen — more than the criterion requires, not less.
+- 2026-07-31: T8 done. NEWS.md entry; `pkgdown::check_pkgdown()` clean; `devtools::check()` **Status: OK — 0 errors, 0 warnings, 0 notes** on the shipped state, run with `ranger` installed so the vignette's `knit_exit()` guard did not let the new material past unexecuted.
+- 2026-07-31: reading the rendered guide end to end caught three things no assertion would have. The pessimism paragraph's evidence was entirely in classification units (accuracy, AUROC, AUPR) while the worked example is regression, so Wilimitis and Walsh's regression datapoint (nested MAE 2.39 against 2.38) was added and the framing changed from "two measurements bracket it" to the two ends of the sample-size range. "The same classifier" was wrong — Tibshirani and Tibshirani swap LDA for shrunken centroids in the p >> n cell — and is now named correctly. And "nested came back marginally worse" read as a verdict on the method rather than as the pessimism already explained, so it now says nesting bought nothing and names the connection.
+- 2026-07-31: checked for the contradiction guard-doctrine §9 warns about, a section disagreeing with itself: the final-fit comparison already computes its direction with `ifelse()` and says not to read the direction as the lesson, which agrees with the new pessimism paragraph's caution rather than fighting it. No change needed.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings. Three fixed before the gate — AC3 re-sourced off `bates2023` (whose own reference page records the statistic as different and the effect unmeasured for it) onto `bengio2004` + `gauran2025`; AC4(b)'s "fine grid" condition dropped as false of this vignette's six-point grid and unanimous `min_n`; AC7 pointed at PROFILE's gate definition and required `ranger` present, since `knit_exit()` made "vignette rebuilt" vacuously satisfiable. Three became gate questions (estimand choice, the `mtcars` claim, citation form); one (AC6 checking a superset of "citations this milestone adds") accepted as satisfied a fortiori — there are zero such citations in the tree today.
 - 2026-07-31: plan gate chose naming the estimand as the conditional k-fold test error (bayle2026's R_n) over bates2023's marginal Err because Err is the quantity luo2026 proves is not inferable at N/n ≈ 1.11, so naming it would overclaim; falsified by a source establishing that the outer-fold mean estimates the marginal quantity at this sample ratio.
 - 2026-07-31: plan gate chose correcting the `mtcars` justification over re-cutting the vignette onto a wide example because the re-cut invalidates every inline number, both figures and the runtime budget; falsified by the corrected paragraph proving unwritable without the example itself changing.
