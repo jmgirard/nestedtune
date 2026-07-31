@@ -371,6 +371,55 @@ test_that("a pool failing both ways names both facts", {
   expect_match(msg, "did not answer")
 })
 
+test_that("a pool that cannot load AND holds an old build names both fixes", {
+  # The same M10-D1 rule as above, applied to the outcome M24 added. The two
+  # faults take DIFFERENT remedies -- install for one, restart for the other --
+  # so a message naming only the class-carrying fault sends the user to install,
+  # restart the pool, and meet the second fault on the next pre-flight.
+  status <- preflight_outcome(
+    reports(FALSE, TRUE, missing = list(NULL, c("nested_fold_fit", "rehydrate_payload"))),
+    timeout = 30000
+  )
+  expect_identical(status$outcome, "cannot_load")
+  expect_identical(status$cannot_load, 1L)
+  expect_identical(status$incompatible, 1L)
+
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_cannot_load"
+  )
+  msg <- conditionMessage(err)
+  expect_match(msg, "cannot load")
+  # The second fault, its symbols, and the remedy the install bullet does not give.
+  expect_match(msg, "different build")
+  expect_match(msg, "nested_fold_fit")
+  expect_match(msg, "rehydrate_payload")
+  expect_match(msg, "restart the pool")
+
+  # And the bullet is absent when there is nothing to report, so it cannot
+  # become boilerplate that every load failure carries.
+  plain <- conditionMessage(expect_error(
+    check_daemons_can_load(preflight_outcome(reports(FALSE), timeout = 30000)),
+    class = "nestedtune_daemons_cannot_load"
+  ))
+  expect_no_match(plain, "different build")
+})
+
+test_that("the both-fault bullet counts and pluralises on the affected daemons", {
+  # The F2 trap, in the branch it was not fixed in: cli takes every plural's
+  # quantity from the LAST interpolation, and `{.pkg {package}}` sits between
+  # the count and the verb here.
+  status <- preflight_outcome(
+    reports(FALSE, TRUE, TRUE, missing = list(NULL, "a", "b")),
+    timeout = 30000
+  )
+  msg <- conditionMessage(expect_error(
+    check_daemons_can_load(status), class = "nestedtune_daemons_cannot_load"
+  ))
+  expect_match(msg, "2 daemons loaded")
+  expect_match(msg, "are running a different build")
+})
+
 test_that("both causes answer to one shared class", {
   # M10-D1: a handler that only cares that the startup check failed catches
   # either, without having to list both names.

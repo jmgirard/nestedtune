@@ -42,7 +42,7 @@ cancelled says so once.
       takes the load failure's class (M10-D1). A unit test drives
       `preflight_outcome()` with hand-built records covering all four outcomes
       plus the mixed pool, and asserts each classification.
-- [ ] AC3: the status record carries the fields the abort message names, and
+- [x] AC3: the status record carries the fields the abort message names, and
       `check_daemons_can_load()` aborts on that outcome with condition classes
       `nestedtune_daemons_incompatible` and `nestedtune_daemons_unusable`,
       naming how many daemons are affected, which symbols are missing, and the
@@ -63,7 +63,7 @@ cancelled says so once.
       cancellation paragraph (`R/nested-tune-grid.R:236-242`) says a warning now
       fires, the pre-flight bullet (`R/nested-tune-grid.R:191-195`) covers the
       new refusal, and `man/nested_tune_grid.Rd` is regenerated.
-- [ ] AC7: every new daemon-touching test carries its `helper-time-budget.R`
+- [x] AC7: every new daemon-touching test carries its `helper-time-budget.R`
       row, and the `verify` slot in `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -140,6 +140,7 @@ cancelled says so once.
 
 - 2026-07-30: T12 done. Full gate re-run: suite 1593 pass / 0 fail, `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 57s), `document()` no diff. CI green on both gating workflows at `de4e31f` -- and the coverage job now RUNS the heterogeneous-pool test rather than failing it (1.4 s, FAIL 0), which is the evidence F15 is actually fixed rather than hidden. Four guard inversions, one red test each: dropping `vec-sep2`, dropping `qty()`, making the manifest raise again, and adding a call to the sent expression.
 - 2026-07-30: all send-back tasks done, verify slot clean, CI green; status review. Return count 1.
+- 2026-07-31: review pass 2. Three lenses returned 11 findings (blame-history and prior-review both clean, so all 11 are the diff-bug lens); the scorer actioned 2 and logged 9. Both fixed here rather than sent back: the `cannot_load` message never named an incompatible daemon in a pool failing both ways (G1, 88), the rediscovery M10-D1 refuses one bullet away in the same branch; and the one test starting bare `mirai::daemons()` pools carried no ledger row, an AC7 breach as written (G2, 85), now rowed with the 0-second declaration measured rather than assumed. Ledger drift from the 49 inserted lines repaired by computed offset, not by eye. Suite 1607 pass / 0 fail / 0 skip, `check()` 0/0/0. Return count still 1.
 
 ## Decisions
 
@@ -199,6 +200,8 @@ Falsified by a rewriting tool that reaches string-built expressions, or by a
 second site that ships an expression and cannot be written this way.
 
 ## Review
+
+## First pass — 2026-07-30 (returned to `in-progress`)
 
 Reviewed 2026-07-30 on `m24-preflight-capability-probe` at PR #25.
 `main` had not moved since the branch was cut, so no merge was needed and
@@ -315,3 +318,158 @@ Returned to `in-progress`. AC3 and AC7 are unticked: AC3's snapshot evidence is
 now known to have pinned the two cases that render correctly and missed both
 that do not, and AC7's ledger row is not actually being cross-checked. The
 remaining criteria keep their evidence.
+
+## Second pass — 2026-07-31
+
+Reviewed on `m24-preflight-capability-probe` at PR #25. `main` is still at
+`d70d536`, the branch's merge-base, so no merge-forward was needed and every
+number below is from the branch tip. Return count entering this pass: 1.
+
+### Criterion evidence
+
+- **AC1** — `daemon_report()` validates positively; a length-1 character vector
+  (a `miraiError`'s exact shape) returns NULL. Re-run this pass: the three
+  tests in `test-parallel-classify.R` — "a miraiError is never read as a
+  capability report", "a report is rejected unless every field has the right
+  shape" (7 malformed records plus the well-formed one), "a daemon answering
+  something other than a report counts as silent" — all pass inside a suite of
+  1607 with 0 failures and 0 skips.
+- **AC2** — the `incompatible` outcome exists and ranks below `cannot_load`.
+  Five ladder tests pass, including "every outcome the ladder can produce is
+  reachable and distinct" (all four asserted together) and both mixed pools.
+  Re-confirmed by execution this pass: a pool with one non-loading daemon and
+  one incompatible daemon classifies `cannot_load` with `incompatible = 1`.
+- **AC3** — the status record carries `total`, `cannot_load`, `incompatible`,
+  `missing_symbols`, `no_answer`, `timeout`, `package`; the abort raises
+  `nestedtune_daemons_incompatible` + `nestedtune_daemons_unusable` and names
+  the count, the symbols, and the reinstall-then-restart remedy. The snapshot
+  (`_snaps/parallel-classify.md`) now pins **four** configurations, not the two
+  that rendered correctly: one symbol, two (separator present — the F1 defect),
+  five (truncated to three plus a count), and a mixed pool ("1 of 2 mirai
+  daemons **is**" — the F2 defect). Rendered by execution this pass at all four.
+  Inversions: dropping `vec-sep2` reddens; dropping `qty()` reddens; dropping
+  truncation reddens 1.
+- **AC4** — probe proved against a live pool. "a symbol no build defines is
+  reported by every daemon that loaded" asserts `incompatible == 2`,
+  `cannot_load == 0`, and `missing_symbols` equal to the absent name — a value
+  that can only have come back from the daemons; its companion asserts a primed
+  pool matches the host namespace exactly. Both ran (0 skips) in this pass's
+  suite, and the covr job on CI now **runs** them rather than failing them.
+- **AC5** — warning fires once per `dispatch_folds()` call. Four tests pass:
+  the two pool kinds distinguishable while `connections` reads alike, both
+  argument branches, the `nested_tune_grid()` seam (3 folds → 1 warning), the
+  direct `dispatch_folds()` drive (3 payloads → 1 warning), and a
+  dispatcher-backed run asserting no such condition.
+- **AC6** — two `NEWS.md` entries in users' terms; `grep -nE '\bM[0-9]{2}\b'`
+  over `NEWS.md`, `README.md` and `man/*.Rd` returns nothing, so no milestone
+  numbers reach user-facing text. Pre-flight bullet and cancellation paragraph
+  both amended in `R/nested-tune-grid.R`; `man/nested_tune_grid.Rd` regenerated
+  and `devtools::document()` re-run this pass with no diff.
+- **AC7** — every new daemon-touching test now carries its row. The gap this
+  pass found (G2 below) is closed: the one test starting bare `mirai::daemons()`
+  pools is rowed and its three `daemons(0)` calls disclosed, with the 0-second
+  declaration measured rather than assumed. `test-suite-hygiene.R` passes 17/17
+  and the copied-bound cross-check re-reads every row it declares readable.
+  `verify` slot clean: `devtools::test()` 1607 pass with 0 failures and 0
+  skips, `devtools::document()` no diff, `devtools::check()` 0 errors /
+  0 warnings / 0 notes.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all checks PASS. One advisory: `sizing` warns
+  M24 carries 12 tasks against the 10-task tripwire. Advisory, not a gate
+  failure, and it reflects T8–T12 being added by the first pass's send-back
+  rather than a mis-sized plan.
+- `cairn_impact.py` — not run: `cairn/DESIGN.md` is untouched by this branch
+  (`git diff origin/main..HEAD -- cairn/DESIGN.md` empty), so no principle
+  text changed.
+- `devtools::document()` — no diff.
+- `pkgdown::check_pkgdown()` — no problems found.
+- README.Rmd absent, so no knit-sync check applies.
+- `NEWS.md` carries this milestone's user-visible changes, no milestone numbers.
+- No new top-level files beyond the already-tracked `NEWS.md`.
+- `devtools::check()` — **0 errors, 0 warnings, 0 notes** (3m 59s), run twice
+  this pass: once before the review fixes and once after.
+- CI at `093751c`: **all ten checks green**, including `test-coverage`, which
+  was the first pass's gate failure. Re-run required after this pass's fixes.
+- Returns to `in-progress` for this milestone: 1 (the first pass). No second
+  return — both actioned findings were fixed within this pass.
+
+### Independent review
+
+Three fresh-context lenses, then a Sonnet scorer that generated none of the
+findings and was given the diff and the plan.
+
+- **Blame-history [S]** — no regressions. Checked the `loaded_answer()`
+  deletion (semantics preserved in `daemon_report()`), M10-D1's ladder
+  (extended, not reordered), every shifted ledger row against its real line,
+  the `call_site_bound_s()` widening (a strengthening of M16's guard), and
+  GP3's refuse-vs-warn line against DESIGN.md. Zero findings.
+- **Prior-review [S]** — no prior-review evidence contradicted. GitHub probe
+  returned `[]` (no inline review comments in the repo at all), so the lens ran
+  on the archived `## Review` record: M16's F3 lesson is honoured rather than
+  regressed by the F9 fix, and the ten sub-threshold findings from the first
+  pass are unchanged rather than worsened. Also verified the temporary
+  diagnostic commit `d96ad60` left no residue. Zero findings.
+- **Diff-bug [O]** — verified all five first-pass fixes hold (F1/F2 by
+  rendering seven configurations, F15 by running `covr:::trace_calls()` over
+  the current form, F6 and F9 by execution) and returned 11 further findings.
+
+Eleven findings scored; two at or above 80.
+
+**Actioned (score ≥ 80):**
+
+- **G1 (88)** — *A pool failing both ways never hears about the incompatible
+  daemons.* `R/parallel.R`: the `cannot_load` branch appends the `n_silent`
+  bullet but nothing for `n_incompatible`, though `status$incompatible` and
+  `status$missing_symbols` are both populated. A pool with one daemon that
+  cannot load and one holding an old build said only "1 of 2 mirai daemons
+  cannot load nestedtune" — so the user installs, restarts, pays another
+  pre-flight, and only then meets the second fault, which needs a *different*
+  fix. This is exactly the rediscovery M10-D1 refuses for the non-answer case
+  in the same branch. **Fixed now.** The symbol rendering is hoisted above both
+  branches and the `cannot_load` message gains an incompatible bullet naming
+  the count, the symbols, and the restart. Two regression tests added; the
+  pluralisation is asserted in the branch F2 was *not* fixed in. Inversion:
+  suppressing the bullet reddens 6 assertions.
+- **G2 (85)** — *AC7 miss: a new daemon-touching test carries no ledger row.*
+  `test-parallel-detection.R:178` ("the two pool kinds are distinguishable")
+  starts pools with bare `mirai::daemons(2)` and
+  `mirai::daemons(2, dispatcher = FALSE)`, which are not in
+  `BUDGETED_WAIT_CALLS`, so the guard cannot see them and no row or disclosure
+  covered them — an AC7 breach as written. **Fixed now.** Both starts are rowed
+  at 0 seconds and the three `daemons(0)` calls beside them disclosed, matching
+  the `test-parallel-metrics.R` precedent. The 0 is measured, not assumed
+  (2026-07-31, mirai 2.7.2): `daemons(2)` returns in 0.635 s,
+  `daemons(2, dispatcher = FALSE)` in 0.224 s, `daemons(0)` in 0.205 s, with
+  `status()$connections` already reading 2 — none waits on a mirai result.
+  Routing the test through `start_daemons()` was rejected: it primes and warms,
+  which is orthogonal to the pool-kind property under test and would charge
+  this file two further bounds.
+
+**Logged below threshold (9), surfaced not dropped:** G7 (75) roxygen and NEWS
+say the probe asks for "internal functions" while it sends the whole namespace,
+exports included; G3 (68) the new drift guard keys its declared-unreadable set
+on `file :: payer`, so a *second* unreadable row inside an already-declared
+test would collapse onto the existing key — latent, no such row exists; G6 (68)
+stale in-comment coordinates (`:232`/`:585` against the real `:254`/`:805`) and
+a 106-vs-110 symbol count, one step further out of date than first-pass F10
+(75); G8 (60) `daemon_symbol_manifest()` loads the probed package on the host
+and the abort text is written for nestedtune, so it reads wrongly for any other
+probed package; G5 (55) the base-R allowlist test inspects
+`daemon_probe_expr()`'s own return value, which is uninstrumentable by
+construction, rather than the `everywhere()` call-site argument that actually
+broke; G10 (42) the widened bound regex takes the first keyword match in the
+call text, so a nested call using the same keyword would be misread — latent;
+G4 (35) `helper-time-budget.R`'s "detection is small" comment justifying no
+ceiling is now false at 780 s declared, a restatement of first-pass F14 (60) on
+an unmodified line; G9 (30) `cli_vec(NULL)` still errors on a degenerate
+injected status, a restatement of first-pass F5 (55); G11 (25) tracking
+bookkeeping this pass closes by writing.
+
+### Disposition
+
+Both actioned findings fixed on the branch and re-verified: full suite
+1607 pass / 0 fail / 0 skip, `devtools::check()` 0/0/0, `document()` no diff,
+`cairn_validate` exit 0. All seven acceptance criteria carry fresh evidence
+above and every checkbox is ticked against it. Awaiting the merge gate.

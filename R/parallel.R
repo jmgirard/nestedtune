@@ -556,6 +556,35 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
   # notation in the very bullet telling the user to raise that number.
   timeout <- format(status$timeout, scientific = FALSE, trim = TRUE)
 
+  # Rendered once, above both branches that name missing symbols: a pool can be
+  # incompatible while ALSO holding a daemon that cannot load, and that pool
+  # takes the load failure's class while still owing the user the second fact.
+  #
+  # Truncated by hand rather than with cli's `vec-trunc` style, which does not
+  # survive being wrapped in `{.code }` -- verified by rendering. It matters at
+  # the size that matters: a daemon holding a genuinely old build is missing not
+  # one symbol but most of them, and an untruncated bullet would list the whole
+  # namespace at the user.
+  all_missing <- status$missing_symbols
+  n_missing <- length(all_missing)
+  # Joined with plain commas rather than cli's default "and" so the trailing
+  # count below does not read as "`a`, `b`, and `c` and 3 more".
+  #
+  # BOTH separator styles, because cli uses a different one at length 2:
+  # `vec-sep` joins all but the last pair, `vec-last` joins the final pair at
+  # n > 2, and `vec-sep2` is what joins the ONLY pair at exactly n = 2. Setting
+  # `vec-last` alone left the two-symbol message reading "`a` `b`" with no
+  # separator at all -- and n = 2 is the headline case, the two names the worker
+  # resolves through the daemon's namespace (M24 review F1).
+  shown <- cli::cli_vec(
+    all_missing[seq_len(min(3L, n_missing))],
+    style = list("vec-last" = ", ", "vec-sep2" = ", ")
+  )
+  # Built here rather than as a conditional inside the template: cli does not
+  # re-interpolate a string a template returns, so `{extra}` nested in one
+  # reaches the user verbatim (verified by rendering).
+  more <- if (n_missing > 3L) paste0(" and ", n_missing - 3L, " more") else ""
+
   if (identical(status$outcome, "cannot_load")) {
     bullets <- c(
       "{n_cannot} of {n_total} mirai daemon{?s} cannot load {.pkg {package}}.",
@@ -564,6 +593,21 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
       i = "Install the package, or prime the daemons with
            {.code mirai::everywhere(pkgload::load_all('<path>'))}."
     )
+    # A pool can fail both ways at once, and the ladder gives the class to the
+    # load failure -- but the class is not the message. Naming only the load
+    # failure sends the user to install, restart, and meet the second fault on
+    # the next pre-flight, which is the rediscovery M10-D1 refuses for the
+    # non-answer case immediately below. The two need DIFFERENT fixes, so both
+    # are stated here.
+    if (n_incompatible > 0L) {
+      bullets <- c(bullets, i = "A further {n_incompatible} daemon{?s} loaded
+                                 {.pkg {package}} but
+                                 {cli::qty(n_incompatible)}{?is/are} running a
+                                 different build, missing {.code {shown}}{more};
+                                 restart the pool after installing, because a
+                                 running daemon keeps the namespace it already
+                                 loaded.")
+    }
     if (n_silent > 0L) {
       bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
                                  within {timeout} ms.")
@@ -582,30 +626,6 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
     # WHICH build they hold, and restarting the pool is the half users forget --
     # a daemon keeps the namespace it loaded for its whole life, so reinstalling
     # underneath a running pool changes nothing until the daemons are replaced.
-    # Truncated by hand rather than with cli's `vec-trunc` style, which does not
-    # survive being wrapped in `{.code }` -- verified by rendering. It matters at
-    # the size that matters: a daemon holding a genuinely old build is missing
-    # not one symbol but most of them, and an untruncated bullet would list all
-    # 106 of them at the user.
-    all_missing <- status$missing_symbols
-    n_missing <- length(all_missing)
-    # Joined with plain commas rather than cli's default "and" so the trailing
-    # count below does not read as "`a`, `b`, and `c` and 3 more".
-    #
-    # BOTH separator styles, because cli uses a different one at length 2:
-    # `vec-sep` joins all but the last pair, `vec-last` joins the final pair at
-    # n > 2, and `vec-sep2` is what joins the ONLY pair at exactly n = 2. Setting
-    # `vec-last` alone left the two-symbol message reading "`a` `b`" with no
-    # separator at all -- and n = 2 is the headline case, the two names the
-    # worker resolves through the daemon's namespace (M24 review F1).
-    shown <- cli::cli_vec(
-      all_missing[seq_len(min(3L, n_missing))],
-      style = list("vec-last" = ", ", "vec-sep2" = ", ")
-    )
-    # Built here rather than as a conditional inside the template: cli does not
-    # re-interpolate a string a template returns, so `{extra}` nested in one
-    # reaches the user verbatim (verified by rendering).
-    more <- if (n_missing > 3L) paste0(" and ", n_missing - 3L, " more") else ""
     bullets <- c(
       # `daemon{?s}` agrees with {n_total}, the interpolation before it, but the
       # verb belongs to the affected daemons -- and cli takes every plural's
