@@ -391,6 +391,48 @@ test_that("both causes answer to one shared class", {
 # reports what it lacks, so the gap is classified rather than discovered a fold
 # at a time.
 
+test_that("the probe expression asks the daemon for nothing but base R", {
+  # The contract, and the one this suite got wrong: whatever `everywhere()` is
+  # handed is serialized to daemons that may hold nothing but base R and the
+  # package itself. Anything else named in it is a name the daemon has to
+  # resolve, and a daemon that cannot raises -- returning a miraiError that
+  # daemon_report() refuses, so a pool that answered is classified as silent.
+  #
+  # This is what caught M24's first cut only after CI: the probe was written as
+  # live source, so `covr` rewrote its braces and sent `covr:::count()` calls to
+  # daemons whose library has no covr (review F15). Under the coverage job this
+  # test is now the thing that fails, at the exact allowlist below, rather than a
+  # heterogeneous-pool test failing four assertions down with no cause named.
+  names_called <- function(x) {
+    if (is.call(x)) {
+      c(deparse(x[[1L]]), unlist(lapply(as.list(x)[-1L], names_called)))
+    } else {
+      character()
+    }
+  }
+  expect_identical(
+    sort(unique(names_called(daemon_probe_expr()))),
+    sort(c("{", "asNamespace", "character", "if", "list", "ls",
+           "requireNamespace", "setdiff"))
+  )
+})
+
+test_that("a package this session has no copy of yields no symbol expectation", {
+  # The manifest asks what THIS build contains, so with no build here there is
+  # nothing to compare a daemon against and the probe falls back to the load
+  # question -- which is exactly what the `package` argument exists to ask.
+  # Before this it raised an unclassified error from asNamespace() (review F6).
+  absent <- "nestedtune.no.such.package"
+  expect_false(requireNamespace(absent, quietly = TRUE))
+  expect_identical(daemon_symbol_manifest(absent), character())
+
+  # An empty expectation classifies a daemon that loaded as ok, never as
+  # running a different build -- the fallback has to be silent, not accusing.
+  status <- preflight_outcome(reports(TRUE, TRUE))
+  expect_identical(status$outcome, "ok")
+  expect_identical(status$incompatible, 0L)
+})
+
 test_that("a daemon that loads but lacks a symbol is incompatible, not ok", {
   status <- preflight_outcome(
     reports(TRUE, TRUE, missing = list(NULL, "rehydrate_payload"))

@@ -136,16 +136,61 @@ test_that("the budget ledger has no rows for calls that are gone", {
 # case grew by nine minutes (M16 review F3). Rows whose bound comes from a named
 # constant in helper-parallel.R cannot drift that way and need no check.
 #
-# NA means the line carries no explicit bound of its own: the option-set-elsewhere
-# case and the deadline poll, both named in helper-time-budget.R's header.
-call_site_bound_s <- function(path, line) {
-  txt <- readLines(path, warn = FALSE)[[line]]
-  ms <- regmatches(txt, regexpr("timeout\\s*=\\s*[0-9.]+", txt))
-  if (length(ms)) return(as.numeric(sub(".*=\\s*", "", ms)) / 1000)
-  sec <- regmatches(txt, regexpr("seconds\\s*=\\s*[0-9.]+", txt))
-  if (length(sec)) return(as.numeric(sub(".*=\\s*", "", sec)))
-  NA_real_
+# NA means the call carries no explicit bound of its own: a bound read from a
+# named constant, the option-set-elsewhere case, and the deadline poll. Which
+# rows those are is declared below rather than left to whatever the regex
+# happens to miss.
+#
+# Read from the whole CALL, not from the row's one line. A ledger row points at
+# the line holding the function name, which is where both accounting guards
+# expect it; but an argument list wrapped across lines puts the bound on a
+# different line, and reading one line then found nothing and skipped the row in
+# silence. That is how the single new row claiming a copied bound went
+# uncross-checked for a whole milestone (M24 review F9) -- a blind spot in the
+# guard, so it is closed here rather than worked around by reflowing the call to
+# suit it.
+call_site_expr <- function(path, line) {
+  data <- utils::getParseData(parse(path, keep.source = TRUE))
+  token <- data[data$token == "SYMBOL_FUNCTION_CALL" & data$line1 == line, ,
+                drop = FALSE]
+  if (!nrow(token)) return("")
+  # The token sits inside an `expr` holding the function position, whose own
+  # parent is the call -- so the call is the grandparent.
+  fn <- data[data$id == token$parent[[1]], , drop = FALSE]
+  call <- data[data$id == fn$parent[[1]], , drop = FALSE]
+  if (!nrow(call)) return("")
+  txt <- readLines(path, warn = FALSE)
+  paste(txt[seq(call$line1[[1]], call$line2[[1]])], collapse = " ")
 }
+
+# The keyword is chosen by the call rather than tried in turn, because widening
+# the read from one line to a whole call brings any nested call's arguments into
+# view with it -- `collect_bounded(mirai::everywhere(...), seconds = 30)` is the
+# shape already in the suite. Each call has exactly one bound argument, so
+# asking for that one can never read a neighbour's.
+call_site_bound_s <- function(path, line, call) {
+  txt <- call_site_expr(path, line)
+  keyword <- if (identical(call, "collect_bounded")) "seconds" else "timeout"
+  hit <- regmatches(
+    txt, regexpr(paste0(keyword, "[[:space:]]*=[[:space:]]*[0-9.]+"), txt)
+  )
+  if (!length(hit)) return(NA_real_)
+  value <- as.numeric(sub(".*=[[:space:]]*", "", hit))
+  if (identical(keyword, "timeout")) value / 1000 else value
+}
+
+# The rows whose bound this cross-check cannot re-read, named so a new one
+# cannot join them in silence -- which is the failure F9 found. Keyed on the
+# paying test rather than on a line number, so moving a test does not require
+# editing this list and a stale entry cannot quietly excuse a different row.
+DECLARED_UNCHECKABLE_BOUNDS <- c(
+  # Bound comes from COLLECT_BOUNDED_DEFAULT_S, which the row reads directly.
+  paste0("test-parallel-classify.R :: ",
+         "a miraiError becomes a recorded worker failure, not an abort"),
+  # Bound is set through the option at one line and spent at another.
+  paste0("test-parallel-classify.R :: ",
+         "the probe reads its bound from the option, not from the constant")
+)
 
 test_that("a copied bound still matches the argument it was copied from", {
   ledger <- time_budget_ledger()
@@ -157,9 +202,17 @@ test_that("a copied bound still matches the argument it was copied from", {
                      ledger$seconds > 0, , drop = FALSE]
 
   checked <- 0L
+  unreadable <- character(0)
   for (i in seq_len(nrow(ledger))) {
-    at <- call_site_bound_s(test_path(ledger$file[[i]]), ledger$line[[i]])
-    if (is.na(at)) next
+    at <- call_site_bound_s(
+      test_path(ledger$file[[i]]), ledger$line[[i]], ledger$call[[i]]
+    )
+    if (is.na(at)) {
+      unreadable <- c(
+        unreadable, paste0(ledger$file[[i]], " :: ", ledger$payer[[i]])
+      )
+      next
+    }
     checked <- checked + 1L
     expect_equal(
       ledger$seconds[[i]], at * ledger$times[[i]],
@@ -168,6 +221,19 @@ test_that("a copied bound still matches the argument it was copied from", {
                     " s but the call site says ", at * ledger$times[[i]], " s")
     )
   }
+  # A skipped row is the failure mode, not an accident of it: F9's row declared a
+  # copied bound, was never re-read, and nothing said so. Asserting the skipped
+  # set EQUALS the declared one -- rather than counting the checked rows -- is
+  # what makes a fourth unreadable row fail here instead of passing quietly.
+  expect_identical(
+    sort(unique(unreadable)), sort(DECLARED_UNCHECKABLE_BOUNDS),
+    info = paste0(
+      "a ledger row declaring a copied bound that this check cannot re-read: ",
+      paste(setdiff(unique(unreadable), DECLARED_UNCHECKABLE_BOUNDS),
+            collapse = ", "),
+      " -- give the call an explicit bound, or declare why it has none."
+    )
+  )
   # Without this the test passes by checking nothing the moment the filter or the
   # regex stops matching -- the failure M14's review found in a harness that
   # reported clean having asserted nothing.

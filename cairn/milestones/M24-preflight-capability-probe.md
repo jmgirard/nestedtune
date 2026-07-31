@@ -95,7 +95,7 @@ cancelled says so once.
 - [x] T6: `NEWS.md`, the two roxygen sites, and `devtools::document()`.
 - [x] T7: full `verify` slot clean; register any new prose-guard in the
       mutation harness.
-- [ ] T8 (review F15): find why `daemons_load_status(package = "ranger")`
+- [x] T8 (review F15): find why `daemons_load_status(package = "ranger")`
       returns `no_response` under the covr job on ubuntu when it returned
       `cannot_load` on `main`, and fix it. Does not reproduce under local covr
       on macOS; all five `R CMD check` legs pass. F6 is the leading suspect.
@@ -104,10 +104,13 @@ cancelled says so once.
       `n_incompatible` rather than `n_total`. Extend the snapshot to a
       two-symbol case and a mixed pool — the two configurations it does not
       currently reach (F11a).
-- [ ] T10 (review F6): stop `daemons_load_status()` requiring its probed
+- [x] T10 (review F6): stop `daemons_load_status()` requiring its probed
       package on the host, or refuse it with a classified condition.
-- [ ] T11 (review F9): point the ledger row at the line carrying
-      `timeout = 30000` so the copied-bound drift guard actually reads it.
+- [x] T11 (review F9): teach the copied-bound drift guard to read the whole
+      call, not the row's one line, and declare the rows it cannot re-read.
+      Amended 2026-07-30: pointing the row at the `timeout = 30000` line, as
+      planned, would break both accounting guards, which key on the line
+      carrying the call's name.
 - [ ] T12: re-run the full gate — suite, `check()`, and CI green on every leg
       including `test-coverage` — before returning to review.
 
@@ -129,6 +132,10 @@ cancelled says so once.
 - 2026-07-30: review returned M24 to in-progress. Gate failure: CI red on `test-coverage` (F15, scored 98) at a pre-existing test that passed on `main`. Four more findings actioned — the two-symbol separator (F1, 94) and the `is/are` quantity (F2, 88), both confirmed by execution here and both invisible to the snapshot I wrote, which pinned the cases that render correctly; the host-side `asNamespace()` regression (F6, 85); and a ledger row the drift guard silently skips (F9, 85). Ten findings logged below threshold. T8–T12 added. Return count 1.
 - 2026-07-30: process deviation, recorded rather than corrected silently — the AC boxes were ticked during implement, task by task, when AC fencing makes them review's verification mark against fresh evidence. Every criterion's evidence is now recorded in the Review section and each tick is backed by it, so the end state is correct; what was wrong was the order. Nothing was accepted unverified.
 - 2026-07-30: T9 done. Both defects confirmed by rendering before the fix: `vec-sep2` is the style cli uses at exactly n=2, and `{?is/are}` took `n_total` from the last interpolation. The snapshot now renders four configurations, not two — one symbol, two, five truncated, and a mixed pool — chosen as the counts at which the wording changes, since the first draft pinned precisely the two that came out right. Ledger: 2 new rows, 14 shifted by 24.
+- 2026-07-30: T11 done. The planned remedy does not work -- both accounting guards key a row to the line carrying the call's NAME, so moving the row to the argument's line makes it stale in one guard and unbudgeted in the other. The blind spot is the guard's, so it is closed there: it now reads the whole call expression via parse data, picks the bound keyword by call so widening the read cannot pick up a nested call's argument, and asserts the set of rows it could NOT re-read equals a declared list keyed on the paying test. Inversions: raising the multi-line bound to 60000 reddens it (it was silent before), and adding a fourth unreadable row reddens the declaration.
+- 2026-07-30: T8 done. Named by execution, not by inspection: a diagnostic push showed the probe returning in 0.76 s of a 30 s bound with one daemon's answer invalid, and `covr:::trace_calls()` over both cuts showed why -- covr rewrites the braces of the probe expression and `everywhere()` serializes the rewritten form, so daemons without covr raise. Probe now built with `str2lang()`; see the Decisions entry. A new allowlist test makes the coverage job itself the detector.
+- 2026-07-30: T10 done. `daemon_symbol_manifest()` returns `character()` when the host has no copy of the probed package, restoring what the `package` argument is for. Unreachable for the package's own probe, so it cannot weaken the real check. Question gate chose this over a classified refusal, which would have removed the capability rather than restored it.
+- 2026-07-30: T8, T10 and T11 landed in one checkpoint: all three move `helper-time-budget.R`'s ledger, and splitting them would have produced commits whose verify slot could not pass.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions
@@ -156,6 +163,37 @@ both — primed by `load_all()` in the suite, installed under `R CMD check`.
 
 Falsified by a legitimate pool this refuses — a daemon whose namespace differs
 for a reason unrelated to which build it is running.
+
+### 2026-07-30 (T8): the daemons are sent an expression built from text, not one written as source
+
+`mirai::everywhere()` captures its expression unevaluated and serializes it, so
+the daemons evaluate whatever the HOST's copy of that function body has been
+rewritten into. Under `covr` the rewriting inserts a `covr:::count()` call inside
+every `{` block, and M24's first cut wrote the probe as a braced `if`/`else` --
+so every daemon was sent two counter calls, and a daemon whose library has no
+covr raised on them. The raise returned as a `miraiError`, `daemon_report()`
+refused it exactly as designed, and a pool that had answered correctly was
+classified as silent (`no_answer = 1` in 0.76 s of a 30 s bound). Confirmed by
+running `covr:::trace_calls()` over both cuts: the counters land inside the sent
+expression here and outside it on `main`, which is why this failed only the
+coverage job and passed all five `R CMD check` legs.
+
+The probe is now built with `str2lang()` from a string. A string is data rather
+than source, so no rewriting tool reaches it and the daemons receive exactly the
+expression written in the file. The alternative considered and declined was
+skipping the affected test under coverage: it would green CI while leaving the
+daemons still receiving the host's build tooling, which is the opposite of what
+a capability probe is for.
+
+The scope is narrow by construction and stays that way only while it is
+checked. This is the package's one site that ships an *expression* to a daemon;
+the fold path resolves `rehydrate_payload` and `nested_fold_fit` through the
+daemon's own namespace and ships no bodies. The allowlist test asserts the sent
+expression names nothing but base R, so the coverage job now fails at that
+assertion rather than at an unexplained heterogeneous-pool failure.
+
+Falsified by a rewriting tool that reaches string-built expressions, or by a
+second site that ships an expression and cannot be written this way.
 
 ## Review
 

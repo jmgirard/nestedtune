@@ -380,8 +380,53 @@ preflight_timeout <- function(call = rlang::caller_env()) {
 # catch -- M23 added the second and nothing made the pre-flight notice -- so the
 # manifest is derived, never written down. It costs 2,627 B serialized for 106
 # names against a per-fold payload already in the megabytes.
+# A package this session has no copy of yields no expectation at all, rather
+# than an error. The manifest answers "what does MY build contain"; with no
+# build here there is nothing to compare a daemon against, so the check falls
+# back to the load question it asked before M24 -- which is precisely what the
+# `package` argument exists to ask (M24 review F6: this raised an unclassified
+# error instead, from asNamespace() running on the HOST). It cannot weaken the
+# real check: the manifest for `nestedtune` is taken by a function living in
+# `nestedtune`, so the empty branch is unreachable for the package's own probe.
 daemon_symbol_manifest <- function(package = "nestedtune") {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    return(character())
+  }
   ls(asNamespace(package))
+}
+
+# What each daemon is asked to evaluate, built from text rather than written as
+# live source.
+#
+# `everywhere()` captures its expression unevaluated and serializes it, so the
+# daemons run whatever the HOST's copy of this function body has been rewritten
+# into -- not what is written here. Under `covr` that rewriting inserts a
+# `covr:::count()` call inside every `{` block, this probe's braces included, and
+# a daemon whose library has no covr raises on it. The raise returns as a
+# miraiError, daemon_report() rightly refuses it, and a pool that answered
+# perfectly well is classified as silent. That is why M24's first cut failed the
+# coverage job while passing all five `R CMD check` legs (M24 review F15).
+#
+# A string is data, not source, so no rewriting reaches it and the daemons
+# receive exactly the expression written below. Verified against
+# `covr:::trace_calls()`: the counters land around the everywhere() call and
+# never inside the expression it sends.
+#
+# The symbol check is nested inside the load branch because asNamespace() on a
+# package that will not load raises, and a raised probe comes back as a
+# miraiError -- a length-1 CHARACTER vector, which daemon_report() rejects,
+# turning a clean "cannot load" into a silent daemon and losing the actionable
+# message.
+daemon_probe_expr <- function() {
+  str2lang(paste(
+    "if (requireNamespace(package, quietly = TRUE)) {",
+    "  list(loaded = TRUE,",
+    "       missing = setdiff(symbols, ls(asNamespace(package))))",
+    "} else {",
+    "  list(loaded = FALSE, missing = character())",
+    "}",
+    sep = "\n"
+  ))
 }
 
 daemons_load_status <- function(package = "nestedtune",
@@ -393,17 +438,12 @@ daemons_load_status <- function(package = "nestedtune",
   # a full cold load on every daemon before the user is told the option is bad.
   force(timeout)
 
-  # One round trip answers both questions. The symbol check is nested inside the
-  # load branch because asNamespace() on a package that will not load raises,
-  # and a raised probe comes back as a miraiError -- a length-1 CHARACTER vector,
-  # which daemon_report() rejects, turning a clean "cannot load" into a silent
-  # daemon and losing the actionable message.
+  # One round trip answers both questions. Held in a local first: everywhere()
+  # resolves `.expr` through substitute(), so a bare call in that position is
+  # what would be sent, rather than the expression it returns.
+  probe_expr <- daemon_probe_expr()
   probe <- mirai::everywhere(
-    if (requireNamespace(package, quietly = TRUE)) {
-      list(loaded = TRUE, missing = setdiff(symbols, ls(asNamespace(package))))
-    } else {
-      list(loaded = FALSE, missing = character())
-    },
+    probe_expr,
     .args = list(package = package, symbols = symbols)
   )
   deadline <- Sys.time() + timeout / 1000

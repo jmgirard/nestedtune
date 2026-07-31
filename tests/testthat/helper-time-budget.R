@@ -39,11 +39,20 @@
 #
 # What that cross-check cannot reach is declared here rather than left implicit,
 # because an unstated exemption is how the first version of this comment came to
-# overclaim. Two kinds escape it: a bound set through the OPTION at one line and
-# spent at another (classify:409 sets it, :415 spends it), and a wait that is no
-# function call at all (the deadline poll in interrupt). Neither carries an
-# explicit argument on its own line, which is exactly how the cross-check
-# recognises them, and both are named here so the gap is on the record.
+# overclaim. Three kinds escape it: a bound read from a named constant, which
+# cannot drift and needs no re-read; a bound set through the OPTION at one line
+# and spent at another (classify:644 sets it, :650 spends it); and a wait that is
+# no function call at all (the deadline poll in interrupt). None carries an
+# explicit bound argument in the call itself, which is exactly how the
+# cross-check recognises them.
+#
+# Those exemptions are now DECLARED and asserted, not merely described here.
+# `test-suite-hygiene.R` keeps the list as DECLARED_UNCHECKABLE_BOUNDS and fails
+# when the set of rows it could not re-read differs from it -- so a fourth
+# exemption has to be argued for rather than acquired by writing a call the
+# regex cannot parse. Prose alone was not enough: this paragraph said the gap was
+# on the record while a row wrapped across two lines sat in it unnoticed (M24
+# review F9).
 
 # One site's worst case: what it waits for, times the number of times the
 # surrounding code runs it. `times` is 1 unless a loop says otherwise -- the
@@ -118,54 +127,54 @@ time_budget_ledger <- function() {
            "a pool failing both ways names both facts", note = "fabricated status"),
     tb_row("test-parallel-classify.R", 379L, "check_daemons_can_load", 0,
            "both causes answer to one shared class", note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 464L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 506L, "check_daemons_can_load", 0,
            "the incompatible abort names the symbols, the count, and the restart",
            note = "fabricated status; classifies, never dispatches"),
-    tb_row("test-parallel-classify.R", 494L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 536L, "check_daemons_can_load", 0,
            "the incompatible abort renders at one, two, five, and a mixed pool",
            note = "fabricated status; snapshot, one symbol"),
-    tb_row("test-parallel-classify.R", 500L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 542L, "check_daemons_can_load", 0,
            "the incompatible abort renders at one, two, five, and a mixed pool",
            note = "fabricated status; snapshot, two symbols"),
-    tb_row("test-parallel-classify.R", 506L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 548L, "check_daemons_can_load", 0,
            "the incompatible abort renders at one, two, five, and a mixed pool",
            note = "fabricated status; snapshot, truncated case"),
-    tb_row("test-parallel-classify.R", 514L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 556L, "check_daemons_can_load", 0,
            "the incompatible abort renders at one, two, five, and a mixed pool",
            note = "fabricated status; snapshot, mixed pool"),
-    tb_row("test-parallel-classify.R", 528L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 570L, "check_daemons_can_load", 0,
            "an incompatible pool answers to the shared unusable class",
            note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 541L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 583L, "check_daemons_can_load", 0,
            "an incompatible pool still reports daemons that said nothing",
            note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 600L, "start_daemons",
+    tb_row("test-parallel-classify.R", 642L, "start_daemons",
            START_DAEMONS_BOUND_S(),
            "the probe reads its bound from the option, not from the constant"),
-    tb_row("test-parallel-classify.R", 605L, "setTimeLimit", 0,
+    tb_row("test-parallel-classify.R", 647L, "setTimeLimit", 0,
            "the probe reads its bound from the option, not from the constant",
            note = "not a bound on a blocked mirai wait (M14)"),
-    tb_row("test-parallel-classify.R", 606L, "setTimeLimit", 0,
+    tb_row("test-parallel-classify.R", 648L, "setTimeLimit", 0,
            "the probe reads its bound from the option, not from the constant",
            note = "restore"),
-    tb_row("test-parallel-classify.R", 608L, "daemons_load_status", 45.678,
+    tb_row("test-parallel-classify.R", 650L, "daemons_load_status", 45.678,
            "the probe reads its bound from the option, not from the constant",
-           note = "the test sets the option to 45678 ms at :409"),
-    tb_row("test-parallel-classify.R", 625L, "daemons_load_status", 0,
+           note = "the test sets the option to 45678 ms at :644"),
+    tb_row("test-parallel-classify.R", 667L, "daemons_load_status", 0,
            "a bad bound is refused before any daemon is asked",
            note = "the option is invalid, so it aborts before dispatching"),
-    tb_row("test-parallel-classify.R", 639L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 681L, "check_daemons_can_load", 0,
            "a probe that reached no daemon at all is not a pass",
            note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 649L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 691L, "check_daemons_can_load", 0,
            "the abort names the package actually probed", note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 719L, "start_daemons",
+    tb_row("test-parallel-classify.R", 761L, "start_daemons",
            START_DAEMONS_BOUND_S(),
            "dispatch accepts daemons primed with the package"),
-    tb_row("test-parallel-classify.R", 726L, "daemons_load_status", 60,
+    tb_row("test-parallel-classify.R", 768L, "daemons_load_status", 60,
            "dispatch accepts daemons primed with the package",
            note = "explicit timeout = 60000; was the option's 300 s before M16"),
-    tb_row("test-parallel-classify.R", 727L, "check_daemons_can_load", 0,
+    tb_row("test-parallel-classify.R", 769L, "check_daemons_can_load", 0,
            "dispatch accepts daemons primed with the package",
            note = "status already in hand"),
 
