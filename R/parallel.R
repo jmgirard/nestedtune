@@ -551,16 +551,29 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
     n_missing <- length(all_missing)
     # Joined with plain commas rather than cli's default "and" so the trailing
     # count below does not read as "`a`, `b`, and `c` and 3 more".
+    #
+    # BOTH separator styles, because cli uses a different one at length 2:
+    # `vec-sep` joins all but the last pair, `vec-last` joins the final pair at
+    # n > 2, and `vec-sep2` is what joins the ONLY pair at exactly n = 2. Setting
+    # `vec-last` alone left the two-symbol message reading "`a` `b`" with no
+    # separator at all -- and n = 2 is the headline case, the two names the
+    # worker resolves through the daemon's namespace (M24 review F1).
     shown <- cli::cli_vec(
       all_missing[seq_len(min(3L, n_missing))],
-      style = list("vec-last" = ", ")
+      style = list("vec-last" = ", ", "vec-sep2" = ", ")
     )
     # Built here rather than as a conditional inside the template: cli does not
     # re-interpolate a string a template returns, so `{extra}` nested in one
     # reaches the user verbatim (verified by rendering).
     more <- if (n_missing > 3L) paste0(" and ", n_missing - 3L, " more") else ""
     bullets <- c(
-      "{n_incompatible} of {n_total} mirai daemon{?s} {?is/are} running a
+      # `daemon{?s}` agrees with {n_total}, the interpolation before it, but the
+      # verb belongs to the affected daemons -- and cli takes every plural's
+      # quantity from the LAST interpolation, so an unqualified `{?is/are}` read
+      # n_total too and every mixed pool said "1 of 2 mirai daemons ARE running"
+      # (M24 review F2). qty() sets the quantity without printing it.
+      "{n_incompatible} of {n_total} mirai daemon{?s}
+       {cli::qty(n_incompatible)}{?is/are} running a
        different build of {.pkg {package}}.",
       i = "{cli::qty(n_incompatible)}The daemon{?s} could not find
            {.code {shown}}{more}, which this session's copy defines and the

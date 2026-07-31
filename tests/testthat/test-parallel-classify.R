@@ -475,21 +475,45 @@ test_that("the incompatible abort names the symbols, the count, and the restart"
   expect_false(grepl("Install the package", msg, fixed = TRUE))
 })
 
-test_that("the incompatible abort reads the same whether one symbol is missing or a hundred", {
-  # Snapshotted rather than matched because the failure this guards is
+test_that("the incompatible abort renders at one symbol, two, five, and a mixed pool", {
+  # Snapshotted rather than matched because the failures this guards are
   # presentational: a daemon holding a genuinely old build is missing most of
   # the namespace, and the untruncated bullet listed all 106 names at the user.
   # Pluralisation is snapshotted with it -- the daemon count and the symbol
   # count are different quantities and an earlier draft pluralised on the wrong
   # one, printing "The daemons" for a single daemon.
+  #
+  # Four configurations, not two, because a snapshot only guards what it
+  # renders. The first draft pinned one symbol and five, which are exactly the
+  # two counts that came out right, and shipped both defects the review found
+  # (M24 review F1, F2, F11a). The two added here are where the wording
+  # actually changes: cli joins a pair with `vec-sep2` rather than `vec-last`,
+  # and a pool that is only PARTLY incompatible is the only one whose verb
+  # quantity differs from its daemon count.
   expect_snapshot(error = TRUE, {
     check_daemons_can_load(
       preflight_outcome(reports(TRUE, missing = list("rehydrate_payload")),
                         timeout = 30000)
     )
+    # The headline case: exactly the two names the worker resolves through the
+    # daemon's own namespace, which is what a pre-M23 daemon is short of.
+    check_daemons_can_load(
+      preflight_outcome(
+        reports(TRUE, missing = list(c("nested_fold_fit", "rehydrate_payload"))),
+        timeout = 30000
+      )
+    )
     check_daemons_can_load(
       preflight_outcome(
         reports(TRUE, missing = list(c("a", "b", "c", "d", "e"))),
+        timeout = 30000
+      )
+    )
+    # One daemon of two: "1 of 2 ... is running", against the daemon count's own
+    # plural in the same sentence.
+    check_daemons_can_load(
+      preflight_outcome(
+        reports(TRUE, TRUE, missing = list(NULL, "rehydrate_payload")),
         timeout = 30000
       )
     )

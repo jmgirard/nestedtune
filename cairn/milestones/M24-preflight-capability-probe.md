@@ -99,7 +99,7 @@ cancelled says so once.
       returns `no_response` under the covr job on ubuntu when it returned
       `cannot_load` on `main`, and fix it. Does not reproduce under local covr
       on macOS; all five `R CMD check` legs pass. F6 is the leading suspect.
-- [ ] T9 (review F1, F2): add `"vec-sep2" = ", "` to the `cli_vec()` style so
+- [x] T9 (review F1, F2): add `"vec-sep2" = ", "` to the `cli_vec()` style so
       two missing symbols separate, and take `{?is/are}`'s quantity from
       `n_incompatible` rather than `n_total`. Extend the snapshot to a
       two-symbol case and a mixed pool — the two configurations it does not
@@ -128,6 +128,7 @@ cancelled says so once.
 - 2026-07-30: all tasks done, verify slot clean; status review.
 - 2026-07-30: review returned M24 to in-progress. Gate failure: CI red on `test-coverage` (F15, scored 98) at a pre-existing test that passed on `main`. Four more findings actioned — the two-symbol separator (F1, 94) and the `is/are` quantity (F2, 88), both confirmed by execution here and both invisible to the snapshot I wrote, which pinned the cases that render correctly; the host-side `asNamespace()` regression (F6, 85); and a ledger row the drift guard silently skips (F9, 85). Ten findings logged below threshold. T8–T12 added. Return count 1.
 - 2026-07-30: process deviation, recorded rather than corrected silently — the AC boxes were ticked during implement, task by task, when AC fencing makes them review's verification mark against fresh evidence. Every criterion's evidence is now recorded in the Review section and each tick is backed by it, so the end state is correct; what was wrong was the order. Nothing was accepted unverified.
+- 2026-07-30: T9 done. Both defects confirmed by rendering before the fix: `vec-sep2` is the style cli uses at exactly n=2, and `{?is/are}` took `n_total` from the last interpolation. The snapshot now renders four configurations, not two — one symbol, two, five truncated, and a mixed pool — chosen as the counts at which the wording changes, since the first draft pinned precisely the two that came out right. Ledger: 2 new rows, 14 shifted by 24.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions
