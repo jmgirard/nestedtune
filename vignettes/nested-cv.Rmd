@@ -154,11 +154,42 @@ Two quantities it is *not*, both easy to mistake it for:
   `r nrow(folds)`/`r nrow(folds) - 1`, which is not that. So this package
   reports the estimate and offers no test of it.
 
+Expect that number to run slightly **pessimistic** — to look a little worse
+than the procedure deserves. The reason is arithmetic rather than statistical:
+every outer fold trains on its analysis rows only, so every model scored is
+built on less data than the model you finally deploy, and less data usually
+means worse predictions. Two measurements bracket the size of it. Varma and
+Simon (2006) found a nested estimate of 54.2% against a true 50.0% on
+deliberately null data with 40 samples — a 4.2-point overshoot they attribute
+directly to training on 39 rows rather than 40. Wilimitis and Walsh (2023),
+working on 41,121 hospital visits, found nested cross-validation the most
+pessimistic of every method they compared, by roughly 1–2% of AUROC and 5–9%
+of AUPR against a held-out benchmark. The offset therefore shrinks as folds
+get larger, but it does not vanish, and it points the same way in both.
+
+Two cautions on reading that. The gap is a property of the estimator, not a
+prediction about any one run: at the sample size on this page it is small next
+to fold-to-fold noise, so this particular vignette's numbers could as easily
+land the other way, and nothing below is offered as a demonstration of it.
+And "pessimistic" is a claim about the procedure's error, never a licence to
+adjust the reported figure upward — there is no correction here to apply.
+
 `std_err` is the standard error *of that mean* — the standard deviation of the
 `r rmse_row$n` fold scores divided by the square root of how many there were. It
 is not the fold-to-fold spread, which is larger by that same factor, and it is
 not a confidence interval: this package deliberately ships no inference on the
 nested estimate.
+
+That has a consequence for the obvious next thing to do with two of these
+numbers. If you run `nested_tune_grid()` on two different workflows and one
+comes back lower, nothing in `collect_metrics()` output tells you whether the
+difference is real — there is no valid interval here to subtract. Bayle et al.
+(2026) give a second, sharper reason not to reach for one: the stability
+condition that makes a single procedure's cross-validation interval valid can
+fail for the *difference* between two procedures even when it holds for each of
+them separately, and it fails hardest when the two are similar — which is
+exactly the case where you most want the comparison. Treat a gap between two
+nested estimates as a reason to look closer, never as a result.
 
 Now the number **not** to report. Any tuning run — the ones inside these outer
 folds, and the one behind the final model further down — carries resampling
@@ -217,6 +248,15 @@ by the evidence. That is not a defect in the estimate: the outer scores already
 average over exactly this variability, which is what makes them describe the
 procedure honestly. It is a defect in any story you might tell about the
 selected parameters being the right ones.
+
+Disagreement is the expected behaviour, not a symptom, wherever the candidates
+in question perform about equally well. Bayle et al. (2026) give the mechanism:
+as two candidates' predictions converge, the *difference* between their losses
+loses variance faster than the noise in estimating that difference does, so
+which of them wins any particular fold becomes close to a coin flip. The run
+above shows both faces of it at once — the folds split over `mtry`, whose
+candidates the data cannot separate here, and agree unanimously on `min_n`,
+where they can.
 
 The per-fold scores are worth a look for the same reason:
 
