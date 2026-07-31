@@ -29,6 +29,27 @@ use_parallel <- function(workers = mirai_workers()) {
   length(workers) == 1L && !is.na(workers) && workers >= 2L
 }
 
+# Whether the pool can be told to stop.
+#
+# Cancellation is a dispatcher feature: `mirai::daemons(n)` starts one by
+# default, but `daemons(n, dispatcher = FALSE)` does not, and use_parallel()
+# admits both because it asks only how many daemons are connected. On such a
+# pool the unconditional stop_mirai() in dispatch_folds() returns FALSE per
+# element and every outstanding fold runs to completion regardless (verified at
+# M15 against mirai 2.7.2).
+#
+# `status()$mirai` is what separates them -- NULL without a dispatcher and a
+# record with one -- while `status()$connections` reads the same either way, so
+# the count use_parallel() consults cannot tell them apart (verified by
+# execution, mirai 2.7.2). NULL is also what an absent mirai would give, hence
+# the installed check first: never warn about a pool that is not there.
+pool_is_cancellable <- function() {
+  if (!is_mirai_installed()) {
+    return(TRUE)
+  }
+  !is.null(mirai::status()$mirai)
+}
+
 # Which branch the last dispatch took.
 #
 # This is deliberately NOT stored on the results object. BC1 requires both that
@@ -174,6 +195,7 @@ dispatch_folds <- function(payloads, object, grid, metrics,
   }
 
   check_daemons_can_load(call = call)
+  warn_if_not_cancellable(call = call)
 
   record_dispatch("parallel")
   # The task is sent with its environment stripped to the global one. Left
@@ -581,6 +603,42 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
     class = c("nestedtune_daemons_no_response", "nestedtune_daemons_unusable"),
     call = call
   )
+}
+
+# Say once that this pool cannot be stopped.
+#
+# A warning rather than a refusal, and the line is GP3's: a dispatcher-less pool
+# computes correct results, so what is unavailable is cancellation and not
+# correctness. GP3 asks that provably invalid designs be refused, and this pool
+# is degraded rather than invalid -- refusing it would reject a configuration
+# that produces the right answer.
+#
+# Emitted here rather than in nested_tune_grid() because this is where the fact
+# becomes true: dispatch_folds() is called once per run (R/nested-tune-grid.R),
+# so one warning site is one warning per call, and the serial branch returns
+# above without reaching it. Before M24 only the roxygen said any of this, which
+# a user meets only if they go looking after the run they wanted to interrupt.
+#
+# `cancellable` is an argument so the branch is reachable without a real pool,
+# the same seam check_daemons_can_load() opens with `status`.
+warn_if_not_cancellable <- function(cancellable = pool_is_cancellable(),
+                                    call = rlang::caller_env()) {
+  if (isTRUE(cancellable)) {
+    return(invisible(FALSE))
+  }
+  cli::cli_warn(
+    c(
+      "These mirai daemons were started without a dispatcher, so this run
+       cannot be cancelled.",
+      i = "Interrupting it returns control to you, but the outer folds keep
+           computing on the pool and their results are never read.",
+      i = "For a pool that stops when you do, restart it with
+           {.code mirai::daemons(n)}, which starts a dispatcher by default."
+    ),
+    class = "nestedtune_pool_not_cancellable",
+    call = call
+  )
+  invisible(TRUE)
 }
 
 # What a worker handed back, turned into a fold record.

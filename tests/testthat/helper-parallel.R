@@ -132,6 +132,25 @@ reports <- function(..., missing = NULL) {
   })
 }
 
+# The same pool, minus the dispatcher that makes cancellation possible (M24).
+#
+# `mirai::daemons(n)` starts a dispatcher; `daemons(n, dispatcher = FALSE)` does
+# not, and use_parallel() admits both because it counts connections, which read
+# alike. Primed and warmed exactly as start_daemons() does, so the two differ in
+# the one property under test and in nothing else.
+#
+# A named helper rather than the three calls inline, so its waits are one
+# BUDGETED_WAIT_CALLS entry the time-budget ledger can see -- prime_daemons()
+# and warm_daemons() are not names that guard recognises, and spelled out at a
+# call site they would each wait 60 s invisibly to it.
+start_daemons_undispatched <- function(n) {
+  mirai::daemons(0)
+  mirai::daemons(n, dispatcher = FALSE)
+  prime_daemons()
+  warm_daemons()
+  invisible(n)
+}
+
 skip_if_no_daemons <- function() {
   testthat::skip_if_not_installed("mirai")
   testthat::skip_on_cran()

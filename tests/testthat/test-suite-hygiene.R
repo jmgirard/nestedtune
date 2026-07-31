@@ -59,7 +59,8 @@ blocking_collect_sites <- function(path) {
 # conscious classification instead of letting it hide among the harmless ones.
 BUDGETED_WAIT_CALLS <- c(
   "collect_bounded", "daemons_load_status", "setTimeLimit",
-  "check_daemons_can_load", "start_daemons", "start_mixed_daemons"
+  "check_daemons_can_load", "start_daemons", "start_mixed_daemons",
+  "start_daemons_undispatched"
 )
 
 BUDGETED_FILES <- c(
