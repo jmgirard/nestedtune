@@ -49,7 +49,7 @@ cancelled says so once.
       remedy (reinstall the current version into the daemons' library, then
       restart the pool). Asserted through the existing `status =` injection
       point against a snapshot.
-- [ ] AC4: the probe expression runs on a real daemon pool and correctly
+- [x] AC4: the probe expression runs on a real daemon pool and correctly
       reports a symbol that genuinely is not present, asserted against a live
       pool by asking for a name no version of the package defines.
 - [ ] AC5: dispatch to a pool started with `mirai::daemons(n, dispatcher = FALSE)`
@@ -87,7 +87,7 @@ cancelled says so once.
       the new outcome below `cannot_load`; test all four plus the mixed pool.
 - [x] T3: carry the new fields on the status record and add the abort branch to
       `check_daemons_can_load()` (`R/parallel.R:419-475`); snapshot the message.
-- [ ] T4: assert the probe against a live pool with a deliberately absent
+- [x] T4: assert the probe against a live pool with a deliberately absent
       symbol, in `test-parallel-detection.R`; add its time-budget row.
 - [ ] T5: detect the pool kind from `mirai::status()$mirai` and warn once in
       `dispatch_folds()` (`R/parallel.R:169-273`); assert both pool kinds and
@@ -106,6 +106,7 @@ cancelled says so once.
 - 2026-07-30: T1 done. Probe returns a per-daemon record; `daemon_report()` replaces `loaded_answer()`. `preflight_outcome()`'s new `incompatible` branch landed here too (same function), so T2 is code-complete and awaits its own tests. Three test call sites built bare logicals; a `reports()` helper builds records in place so no line moved. Missed one at `test-parallel-identity.R:112` — a mock fabricating `FALSE` silently reclassified from cannot_load to no_response, caught by the full suite. Ledger rows 520/527/528 shifted 37 lines and were repaired (the M16/M21 drift trap).
 - 2026-07-30: T2 done. Five ladder tests: incompatible classified, missing symbols unioned across the pool, `cannot_load` still outranks it, it outranks `no_response`, and all four outcomes asserted distinct in one place so a future branch cannot absorb its neighbour. The 73 inserted lines shifted 10 ledger rows; repaired by offset.
 - 2026-07-30: T3 done. `nestedtune_daemons_incompatible` aborts with its own remedy — reinstall AND restart, because a live daemon keeps the namespace it loaded — deliberately not the install bullet, which reads as already done. Snapshotted. Two presentation bugs found by rendering rather than by assertion: cli's `vec-trunc` does not survive `{.code {}}` (a stale daemon would have listed all 106 symbols) and `{extra}` nested in a template conditional reached the user verbatim; both fixed and pinned by the snapshot, which also pins the daemon-vs-symbol pluralisation an earlier draft got wrong. Full suite 1557 pass / 0 fail.
+- 2026-07-30: T4 done. Two live-pool tests in `test-parallel-detection.R`: a symbol no build defines comes back reported by both daemons, and — the precondition the whole approach rests on — a primed pool matches the host's namespace exactly, so the manifest does not false-positive under pkgload as it must not under R CMD check either. Five budget rows added. Full suite 1569 pass / 0 fail.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions

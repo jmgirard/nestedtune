@@ -103,3 +103,61 @@ test_that("the probe reaches every daemon, not just a loadable one", {
   )
   expect_lt(elapsed, 150)
 })
+
+# --- A daemon that loads the package but cannot run the fold (M24) ----------
+#
+# The failure M23 made reachable: dispatch resolves `rehydrate_payload` through
+# the daemon's own namespace, so a daemon holding a build from before that
+# symbol existed loads the package, answers the old pre-flight TRUE, and then
+# raises "attempt to apply non-function" on every fold. A version comparison
+# cannot see it -- DESCRIPTION has read 0.0.0.9000 since M01, so the stale
+# daemon reports this session's own string.
+#
+# Proved here against a real pool rather than a stubbed install: asking for a
+# name no build defines produces exactly the shape a stale build produces, and
+# needs no second library. The stub-install route was weighed at the plan gate
+# and declined -- priming reaches every daemon, erasing the heterogeneity such
+# a fixture exists to create (see the ranger test above).
+
+test_that("a primed pool matches the host's namespace exactly", {
+  skip_if_no_daemons()
+
+  # The precondition for the whole approach, asserted rather than assumed. The
+  # manifest is `ls()` of the host's namespace, and host and daemons must agree
+  # under BOTH ways the suite runs -- primed by pkgload here, installed under
+  # R CMD check. A mismatch either way would refuse every parallel run.
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+
+  status <- daemons_load_status(timeout = 30000)
+  expect_identical(status$outcome, "ok")
+  expect_identical(status$incompatible, 0L)
+  expect_identical(status$missing_symbols, character())
+})
+
+test_that("a symbol no build defines is reported by every daemon that loaded", {
+  skip_if_no_daemons()
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+
+  absent <- "nestedtune_symbol_no_build_defines"
+  status <- daemons_load_status(
+    symbols = c(daemon_symbol_manifest(), absent), timeout = 30000
+  )
+
+  # Every daemon loaded the package -- this is not the cannot_load path -- and
+  # every one of them is short the same symbol.
+  expect_identical(status$total, 2L)
+  expect_identical(status$cannot_load, 0L)
+  expect_identical(status$no_answer, 0L)
+  expect_identical(status$incompatible, 2L)
+  expect_identical(status$missing_symbols, absent)
+  expect_identical(status$outcome, "incompatible")
+
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_incompatible"
+  )
+  expect_match(conditionMessage(err), absent)
+})
