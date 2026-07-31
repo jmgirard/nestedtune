@@ -65,6 +65,10 @@ point is used for both training and testing, giving the block covariance
 structure of Figure 6 (p. 7). So se = sd(e)/√n is too small. Bengio & Grandvalet
 (2004), cited p. 2, prove no unbiased estimator of that variance exists from a
 single run of CV, which is why fixing it requires changing the procedure.
+_(Sharpened 2026-07-31 on ingesting that paper as `bengio2004.md`: the theorem
+is that no **universally** unbiased estimator exists — unbiased under all
+distributions is what fails — and its §5 adds that repeating the K-fold split
+does not help either, since extra runs are not independent realizations.)_
 
 **Result 3 — their NCV, and its cost.** Lemma 3 (p. 8) decomposes the MSE of any
 prediction-error estimate into two terms that are each estimable from a
