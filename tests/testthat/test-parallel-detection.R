@@ -86,8 +86,42 @@ test_that("the probe reaches every daemon, not just a loadable one", {
   # library, and not something mirai drags in. Probing for nestedtune itself
   # would need it installed, and priming a daemon with everywhere() reaches
   # every daemon -- erasing the very heterogeneity under test.
+  probe_started <- Sys.time()
   status <- daemons_load_status(package = "ranger", timeout = 30000)
+  probe_secs <- as.numeric(Sys.time() - probe_started, units = "secs")
   elapsed <- as.numeric(Sys.time() - started, units = "secs")
+
+  # TEMPORARY DIAGNOSTIC (M24 T8) -- removed once F15's mechanism is named.
+  dbg <- function(...) cat("[m24-dbg]", ..., "\n", file = stderr())
+  dbg("probe took", round(probe_secs, 2), "s of a 30 s bound")
+  dbg("status:", paste(names(status), unlist(lapply(status, function(v)
+    paste(format(v), collapse = "/"))), sep = "=", collapse = " "))
+  dbg("host libPaths:", paste(.libPaths(), collapse = " | "))
+  dbg("host ranger:", paste(find.package("ranger", quiet = TRUE), collapse = " | "))
+  syms <- daemon_symbol_manifest("ranger")
+  dbg("manifest n =", length(syms))
+  seen <- collect_bounded(mirai::everywhere(
+    list(lib = .libPaths(), has = requireNamespace(package, quietly = TRUE)),
+    .args = list(package = "ranger")
+  ), seconds = 30)
+  for (i in seq_along(seen)) {
+    dbg("daemon", i, "class:", paste(class(seen[[i]]), collapse = "/"),
+        "value:", paste(utils::capture.output(utils::str(seen[[i]])),
+                        collapse = " ~ "))
+  }
+  again <- collect_bounded(mirai::everywhere(
+    if (requireNamespace(package, quietly = TRUE)) {
+      list(loaded = TRUE, missing = setdiff(symbols, ls(asNamespace(package))))
+    } else {
+      list(loaded = FALSE, missing = character())
+    },
+    .args = list(package = "ranger", symbols = syms)
+  ), seconds = 30)
+  for (i in seq_along(again)) {
+    dbg("reprobe", i, "class:", paste(class(again[[i]]), collapse = "/"),
+        "value:", paste(utils::capture.output(utils::str(again[[i]])),
+                        collapse = " ~ "))
+  }
 
   # The M07 defect, in its natural habitat: one mirai() task lands on one
   # daemon, so this pool answered TRUE and dispatched, and every fold routed to
