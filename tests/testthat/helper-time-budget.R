@@ -208,7 +208,7 @@ time_budget_ledger <- function() {
     tb_row("test-parallel-metrics.R", 58L, "start_daemons",
            START_DAEMONS_BOUND_S(),
            "the metric set the caller gave reaches folds running on a worker"),
-    tb_row("test-parallel-payload.R", 224L, "start_daemons",
+    tb_row("test-parallel-payload.R", 259L, "start_daemons",
            START_DAEMONS_BOUND_S(),
            "a daemon receives the payload rehydrated, not the leaned one"),
 

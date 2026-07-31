@@ -203,6 +203,41 @@ test_that("a design whose folds share no frame is leaned too", {
   }
 })
 
+test_that("a fold whose outer frame is not the shared one carries its own", {
+  # `shared` is taken from the FIRST fold's outer split, so a design assembled
+  # from folds over different frames has folds that do not match it. Each fold
+  # is compared against `shared` rather than assumed to share it, and one that
+  # does not carries its own copy -- larger on the wire, and correct, which is
+  # the direction that matters.
+  d1 <- payload_fixture_data(n = 200, p = 3)
+  d2 <- payload_fixture_data(n = 200, p = 3, seed = 99)
+  fold_over <- function(d) {
+    list(
+      split = rsample::make_splits(
+        list(analysis = 1:150, assessment = 151:200), d
+      ),
+      inner = rsample::vfold_cv(d[1:150, ], v = 3),
+      seeds = c(1L, 2L)
+    )
+  }
+  first <- fold_over(d1)
+  other <- fold_over(d2)
+  shared <- first$split$data
+
+  lean_first <- lean_payload(first, shared)
+  lean_other <- lean_payload(other, shared)
+
+  # The first fold IS the shared frame, so it carries neither copy; the second
+  # matches nothing and carries both its outer and its inner frame.
+  expect_null(lean_first$outer_data)
+  expect_false(is.null(lean_other$outer_data))
+  expect_false(is.null(lean_other$inner_data))
+
+  # Both round-trip exactly, which is what keeps a mixed design correct.
+  expect_identical(rehydrate_payload(lean_first, shared), first)
+  expect_identical(rehydrate_payload(lean_other, shared), other)
+})
+
 test_that("a daemon receives the payload the serial branch would have passed", {
   skip_if_no_daemons()
 
