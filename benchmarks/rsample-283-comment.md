@@ -1,15 +1,19 @@
 # Draft comment for rsample#283
 
-**Not posted.** This is a draft. A maintainer of this repository posts it to
-https://github.com/tidymodels/rsample/issues/283 by hand. Every figure below
-comes from `benchmarks/rsample-283-reprex.R` in this repository. Run that
-script before posting if the versions have moved.
+**Posted 2026-07-30**, closing the handoff M13 left open:
+https://github.com/tidymodels/rsample/issues/283#issuecomment-5138541442
+_(This block read "**Not posted.** This is a draft. A maintainer of this
+repository posts it to ... by hand" from M13 until it was posted; corrected in
+place 2026-07-30 — git holds the original.)_
 
-Figures re-verified against rsample 1.3.2 / R 4.6.1 on 2026-07-30; every number
-below reproduced exactly, and the prose was rewritten that day for readability
-without any figure changing.
+Every figure below comes from `benchmarks/rsample-283-reprex.R` in this
+repository, re-verified against rsample 1.3.2 / R 4.6.1 on 2026-07-30
+immediately before posting; every number reproduced exactly, and the prose was
+rewritten that day for readability without any figure changing.
 
-Nothing outside this file depends on it, and no script here posts it.
+The text below the rule is what was posted, verbatim. Keep it in sync with the
+comment if that thread is ever edited; nothing outside this file depends on it,
+and no script here posts it.
 
 ---
 
