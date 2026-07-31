@@ -52,6 +52,82 @@ reset_dispatch_record <- function() {
   invisible(NULL)
 }
 
+# Take the data out of one fold's payload, and put it back on the worker.
+#
+# Every rsplit carries the whole frame it indexes. In memory those are one
+# shared copy -- that is what nested_resamples() exists to achieve -- but R's
+# serializer does not preserve sharing for ordinary objects, so each split wrote
+# its own copy onto the wire: six of them for v = 5, inner_v = 5, measured
+# 5,141,166 B against 840,540 B of data. `lobstr::obj_size()` reports 946.94 kB
+# for that same payload and so cannot see the defect at all, which is why the
+# guards in test-parallel-payload.R measure the serialized stream.
+#
+# `$data` is blanked with `x["data"] <- list(NULL)` rather than `x$data <- NULL`
+# on purpose: assigning NULL to a list element DELETES it, and the rehydrated
+# object would then carry `data` in last position instead of its own. The round
+# trip has to be `identical()` to what the serial branch passes, not merely
+# equivalent, or IP2's serial-vs-parallel comparison is testing two shapes.
+#
+# What each frame is compared against is `shared`, the one copy `.args` carries.
+# A nested_resamples() design indexes a single frame throughout, so nothing is
+# carried per fold. An rsample::nested_cv() design materializes each outer
+# fold's analysis set, so that fold's inner frame is neither the original nor
+# any other fold's and travels with the fold -- still once, rather than once per
+# inner split. `identical()` decides which case a fold is in: it takes a pointer
+# fast path when the frames are the same object (0.04 ms against 1.05 ms on a
+# 32 MB frame), and an equal-but-distinct frame answering TRUE is sound here,
+# since substituting one for the other is exactly what rehydration does.
+is_fold_payload <- function(x) {
+  is.list(x) &&
+    inherits(x$split, "rsplit") &&
+    is.data.frame(x$split$data) &&
+    is.data.frame(x$inner) &&
+    is.list(x$inner$splits) &&
+    length(x$inner$splits) > 0L &&
+    is.data.frame(x$inner$splits[[1L]]$data)
+}
+
+lean_payload <- function(payload, shared) {
+  outer_data <- payload$split$data
+  inner_data <- payload$inner$splits[[1L]]$data
+
+  payload$split["data"] <- list(NULL)
+  payload$inner$splits <- lapply(payload$inner$splits, function(split) {
+    split["data"] <- list(NULL)
+    split
+  })
+
+  if (!identical(outer_data, shared)) {
+    payload$outer_data <- outer_data
+  }
+  if (!identical(inner_data, shared)) {
+    payload$inner_data <- inner_data
+  }
+  payload
+}
+
+rehydrate_payload <- function(payload, shared) {
+  outer_data <- payload$outer_data
+  inner_data <- payload$inner_data
+  if (is.null(outer_data)) {
+    outer_data <- shared
+  }
+  if (is.null(inner_data)) {
+    inner_data <- shared
+  }
+
+  payload$split$data <- outer_data
+  payload$inner$splits <- lapply(payload$inner$splits, function(split) {
+    split$data <- inner_data
+    split
+  })
+  # Removes the fields rather than blanking them, so what comes back has the
+  # shape the serial branch passes and nothing more.
+  payload$outer_data <- NULL
+  payload$inner_data <- NULL
+  payload
+}
+
 # Run every fold, serially or across daemons.
 #
 # `payloads` is one self-contained list per fold -- split, inner rset, and the
@@ -77,14 +153,59 @@ dispatch_folds <- function(payloads, object, grid, metrics,
   # and where it truly is unavailable the environment silently degrades to the
   # global one anyway (RR03 Q5). Since the body resolves the namespace by name
   # regardless, carrying it buys nothing and costs a warning per fold.
-  task <- fold_task
+  # One copy of the data for the whole run, and index vectors per fold. The
+  # outer split's frame is the original under both constructors, so it is what
+  # every fold is measured against; anything a fold does not share with it
+  # travels in that fold's own payload (see lean_payload()).
+  #
+  # `.args` is charged per fold, not per run -- mirai::mirai_map() serializes it
+  # once per task -- so this is one copy per fold rather than one per run, which
+  # is still the difference between 25,714,635 B and 4,701,505 B on the fixture
+  # in test-parallel-payload.R.
+  #
+  # Leaning is skipped entirely unless every payload IS a fold payload.
+  # dispatch_folds() is also driven directly with stand-in payloads carrying
+  # neither split nor inner rset -- deliberately, since what those exercise is
+  # the dispatch mechanics and a real fold would cost a model fit apiece. The
+  # shape is recognised positively, the same discipline is_fold_record() uses.
+  leaning <- all(vapply(payloads, is_fold_payload, logical(1)))
+
+  if (leaning) {
+    shared <- payloads[[1L]]$split$data
+    payloads <- lapply(payloads, lean_payload, shared = shared)
+    # Rehydration wraps `fold_task` rather than living inside it, so that
+    # `fold_task` keeps the signature the interrupt and identity tests mock, and
+    # so a mock receives the objects the real worker would rather than splits
+    # with the data still missing -- a mock made to rehydrate itself would be
+    # hand-rolling the path it exists to cover (M07).
+    #
+    # The worker is passed BY VALUE through `.args`, never looked up by name in
+    # the wrapper. `local_mocked_bindings()` rebinds `fold_task` in this
+    # process only, so a daemon-side `asNamespace()` lookup would resolve the
+    # real function and silently bypass the mock -- which is what makes the
+    # mocked-binding injection point work at all. Its environment is stripped
+    # for the reason the task's is.
+    # `removeSource()` because a function's srcrefs are serialized with it, and
+    # whether they are present depends on how the package was installed rather
+    # than on anything about the run: under `pkgload::load_all()` this closure
+    # measured 202,363 B against 524 B re-parsed, and it is charged once per
+    # fold. Stripping them makes the wire cost the same in development as it is
+    # from an installed library.
+    worker <- removeSource(fold_task)
+    environment(worker) <- globalenv()
+    task <- function(payload, object, grid, metrics, shared, worker) {
+      ns <- asNamespace("nestedtune")
+      worker(ns$rehydrate_payload(payload, shared), object, grid, metrics)
+    }
+    args <- list(object = object, grid = grid, metrics = metrics,
+                 shared = shared, worker = worker)
+  } else {
+    task <- fold_task
+    args <- list(object = object, grid = grid, metrics = metrics)
+  }
   environment(task) <- globalenv()
 
-  mapped <- mirai::mirai_map(
-    .x = payloads,
-    .f = task,
-    .args = list(object = object, grid = grid, metrics = metrics)
-  )
+  mapped <- mirai::mirai_map(.x = payloads, .f = task, .args = args)
   # Leaving this function without returning must not leave folds running.
   #
   # The collect below blocks, and interrupting it unwinds the host while saying

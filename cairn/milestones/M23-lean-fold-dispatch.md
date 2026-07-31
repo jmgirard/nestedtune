@@ -93,14 +93,14 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
       bytes of the `.x` element, of the `.args` list, and the sentinel copy
       count. Run it on the pre-milestone revision and record the baseline in the
       work log.
-- [ ] T2 Write the failing tests first: AC2's closed-form bound and copy count,
+- [x] T2 Write the failing tests first: AC2's closed-form bound and copy count,
       and AC3's round-trip identity for the outer split and the inner `rset`.
-- [ ] T3 Add the lean/rehydrate pair to `R/parallel.R` — set `$data` to `NULL` on
+- [x] T3 Add the lean/rehydrate pair to `R/parallel.R` — set `$data` to `NULL` on
       the outer split and on each inner split in place, so every other attribute
       survives untouched, and reattach on the worker. Each payload carries its
       fold's inner frame only when that frame is not the shared one `.args`
       already holds, which is what covers designs from `rsample::nested_cv()`.
-- [ ] T4 Wire them into the parallel branch of `dispatch_folds()`
+- [x] T4 Wire them into the parallel branch of `dispatch_folds()`
       (`R/parallel.R:64-118`): lean the payloads before `mirai_map()`, add the
       data to `.args`, and rehydrate in `fold_task()` (`R/parallel.R:428-438`)
       before `nested_fold_fit()`. Leave the serial branch at line 68 untouched.
@@ -129,6 +129,11 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
 
 - 2026-07-30: T1 baseline, `benchmarks/dispatch-payload-size.R`, R 4.6.1 / rsample 1.3.2 / mirai 2.7.2, fixture n=5000 x 21, v=5, inner_v=5. `nested_resamples` design: payload 5,141,166 B per fold, 6 copies of the data by sentinel count, `.args` 1,761 B per fold, TOTAL WIRE 25,714,635 B. `rsample::nested_cv` design: payload 4,285,186 B per fold, 1 shared copy plus 5 of the fold's own analysis frame, TOTAL WIRE 21,434,735 B. Closed-form prediction for a leaned payload: 96,000 B.
 - 2026-07-30: the harness measured `.args` at 26,549,958 B until its own workflow was pinned — a formula built inside a function carries that function's frame, and R serializes an ordinary environment by contents while `globalenv()` and namespaces go by reference (the mechanism M12's hashing lesson records). Realistic value is 1,761 B. Left in the script as a named trap rather than silently fixed, since a user building a formula in a data-holding scope pays it for real.
+
+- 2026-07-30: T2-T4 done. Suite green, 0 failures. Measured after-state on the T1 fixture: `nested_resamples` design 25,714,635 -> 4,705,635 B (18.3%, 5.5x); `rsample::nested_cv` design 21,434,735 -> 7,988,195 B (37.3%, 2.7x), the difference being that fold's own materialized analysis frame, which AC1's bar does not cover and AC8's copy count does.
+- 2026-07-30: two corrections to the plan's "serial branch untouched" premise, both found by the suite rather than by reading. `fold_task()` is shared by BOTH branches, so adding a parameter to it broke every serial test; and `dispatch_folds()` is driven directly by test-parallel-interrupt.R with stand-in payloads carrying neither split nor inner rset. Resolved by leaning only when every payload is positively recognised as a fold payload (`is_fold_payload()`), and by wrapping rehydration around `fold_task` rather than inside it. The serial branch's own call is byte-identical to before.
+- 2026-07-30: the wrapper's first form resolved `fold_task` by name inside the daemon and silently bypassed `local_mocked_bindings()`, turning BC3's daemon-kill test green while the mock never ran — M07's lesson is that the mock reaches a daemon precisely because the function is captured by value and serialized. The worker is now passed by value through `.args`, which also means a mock receives rehydrated payloads instead of having to hand-roll rehydration itself.
+- 2026-07-30: the worker closure measured 202,363 B per fold under `pkgload::load_all()` against 524 B re-parsed — srcrefs are serialized with a function and their presence depends on how the package was installed, not on the run. `removeSource()` at dispatch makes the wire cost the same either way. Same class of measurement trap as the harness's formula environment at T1.
 
 ## Decisions
 
