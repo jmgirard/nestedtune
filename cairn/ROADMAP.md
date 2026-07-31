@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-30 (all checks and advisories green, both GitHub inboxes empty, no orphans, nothing in flight. Since the last check: D-024 settled the upstream posture, and M13's rsample#283 handoff closed with the comment posted)_
+_Last hygiene check: 2026-07-31 (all checks green, one advisory — M24 carried 12 tasks past the 10-task tripwire, from its send-back rather than a mis-sized plan. Since the last check: M24 merged after two review passes, and M19's terminal row was pruned to hold the 5-row cap)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M24 | The pre-flight tells the truth about the pool | review | — | normal | milestones/M24-preflight-capability-probe.md |
+| M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |
 | M23 | A worker is sent the fold, not six copies of the data | done | — | normal | milestones/archive/M23-lean-fold-dispatch.md |
 | M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |
 | M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |
 | M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
-| M19 | A malformed design is refused at the driver, not at the tenth fold | done | — | normal | milestones/archive/M19-driver-design-guards.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
