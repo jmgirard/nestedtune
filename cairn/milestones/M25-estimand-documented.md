@@ -104,7 +104,7 @@ internal.
 - [x] T1: Draft the References section and its entry list, and decide the
       author-year form each of the six sources takes in prose. Reader-facing
       text carries no cairn citekey.
-- [ ] T2: Name the estimand in the "What to report, and why" section
+- [x] T2: Name the estimand in the "What to report, and why" section
       (`vignettes/nested-cv.Rmd:124-163`), reconciling it with line 33.
 - [ ] T3: Replace the uncited bias-direction clause at
       `vignettes/nested-cv.Rmd:133-136` with the sourced paragraph, no inline
@@ -129,6 +129,7 @@ internal.
 - 2026-07-31: implement started on `m25-estimand-documented`, cut from `main` at 4fd429e.
 - 2026-07-31: verified the audit's reproduction of the vignette run independently before writing anything resting on it — `mtry` 5/8/5/8/5, `min_n` 2 in all five folds, RMSE 2.46 (SE 0.445). AC4(b)'s condition holds.
 - 2026-07-31: T1 done. References section carries the six reader-facing sources; prose form is author-year (`Varma and Simon (2006)`, `Bayle et al. (2026)`). `bengio2004` and `gauran2025` are roxygen-only per AC3 and get `@references` on the man page instead.
+- 2026-07-31: T2 done. Estimand named as the k-fold test error of the tune-and-fit procedure (Bayle et al., 2026), with the two quantities it is not — the deployed model's risk, and the training-set-averaged version, the latter carrying Luo and Barber (2026)'s ratio argument. Intro line 33 reconciled: the nested estimate is reported *in place of* a model score, not as one.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings. Three fixed before the gate — AC3 re-sourced off `bates2023` (whose own reference page records the statistic as different and the effect unmeasured for it) onto `bengio2004` + `gauran2025`; AC4(b)'s "fine grid" condition dropped as false of this vignette's six-point grid and unanimous `min_n`; AC7 pointed at PROFILE's gate definition and required `ranger` present, since `knit_exit()` made "vignette rebuilt" vacuously satisfiable. Three became gate questions (estimand choice, the `mtcars` claim, citation form); one (AC6 checking a superset of "citations this milestone adds") accepted as satisfied a fortiori — there are zero such citations in the tree today.
 - 2026-07-31: plan gate chose naming the estimand as the conditional k-fold test error (bayle2026's R_n) over bates2023's marginal Err because Err is the quantity luo2026 proves is not inferable at N/n ≈ 1.11, so naming it would overclaim; falsified by a source establishing that the outer-fold mean estimates the marginal quantity at this sample ratio.
 - 2026-07-31: plan gate chose correcting the `mtcars` justification over re-cutting the vignette onto a wide example because the re-cut invalidates every inline number, both figures and the runtime budget; falsified by the corrected paragraph proving unwritable without the example itself changing.

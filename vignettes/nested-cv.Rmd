@@ -30,7 +30,9 @@ That last sentence is the whole idea, and it has a consequence worth stating up
 front: what comes back is a property of the procedure, never of any one fitted
 model. The model you eventually deploy is a separate object, produced further
 down this page, and it has no honest performance number of its own. The nested
-estimate is what you report for it.
+estimate is what you report in its place — as a statement about the procedure
+that produced it, not as that model's score. The section below names exactly
+which quantity it is.
 
 ```{r libraries, message = FALSE}
 library(nestedtune)
@@ -130,10 +132,27 @@ est
 rmse_row <- est[est$.metric == "rmse", ]
 ```
 
-Report that. The RMSE of `r round(rmse_row$mean, 2)` is an approximately
-unbiased — if anything slightly conservative — estimate of how this whole
-tune-and-fit procedure performs on new data drawn like `mtcars`, measured
-`r rmse_row$n` times on rows the procedure never touched.
+Report that. The RMSE of `r round(rmse_row$mean, 2)`, measured `r rmse_row$n`
+times on rows the procedure never touched, estimates one specific quantity, and
+it is worth naming it: the **k-fold test error of the tune-and-fit procedure**
+(Bayle et al., 2026). That is the error you should expect from resampling,
+tuning, selecting and fitting — the whole thing — on a training set the size of
+one outer analysis set, and then predicting fresh data drawn like `mtcars`.
+
+Two quantities it is *not*, both easy to mistake it for:
+
+- **Not the risk of the model you deploy.** That model is built further down
+  this page on all `r nrow(mtcars)` rows; its own error is a different quantity
+  with a different value, and nothing here estimates it. What the nested number
+  buys you is the right to describe the procedure that produced that model.
+- **Not the same quantity averaged over training sets.** The average — how this
+  procedure does across all datasets of this size, rather than on the ones these
+  folds happened to draw — is usually what a reader has in mind, and it is much
+  the harder thing to get. Luo and Barber (2026) prove that any assumption-free
+  test of it needs a dataset many times larger than the training size being
+  evaluated; a `r nrow(folds)`-fold outer loop supplies a ratio of
+  `r nrow(folds)`/`r nrow(folds) - 1`, which is not that. So this package
+  reports the estimate and offers no test of it.
 
 `std_err` is the standard error *of that mean* — the standard deviation of the
 `r rmse_row$n` fold scores divided by the square root of how many there were. It
