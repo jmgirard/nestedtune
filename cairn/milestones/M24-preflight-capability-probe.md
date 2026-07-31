@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP3
-- **Branch/PR:** `m24-preflight-capability-probe`
+- **Branch/PR:** `m24-preflight-capability-probe` / https://github.com/jmgirard/nestedtune/pull/25
 
 ## Goal
 
@@ -111,6 +111,7 @@ cancelled says so once.
 - 2026-07-30: T6 done. Two NEWS entries written for users rather than for the changelog — "worker" not "daemon", the restart explained rather than instructed. Pre-flight bullet extended with the capability half; cancellation paragraph now says the warning fires and why the pool is warned about rather than refused. `document()` regenerated `man/nested_tune_grid.Rd`, no other diff. Full suite 1586 pass / 0 fail.
 - 2026-07-30: T7 done. No prose-guard over a doc was authored, so the obligation was guard verification by inversion: six mutations, each reddening the guard that locks it — admitting a bare character into `daemon_report` (4 fail), inverting the ladder (1), never sending the manifest (5), never firing the warning (4), reporting every pool cancellable (3), dropping the truncation (1). Tree restored clean after each. `document()` no-diff. Full suite 1586 pass / 0 fail.
 - 2026-07-30: all tasks done, verify slot clean; status review.
+- 2026-07-30: process deviation, recorded rather than corrected silently — the AC boxes were ticked during implement, task by task, when AC fencing makes them review's verification mark against fresh evidence. Every criterion's evidence is now recorded in the Review section and each tick is backed by it, so the end state is correct; what was wrong was the order. Nothing was accepted unverified.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions
@@ -140,3 +141,62 @@ Falsified by a legitimate pool this refuses — a daemon whose namespace differs
 for a reason unrelated to which build it is running.
 
 ## Review
+
+Reviewed 2026-07-30 on `m24-preflight-capability-probe` at PR #25.
+`main` had not moved since the branch was cut, so no merge was needed and
+the evidence below is from the branch tip.
+
+### Criterion evidence
+
+- **AC1** — `daemon_report()` validates positively and returns NULL for a
+  non-record. Three tests in `test-parallel-classify.R`: "a miraiError is
+  never read as a capability report" (asserts the length-1 character
+  rejection the criterion names), "a report is rejected unless every field
+  has the right shape" (7 malformed records plus the well-formed one), and
+  "a daemon answering something other than a report counts as silent".
+  Inversion: admitting a bare character into `daemon_report()` reddens 4 tests.
+- **AC2** — the `incompatible` outcome exists and sits below `cannot_load`.
+  Five tests, including "every outcome the ladder can produce is reachable
+  and distinct" (all four asserted in one vector) and both mixed pools —
+  load-failure-plus-incompatible takes `cannot_load`, incompatible-plus-silent
+  takes `incompatible`. Inversion: swapping the two ladder arms reddens 1 test.
+- **AC3** — status record carries `incompatible` and `missing_symbols`; the
+  abort raises `nestedtune_daemons_incompatible` + `nestedtune_daemons_unusable`.
+  Three tests plus a two-case snapshot (`_snaps/parallel-classify.md`) pinning
+  the one-symbol and truncated forms, the daemon-vs-symbol pluralisation, and
+  the absence of the install remedy. Inversion: dropping truncation reddens 1.
+- **AC4** — probe proved against a live pool. "a symbol no build defines is
+  reported by every daemon that loaded" asserts `incompatible == 2`,
+  `cannot_load == 0`, and `missing_symbols` equal to the absent name, which
+  can only have come back from the daemons; its companion asserts a primed
+  pool matches the host namespace exactly, which is the precondition the
+  manifest approach rests on. Inversion: not sending the manifest reddens 5.
+- **AC5** — warning fires once per `dispatch_folds()` call. Four tests: pool
+  kinds distinguishable while `connections` reads alike, both argument
+  branches, the `nested_tune_grid()` seam (3 folds → 1 warning), the direct
+  `dispatch_folds()` drive (3 payloads → 1 warning), and a dispatcher-backed
+  run asserting no such condition. Inversions: never warning reddens 4,
+  reporting every pool cancellable reddens 3.
+- **AC6** — two `NEWS.md` entries in users' terms carrying no milestone
+  numbers (grep clean); pre-flight bullet and cancellation paragraph both
+  amended in `R/nested-tune-grid.R`; `man/nested_tune_grid.Rd` regenerated
+  and `devtools::document()` re-run with no diff.
+- **AC7** — `test-suite-hygiene.R` passes 17/17, so every new daemon-touching
+  call carries its ledger row and no row points at a moved line.
+  `devtools::check()` clean.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all checks PASS, all advisories OK.
+- `cairn_impact.py` — not run: no `DESIGN.md` principle text changed.
+- `devtools::document()` — no diff.
+- `pkgdown::check_pkgdown()` — no problems found.
+- README.Rmd absent, so no knit-sync check applies.
+- `NEWS.md` carries this milestone's user-visible changes, no milestone numbers.
+- No new top-level files beyond the already-tracked `NEWS.md`.
+- `devtools::check()` — **0 errors, 0 warnings, 0 notes** (4m 2s; tests
+  97s/162s under `test_check`, the installed-package daemon path, which is a
+  different path from `devtools::test()`'s pkgload one).
+- Fresh per-file suite runs: classify 141, detection 49, hygiene 17,
+  identity 49 — all 0 fail, 0 skip.
+- Returns to `in-progress` for this milestone: 0.
