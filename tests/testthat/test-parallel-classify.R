@@ -455,6 +455,71 @@ test_that("every outcome the ladder can produce is reachable and distinct", {
   )
 })
 
+test_that("the incompatible abort names the symbols, the count, and the restart", {
+  status <- preflight_outcome(
+    reports(TRUE, TRUE, missing = list(NULL, "rehydrate_payload")),
+    timeout = 2000
+  )
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_incompatible"
+  )
+  msg <- conditionMessage(err)
+  expect_match(msg, "1 of 2")
+  expect_match(msg, "rehydrate_payload")
+  # The half users forget: a daemon keeps the namespace it loaded, so
+  # reinstalling under a live pool changes nothing until it is replaced.
+  expect_match(msg, "restart the pool")
+  # NOT the install remedy -- the package is installed on these daemons, so
+  # telling the user to install it reads as already done.
+  expect_false(grepl("Install the package", msg, fixed = TRUE))
+})
+
+test_that("the incompatible abort reads the same whether one symbol is missing or a hundred", {
+  # Snapshotted rather than matched because the failure this guards is
+  # presentational: a daemon holding a genuinely old build is missing most of
+  # the namespace, and the untruncated bullet listed all 106 names at the user.
+  # Pluralisation is snapshotted with it -- the daemon count and the symbol
+  # count are different quantities and an earlier draft pluralised on the wrong
+  # one, printing "The daemons" for a single daemon.
+  expect_snapshot(error = TRUE, {
+    check_daemons_can_load(
+      preflight_outcome(reports(TRUE, missing = list("rehydrate_payload")),
+                        timeout = 30000)
+    )
+    check_daemons_can_load(
+      preflight_outcome(
+        reports(TRUE, missing = list(c("a", "b", "c", "d", "e"))),
+        timeout = 30000
+      )
+    )
+  })
+})
+
+test_that("an incompatible pool answers to the shared unusable class", {
+  # A handler that only cares the startup check failed catches this too,
+  # alongside cannot_load and no_response.
+  status <- preflight_outcome(reports(TRUE, missing = list("nested_fold_fit")))
+  expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_unusable"
+  )
+})
+
+test_that("an incompatible pool still reports daemons that said nothing", {
+  # Same reasoning as M10-D1's both-ways message: staying silent on the
+  # non-answer only makes the user rediscover it on the next run.
+  status <- preflight_outcome(
+    reports(NA, TRUE, missing = list(NULL, "rehydrate_payload")),
+    timeout = 2000
+  )
+  msg <- conditionMessage(
+    expect_error(check_daemons_can_load(status),
+                 class = "nestedtune_daemons_incompatible")
+  )
+  expect_match(msg, "did not answer")
+})
+
 # --- The bound is an option, not an argument (D-020, M10-D2) ----------------
 
 test_that("an unset option yields the documented 30 seconds", {

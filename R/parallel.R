@@ -486,6 +486,7 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
 
   n_total <- status$total
   n_cannot <- status$cannot_load
+  n_incompatible <- status$incompatible
   n_silent <- status$no_answer
   package <- status$package
   # Spelled out rather than interpolated raw: cli renders a numeric through
@@ -509,6 +510,52 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
       c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
                       serially -- results are identical either way."),
       class = c("nestedtune_daemons_cannot_load", "nestedtune_daemons_unusable"),
+      call = call
+    )
+  }
+
+  if (identical(status$outcome, "incompatible")) {
+    # Deliberately not the install remedy above: the package IS installed on
+    # these daemons, so "install it" reads as already done. What is wrong is
+    # WHICH build they hold, and restarting the pool is the half users forget --
+    # a daemon keeps the namespace it loaded for its whole life, so reinstalling
+    # underneath a running pool changes nothing until the daemons are replaced.
+    # Truncated by hand rather than with cli's `vec-trunc` style, which does not
+    # survive being wrapped in `{.code }` -- verified by rendering. It matters at
+    # the size that matters: a daemon holding a genuinely old build is missing
+    # not one symbol but most of them, and an untruncated bullet would list all
+    # 106 of them at the user.
+    all_missing <- status$missing_symbols
+    n_missing <- length(all_missing)
+    # Joined with plain commas rather than cli's default "and" so the trailing
+    # count below does not read as "`a`, `b`, and `c` and 3 more".
+    shown <- cli::cli_vec(
+      all_missing[seq_len(min(3L, n_missing))],
+      style = list("vec-last" = ", ")
+    )
+    # Built here rather than as a conditional inside the template: cli does not
+    # re-interpolate a string a template returns, so `{extra}` nested in one
+    # reaches the user verbatim (verified by rendering).
+    more <- if (n_missing > 3L) paste0(" and ", n_missing - 3L, " more") else ""
+    bullets <- c(
+      "{n_incompatible} of {n_total} mirai daemon{?s} {?is/are} running a
+       different build of {.pkg {package}}.",
+      i = "{cli::qty(n_incompatible)}The daemon{?s} could not find
+           {.code {shown}}{more}, which this session's copy defines and the
+           outer loop calls by name on the worker.",
+      i = "Reinstall {.pkg {package}} into the daemons' library, then restart
+           the pool with {.code mirai::daemons(0)} followed by
+           {.code mirai::daemons(n)} -- a running daemon keeps the namespace it
+           already loaded."
+    )
+    if (n_silent > 0L) {
+      bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
+                                 within {timeout} ms.")
+    }
+    cli::cli_abort(
+      c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
+                      serially -- results are identical either way."),
+      class = c("nestedtune_daemons_incompatible", "nestedtune_daemons_unusable"),
       call = call
     )
   }

@@ -42,7 +42,7 @@ cancelled says so once.
       takes the load failure's class (M10-D1). A unit test drives
       `preflight_outcome()` with hand-built records covering all four outcomes
       plus the mixed pool, and asserts each classification.
-- [ ] AC3: the status record carries the fields the abort message names, and
+- [x] AC3: the status record carries the fields the abort message names, and
       `check_daemons_can_load()` aborts on that outcome with condition classes
       `nestedtune_daemons_incompatible` and `nestedtune_daemons_unusable`,
       naming how many daemons are affected, which symbols are missing, and the
@@ -85,7 +85,7 @@ cancelled says so once.
       shape this changes.
 - [x] T2: extend `preflight_outcome()`'s ladder (`R/parallel.R:390-411`) with
       the new outcome below `cannot_load`; test all four plus the mixed pool.
-- [ ] T3: carry the new fields on the status record and add the abort branch to
+- [x] T3: carry the new fields on the status record and add the abort branch to
       `check_daemons_can_load()` (`R/parallel.R:419-475`); snapshot the message.
 - [ ] T4: assert the probe against a live pool with a deliberately absent
       symbol, in `test-parallel-detection.R`; add its time-budget row.
@@ -105,6 +105,7 @@ cancelled says so once.
 - 2026-07-30: plan gate chose warning on a `dispatcher = FALSE` pool over refusing it, because the pool computes correct results and only cancellation is unavailable, so GP3's refuse-don't-warn stance does not reach it; falsified by evidence that an uncancellable pool produces a wrong result rather than an uninterruptible one.
 - 2026-07-30: T1 done. Probe returns a per-daemon record; `daemon_report()` replaces `loaded_answer()`. `preflight_outcome()`'s new `incompatible` branch landed here too (same function), so T2 is code-complete and awaits its own tests. Three test call sites built bare logicals; a `reports()` helper builds records in place so no line moved. Missed one at `test-parallel-identity.R:112` — a mock fabricating `FALSE` silently reclassified from cannot_load to no_response, caught by the full suite. Ledger rows 520/527/528 shifted 37 lines and were repaired (the M16/M21 drift trap).
 - 2026-07-30: T2 done. Five ladder tests: incompatible classified, missing symbols unioned across the pool, `cannot_load` still outranks it, it outranks `no_response`, and all four outcomes asserted distinct in one place so a future branch cannot absorb its neighbour. The 73 inserted lines shifted 10 ledger rows; repaired by offset.
+- 2026-07-30: T3 done. `nestedtune_daemons_incompatible` aborts with its own remedy — reinstall AND restart, because a live daemon keeps the namespace it loaded — deliberately not the install bullet, which reads as already done. Snapshotted. Two presentation bugs found by rendering rather than by assertion: cli's `vec-trunc` does not survive `{.code {}}` (a stale daemon would have listed all 106 symbols) and `{extra}` nested in a template conditional reached the user verbatim; both fixed and pinned by the snapshot, which also pins the daemon-vs-symbol pluralisation an earlier draft got wrong. Full suite 1557 pass / 0 fail.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions
