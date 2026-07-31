@@ -22,3 +22,12 @@ _Entries are bullet lines — `- page.md — what it covers` — not table rows;
 - bengio2004.md — source; no **universally** unbiased estimator of Var(K-fold CV) exists, and repeating the splits does not help. The theorem under the G6 caveat.
 - bayle2020.md — source; an asymptotically exact CI for k-fold test error, O(n) from per-point losses. Valid only under loss stability, targets a different estimand, and needs data we discard.
 - austern2020.md — source; two estimands with two asymptotic variances, and a V-fold speed-up that is a joint property of algorithm *and* data distribution (1.638 vs 2.367 at V = 2).
+- tibshirani2009.md — source; the cheap alternative to nesting — correct the minimum CV error from the per-fold curves, no refitting. Bias material only at p ≫ n; Theorem 1 proves the null-data bound analytically.
+- vabalas2019a.md — source; the K-fold bias survives to n = 1000, and leaky feature selection costs far more than leaky tuning. The answer to "isn't this just a small-n problem?".
+- wilimitis2023.md — source; the honest null result. On 41k MIMIC-III rows with a small grid, nesting scored *worse* by 0.002 AUPR and cost O(k²) — and the authors say why.
+- tsamardinos2018.md — source; BBC-CV bootstraps the pooled out-of-sample predictions to remove selection bias without refitting, and recommends forgoing NCV. Its own numbers still put NCV first on bias.
+- luo2026.md — source; inference on a *procedure's* risk is provably hard unless N ≫ n, and stability does not rescue it. The theory under IP3, and a categorical fourth blocker for G6.
+- luo2025.md — source; the companion — certifying a black-box algorithm's (ε, δ)-stability is impossible without exhaustive search. Read after `luo2026.md`; the notion is prediction-based, not loss-based.
+- bayle2026.md — source; two individually stable algorithms can have an unstable *comparison*, and `bayle2020.md`'s CV interval then under-covers. Not the same A. Bayle as the 2020 paper's first author.
+- gauran2025.md — source; a valid test and CI *from* a nested design, bought with a ridge closed form the package's contract boundary excludes. Its Table 1 maps seven names for prediction error.
+- nachum2026.md — source; MSE = squared-loss-stability + fold covariance, so no fold count is universally optimal, and every ERM faces an Ω(√k*/n) floor. Carries the shelf's first analytic outer-loop oracle candidate.
