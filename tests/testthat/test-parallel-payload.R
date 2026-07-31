@@ -94,6 +94,20 @@ test_that("the dispatch gate recognises the payloads it must lean", {
   expect_false(is_fold_payload(list(marker = "f")))
   # `$` partial-matching would answer these from the wrong fields.
   expect_false(is_fold_payload(list(splits = 1, inner_resamples = 2)))
+
+  # The shapes that carry the right NAMES but the wrong contents. Each of these
+  # would reach further into the payload than it can safely go, so each has to
+  # be refused by its own clause rather than by the name check above.
+  real <- fat_payload(fixture_design(v = 3, inner_v = 3, n = 200, p = 3)$design, 1L)
+  expect_false(is_fold_payload(list(split = "not a split", inner = real$inner)))
+  expect_false(is_fold_payload(list(split = real$split, inner = "not an rset")))
+  expect_false(is_fold_payload(list(split = real$split, inner = real$inner[0, ])))
+  dataless <- real$inner
+  dataless$splits <- lapply(dataless$splits, function(sp) {
+    sp["data"] <- list(NULL)
+    sp
+  })
+  expect_false(is_fold_payload(list(split = real$split, inner = dataless)))
 })
 
 test_that("an inner rset whose splits hold different frames is refused leaning", {
