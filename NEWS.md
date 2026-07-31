@@ -1,17 +1,17 @@
 # nestedtune 0.0.0.9000
 
 * The documentation now names the quantity a nested run estimates, instead of
-  describing it. `collect_metrics()` returns the k-fold test error of the whole
-  tune-and-fit procedure, measured on training sets the size of one outer
-  analysis set — which is neither the risk of the model you deploy nor the same
-  quantity averaged over datasets, and the help page and the guide both say so.
+  describing it. `collect_metrics()` estimates the k-fold test error of the
+  whole tune-and-fit procedure on the analysis sets the outer folds drew —
+  which is neither the risk of the model you deploy nor the same quantity
+  averaged over datasets, and the help page and the guide both say so.
 
 * `collect_metrics()` help now explains why its `std_err` column is not a
   confidence interval and why no interval is offered: outer fold scores share
   most of their training rows, so a standard error computed as though they were
-  independent understates the uncertainty, and there is no universally unbiased
-  replacement to substitute. Published measurements of what that costs are
-  cited.
+  independent can misstate the uncertainty, typically downward, and there is no
+  universally unbiased replacement to substitute. Published measurements of what
+  that costs are cited.
 
 * The nested cross-validation guide gains sources for its claim that the
   estimate runs slightly pessimistic, a warning against reading a gap between

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, GP5
-- **Branch/PR:** `m25-estimand-documented`
+- **Branch/PR:** `m25-estimand-documented` · https://github.com/jmgirard/nestedtune/pull/26
 
 ## Goal
 
@@ -43,7 +43,7 @@ internal.
 
 ## Acceptance criteria
 
-- [ ] AC1: `vignettes/nested-cv.Rmd` names what `collect_metrics()` reports as
+- [x] AC1: `vignettes/nested-cv.Rmd` names what `collect_metrics()` reports as
       the k-fold test error of the tune-and-fit procedure, states that the
       training sets are the outer analysis sets and so smaller than the full
       data, and names at least two quantities it is not — one of them the risk
@@ -51,38 +51,38 @@ internal.
       quantity and Luo & Barber (2026) for why the marginal version is not
       inferable here. Reconciled with the existing claim at
       `vignettes/nested-cv.Rmd:33`.
-- [ ] AC2: The bias-direction statement cites Varma & Simon (2006) (+4.2 points
+- [x] AC2: The bias-direction statement cites Varma & Simon (2006) (+4.2 points
       against a 50.0% truth, n = 40, `references/varma2006.md` p. 6) and
       Wilimitis & Walsh (2023) (1–2% AUROC and 5–9% AUPR pessimistic,
       n = 41,121, `references/wilimitis2023.md` p. 8), names reduced training
       size as the mechanism, and states in the same paragraph that a single run
       at this vignette's sample size can land either way. No number in that
       paragraph is computed inline from the vignette's own run.
-- [ ] AC3: `collect_metrics.nested_results()`'s roxygen states that `std_err`
+- [x] AC3: `collect_metrics.nested_results()`'s roxygen states that `std_err`
       must not be read as a confidence interval and why, citing Bengio &
       Grandvalet (2004) for the absence of a universally unbiased variance
       estimator and Gauran, Ombao & Yu (2025) for variance-denominator Type I
       error measured near 0.36 against a nominal 0.05 inside a nested design.
       `man/collect_metrics.nested_results.Rd` regenerates with no further diff.
-- [ ] AC4: The vignette states (a) that two nested estimates cannot be compared
+- [x] AC4: The vignette states (a) that two nested estimates cannot be compared
       inferentially from `collect_metrics()` output, and (b) that fold-to-fold
       disagreement is expected wherever candidates perform near-identically —
       a condition consistent with this vignette's own run, in which `mtry`
       splits across folds while `min_n` does not. Both cite Bayle, Janson &
       Mackey (2026).
-- [ ] AC5: The vignette carries a section stating when nesting changes the
+- [x] AC5: The vignette carries a section stating when nesting changes the
       reported number materially and when it does not, citing Tibshirani &
       Tibshirani (2009) (material only at p ≫ n), Vabalas et al. (2019) (the
       flat-CV bias persists to n = 1000, and nesting feature selection matters
       more than nesting tuning) and Wilimitis & Walsh (2023) (a measured null
       result at n ≫ p with a small grid). `vignettes/nested-cv.Rmd:81-84` no
       longer claims `mtcars` is where the optimism is largest.
-- [ ] AC6: A `testthat` test asserts every author-year citation in the
+- [x] AC6: A `testthat` test asserts every author-year citation in the
       vignette's References section maps to an existing
       `cairn/references/<citekey>.md`, and skips when `cairn/` is absent, as
       it is in the built package (`.Rbuildignore:1`; the pattern is
       `tests/testthat/test-ci-workflows.R:1-15`).
-- [ ] AC7: `Rscript -e 'devtools::check()'` clean per `cairn/PROFILE.md`'s
+- [x] AC7: `Rscript -e 'devtools::check()'` clean per `cairn/PROFILE.md`'s
       consistency-gate — 0 errors, 0 warnings, NOTEs justified — run on a
       machine with `ranger` installed, so the vignette's
       `requireNamespace()`/`knit_exit()` guard
@@ -153,3 +153,112 @@ internal.
 ## Decisions
 
 ## Review
+
+**Evidence, per acceptance criterion.** Gathered fresh on
+`m25-estimand-documented`; PR #26.
+
+- **AC1** — `vignettes/nested-cv.Rmd` names the quantity "the **k-fold test
+  error of the tune-and-fit procedure** (Bayle et al., 2026)", ties it to "the
+  particular analysis sets these folds drew", and gives both exclusions: "Not
+  the risk of the model you deploy" and "Not the same quantity averaged over
+  training sets", the latter citing Luo and Barber (2026). Line 33 reconciled —
+  reported "in its place", not as the model's score.
+- **AC2** — carries Varma and Simon (2006) at 54.2% against a 50.0% truth,
+  n = 40, 4.2-point overshoot attributed to 39 rows against 40; and Wilimitis
+  and Walsh (2023) at 1-2% AUROC / 5-9% AUPR on 41,121 visits plus their
+  regression MAE 2.39 against 2.38. Mechanism named as training-set size.
+  States the vignette's own numbers could land the other way. Inline-`r` count
+  over both paragraphs, measured by `awk` range: **0**.
+- **AC3** — `R/nested-results.R`, `@section Reading std_err`: "It is **not** a
+  confidence interval", Bengio and Grandvalet (2004) for the absent universally
+  unbiased estimator, Gauran, Ombao and Yu (2025) for 36% and 40% in the worst
+  cells against a nominal 5%. `devtools::document()`: **0** changed files under
+  `man/`, `NAMESPACE`.
+- **AC4** — (a) "there is no valid interval here to subtract", with Bayle et al.
+  (2026) for difference-instability. (b) disagreement expected "wherever the
+  candidates in question perform about equally well", citing Bayle et al.
+  (2026), naming this run's split `mtry` against unanimous `min_n`.
+- **AC5** — `## When this is worth the cost` present. Wrap-aware scan finds
+  Tibshirani and Tibshirani (2009), Vabalas et al. (2019) and Wilimitis and
+  Walsh (2023). "the optimism it introduces is largest": **0** occurrences.
+- **AC6** — `tests/testthat/test-vignette-citations.R`, 8 assertions,
+  `FAIL 0 | WARN 0 | SKIP 0 | PASS 8` under `devtools::test()`; verified red
+  across 8 inversions at implement time. _(Corrected at review, finding C1: this
+  line first claimed the built-tarball path "is exercised by `R CMD check`". It
+  is not — probing both layouts shows every `test_path("..", "..", ...)` here
+  resolves outside the source tree under check, so all six tests skip there and
+  CI never runs this guard. The header now says so. The criterion is met by the
+  source-tree run, which is where the vignette and the shelf are edited.)_
+- **AC7** — `devtools::check()` with `ranger` installed: **Status: OK, 0 errors,
+  0 warnings, 0 notes**, re-run after the review fixes. `pkgdown::check_pkgdown()`:
+  "No problems found."
+
+**Consistency gate.** `cairn_validate` exit 0, all 16 checks PASS; 18 advisory
+`references staleness` warnings, shelf-wide and pre-existing. `document()`
+no-diff. No `README.Rmd`. NEWS entry present. No new top-level file needing an
+`.Rbuildignore` entry. No principle text changed, so `cairn_impact` does not
+apply. CI on PR #26 green across ubuntu release/devel/oldrel, macOS, Windows,
+coverage and build. Returns to `in-progress`: **0** — the thrash rule does not
+fire.
+
+**Independent review.** Three fresh-context lenses (diff-bug [O]; blame-history
+[S]; prior-review [S]) reported 28 candidate findings, scored by a fourth agent
+that generated none of them. **Seven scored 80 or above.** All seven fixed on
+the branch:
+
+- **A1 (97)** — `cairn/references/gauran2025.md` settled a standing open
+  question citing "p. 1098" and "p. 1727" for the nominal α = 0.05. Those are
+  line numbers in the `pdftotext` output, mistaken for pages; the document has
+  37. Confirmed by extracting the PDF page by page: the α = 0.05 statement is on
+  **p. 17**, the figure captions on **pp. 16–19**, the summary table on
+  **p. 23**. Substance holds, citations did not. Corrected in place and marked.
+- **A6 (85)** — "from percentage points at n = 40 to the third decimal at
+  n = 41,121" was wrong (MAE 2.39 vs 2.38 is the second decimal) and asserted a
+  cross-study trend no source supports. Replaced with two data points and an
+  explicit refusal to read a trend into them.
+- **A8 (85)** — "sat at chance across the whole range they tested" overstated
+  Vabalas et al.; `vabalas2019a.md` records the real figure and flags this exact
+  framing. Now "indistinguishable from chance at 96.5% of the sample sizes".
+- **B1 (85)** — roxygen and NEWS said the number **is** the k-fold test error;
+  it *estimates* it. Fixed on both surfaces, matching the vignette.
+- **A9 (84)** — "when the features outnumber the observations" weakened
+  Tibshirani's p ≫ n to p > n; the p ≫ n exemplar was also cherry-picked (SVM
+  0.475 and a tree 0.498 in the same cell). Both fixed, and the paper's own
+  posture — it argues for a cheap correction rather than nesting — is now
+  disclosed.
+- **B2 (82)** — roxygen said `std_err` "describes how much those folds varied",
+  the loose reading the vignette explicitly corrects. Now states it is the
+  precision of the mean, not the fold-to-fold spread.
+- **C1 (82)** — the guard's header claimed `vignettes/` and `R/` stay reachable
+  under `R CMD check`. Probed both layouts: they do not, and every test skips
+  there. Header corrected; AC6 evidence corrected with it.
+
+**Six sub-threshold findings actioned anyway**, because each was verifiably true
+and sat inside a sentence one of the seven was already rewriting; fixing the
+neighbour and leaving these would have shipped a known inaccuracy: A5 (78,
+"most pessimistic of every method" → "among the most", plus the optimistic cell
+disclosed), A12 (78, the estimand gloss read as marginal in the clause defining
+the conditional quantity), A7 (76, "arithmetic rather than statistical" — the
+training-size component is either-sign in Varma and Simon's own decomposition),
+A4 (74, "understates" → "can misstate, typically downward"), A2 (72, "far more
+often" over-generalized across the variance-denominator class; the worst cells
+are 36% and 40%, now named), A3 (70, both sources study closely related rather
+than identical quantities — now said in the man page).
+
+**Fifteen findings logged, not actioned** (all below 80): C3 (75) direction 5
+keeps a `skip_if` where direction 1 does not — a real asymmetry, left because
+asserting roxygen citations exist would couple the guard to roxygen always
+carrying them. C2 (65) four citation renderings the matcher misses, none present
+today. D4 (65) the split-`mtry`/unanimous-`min_n` prose is hard-coded about a
+build-time chunk — verified twice, but a version shift could falsify it. A10
+(55) the coin-flip framing is the shelf page's extrapolation, labelled as such
+there. A11 (55) the shipped ratio is right; the work log's plan-gate note says
+"N/n ≈ 1.11" (a v = 10 figure) where this design is v = 5 and the vignette
+computes 5/4 — the log is append-only history, so it is corrected here rather
+than edited. C4 (50) every test skips on a vignette rename. D3 (50) the write-up
+template still emits an SE, on an unmodified line. C5 (45) the year check can
+match a DOI. D2 (40) preprint status not marked inline. D1 (25) a disclosed
+limitation. H1, H2, H3, H4, P1 — the two history lenses' own verdicts were that
+the mtcars reversal and the wording change are documented and deliberate, the
+G6 row is byte-identical to main, M06 F1 is not reintroduced, and the GitHub
+inline-comment probe returned empty so no PR-thread walk was owed.

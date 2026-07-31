@@ -39,10 +39,15 @@
 #   lists background a topic rests on, whether or not each entry is named in the
 #   prose above it, so requiring a mention there would fight the format.
 #
-# `cairn/` is `.Rbuildignore`d (`^cairn$`), so every assertion that reads the
-# shelf skips from a built tarball. `vignettes/` and `R/` *are* shipped in the
-# source tarball, so the assertions that read only those still run there --
-# which is why they are guarded separately rather than by one blanket skip.
+# Where this actually runs: `devtools::test()` in the source tree, and nowhere
+# else. Under `R CMD check` the suite executes from `<pkg>.Rcheck/tests/testthat`,
+# so every `test_path("..", "..", ...)` here resolves outside the source tree and
+# all of these tests skip -- `vignettes/`, `R/` and `cairn/` alike, whatever
+# `.Rbuildignore` says about any of them. Verified by probing both layouts, not
+# assumed. That means CI does not exercise this guard; the source tree is where
+# the vignette and the shelf are edited, which is where it needs to fire. The
+# separate `dir.exists(shelf_dir())` guards are kept only so a failure reads as
+# "no shelf" rather than as an empty result.
 
 vignette_file <- function() {
   test_path("..", "..", "vignettes", "nested-cv.Rmd")

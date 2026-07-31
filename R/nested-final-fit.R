@@ -58,9 +58,9 @@
 #' @section What to report:
 #'
 #' Report the estimate from [collect_metrics()] on the [nested_tune_grid()]
-#' result as this model's performance. That number is the k-fold test error of
-#' the whole tune-and-fit procedure that produced this model, measured on data
-#' no part of the procedure ever touched. Expect it to run slightly
+#' result as this model's performance. That number estimates the k-fold test
+#' error of the whole tune-and-fit procedure that produced this model, measured
+#' on data no part of the procedure ever touched. Expect it to run slightly
 #' pessimistic: each outer fold trains on its analysis rows alone, so every
 #' model it scores is built on less data than this one. Varma and Simon (2006)
 #' measured a 4.2-point overshoot from that effect at n = 40, and Wilimitis and

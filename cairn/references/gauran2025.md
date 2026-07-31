@@ -18,9 +18,13 @@ exhaustively; Appendices A–C are proofs and were not read.** The simulation
 results are rendered as heat-map figures whose cell values extract as loose
 text; a subset is reproduced below **as extracted** _(the column alignment was
 recorded here as inferred from the axis labels; confirmed 2026-07-31 against
-the paper's own figure captions, which state that the first column, ξ = 0,
-holds Type I error rates, and against p. 1098 and the summary table on
-p. 1727, which both give the nominal level as α = 0.05)_ — observed
+the paper's own figure captions, pp. 16–19, which state that the first column,
+ξ = 0, holds Type I error rates, and against p. 17 and the summary table on
+p. 23, which both give the nominal level as α = 0.05)_ **(page numbers
+corrected 2026-07-31 at M25 review: this block first cited "p. 1098" and
+"p. 1727", which are line numbers in the `pdftotext` output mistaken for pages
+and cannot exist in a 37-page document. The underlying statements are real and
+were re-located page by page; git holds the original.)** — observed
 2026-07-31.
 
 **Preprint status.** arXiv preprint as of 2026-07-31; no journal version
@@ -124,10 +128,10 @@ Simulation design (p. 15): N ∈ {50, 100, 150, 200};
 
 Rejection rates at N = 50, P = 51 and N = 100, P = 101, extracted from the
 Section 5 heat maps. The ξ = 0 column is the Type I error rate, against a
-**nominal α = 0.05** (p. 1098; restated in the summary table, p. 1727); naming
-is [R/L][R_O][V/B/M][Ad/Av]. **Extracted as printed**; the column alignment was
-confirmed 2026-07-31 against the figure captions, individual cell values remain
-text recovered from images — observed 2026-07-31.
+**nominal α = 0.05** (p. 17; restated in the summary table, p. 23); naming is
+[R/L][R_O][V/B/M][Ad/Av]. **Extracted as printed**; the column alignment was
+confirmed 2026-07-31 against the figure captions (pp. 16–19), individual cell
+values remain text recovered from images — observed 2026-07-31.
 
 | Statistic | N=50, ξ=0 | ξ=0.05 | ξ=0.125 | N=100, ξ=0 | ξ=0.05 | ξ=0.125 |
 |---|---|---|---|---|---|---|
@@ -214,10 +218,13 @@ That would test the algebra, not this package. Not planned.
 
 - ~~Whether the heat-map extraction above is correctly aligned to its axes~~ —
   **settled 2026-07-31** at M25 T6, when the nominal level was needed for a man
-  page: the figure captions state the ξ = 0 column holds Type I error rates,
-  and p. 1098 and the p. 1727 summary table both give α = 0.05. Individual cell
-  values are still text recovered from images, so the qualitative pattern is
-  what this page stands behind — observed 2026-07-31.
+  page: the figure captions (pp. 16–19) state the ξ = 0 column holds Type I
+  error rates, and p. 17 and the p. 23 summary table both give α = 0.05.
+  _(Page numbers corrected at M25 review — first written as "p. 1098" and
+  "p. 1727", which were `pdftotext` line numbers, not pages. The statements
+  themselves were re-located page by page and hold.)_ Individual cell values
+  are still text recovered from images, so the qualitative pattern is what this
+  page stands behind — observed 2026-07-31.
 - Whether any part of the exhaustive-partition idea survives without a closed
   form. The paper never addresses the general case, and the naive cost is
   C(N, N₀) fits — observed 2026-07-31.
