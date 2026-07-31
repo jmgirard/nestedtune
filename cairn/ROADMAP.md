@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-30 (M23 merged and archived; M18's row pruned under terminal-row retention. LESSONS.md again sat at 49, so M12's, M13's and M14's lines were extended in place rather than lines added. Nothing met the retirement bar)_
+_Last hygiene check: 2026-07-30 (post-M23 audit for the tune#969 reply: all checks and advisories green, both GitHub inboxes empty, no orphans. Surfaced M13's still-open rsample#283 handoff as a live disposition rather than a FAIL)_
 
 ## Milestones
 
