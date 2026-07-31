@@ -1,6 +1,6 @@
 # M23: A worker is sent the fold, not six copies of the data
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
