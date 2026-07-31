@@ -7,7 +7,7 @@ _Last hygiene check: 2026-07-30 (all checks and advisories green, both GitHub in
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M24 | The pre-flight tells the truth about the pool | planned | — | normal | milestones/M24-preflight-capability-probe.md |
+| M24 | The pre-flight tells the truth about the pool | review | — | normal | milestones/M24-preflight-capability-probe.md |
 | M23 | A worker is sent the fold, not six copies of the data | done | — | normal | milestones/archive/M23-lean-fold-dispatch.md |
 | M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |
 | M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |

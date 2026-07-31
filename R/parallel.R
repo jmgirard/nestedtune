@@ -29,6 +29,27 @@ use_parallel <- function(workers = mirai_workers()) {
   length(workers) == 1L && !is.na(workers) && workers >= 2L
 }
 
+# Whether the pool can be told to stop.
+#
+# Cancellation is a dispatcher feature: `mirai::daemons(n)` starts one by
+# default, but `daemons(n, dispatcher = FALSE)` does not, and use_parallel()
+# admits both because it asks only how many daemons are connected. On such a
+# pool the unconditional stop_mirai() in dispatch_folds() returns FALSE per
+# element and every outstanding fold runs to completion regardless (verified at
+# M15 against mirai 2.7.2).
+#
+# `status()$mirai` is what separates them -- NULL without a dispatcher and a
+# record with one -- while `status()$connections` reads the same either way, so
+# the count use_parallel() consults cannot tell them apart (verified by
+# execution, mirai 2.7.2). NULL is also what an absent mirai would give, hence
+# the installed check first: never warn about a pool that is not there.
+pool_is_cancellable <- function() {
+  if (!is_mirai_installed()) {
+    return(TRUE)
+  }
+  !is.null(mirai::status()$mirai)
+}
+
 # Which branch the last dispatch took.
 #
 # This is deliberately NOT stored on the results object. BC1 requires both that
@@ -174,6 +195,7 @@ dispatch_folds <- function(payloads, object, grid, metrics,
   }
 
   check_daemons_can_load(call = call)
+  warn_if_not_cancellable(call = call)
 
   record_dispatch("parallel")
   # The task is sent with its environment stripped to the global one. Left
@@ -346,17 +368,83 @@ preflight_timeout <- function(call = rlang::caller_env()) {
 # general: a version whose send blocked on a saturated pool would hang here, and
 # no R-side bound could break it, setTimeLimit() not reaching a blocked mirai
 # call (M14).
+# What the host expects a daemon's copy of the package to contain.
+#
+# `ls()` rather than `names()`: it drops the dotted internals a namespace
+# carries for its own bookkeeping, which differ between an installed package and
+# one under pkgload and would report every daemon as incompatible.
+#
+# The whole namespace rather than the two symbols dispatch_folds() actually
+# resolves by name (`rehydrate_payload` at :232, `nested_fold_fit` at :585).
+# A hand-maintained list of those two is the defect this check exists to
+# catch -- M23 added the second and nothing made the pre-flight notice -- so the
+# manifest is derived, never written down. It costs 2,627 B serialized for 106
+# names against a per-fold payload already in the megabytes.
+# A package this session has no copy of yields no expectation at all, rather
+# than an error. The manifest answers "what does MY build contain"; with no
+# build here there is nothing to compare a daemon against, so the check falls
+# back to the load question it asked before M24 -- which is precisely what the
+# `package` argument exists to ask (M24 review F6: this raised an unclassified
+# error instead, from asNamespace() running on the HOST). It cannot weaken the
+# real check: the manifest for `nestedtune` is taken by a function living in
+# `nestedtune`, so the empty branch is unreachable for the package's own probe.
+daemon_symbol_manifest <- function(package = "nestedtune") {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    return(character())
+  }
+  ls(asNamespace(package))
+}
+
+# What each daemon is asked to evaluate, built from text rather than written as
+# live source.
+#
+# `everywhere()` captures its expression unevaluated and serializes it, so the
+# daemons run whatever the HOST's copy of this function body has been rewritten
+# into -- not what is written here. Under `covr` that rewriting inserts a
+# `covr:::count()` call inside every `{` block, this probe's braces included, and
+# a daemon whose library has no covr raises on it. The raise returns as a
+# miraiError, daemon_report() rightly refuses it, and a pool that answered
+# perfectly well is classified as silent. That is why M24's first cut failed the
+# coverage job while passing all five `R CMD check` legs (M24 review F15).
+#
+# A string is data, not source, so no rewriting reaches it and the daemons
+# receive exactly the expression written below. Verified against
+# `covr:::trace_calls()`: the counters land around the everywhere() call and
+# never inside the expression it sends.
+#
+# The symbol check is nested inside the load branch because asNamespace() on a
+# package that will not load raises, and a raised probe comes back as a
+# miraiError -- a length-1 CHARACTER vector, which daemon_report() rejects,
+# turning a clean "cannot load" into a silent daemon and losing the actionable
+# message.
+daemon_probe_expr <- function() {
+  str2lang(paste(
+    "if (requireNamespace(package, quietly = TRUE)) {",
+    "  list(loaded = TRUE,",
+    "       missing = setdiff(symbols, ls(asNamespace(package))))",
+    "} else {",
+    "  list(loaded = FALSE, missing = character())",
+    "}",
+    sep = "\n"
+  ))
+}
+
 daemons_load_status <- function(package = "nestedtune",
                                 timeout = preflight_timeout(call = call),
+                                symbols = daemon_symbol_manifest(package),
                                 call = rlang::caller_env()) {
   # Forced before anything is dispatched. Left lazy, the bound is not read until
   # after everywhere() has already sent the probe, so a typo in the option costs
   # a full cold load on every daemon before the user is told the option is bad.
   force(timeout)
 
+  # One round trip answers both questions. Held in a local first: everywhere()
+  # resolves `.expr` through substitute(), so a bare call in that position is
+  # what would be sent, rather than the expression it returns.
+  probe_expr <- daemon_probe_expr()
   probe <- mirai::everywhere(
-    requireNamespace(package, quietly = TRUE),
-    .args = list(package = package)
+    probe_expr,
+    .args = list(package = package, symbols = symbols)
   )
   deadline <- Sys.time() + timeout / 1000
   while (mirai::unresolved(probe) && Sys.time() < deadline) {
@@ -373,12 +461,31 @@ daemons_load_status <- function(package = "nestedtune",
 #
 # Same discipline as classify_fold_result(): recognise the expected shape and
 # treat everything else as a non-answer, rather than trying to enumerate the
-# ways mirai can hand back something that is not a logical. A stopped probe
+# ways mirai can hand back something that is not a report. A stopped probe
 # yields errorValue 20; a daemon that died mid-probe yields something else
 # again. Neither is a report that the package is missing, so neither may be
 # reported as one.
-loaded_answer <- function(x) {
-  if (is.logical(x) && length(x) == 1L && !is.na(x)) as.logical(x) else NA
+#
+# `is.list()` is what keeps mirai's failure shapes out, and it is load-bearing
+# rather than incidental: a miraiError is a length-1 character vector carrying
+# the task's message, so any validator admitting a bare string would read a
+# daemon's error text as a capability report. `[[` and `%in% names(x)` rather
+# than `$` for the reason given at the top of this file -- `$` partial-matches
+# on a plain list, so `x$loaded` would answer a list carrying `loaded_at`.
+#
+# Returns NULL for a non-answer rather than NA, so the caller distinguishes
+# "this daemon said nothing" from any value a daemon could legitimately report.
+daemon_report <- function(x) {
+  if (!is.list(x) || !all(c("loaded", "missing") %in% names(x))) {
+    return(NULL)
+  }
+  loaded <- x[["loaded"]]
+  missing <- x[["missing"]]
+  if (!is.logical(loaded) || length(loaded) != 1L || is.na(loaded) ||
+        !is.character(missing) || anyNA(missing)) {
+    return(NULL)
+  }
+  list(loaded = loaded, missing = missing)
 }
 
 # The three-way outcome, kept separate from both the probing and the message so
@@ -389,12 +496,27 @@ loaded_answer <- function(x) {
 # actionable fix, and the message still names the non-answers (M10-D1).
 preflight_outcome <- function(answers, timeout = NA_real_,
                               package = "nestedtune") {
-  answers <- vapply(as.list(answers), loaded_answer, logical(1))
-  total <- length(answers)
-  cannot_load <- sum(!answers, na.rm = TRUE)
-  no_answer <- sum(is.na(answers))
+  reports <- lapply(as.list(answers), daemon_report)
+  answered <- !vapply(reports, is.null, logical(1))
+  loaded <- vapply(
+    reports, function(r) !is.null(r) && r[["loaded"]], logical(1)
+  )
+  absent <- lapply(reports[loaded], function(r) r[["missing"]])
+
+  total <- length(reports)
+  cannot_load <- sum(answered & !loaded)
+  incompatible <- sum(lengths(absent) > 0L)
+  no_answer <- sum(!answered)
+  missing_symbols <- sort(unique(unlist(absent, use.names = FALSE)))
+
+  # `incompatible` sits below `cannot_load` and above `no_response`, extending
+  # rather than reordering M10-D1's ladder: the class goes to whichever failure
+  # names the most actionable fix. Installing beats reinstalling, and both beat
+  # "some daemon said nothing", which names no fix at all.
   outcome <- if (cannot_load > 0L) {
     "cannot_load"
+  } else if (incompatible > 0L) {
+    "incompatible"
   } else if (no_answer > 0L || total == 0L) {
     "no_response"
   } else {
@@ -404,6 +526,8 @@ preflight_outcome <- function(answers, timeout = NA_real_,
     outcome = outcome,
     total = total,
     cannot_load = cannot_load,
+    incompatible = incompatible,
+    missing_symbols = if (is.null(missing_symbols)) character() else missing_symbols,
     no_answer = no_answer,
     timeout = timeout,
     package = package
@@ -424,12 +548,42 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
 
   n_total <- status$total
   n_cannot <- status$cannot_load
+  n_incompatible <- status$incompatible
   n_silent <- status$no_answer
   package <- status$package
   # Spelled out rather than interpolated raw: cli renders a numeric through
   # as.character(), which gives "3e+05" for a 300000 ms bound -- scientific
   # notation in the very bullet telling the user to raise that number.
   timeout <- format(status$timeout, scientific = FALSE, trim = TRUE)
+
+  # Rendered once, above both branches that name missing symbols: a pool can be
+  # incompatible while ALSO holding a daemon that cannot load, and that pool
+  # takes the load failure's class while still owing the user the second fact.
+  #
+  # Truncated by hand rather than with cli's `vec-trunc` style, which does not
+  # survive being wrapped in `{.code }` -- verified by rendering. It matters at
+  # the size that matters: a daemon holding a genuinely old build is missing not
+  # one symbol but most of them, and an untruncated bullet would list the whole
+  # namespace at the user.
+  all_missing <- status$missing_symbols
+  n_missing <- length(all_missing)
+  # Joined with plain commas rather than cli's default "and" so the trailing
+  # count below does not read as "`a`, `b`, and `c` and 3 more".
+  #
+  # BOTH separator styles, because cli uses a different one at length 2:
+  # `vec-sep` joins all but the last pair, `vec-last` joins the final pair at
+  # n > 2, and `vec-sep2` is what joins the ONLY pair at exactly n = 2. Setting
+  # `vec-last` alone left the two-symbol message reading "`a` `b`" with no
+  # separator at all -- and n = 2 is the headline case, the two names the worker
+  # resolves through the daemon's namespace (M24 review F1).
+  shown <- cli::cli_vec(
+    all_missing[seq_len(min(3L, n_missing))],
+    style = list("vec-last" = ", ", "vec-sep2" = ", ")
+  )
+  # Built here rather than as a conditional inside the template: cli does not
+  # re-interpolate a string a template returns, so `{extra}` nested in one
+  # reaches the user verbatim (verified by rendering).
+  more <- if (n_missing > 3L) paste0(" and ", n_missing - 3L, " more") else ""
 
   if (identical(status$outcome, "cannot_load")) {
     bullets <- c(
@@ -439,6 +593,21 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
       i = "Install the package, or prime the daemons with
            {.code mirai::everywhere(pkgload::load_all('<path>'))}."
     )
+    # A pool can fail both ways at once, and the ladder gives the class to the
+    # load failure -- but the class is not the message. Naming only the load
+    # failure sends the user to install, restart, and meet the second fault on
+    # the next pre-flight, which is the rediscovery M10-D1 refuses for the
+    # non-answer case immediately below. The two need DIFFERENT fixes, so both
+    # are stated here.
+    if (n_incompatible > 0L) {
+      bullets <- c(bullets, i = "A further {n_incompatible} daemon{?s} loaded
+                                 {.pkg {package}} but
+                                 {cli::qty(n_incompatible)}{?is/are} running a
+                                 different build, missing {.code {shown}}{more};
+                                 restart the pool after installing, because a
+                                 running daemon keeps the namespace it already
+                                 loaded.")
+    }
     if (n_silent > 0L) {
       bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
                                  within {timeout} ms.")
@@ -447,6 +616,41 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
       c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
                       serially -- results are identical either way."),
       class = c("nestedtune_daemons_cannot_load", "nestedtune_daemons_unusable"),
+      call = call
+    )
+  }
+
+  if (identical(status$outcome, "incompatible")) {
+    # Deliberately not the install remedy above: the package IS installed on
+    # these daemons, so "install it" reads as already done. What is wrong is
+    # WHICH build they hold, and restarting the pool is the half users forget --
+    # a daemon keeps the namespace it loaded for its whole life, so reinstalling
+    # underneath a running pool changes nothing until the daemons are replaced.
+    bullets <- c(
+      # `daemon{?s}` agrees with {n_total}, the interpolation before it, but the
+      # verb belongs to the affected daemons -- and cli takes every plural's
+      # quantity from the LAST interpolation, so an unqualified `{?is/are}` read
+      # n_total too and every mixed pool said "1 of 2 mirai daemons ARE running"
+      # (M24 review F2). qty() sets the quantity without printing it.
+      "{n_incompatible} of {n_total} mirai daemon{?s}
+       {cli::qty(n_incompatible)}{?is/are} running a
+       different build of {.pkg {package}}.",
+      i = "{cli::qty(n_incompatible)}The daemon{?s} could not find
+           {.code {shown}}{more}, which this session's copy defines and the
+           outer loop calls by name on the worker.",
+      i = "Reinstall {.pkg {package}} into the daemons' library, then restart
+           the pool with {.code mirai::daemons(0)} followed by
+           {.code mirai::daemons(n)} -- a running daemon keeps the namespace it
+           already loaded."
+    )
+    if (n_silent > 0L) {
+      bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
+                                 within {timeout} ms.")
+    }
+    cli::cli_abort(
+      c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
+                      serially -- results are identical either way."),
+      class = c("nestedtune_daemons_incompatible", "nestedtune_daemons_unusable"),
       call = call
     )
   }
@@ -472,6 +676,42 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
     class = c("nestedtune_daemons_no_response", "nestedtune_daemons_unusable"),
     call = call
   )
+}
+
+# Say once that this pool cannot be stopped.
+#
+# A warning rather than a refusal, and the line is GP3's: a dispatcher-less pool
+# computes correct results, so what is unavailable is cancellation and not
+# correctness. GP3 asks that provably invalid designs be refused, and this pool
+# is degraded rather than invalid -- refusing it would reject a configuration
+# that produces the right answer.
+#
+# Emitted here rather than in nested_tune_grid() because this is where the fact
+# becomes true: dispatch_folds() is called once per run (R/nested-tune-grid.R),
+# so one warning site is one warning per call, and the serial branch returns
+# above without reaching it. Before M24 only the roxygen said any of this, which
+# a user meets only if they go looking after the run they wanted to interrupt.
+#
+# `cancellable` is an argument so the branch is reachable without a real pool,
+# the same seam check_daemons_can_load() opens with `status`.
+warn_if_not_cancellable <- function(cancellable = pool_is_cancellable(),
+                                    call = rlang::caller_env()) {
+  if (isTRUE(cancellable)) {
+    return(invisible(FALSE))
+  }
+  cli::cli_warn(
+    c(
+      "These mirai daemons were started without a dispatcher, so this run
+       cannot be cancelled.",
+      i = "Interrupting it returns control to you, but the outer folds keep
+           computing on the pool and their results are never read.",
+      i = "For a pool that stops when you do, restart it with
+           {.code mirai::daemons(n)}, which starts a dispatcher by default."
+    ),
+    class = "nestedtune_pool_not_cancellable",
+    call = call
+  )
+  invisible(TRUE)
 }
 
 # What a worker handed back, turned into a fold record.

@@ -1,11 +1,11 @@
 # M24: The pre-flight tells the truth about the pool
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m24-preflight-capability-probe` / https://github.com/jmgirard/nestedtune/pull/25
 
 ## Goal
 
@@ -31,39 +31,39 @@ cancelled says so once.
 
 ## Acceptance criteria
 
-- [ ] AC1: the pre-flight probe returns one record per daemon carrying the
+- [x] AC1: the pre-flight probe returns one record per daemon carrying the
       symbols it was asked for and which of them it could not find, validated
       positively by shape the way `is_fold_record()` is — a length-1 character
       vector is rejected as a non-answer, because a `miraiError` is exactly
       that shape and must never be read as a capability report.
-- [ ] AC2: `preflight_outcome()` gains a fourth outcome for a pool whose
+- [x] AC2: `preflight_outcome()` gains a fourth outcome for a pool whose
       daemons load the package but lack a required symbol, ranked *below*
       `cannot_load` in the existing ladder, so a pool failing both ways still
       takes the load failure's class (M10-D1). A unit test drives
       `preflight_outcome()` with hand-built records covering all four outcomes
       plus the mixed pool, and asserts each classification.
-- [ ] AC3: the status record carries the fields the abort message names, and
+- [x] AC3: the status record carries the fields the abort message names, and
       `check_daemons_can_load()` aborts on that outcome with condition classes
       `nestedtune_daemons_incompatible` and `nestedtune_daemons_unusable`,
       naming how many daemons are affected, which symbols are missing, and the
       remedy (reinstall the current version into the daemons' library, then
       restart the pool). Asserted through the existing `status =` injection
       point against a snapshot.
-- [ ] AC4: the probe expression runs on a real daemon pool and correctly
+- [x] AC4: the probe expression runs on a real daemon pool and correctly
       reports a symbol that genuinely is not present, asserted against a live
       pool by asking for a name no version of the package defines.
-- [ ] AC5: dispatch to a pool started with `mirai::daemons(n, dispatcher = FALSE)`
+- [x] AC5: dispatch to a pool started with `mirai::daemons(n, dispatcher = FALSE)`
       emits exactly one warning of class `nestedtune_pool_not_cancellable`,
       naming that an interrupted run's folds keep computing and that a
       dispatcher-backed pool is what makes cancellation work; a pool started
       with `mirai::daemons(n)` emits none. The warning is emitted in
       `dispatch_folds()`; both branches are asserted at the `nested_tune_grid()`
       seam and again driving `dispatch_folds()` directly.
-- [ ] AC6: `NEWS.md` records the refusal and the warning; the roxygen
+- [x] AC6: `NEWS.md` records the refusal and the warning; the roxygen
       cancellation paragraph (`R/nested-tune-grid.R:236-242`) says a warning now
       fires, the pre-flight bullet (`R/nested-tune-grid.R:191-195`) covers the
       new refusal, and `man/nested_tune_grid.Rd` is regenerated.
-- [ ] AC7: every new daemon-touching test carries its `helper-time-budget.R`
+- [x] AC7: every new daemon-touching test carries its `helper-time-budget.R`
       row, and the `verify` slot in `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -78,32 +78,402 @@ cancelled says so once.
 
 ## Tasks
 
-- [ ] T1: replace the probe's logical answer with a per-daemon record and its
+- [x] T1: replace the probe's logical answer with a per-daemon record and its
       positive validator, superseding `loaded_answer()`
       (`R/parallel.R:380-382`); amend the contract test at
       `tests/testthat/test-parallel-classify.R:503`, which encodes the answer
       shape this changes.
-- [ ] T2: extend `preflight_outcome()`'s ladder (`R/parallel.R:390-411`) with
+- [x] T2: extend `preflight_outcome()`'s ladder (`R/parallel.R:390-411`) with
       the new outcome below `cannot_load`; test all four plus the mixed pool.
-- [ ] T3: carry the new fields on the status record and add the abort branch to
+- [x] T3: carry the new fields on the status record and add the abort branch to
       `check_daemons_can_load()` (`R/parallel.R:419-475`); snapshot the message.
-- [ ] T4: assert the probe against a live pool with a deliberately absent
+- [x] T4: assert the probe against a live pool with a deliberately absent
       symbol, in `test-parallel-detection.R`; add its time-budget row.
-- [ ] T5: detect the pool kind from `mirai::status()$mirai` and warn once in
+- [x] T5: detect the pool kind from `mirai::status()$mirai` and warn once in
       `dispatch_folds()` (`R/parallel.R:169-273`); assert both pool kinds and
       add the time-budget rows.
-- [ ] T6: `NEWS.md`, the two roxygen sites, and `devtools::document()`.
-- [ ] T7: full `verify` slot clean; register any new prose-guard in the
+- [x] T6: `NEWS.md`, the two roxygen sites, and `devtools::document()`.
+- [x] T7: full `verify` slot clean; register any new prose-guard in the
       mutation harness.
+- [x] T8 (review F15): find why `daemons_load_status(package = "ranger")`
+      returns `no_response` under the covr job on ubuntu when it returned
+      `cannot_load` on `main`, and fix it. Does not reproduce under local covr
+      on macOS; all five `R CMD check` legs pass. F6 is the leading suspect.
+- [x] T9 (review F1, F2): add `"vec-sep2" = ", "` to the `cli_vec()` style so
+      two missing symbols separate, and take `{?is/are}`'s quantity from
+      `n_incompatible` rather than `n_total`. Extend the snapshot to a
+      two-symbol case and a mixed pool — the two configurations it does not
+      currently reach (F11a).
+- [x] T10 (review F6): stop `daemons_load_status()` requiring its probed
+      package on the host, or refuse it with a classified condition.
+- [x] T11 (review F9): teach the copied-bound drift guard to read the whole
+      call, not the row's one line, and declare the rows it cannot re-read.
+      Amended 2026-07-30: pointing the row at the `timeout = 30000` line, as
+      planned, would break both accounting guards, which key on the line
+      carrying the call's name.
+- [x] T12: re-run the full gate — suite, `check()`, and CI green on every leg
+      including `test-coverage` — before returning to review.
 
 ## Work log
 
 - 2026-07-30: created by /milestone-plan.
+- 2026-07-30: branch `m24-preflight-capability-probe` cut from main; status in-progress.
 - 2026-07-30: plan gate chose a symbol-capability probe over comparing the daemon's package version because `DESCRIPTION`'s `Version:` has read `0.0.0.9000` since M01 (`fafb31f`, the only commit touching it in 23 milestones), so a stale daemon reports the host's own string and a version check cannot fire; falsified by a daemon whose symbols are all present while its code differs, which is the build-hash candidate this leaves in Out.
 - 2026-07-30: plan gate chose proving the probe against a live pool with an absent symbol over installing a stubbed package into a scratch library, because priming a daemon reaches every daemon and erases the heterogeneity such a fixture exists to create (`test-parallel-detection.R:86-88`); falsified by a failure mode that only a genuinely mixed pool exhibits.
 - 2026-07-30: plan gate chose warning on a `dispatcher = FALSE` pool over refusing it, because the pool computes correct results and only cancellation is unavailable, so GP3's refuse-don't-warn stance does not reach it; falsified by evidence that an uncancellable pool produces a wrong result rather than an uninterruptible one.
+- 2026-07-30: T1 done. Probe returns a per-daemon record; `daemon_report()` replaces `loaded_answer()`. `preflight_outcome()`'s new `incompatible` branch landed here too (same function), so T2 is code-complete and awaits its own tests. Three test call sites built bare logicals; a `reports()` helper builds records in place so no line moved. Missed one at `test-parallel-identity.R:112` — a mock fabricating `FALSE` silently reclassified from cannot_load to no_response, caught by the full suite. Ledger rows 520/527/528 shifted 37 lines and were repaired (the M16/M21 drift trap).
+- 2026-07-30: T2 done. Five ladder tests: incompatible classified, missing symbols unioned across the pool, `cannot_load` still outranks it, it outranks `no_response`, and all four outcomes asserted distinct in one place so a future branch cannot absorb its neighbour. The 73 inserted lines shifted 10 ledger rows; repaired by offset.
+- 2026-07-30: T3 done. `nestedtune_daemons_incompatible` aborts with its own remedy — reinstall AND restart, because a live daemon keeps the namespace it loaded — deliberately not the install bullet, which reads as already done. Snapshotted. Two presentation bugs found by rendering rather than by assertion: cli's `vec-trunc` does not survive `{.code {}}` (a stale daemon would have listed all 106 symbols) and `{extra}` nested in a template conditional reached the user verbatim; both fixed and pinned by the snapshot, which also pins the daemon-vs-symbol pluralisation an earlier draft got wrong. Full suite 1557 pass / 0 fail.
+- 2026-07-30: T4 done. Two live-pool tests in `test-parallel-detection.R`: a symbol no build defines comes back reported by both daemons, and — the precondition the whole approach rests on — a primed pool matches the host's namespace exactly, so the manifest does not false-positive under pkgload as it must not under R CMD check either. Five budget rows added. Full suite 1569 pass / 0 fail.
+- 2026-07-30: T5 done. `pool_is_cancellable()` reads `status()$mirai`; the warning fires once per `dispatch_folds()` call, asserted at the `nested_tune_grid()` seam (3 folds, 1 warning), driving `dispatch_folds()` directly (3 payloads, 1 warning), and absent on a dispatcher-backed pool. Hand-rolling the undispatched pool would have hidden 120 s of waits from the ledger — `prime_daemons`/`warm_daemons` are not names the guard recognises — so a `start_daemons_undispatched()` helper joins `BUDGETED_WAIT_CALLS` and the guard's coverage grows rather than shrinks. Full suite 1586 pass / 0 fail.
+- 2026-07-30: T6 done. Two NEWS entries written for users rather than for the changelog — "worker" not "daemon", the restart explained rather than instructed. Pre-flight bullet extended with the capability half; cancellation paragraph now says the warning fires and why the pool is warned about rather than refused. `document()` regenerated `man/nested_tune_grid.Rd`, no other diff. Full suite 1586 pass / 0 fail.
+- 2026-07-30: T7 done. No prose-guard over a doc was authored, so the obligation was guard verification by inversion: six mutations, each reddening the guard that locks it — admitting a bare character into `daemon_report` (4 fail), inverting the ladder (1), never sending the manifest (5), never firing the warning (4), reporting every pool cancellable (3), dropping the truncation (1). Tree restored clean after each. `document()` no-diff. Full suite 1586 pass / 0 fail.
+- 2026-07-30: all tasks done, verify slot clean; status review.
+- 2026-07-30: review returned M24 to in-progress. Gate failure: CI red on `test-coverage` (F15, scored 98) at a pre-existing test that passed on `main`. Four more findings actioned — the two-symbol separator (F1, 94) and the `is/are` quantity (F2, 88), both confirmed by execution here and both invisible to the snapshot I wrote, which pinned the cases that render correctly; the host-side `asNamespace()` regression (F6, 85); and a ledger row the drift guard silently skips (F9, 85). Ten findings logged below threshold. T8–T12 added. Return count 1.
+- 2026-07-30: process deviation, recorded rather than corrected silently — the AC boxes were ticked during implement, task by task, when AC fencing makes them review's verification mark against fresh evidence. Every criterion's evidence is now recorded in the Review section and each tick is backed by it, so the end state is correct; what was wrong was the order. Nothing was accepted unverified.
+- 2026-07-30: T9 done. Both defects confirmed by rendering before the fix: `vec-sep2` is the style cli uses at exactly n=2, and `{?is/are}` took `n_total` from the last interpolation. The snapshot now renders four configurations, not two — one symbol, two, five truncated, and a mixed pool — chosen as the counts at which the wording changes, since the first draft pinned precisely the two that came out right. Ledger: 2 new rows, 14 shifted by 24.
+- 2026-07-30: T11 done. The planned remedy does not work -- both accounting guards key a row to the line carrying the call's NAME, so moving the row to the argument's line makes it stale in one guard and unbudgeted in the other. The blind spot is the guard's, so it is closed there: it now reads the whole call expression via parse data, picks the bound keyword by call so widening the read cannot pick up a nested call's argument, and asserts the set of rows it could NOT re-read equals a declared list keyed on the paying test. Inversions: raising the multi-line bound to 60000 reddens it (it was silent before), and adding a fourth unreadable row reddens the declaration.
+- 2026-07-30: T8 done. Named by execution, not by inspection: a diagnostic push showed the probe returning in 0.76 s of a 30 s bound with one daemon's answer invalid, and `covr:::trace_calls()` over both cuts showed why -- covr rewrites the braces of the probe expression and `everywhere()` serializes the rewritten form, so daemons without covr raise. Probe now built with `str2lang()`; see the Decisions entry. A new allowlist test makes the coverage job itself the detector.
+- 2026-07-30: T10 done. `daemon_symbol_manifest()` returns `character()` when the host has no copy of the probed package, restoring what the `package` argument is for. Unreachable for the package's own probe, so it cannot weaken the real check. Question gate chose this over a classified refusal, which would have removed the capability rather than restored it.
+- 2026-07-30: T8, T10 and T11 landed in one checkpoint: all three move `helper-time-budget.R`'s ledger, and splitting them would have produced commits whose verify slot could not pass.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
+
+- 2026-07-30: T12 done. Full gate re-run: suite 1593 pass / 0 fail, `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 57s), `document()` no diff. CI green on both gating workflows at `de4e31f` -- and the coverage job now RUNS the heterogeneous-pool test rather than failing it (1.4 s, FAIL 0), which is the evidence F15 is actually fixed rather than hidden. Four guard inversions, one red test each: dropping `vec-sep2`, dropping `qty()`, making the manifest raise again, and adding a call to the sent expression.
+- 2026-07-30: all send-back tasks done, verify slot clean, CI green; status review. Return count 1.
+- 2026-07-31: CI green on all ten checks at `c1349bd`, the review-fix commit; PR #25 marked ready.
+- 2026-07-31: review pass 2. Three lenses returned 11 findings (blame-history and prior-review both clean, so all 11 are the diff-bug lens); the scorer actioned 2 and logged 9. Both fixed here rather than sent back: the `cannot_load` message never named an incompatible daemon in a pool failing both ways (G1, 88), the rediscovery M10-D1 refuses one bullet away in the same branch; and the one test starting bare `mirai::daemons()` pools carried no ledger row, an AC7 breach as written (G2, 85), now rowed with the 0-second declaration measured rather than assumed. Ledger drift from the 49 inserted lines repaired by computed offset, not by eye. Suite 1607 pass / 0 fail / 0 skip, `check()` 0/0/0. Return count still 1.
 
 ## Decisions
 
+### 2026-07-30 (T1): the probe asks for the host's whole namespace, not the two symbols the worker calls
+
+The dispatch path resolves exactly two names through the daemon's namespace —
+`rehydrate_payload` (`R/parallel.R:232`) and `nested_fold_fit` (`R/parallel.R:585`)
+— so a two-name check is the precise test of "can this daemon run this fold".
+The probe instead sends `ls(asNamespace("nestedtune"))`, all 106 names, and each
+daemon reports which it lacks. Measured at 2,627 B serialized, against a per-fold
+payload already in the megabytes, so the width is free.
+
+Chosen at the implementation gate because a hand-maintained list is the defect
+being fixed: M23 added the second name and nothing made the pre-flight notice. A
+source-scanning drift test was the runner-up and would have kept the precision,
+but it guards a list that exists only to be guarded. Deliberately stricter than
+"can run this fold": a daemon missing a symbol this run does not reach is still
+running different code, which is the IP2 hazard the build-hash candidate holds.
+
+`ls()` rather than `names()` because a namespace carries dotted bookkeeping
+objects that differ between an installed package and one under pkgload, which
+would report every daemon as incompatible. Host and daemons are symmetric under
+both — primed by `load_all()` in the suite, installed under `R CMD check`.
+
+Falsified by a legitimate pool this refuses — a daemon whose namespace differs
+for a reason unrelated to which build it is running.
+
+### 2026-07-30 (T8): the daemons are sent an expression built from text, not one written as source
+
+`mirai::everywhere()` captures its expression unevaluated and serializes it, so
+the daemons evaluate whatever the HOST's copy of that function body has been
+rewritten into. Under `covr` the rewriting inserts a `covr:::count()` call inside
+every `{` block, and M24's first cut wrote the probe as a braced `if`/`else` --
+so every daemon was sent two counter calls, and a daemon whose library has no
+covr raised on them. The raise returned as a `miraiError`, `daemon_report()`
+refused it exactly as designed, and a pool that had answered correctly was
+classified as silent (`no_answer = 1` in 0.76 s of a 30 s bound). Confirmed by
+running `covr:::trace_calls()` over both cuts: the counters land inside the sent
+expression here and outside it on `main`, which is why this failed only the
+coverage job and passed all five `R CMD check` legs.
+
+The probe is now built with `str2lang()` from a string. A string is data rather
+than source, so no rewriting tool reaches it and the daemons receive exactly the
+expression written in the file. The alternative considered and declined was
+skipping the affected test under coverage: it would green CI while leaving the
+daemons still receiving the host's build tooling, which is the opposite of what
+a capability probe is for.
+
+The scope is narrow by construction and stays that way only while it is
+checked. This is the package's one site that ships an *expression* to a daemon;
+the fold path resolves `rehydrate_payload` and `nested_fold_fit` through the
+daemon's own namespace and ships no bodies. The allowlist test asserts the sent
+expression names nothing but base R, so the coverage job now fails at that
+assertion rather than at an unexplained heterogeneous-pool failure.
+
+Falsified by a rewriting tool that reaches string-built expressions, or by a
+second site that ships an expression and cannot be written this way.
+
 ## Review
+
+## First pass — 2026-07-30 (returned to `in-progress`)
+
+Reviewed 2026-07-30 on `m24-preflight-capability-probe` at PR #25.
+`main` had not moved since the branch was cut, so no merge was needed and
+the evidence below is from the branch tip.
+
+### Criterion evidence
+
+- **AC1** — `daemon_report()` validates positively and returns NULL for a
+  non-record. Three tests in `test-parallel-classify.R`: "a miraiError is
+  never read as a capability report" (asserts the length-1 character
+  rejection the criterion names), "a report is rejected unless every field
+  has the right shape" (7 malformed records plus the well-formed one), and
+  "a daemon answering something other than a report counts as silent".
+  Inversion: admitting a bare character into `daemon_report()` reddens 4 tests.
+- **AC2** — the `incompatible` outcome exists and sits below `cannot_load`.
+  Five tests, including "every outcome the ladder can produce is reachable
+  and distinct" (all four asserted in one vector) and both mixed pools —
+  load-failure-plus-incompatible takes `cannot_load`, incompatible-plus-silent
+  takes `incompatible`. Inversion: swapping the two ladder arms reddens 1 test.
+- **AC3** — status record carries `incompatible` and `missing_symbols`; the
+  abort raises `nestedtune_daemons_incompatible` + `nestedtune_daemons_unusable`.
+  Three tests plus a two-case snapshot (`_snaps/parallel-classify.md`) pinning
+  the one-symbol and truncated forms, the daemon-vs-symbol pluralisation, and
+  the absence of the install remedy. Inversion: dropping truncation reddens 1.
+- **AC4** — probe proved against a live pool. "a symbol no build defines is
+  reported by every daemon that loaded" asserts `incompatible == 2`,
+  `cannot_load == 0`, and `missing_symbols` equal to the absent name, which
+  can only have come back from the daemons; its companion asserts a primed
+  pool matches the host namespace exactly, which is the precondition the
+  manifest approach rests on. Inversion: not sending the manifest reddens 5.
+- **AC5** — warning fires once per `dispatch_folds()` call. Four tests: pool
+  kinds distinguishable while `connections` reads alike, both argument
+  branches, the `nested_tune_grid()` seam (3 folds → 1 warning), the direct
+  `dispatch_folds()` drive (3 payloads → 1 warning), and a dispatcher-backed
+  run asserting no such condition. Inversions: never warning reddens 4,
+  reporting every pool cancellable reddens 3.
+- **AC6** — two `NEWS.md` entries in users' terms carrying no milestone
+  numbers (grep clean); pre-flight bullet and cancellation paragraph both
+  amended in `R/nested-tune-grid.R`; `man/nested_tune_grid.Rd` regenerated
+  and `devtools::document()` re-run with no diff.
+- **AC7** — `test-suite-hygiene.R` passes 17/17, so every new daemon-touching
+  call carries its ledger row and no row points at a moved line.
+  `devtools::check()` clean.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all checks PASS, all advisories OK.
+- `cairn_impact.py` — not run: no `DESIGN.md` principle text changed.
+- `devtools::document()` — no diff.
+- `pkgdown::check_pkgdown()` — no problems found.
+- README.Rmd absent, so no knit-sync check applies.
+- `NEWS.md` carries this milestone's user-visible changes, no milestone numbers.
+- No new top-level files beyond the already-tracked `NEWS.md`.
+- `devtools::check()` — **0 errors, 0 warnings, 0 notes** (4m 2s; tests
+  97s/162s under `test_check`, the installed-package daemon path, which is a
+  different path from `devtools::test()`'s pkgload one).
+- Fresh per-file suite runs: classify 141, detection 49, hygiene 17,
+  identity 49 — all 0 fail, 0 skip.
+- Returns to `in-progress` for this milestone: 1 (this one).
+- **CI: RED.** All five `R CMD check` legs pass (macos, windows, ubuntu
+  devel/release/oldrel-1); `test-coverage` fails. Gate failure — not merged.
+
+### Independent review
+
+Three fresh-context lenses, then a Sonnet scorer that generated none of the
+findings. Blame-history: no regressions — every renumbered ledger row's
+seconds value byte-identical, no row deleted, no assertion weakened, M10-D1's
+ladder rationale honoured. Prior-review: no GitHub thread evidence (probe
+returned empty); one archived-review deviation raised (F13). Diff-bug lens
+returned 12 findings; 15 scored in total.
+
+**Actioned (score ≥ 80):**
+
+- **F15 (98)** — CI regression on a pre-existing test. `test-parallel-detection.R:96-100`
+  ("the probe reaches every daemon, not just a loadable one", probing
+  `package = "ranger"`) returns `no_response` instead of `cannot_load` under
+  the covr job on ubuntu. Passed on `main`. Does not reproduce under a local
+  covr run on macOS, and all five `R CMD check` legs pass.
+- **F1 (94)** — with **exactly two** missing symbols the message renders
+  `` `nested_fold_fit` `rehydrate_payload` `` with no separator:
+  `cli_vec()` sets `vec-last` but not `vec-sep2`, and cli uses `vec-sep2` at
+  n=2. Verified by execution here. This is the pre-M23 stale-daemon case
+  precisely — the two symbols the worker resolves by name — so the headline
+  scenario is the one that renders wrong. The snapshot pinned n=1 and n=5.
+- **F2 (88)** — `{?is/are}` takes its quantity from the last interpolation,
+  `n_total`, so every mixed pool reads "1 of 2 mirai daemons **are** running a
+  different build". Verified by execution. The snapshot pinned only 1-of-1,
+  where it happens to read correctly.
+- **F6 (85)** — `daemon_symbol_manifest()`'s `asNamespace(package)` runs on the
+  **host**, so `daemons_load_status(package = <pkg>)` now requires that package
+  installed locally and raises an unclassified error otherwise. Before M24 the
+  argument existed precisely to probe for a package the daemons may lack.
+  Plausibly the mechanism behind F15.
+- **F9 (85)** — `helper-time-budget.R:196-198` declares
+  `test-parallel-detection.R:145`, but `timeout = 30000` is on line 146. The
+  copied-bound drift guard reads only the declared line, gets `NA`, and skips
+  the row — so the one new row claiming a copied bound is never cross-checked,
+  which is exactly what that guard exists for (M16 review F3).
+
+**Logged below threshold (10), surfaced not dropped:** F10 (75) stale
+in-comment coordinates and a 106-vs-109 symbol count; F11 (60) snapshot never
+covers the two configurations that render wrongly; F14 (60) this file's
+declared worst case rose 120s → 780s with no per-file ceiling guard; F5 (55)
+`cli_vec(NULL)` errors on a degenerate injected status; F3 (40) the remedy
+omits the priming route; F4 (35) `setdiff` is one-directional; F12 (35)
+warning sits after the pre-flight wait; F8 (30) `symbols` inserted as the third
+formal; F7 (25) `pool_is_cancellable()`'s two no-pool branches disagree; F13
+(25) a fabricated `miraiError` without the `skip_if_not_installed("mirai")`
+gate the file's own convention uses.
+
+### Disposition
+
+Returned to `in-progress`. AC3 and AC7 are unticked: AC3's snapshot evidence is
+now known to have pinned the two cases that render correctly and missed both
+that do not, and AC7's ledger row is not actually being cross-checked. The
+remaining criteria keep their evidence.
+
+## Second pass — 2026-07-31
+
+Reviewed on `m24-preflight-capability-probe` at PR #25. `main` is still at
+`d70d536`, the branch's merge-base, so no merge-forward was needed and every
+number below is from the branch tip. Return count entering this pass: 1.
+
+### Criterion evidence
+
+- **AC1** — `daemon_report()` validates positively; a length-1 character vector
+  (a `miraiError`'s exact shape) returns NULL. Re-run this pass: the three
+  tests in `test-parallel-classify.R` — "a miraiError is never read as a
+  capability report", "a report is rejected unless every field has the right
+  shape" (7 malformed records plus the well-formed one), "a daemon answering
+  something other than a report counts as silent" — all pass inside a suite of
+  1607 with 0 failures and 0 skips.
+- **AC2** — the `incompatible` outcome exists and ranks below `cannot_load`.
+  Five ladder tests pass, including "every outcome the ladder can produce is
+  reachable and distinct" (all four asserted together) and both mixed pools.
+  Re-confirmed by execution this pass: a pool with one non-loading daemon and
+  one incompatible daemon classifies `cannot_load` with `incompatible = 1`.
+- **AC3** — the status record carries `total`, `cannot_load`, `incompatible`,
+  `missing_symbols`, `no_answer`, `timeout`, `package`; the abort raises
+  `nestedtune_daemons_incompatible` + `nestedtune_daemons_unusable` and names
+  the count, the symbols, and the reinstall-then-restart remedy. The snapshot
+  (`_snaps/parallel-classify.md`) now pins **four** configurations, not the two
+  that rendered correctly: one symbol, two (separator present — the F1 defect),
+  five (truncated to three plus a count), and a mixed pool ("1 of 2 mirai
+  daemons **is**" — the F2 defect). Rendered by execution this pass at all four.
+  Inversions: dropping `vec-sep2` reddens; dropping `qty()` reddens; dropping
+  truncation reddens 1.
+- **AC4** — probe proved against a live pool. "a symbol no build defines is
+  reported by every daemon that loaded" asserts `incompatible == 2`,
+  `cannot_load == 0`, and `missing_symbols` equal to the absent name — a value
+  that can only have come back from the daemons; its companion asserts a primed
+  pool matches the host namespace exactly. Both ran (0 skips) in this pass's
+  suite, and the covr job on CI now **runs** them rather than failing them.
+- **AC5** — warning fires once per `dispatch_folds()` call. Four tests pass:
+  the two pool kinds distinguishable while `connections` reads alike, both
+  argument branches, the `nested_tune_grid()` seam (3 folds → 1 warning), the
+  direct `dispatch_folds()` drive (3 payloads → 1 warning), and a
+  dispatcher-backed run asserting no such condition.
+- **AC6** — two `NEWS.md` entries in users' terms; `grep -nE '\bM[0-9]{2}\b'`
+  over `NEWS.md`, `README.md` and `man/*.Rd` returns nothing, so no milestone
+  numbers reach user-facing text. Pre-flight bullet and cancellation paragraph
+  both amended in `R/nested-tune-grid.R`; `man/nested_tune_grid.Rd` regenerated
+  and `devtools::document()` re-run this pass with no diff.
+- **AC7** — every new daemon-touching test now carries its row. The gap this
+  pass found (G2 below) is closed: the one test starting bare `mirai::daemons()`
+  pools is rowed and its three `daemons(0)` calls disclosed, with the 0-second
+  declaration measured rather than assumed. `test-suite-hygiene.R` passes 17/17
+  and the copied-bound cross-check re-reads every row it declares readable.
+  `verify` slot clean: `devtools::test()` 1607 pass with 0 failures and 0
+  skips, `devtools::document()` no diff, `devtools::check()` 0 errors /
+  0 warnings / 0 notes.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all checks PASS. One advisory: `sizing` warns
+  M24 carries 12 tasks against the 10-task tripwire. Advisory, not a gate
+  failure, and it reflects T8–T12 being added by the first pass's send-back
+  rather than a mis-sized plan.
+- `cairn_impact.py` — not run: `cairn/DESIGN.md` is untouched by this branch
+  (`git diff origin/main..HEAD -- cairn/DESIGN.md` empty), so no principle
+  text changed.
+- `devtools::document()` — no diff.
+- `pkgdown::check_pkgdown()` — no problems found.
+- README.Rmd absent, so no knit-sync check applies.
+- `NEWS.md` carries this milestone's user-visible changes, no milestone numbers.
+- No new top-level files beyond the already-tracked `NEWS.md`.
+- `devtools::check()` — **0 errors, 0 warnings, 0 notes** (3m 59s), run twice
+  this pass: once before the review fixes and once after.
+- CI: **all ten checks green** at `093751c` and again at `c1349bd` after this
+  pass's fixes — five `R CMD check` legs (macos, windows, ubuntu
+  devel/release/oldrel-1), `test-coverage`, `build`, and both codecov checks.
+  `test-coverage` was the first pass's gate failure and now passes, running the
+  heterogeneous-pool tests rather than failing them.
+- Returns to `in-progress` for this milestone: 1 (the first pass). No second
+  return — both actioned findings were fixed within this pass.
+
+### Independent review
+
+Three fresh-context lenses, then a Sonnet scorer that generated none of the
+findings and was given the diff and the plan.
+
+- **Blame-history [S]** — no regressions. Checked the `loaded_answer()`
+  deletion (semantics preserved in `daemon_report()`), M10-D1's ladder
+  (extended, not reordered), every shifted ledger row against its real line,
+  the `call_site_bound_s()` widening (a strengthening of M16's guard), and
+  GP3's refuse-vs-warn line against DESIGN.md. Zero findings.
+- **Prior-review [S]** — no prior-review evidence contradicted. GitHub probe
+  returned `[]` (no inline review comments in the repo at all), so the lens ran
+  on the archived `## Review` record: M16's F3 lesson is honoured rather than
+  regressed by the F9 fix, and the ten sub-threshold findings from the first
+  pass are unchanged rather than worsened. Also verified the temporary
+  diagnostic commit `d96ad60` left no residue. Zero findings.
+- **Diff-bug [O]** — verified all five first-pass fixes hold (F1/F2 by
+  rendering seven configurations, F15 by running `covr:::trace_calls()` over
+  the current form, F6 and F9 by execution) and returned 11 further findings.
+
+Eleven findings scored; two at or above 80.
+
+**Actioned (score ≥ 80):**
+
+- **G1 (88)** — *A pool failing both ways never hears about the incompatible
+  daemons.* `R/parallel.R`: the `cannot_load` branch appends the `n_silent`
+  bullet but nothing for `n_incompatible`, though `status$incompatible` and
+  `status$missing_symbols` are both populated. A pool with one daemon that
+  cannot load and one holding an old build said only "1 of 2 mirai daemons
+  cannot load nestedtune" — so the user installs, restarts, pays another
+  pre-flight, and only then meets the second fault, which needs a *different*
+  fix. This is exactly the rediscovery M10-D1 refuses for the non-answer case
+  in the same branch. **Fixed now.** The symbol rendering is hoisted above both
+  branches and the `cannot_load` message gains an incompatible bullet naming
+  the count, the symbols, and the restart. Two regression tests added; the
+  pluralisation is asserted in the branch F2 was *not* fixed in. Inversion:
+  suppressing the bullet reddens 6 assertions.
+- **G2 (85)** — *AC7 miss: a new daemon-touching test carries no ledger row.*
+  `test-parallel-detection.R:178` ("the two pool kinds are distinguishable")
+  starts pools with bare `mirai::daemons(2)` and
+  `mirai::daemons(2, dispatcher = FALSE)`, which are not in
+  `BUDGETED_WAIT_CALLS`, so the guard cannot see them and no row or disclosure
+  covered them — an AC7 breach as written. **Fixed now.** Both starts are rowed
+  at 0 seconds and the three `daemons(0)` calls beside them disclosed, matching
+  the `test-parallel-metrics.R` precedent. The 0 is measured, not assumed
+  (2026-07-31, mirai 2.7.2): `daemons(2)` returns in 0.635 s,
+  `daemons(2, dispatcher = FALSE)` in 0.224 s, `daemons(0)` in 0.205 s, with
+  `status()$connections` already reading 2 — none waits on a mirai result.
+  Routing the test through `start_daemons()` was rejected: it primes and warms,
+  which is orthogonal to the pool-kind property under test and would charge
+  this file two further bounds.
+
+**Logged below threshold (9), surfaced not dropped:** G7 (75) roxygen and NEWS
+say the probe asks for "internal functions" while it sends the whole namespace,
+exports included; G3 (68) the new drift guard keys its declared-unreadable set
+on `file :: payer`, so a *second* unreadable row inside an already-declared
+test would collapse onto the existing key — latent, no such row exists; G6 (68)
+stale in-comment coordinates (`:232`/`:585` against the real `:254`/`:805`) and
+a 106-vs-110 symbol count, one step further out of date than first-pass F10
+(75); G8 (60) `daemon_symbol_manifest()` loads the probed package on the host
+and the abort text is written for nestedtune, so it reads wrongly for any other
+probed package; G5 (55) the base-R allowlist test inspects
+`daemon_probe_expr()`'s own return value, which is uninstrumentable by
+construction, rather than the `everywhere()` call-site argument that actually
+broke; G10 (42) the widened bound regex takes the first keyword match in the
+call text, so a nested call using the same keyword would be misread — latent;
+G4 (35) `helper-time-budget.R`'s "detection is small" comment justifying no
+ceiling is now false at 780 s declared, a restatement of first-pass F14 (60) on
+an unmodified line; G9 (30) `cli_vec(NULL)` still errors on a degenerate
+injected status, a restatement of first-pass F5 (55); G11 (25) tracking
+bookkeeping this pass closes by writing.
+
+### Disposition
+
+Both actioned findings fixed on the branch and re-verified: full suite
+1607 pass / 0 fail / 0 skip, `devtools::check()` 0/0/0, `document()` no diff,
+`cairn_validate` exit 0. All seven acceptance criteria carry fresh evidence
+above and every checkbox is ticked against it. Awaiting the merge gate.

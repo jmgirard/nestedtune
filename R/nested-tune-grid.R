@@ -193,6 +193,14 @@
 #'   differ — one respawned, or started against a different library — therefore
 #'   fails here, naming how many are affected, rather than as a run in which
 #'   some folds come back as opaque worker failures.
+#' - The same round trip asks each daemon which of this session's internal
+#'   functions its own copy of the package defines, and stops if any are
+#'   missing. A daemon holding an *older install* loads the package perfectly
+#'   well and then fails every fold, because the worker resolves what it needs
+#'   by name inside that daemon's copy. The error names the missing functions
+#'   and asks you to reinstall and then restart the pool — a running daemon
+#'   keeps the namespace it has already loaded, so reinstalling underneath one
+#'   changes nothing until it is replaced.
 #' - A daemon that does not answer at all is reported as a non-response, not as
 #'   a missing package, so a merely slow daemon is never met with advice to
 #'   install what you already have. The check waits 30 seconds by default; set
@@ -237,7 +245,11 @@
 #' are worth knowing. Cancelling needs mirai's dispatcher, which
 #' `mirai::daemons(n)` starts by default; on a pool started with
 #' `dispatcher = FALSE` the request cannot reach the workers at all and the
-#' folds run to completion. And stopping is a request rather than a guarantee:
+#' folds run to completion. You are told so at dispatch rather than left to
+#' discover it: such a pool raises a warning of class
+#' `nestedtune_pool_not_cancellable`, once per call, naming the remedy. The pool
+#' is not refused, because its results are correct — what it lacks is the
+#' ability to stop. And stopping is a request rather than a guarantee:
 #' a fold already inside a compiled fitting routine may not be interruptible,
 #' and one that has nearly finished may simply finish.
 #'

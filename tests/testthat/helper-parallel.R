@@ -107,6 +107,50 @@ start_daemons <- function(n) {
   invisible(n)
 }
 
+# Daemon probe answers, as preflight_outcome() receives them.
+#
+# The probe returns one record per daemon, so a test asserting the ladder builds
+# records rather than the bare logicals the pre-M24 probe returned. TRUE is a
+# daemon that loaded the package with nothing missing, FALSE one that could not
+# load it, NA a daemon that never answered -- a non-record, which is what a
+# stopped or dead daemon actually yields.
+#
+# `missing =` names the symbols a loaded daemon lacks, keyed by position, so a
+# mixed pool is written in one call: reports(TRUE, FALSE, missing = list(NULL,
+# NULL)) is a load failure beside a healthy daemon.
+reports <- function(..., missing = NULL) {
+  loaded <- c(...)
+  lapply(seq_along(loaded), function(i) {
+    if (is.na(loaded[[i]])) {
+      return(structure(20L, class = c("errorValue", "try-error")))
+    }
+    absent <- if (is.null(missing)) NULL else missing[[i]]
+    list(
+      loaded = loaded[[i]],
+      missing = if (is.null(absent)) character() else absent
+    )
+  })
+}
+
+# The same pool, minus the dispatcher that makes cancellation possible (M24).
+#
+# `mirai::daemons(n)` starts a dispatcher; `daemons(n, dispatcher = FALSE)` does
+# not, and use_parallel() admits both because it counts connections, which read
+# alike. Primed and warmed exactly as start_daemons() does, so the two differ in
+# the one property under test and in nothing else.
+#
+# A named helper rather than the three calls inline, so its waits are one
+# BUDGETED_WAIT_CALLS entry the time-budget ledger can see -- prime_daemons()
+# and warm_daemons() are not names that guard recognises, and spelled out at a
+# call site they would each wait 60 s invisibly to it.
+start_daemons_undispatched <- function(n) {
+  mirai::daemons(0)
+  mirai::daemons(n, dispatcher = FALSE)
+  prime_daemons()
+  warm_daemons()
+  invisible(n)
+}
+
 skip_if_no_daemons <- function() {
   testthat::skip_if_not_installed("mirai")
   testthat::skip_on_cran()
