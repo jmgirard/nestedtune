@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-31 (all checks green, one advisory — M24 carried 12 tasks past the 10-task tripwire, from its send-back rather than a mis-sized plan. Since the last check: M24 merged after two review passes, and M19's terminal row was pruned to hold the 5-row cap)_
+_Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 19 of 24 references pages carry no verification claim in their `Extraction:` status, a shelf-wide gap, 14 of them predating today. Since the last check: nothing in flight, and nine tier-1/2 sources were ingested, restating the G6 row)_
 
 ## Milestones
 
