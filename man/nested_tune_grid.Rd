@@ -178,6 +178,22 @@ carries that daemon's call stack rather than yours. The note text, its
 location, and its type are the same either way, though a daemon wraps long
 message lines to its own console width rather than your terminal's.
 
+\strong{Each fold is sent one copy of the data, not one per inner split.} A
+resampling split carries the whole frame it indexes, and sending a fold to a
+daemon means serializing it — which does not preserve the single shared copy
+the design holds in memory. Each fold's splits are therefore emptied before
+dispatch and refilled on the worker, so what crosses is the fold's row
+indices plus one copy of the data rather than one copy per split. On a design
+built by \code{\link[=nested_resamples]{nested_resamples()}} that is one copy per fold; a design from
+\code{\link[rsample:nested_cv]{rsample::nested_cv()}} materializes an analysis frame per outer fold, so each
+fold also carries its own, still once rather than once per inner split.
+
+Two things this does not reach, both of them objects you supply rather than
+anything the package builds. A recipe keeps a copy of the data it was created
+with, and a formula carries the environment it was written in — so a workflow
+built inside a function that holds a large object sends that object with
+every fold. Building the workflow at the top level avoids the second.
+
 Daemons are \strong{separate R processes}, which has consequences worth knowing:
 \itemize{
 \item They do not inherit your session's options, your \code{.libPaths()} changes, or

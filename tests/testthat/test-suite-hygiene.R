@@ -65,7 +65,7 @@ BUDGETED_WAIT_CALLS <- c(
 BUDGETED_FILES <- c(
   "test-parallel-classify.R", "test-parallel-detection.R",
   "test-parallel-identity.R", "test-parallel-interrupt.R",
-  "test-parallel-metrics.R", "helper-parallel.R"
+  "test-parallel-metrics.R", "test-parallel-payload.R", "helper-parallel.R"
 )
 
 wait_call_sites <- function(path) {

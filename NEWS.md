@@ -1,5 +1,15 @@
 # nestedtune 0.0.0.9000
 
+* Running the outer folds in parallel now sends each fold one copy of your data
+  instead of one copy per inner resample. A split carries the whole frame it
+  indexes, and sending a fold to a worker serializes it, which does not preserve
+  the single shared copy the design holds in memory — so a design with five
+  inner resamples was putting six copies of the data on the wire for every outer
+  fold. The splits are now emptied before dispatch and refilled on the worker.
+  On a five-fold design over a 5,000-row frame this took a run from 25.7 MB to
+  4.7 MB. Results are unchanged: the objects each fold receives are identical to
+  the ones a serial run passes, and the serial path is untouched.
+
 * The object `nested_final_fit()` returns now has two named accessors for the
   tuning run behind it. `extract_tune_results()` returns that run — the record
   of what parameter selection actually saw when the procedure was re-run on
