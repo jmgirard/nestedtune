@@ -672,6 +672,53 @@ accessor that hands the tuning run over carries the same bias caution the print
 method does. `nested_results` gets no method for either generic; the `.grid`
 column stays its per-fold surface.
 
+### D-024 (2026-07-30): Posture toward upstream's tune prototype — port the outer loop and retire nestedtune if tune wants it, otherwise stay a companion asking only that tune's `nested_cv` refusal remain top-level; no CRAN submission until the question is settled — closes the posture the design interview deliberately left open
+
+**Context:** `cairn/DESIGN.md` has recorded this as open since 2026-07-25:
+"Still open, deliberately not invented by the interview: posture toward
+upstream's dormant prototype (tune#969), pending the maintainer's reply." The
+ROADMAP carried the matching candidate row (G7), whose promotion condition was
+the reply itself. topepo answered on tune#969: the `nested` branch is stalled on
+time rather than by choice, tune's internals were rewritten about a year ago and
+he does not believe the rewrite breaks it, his bandwidth opens after 2026-08-14,
+and he is "very open to making this happen" and invited collaboration. He also
+raised multi-level parallelism, and whether mirai or future schedules it better.
+The question is therefore no longer "will upstream ship this" but "where should
+the outer loop live", which the interview declined to answer without him.
+
+**Decision:** Three clauses, decided at the user's gate. (1) If tune wants the
+outer loop upstream, nestedtune ports it and is retired — the repo stays as
+history and the standalone package stops being developed. (2) Otherwise
+nestedtune continues as a companion, and the only thing it asks of tune is that
+the `nested_cv` refusal stay a **top-level** refusal, with each
+`inner_resamples` element still accepted as an ordinary `rset` — which is
+already tune's behavior, so the ask costs tune no new API and no commitment
+beyond not regressing. (3) No CRAN submission while clause (1) is live, so the
+package is never published and then retired; this is a stated condition on the
+posture and not a release plan, which stays user-declared (D-050). Considered
+and rejected at the gate: porting the loop while keeping nestedtune for the
+pieces tune may not want (the memory-lean constructor, per-fold selection
+stability) — it splits maintenance across two homes for a benefit that is
+speculative until tune says what it will take, and clause (1) does not forbid
+proposing those pieces to rsample or tune separately; keeping nestedtune
+standalone regardless (maximum design control, but it leaves the ecosystem
+carrying two implementations of one loop, which is what D-002's boundary
+exists to prevent); asking tune additionally for a supported pass-through for
+forcing inner tuning sequential (safer against internal drift, but it asks a
+maintainer for an API commitment on the first exchange).
+
+**Consequences:** D-002's contract boundary is unchanged in substance and now
+has a stated failure mode: the boundary holds *because* nestedtune delegates,
+and clause (1) says what happens when the delegate wants the caller too. The
+DESIGN.md "Still open" note is corrected in place under D-045's
+current-knowledge rule, pointing here; git holds the original. The G7 candidate
+row is retired from the ROADMAP with this entry taking ownership — search-first
+sweeps for the posture question now land here, not on a row. The 2026-08-14
+date is his stated availability, not a commitment either way, and nothing in
+this entry obliges a reply by then. Clause (3) binds `/cairn-release` in the
+sense that the release-walk is not to be entered while clause (1) is live; it
+creates no release milestone and nominates nothing.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

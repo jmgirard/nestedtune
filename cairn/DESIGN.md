@@ -201,8 +201,11 @@ _Not at principle strength, by decision: surfacing what other tools hide
 obligation among a set of prohibitions — and nothing at principle strength
 defends it if default output gets crowded._
 
-_Still open, deliberately not invented by the interview: posture toward
-upstream's dormant prototype (tune#969), pending the maintainer's reply._
+_Posture toward upstream's prototype (tune#969) is settled by D-024: port the
+outer loop and retire this package if tune wants it upstream, otherwise stay a
+companion asking only that tune's `nested_cv` refusal remain top-level. (This
+line recorded the question as open, deliberately not invented by the interview;
+corrected 2026-07-30 when the maintainer replied — git holds the original.)_
 
 ## Architecture
 
