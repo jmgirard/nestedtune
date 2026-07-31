@@ -145,6 +145,27 @@ new_tbl <- function(cols) {
 #' had run. Those folds are dropped with a warning naming them; when no fold
 #' completed at all, this errors instead of returning `NA`.
 #'
+#' @section Reading `std_err`:
+#'
+#' `std_err` is the standard error of the mean across outer folds: the standard
+#' deviation of the per-fold scores divided by the square root of how many
+#' there were. It describes how much those folds varied. It is **not** a
+#' confidence interval for the estimate, and one should not be built from it.
+#'
+#' That is a limit of the statistics rather than of this implementation. Outer
+#' fold scores are not independent — any two folds share most of their training
+#' rows — so a standard error computed as though they were understates the
+#' uncertainty, and Bengio and Grandvalet (2004) proved there is no universally
+#' unbiased estimator of a k-fold cross-validation estimate's variance to put in
+#' its place. Gauran, Ombao and Yu (2025) measured the consequence inside a
+#' nested design: across their simulations, test statistics using a
+#' variance-based denominator rejected a true null far more often than the
+#' nominal 5% they were run at, reaching roughly 36% in the cells they report,
+#' and they recommend against such denominators outright.
+#'
+#' The column is reported because `tune` reports it and users expect the shape;
+#' no inferential claim is made with it.
+#'
 #' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
 #' data(mtcars)
 #'
@@ -167,6 +188,15 @@ new_tbl <- function(cols) {
 #'
 #' collect_metrics(res)
 #' collect_metrics(res, summarize = FALSE)
+#'
+#' @references
+#' Bengio, Y., & Grandvalet, Y. (2004). No unbiased estimator of the variance of
+#' K-fold cross-validation. *Journal of Machine Learning Research*, 5,
+#' 1089–1105.
+#'
+#' Gauran, I. I., Ombao, H., & Yu, Z. (2025). Predictive performance test based
+#' on the exhaustive nested cross-validation for high-dimensional data.
+#' *arXiv:2408.03138*.
 #'
 #' @export
 collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
