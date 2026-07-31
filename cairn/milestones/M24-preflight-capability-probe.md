@@ -1,6 +1,6 @@
 # M24: The pre-flight tells the truth about the pool
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -63,7 +63,7 @@ cancelled says so once.
       cancellation paragraph (`R/nested-tune-grid.R:236-242`) says a warning now
       fires, the pre-flight bullet (`R/nested-tune-grid.R:191-195`) covers the
       new refusal, and `man/nested_tune_grid.Rd` is regenerated.
-- [ ] AC7: every new daemon-touching test carries its `helper-time-budget.R`
+- [x] AC7: every new daemon-touching test carries its `helper-time-budget.R`
       row, and the `verify` slot in `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -93,7 +93,7 @@ cancelled says so once.
       `dispatch_folds()` (`R/parallel.R:169-273`); assert both pool kinds and
       add the time-budget rows.
 - [x] T6: `NEWS.md`, the two roxygen sites, and `devtools::document()`.
-- [ ] T7: full `verify` slot clean; register any new prose-guard in the
+- [x] T7: full `verify` slot clean; register any new prose-guard in the
       mutation harness.
 
 ## Work log
@@ -109,6 +109,8 @@ cancelled says so once.
 - 2026-07-30: T4 done. Two live-pool tests in `test-parallel-detection.R`: a symbol no build defines comes back reported by both daemons, and — the precondition the whole approach rests on — a primed pool matches the host's namespace exactly, so the manifest does not false-positive under pkgload as it must not under R CMD check either. Five budget rows added. Full suite 1569 pass / 0 fail.
 - 2026-07-30: T5 done. `pool_is_cancellable()` reads `status()$mirai`; the warning fires once per `dispatch_folds()` call, asserted at the `nested_tune_grid()` seam (3 folds, 1 warning), driving `dispatch_folds()` directly (3 payloads, 1 warning), and absent on a dispatcher-backed pool. Hand-rolling the undispatched pool would have hidden 120 s of waits from the ledger — `prime_daemons`/`warm_daemons` are not names the guard recognises — so a `start_daemons_undispatched()` helper joins `BUDGETED_WAIT_CALLS` and the guard's coverage grows rather than shrinks. Full suite 1586 pass / 0 fail.
 - 2026-07-30: T6 done. Two NEWS entries written for users rather than for the changelog — "worker" not "daemon", the restart explained rather than instructed. Pre-flight bullet extended with the capability half; cancellation paragraph now says the warning fires and why the pool is warned about rather than refused. `document()` regenerated `man/nested_tune_grid.Rd`, no other diff. Full suite 1586 pass / 0 fail.
+- 2026-07-30: T7 done. No prose-guard over a doc was authored, so the obligation was guard verification by inversion: six mutations, each reddening the guard that locks it — admitting a bare character into `daemon_report` (4 fail), inverting the ladder (1), never sending the manifest (5), never firing the warning (4), reporting every pool cancellable (3), dropping the truncation (1). Tree restored clean after each. `document()` no-diff. Full suite 1586 pass / 0 fail.
+- 2026-07-30: all tasks done, verify slot clean; status review.
 - 2026-07-30: criteria audit ([O], fresh context) returned 12 findings. Actioned at the gate: the version check was vacuous and became a capability probe; the probe answer became a validated record because a `miraiError` is a length-1 character vector; the new outcome was ranked below `cannot_load`; the status record gained the fields the message names; the roxygen criterion was rewritten after the audit found its premise false. The clock item was dropped to a corrected candidate row on the audit's finding that `proc.time()` is not documented as step-immune.
 
 ## Decisions
