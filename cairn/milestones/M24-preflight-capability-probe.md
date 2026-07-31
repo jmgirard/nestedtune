@@ -140,6 +140,7 @@ cancelled says so once.
 
 - 2026-07-30: T12 done. Full gate re-run: suite 1593 pass / 0 fail, `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 57s), `document()` no diff. CI green on both gating workflows at `de4e31f` -- and the coverage job now RUNS the heterogeneous-pool test rather than failing it (1.4 s, FAIL 0), which is the evidence F15 is actually fixed rather than hidden. Four guard inversions, one red test each: dropping `vec-sep2`, dropping `qty()`, making the manifest raise again, and adding a call to the sent expression.
 - 2026-07-30: all send-back tasks done, verify slot clean, CI green; status review. Return count 1.
+- 2026-07-31: CI green on all ten checks at `c1349bd`, the review-fix commit; PR #25 marked ready.
 - 2026-07-31: review pass 2. Three lenses returned 11 findings (blame-history and prior-review both clean, so all 11 are the diff-bug lens); the scorer actioned 2 and logged 9. Both fixed here rather than sent back: the `cannot_load` message never named an incompatible daemon in a pool failing both ways (G1, 88), the rediscovery M10-D1 refuses one bullet away in the same branch; and the one test starting bare `mirai::daemons()` pools carried no ledger row, an AC7 breach as written (G2, 85), now rowed with the 0-second declaration measured rather than assumed. Ledger drift from the 49 inserted lines repaired by computed offset, not by eye. Suite 1607 pass / 0 fail / 0 skip, `check()` 0/0/0. Return count still 1.
 
 ## Decisions
@@ -390,8 +391,11 @@ number below is from the branch tip. Return count entering this pass: 1.
 - No new top-level files beyond the already-tracked `NEWS.md`.
 - `devtools::check()` — **0 errors, 0 warnings, 0 notes** (3m 59s), run twice
   this pass: once before the review fixes and once after.
-- CI at `093751c`: **all ten checks green**, including `test-coverage`, which
-  was the first pass's gate failure. Re-run required after this pass's fixes.
+- CI: **all ten checks green** at `093751c` and again at `c1349bd` after this
+  pass's fixes — five `R CMD check` legs (macos, windows, ubuntu
+  devel/release/oldrel-1), `test-coverage`, `build`, and both codecov checks.
+  `test-coverage` was the first pass's gate failure and now passes, running the
+  heterogeneous-pool tests rather than failing them.
 - Returns to `in-progress` for this milestone: 1 (the first pass). No second
   return — both actioned findings were fixed within this pass.
 
