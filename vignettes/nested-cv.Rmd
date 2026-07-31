@@ -360,3 +360,25 @@ together: the estimate is attributed to the procedure and not to the model, the
 instability is reported rather than hidden, and the deployed model is described
 as what it is — the same procedure applied to all the data, carrying no
 performance claim of its own.
+
+## References
+
+Bayle, A., Janson, L., & Mackey, L. (2026). The relative instability of model
+comparison with cross-validation. *arXiv:2508.04409*.
+
+Luo, Y., & Barber, R. F. (2026). The limits of assumption-free tests for
+algorithm performance. *Bernoulli*, 32(3), 2427–2450.
+
+Tibshirani, R. J., & Tibshirani, R. (2009). A bias correction for the minimum
+error rate in cross-validation. *The Annals of Applied Statistics*, 3(2),
+822–829.
+
+Vabalas, A., Gowen, E., Poliakoff, E., & Casson, A. J. (2019). Machine learning
+algorithm validation with a limited sample size. *PLoS ONE*, 14(11), e0224365.
+
+Varma, S., & Simon, R. (2006). Bias in error estimation when using
+cross-validation for model selection. *BMC Bioinformatics*, 7, 91.
+
+Wilimitis, D., & Walsh, C. G. (2023). Practical considerations and applied
+examples of cross-validation for model development and evaluation in health
+care: Tutorial. *JMIR AI*, 2, e49023.
