@@ -23,21 +23,26 @@ a reference, not an authority — status lives in `ROADMAP.md`, decisions in
 ## Provenance warning, read this first
 
 **This is not the paper the nested-CV literature cites as "Stone (1974)".**
-The canonical citation for *double cross* — the construct this package
-implements — is Stone, M. (1974), "Cross-validatory choice and assessment of
+That one is Stone, M. (1974), "Cross-validatory choice and assessment of
 statistical predictions", *Journal of the Royal Statistical Society, Series B*,
-36(1), 111–147. That is the paper `cawley2010.md` cites (p. 2080, "nested
-cross-validation or 'double cross' (Stone, 1974)") and the one `arlot2010.md`
-credits with the term (p. 58). It is **not on this shelf.**
+36(2), 111–147 — the paper `cawley2010.md` cites (p. 2080) and the one
+`arlot2010.md` credits with the term "double cross" (p. 58).
 
-The paper that *is* on the shelf is the Biometrika companion, which applies the
-method to multinomial prediction. It cites the JRSS-B paper twice (§1, p. 510:
-the integrated method "was integrated with the method of cross-validatory
-assessment by Stone (1974), where the reader may find many illustrative
-applications"; and in its reference list, p. 515), and it restates the general
-scheme in its own Appendix (p. 515) in self-contained form. So the construct is
-here, but the authority and its worked applications are not. Anything citing
-"Stone (1974)" for double cross must fetch the JRSS-B paper first.
+**Resolved 2026-07-31**: it is now on the shelf as **`stone1974a.md`**, and this
+note was renamed from `stone1974.md` to `stone1974b.md` to disambiguate. Read
+`stone1974a.md` first — it is the authority, it carries the worked applications,
+and it holds a terminology finding this note could not: Stone's "double-cross"
+names his §2 item VI, a two-stage cross-validatory *choice*, not the nested
+assessment (item V) that both later sources take it for. _(This note previously
+gave the issue as 36(1); the JSTOR record reads No. 2.)_
+
+The paper recorded here is the Biometrika companion, which applies the method to
+multinomial prediction. It cites the JRSS-B paper twice (§1, p. 510: the
+integrated method "was integrated with the method of cross-validatory assessment
+by Stone (1974), where the reader may find many illustrative applications"; and
+in its reference list, p. 515), and it restates the general scheme in its own
+Appendix (p. 515) in self-contained form — which is why the construct appeared on
+this shelf before its source paper did.
 
 ## What it establishes
 
@@ -110,8 +115,9 @@ prose statements only.
   scored is α̂(·), the method, applied afresh to S\i. The p. 514 sentence names
   the estimand explicitly as the performance of the predictor the method
   constructs at sample size N − 1. IP3 was elicited, not derived from this; this
-  is the earliest corroboration on the shelf, and it is the citation a doc page
-  should reach for after the JRSS-B paper itself.
+  is the earliest corroboration on the shelf. _(Superseded as the citation of
+  choice 2026-07-31: `stone1974a.md` item V and Dawid's discussion of it say the
+  same thing at more length and in the paper the field cites.)_
 - **The N − 1 caveat is original, not an artifact.** The pessimistic offset —
   the outer estimate describes training sets one fold smaller than the final fit
   — is stated here in 1974, measured by `varma2006.md` (54.2% against a 50.0%
@@ -143,14 +149,18 @@ here is a candidate fixture.
 
 ## Open questions
 
-- Everything in the JRSS-B paper (36(1):111–147) — the term "double cross", the
-  worked applications, and whatever proof stands behind the p. 514 unbiasedness
-  statement — is unread, because that PDF is not on the shelf. This is the one
-  gap on this shelf that a citation would immediately expose; fetch it before
-  any doc page or test cites Stone for double cross — observed 2026-07-31.
+- ~~Everything in the JRSS-B paper — the term "double cross", the worked
+  applications, and whatever proof stands behind the p. 514 unbiasedness
+  statement — is unread, because that PDF is not on the shelf~~ — **closed
+  2026-07-31**: ingested as `stone1974a.md`. Two of the three are answered there
+  (double-cross is defined at its §2 item VI; the applications are its §3); the
+  third is not, and is restated below.
 - Whether the p. 514 unbiasedness claim is proved anywhere or asserted for the
-  multinomial model only. The Biometrika text gives no derivation and no
-  reference for it beyond the JRSS-B paper — observed 2026-07-31.
+  multinomial model only. The Biometrika text gives no derivation, and
+  `stone1974a.md` carries no proof either — the nearest thing is Dawid's
+  discussion contribution (`stone1974a.md`, pp. 136–138), which derives
+  E{C(p, S̃)} = r_{n−1}(p) under an explicit distributional assumption Stone's own
+  framework declines to make — observed 2026-07-31.
 - Table 1's comparison of five predictors across six examples, unread for the
   extraction reason above. It is the paper's only empirical content, and it is
   the only place its assessment measure C is exercised — observed 2026-07-31.

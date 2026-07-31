@@ -44,7 +44,7 @@ a 50.0% truth for shrunken centroids on null data (p. 6), and 35.3% against
 32.0% for the SVM on non-null data (p. 6). Both residuals are *upward*, and the
 paper attributes both to training-set size: "the classifier used in each nested
 CV iteration is based on 39 samples, while the classifier used on the test set
-is trained on 40 samples" (p. 6). Same fact as `stone1974.md`'s N − 1 and
+is trained on 40 samples" (p. 6). Same fact as `stone1974b.md`'s N − 1 and
 `arlot2010.md` §5.1.1.
 
 **Result 3 — the mechanism, and why it generalizes.** The bias decomposes

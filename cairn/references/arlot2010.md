@@ -34,7 +34,14 @@ whole calibrated procedure as a single algorithm —
 
 That is nestedtune's contract in the survey's own notation: the object handed to
 the outer CV is the tune-and-fit procedure, not a model. The Stone reference is
-the JRSS-B paper, **not on this shelf** — see `stone1974.md`.
+the JRSS-B paper, now on the shelf as `stone1974a.md`.
+
+_(Qualified 2026-07-31 on ingesting the cited paper. The A′ construction is an
+exact description of what nestedtune computes and nothing below depends on the
+attribution — but "called 'double cross' by Stone (1974)" names Stone's §2 item
+VI, a two-stage cross-validatory *choice*, where the survey means his item V, the
+cross-validatory assessment of a cross-validatory choice. Same correction as on
+`cawley2010.md`; see `stone1974a.md`.)_
 
 ## What it establishes
 
@@ -130,7 +137,7 @@ hold-out, V for VFCV, B for RLT or MCCV, n for LOO, and n choose p for LPO"
   finalize, then fit — and scores it. A doc page describing what the package
   computes can cite this sentence and nothing else.
 - **A warning about the smart-rule assumption behind the pessimistic caveat.**
-  Every source on this shelf that discusses the N − 1 offset (`stone1974.md`,
+  Every source on this shelf that discusses the N − 1 offset (`stone1974b.md`,
   `varma2006.md`) assumes more training data helps. This survey names the
   exception. So the documented caveat should say the estimate describes training
   sets of size n(V−1)/V and is *usually* pessimistic, not that it is always so.

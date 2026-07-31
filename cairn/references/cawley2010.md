@@ -19,15 +19,22 @@ a reference, not an authority — status lives in `ROADMAP.md`, decisions in
 
 ## Terminology note
 
-**This paper names our construct and credits it correctly.** p. 2080: "robust
+**This paper names our construct and cites Stone for it.** p. 2080: "robust
 unbiased performance evaluation is likely to require more rigorous and
 computationally intensive protocols, such a nested cross-validation or 'double
-cross' (Stone, 1974)" — the Stone reference being the JRSS-B paper, which is
-**not on this shelf** (see `stone1974.md`'s provenance warning). Its own
-vocabulary for the two protocols is *internal* (model selection re-run inside
-every fold — correct) and *external* (model selection done once on all the data,
-then folds evaluated with fixed hyper-parameters — biased), borrowed from
-`ambroise2002.md`.
+cross' (Stone, 1974)" — the Stone reference being the JRSS-B paper, now on the
+shelf as `stone1974a.md`. Its own vocabulary for the two protocols is *internal*
+(model selection re-run inside every fold — correct) and *external* (model
+selection done once on all the data, then folds evaluated with fixed
+hyper-parameters — biased), borrowed from `ambroise2002.md`.
+
+_(Corrected 2026-07-31 on ingesting the cited paper. This note originally said
+"credits it correctly"; the attribution is loose. Stone's "double-cross" is his
+§2 item VI, a two-stage cross-validatory **choice** for a two-component α — not
+the nested assessment, which is his item V and which he calls a "two-deep"
+analysis. The two are adjacent and both nested, so nothing measured here is
+affected, but a doc page copying this phrase would be naming the wrong item.
+See `stone1974a.md`'s terminology finding.)_
 
 ## What it establishes
 

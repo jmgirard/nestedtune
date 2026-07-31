@@ -13,7 +13,8 @@ _Entries are bullet lines — `- page.md — what it covers` — not table rows;
 - krstajic2014.md — source; four CV pitfalls, repeated nested CV for assessment, and the P-estimate — a nested estimate belongs to a (model, protocol) pair. Nearest external statement of IP4.
 - wainer2021.md — source; flat CV picks the same classifier as nested CV 62–71% of the time, so nesting is overzealous *for algorithm selection*; leaves the estimand argument intact.
 - zhong2020.md — source; nested CV as an inner feature-selection loop (a third meaning of the term). Numbers do not reconcile; no oracle.
-- stone1974.md — source; cross-validatory choice and assessment as a five-line scheme, the earliest statement here of the nested construct. **Biometrika 61(3), not the JRSS-B "double cross" paper everyone cites** — that one is not on the shelf.
+- stone1974a.md — source; **the founding paper** (JRSS-B 36(2), with Discussion). The nested assessment is its §2 item V, a "two-deep" analysis; "double-cross" is item VI, a two-stage *choice*, which the later literature conflates. Item VII says the selection loss need not be the assessment loss. Dawid's discussion asks G6's question in 1973.
+- stone1974b.md — source; the Biometrika 61(3) companion, which restates the scheme in its Appendix and shows the choice flipping under a change of loss. Read `stone1974a.md` first.
 - varma2006.md — source; the canonical nested CV, ours in name and construct. Tuned-CV error reads 37.8% where the truth is 50%; nesting returns 54.2%. The clearest oracle *design* on the shelf.
 - ambroise2002.md — source; external vs internal CV for feature selection. Permuted labels give ≈0% internally and 0.40–0.45 externally; a held-out test set is no defence if selection saw it.
 - cawley2010.md — source; model selection over-fits too. External-selection bias positive on all 13 benchmarks, up to 1.19 points — larger than the gap between competitive algorithms.
