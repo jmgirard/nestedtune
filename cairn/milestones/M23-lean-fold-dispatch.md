@@ -274,3 +274,17 @@ M16/M21 failure it exists to catch; re-anchored.
 task closure `pkgload::load_all()` produces; from an installed library it is
 18.3%.
 
+**Coverage.** Codecov failed the first push after the fixes — 94.82% of the diff
+hit against a 98.23% target — and named the branch nothing exercised: a fold
+whose *outer* frame is not the shared one, which F5 and F14 both circled and
+which had been verified only by hand. Two tests closed it: one covering that
+branch through `lean_payload()`/`rehydrate_payload()`, one covering each of the
+gate's refusal clauses with payloads carrying the right field names and the wrong
+contents. Final: **100.00% of the diff hit**, project 98.30% (+0.07% against
+base). The time-budget guard fired twice more while these landed, each time
+because an inserted test moved the `start_daemons` anchor — re-anchored each
+time, which is the guard doing its job.
+
+**Final CI on PR #24, all green:** ubuntu release / devel / oldrel-1, macos,
+windows, build, test-coverage, codecov/patch, codecov/project.
+
