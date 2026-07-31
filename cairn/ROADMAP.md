@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-30 (post-M23 audit for the tune#969 reply: all checks and advisories green, both GitHub inboxes empty, no orphans. Surfaced M13's still-open rsample#283 handoff as a live disposition rather than a FAIL)_
+_Last hygiene check: 2026-07-30 (all checks and advisories green, both GitHub inboxes empty, no orphans, nothing in flight. Since the last check: D-024 settled the upstream posture, and M13's rsample#283 handoff closed with the comment posted)_
 
 ## Milestones
 
