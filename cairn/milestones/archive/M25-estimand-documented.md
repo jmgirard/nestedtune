@@ -1,0 +1,11 @@
+# M25: The number has a name, and the docs say which
+
+**Status:** done (2026-07-31, PR #26 https://github.com/jmgirard/nestedtune/pull/26)
+
+**Goal:** Extend M06's guide so the nested estimate is named as a published quantity, its bias direction and `std_err` carry sources, and it says when nesting matters.
+
+**Outcome:** `collect_metrics()` documented as *estimating* the k-fold test error of the tune-and-fit procedure on the folds' own analysis sets (bayle2026), with the deployed model's risk and the training-set-averaged version named as what it is not (luo2026). New `@section Reading std_err` — fold scores share training rows, no universally unbiased variance estimator (bengio2004), 36–40% Type I error against nominal 5% in a nested design (gauran2025) — closes M02 F5. `vignettes/nested-cv.Rmd` gains a sourced pessimism paragraph, a no-inferential-comparison warning, a disagreement mechanism, References, and `## When this is worth the cost`, correcting the old claim that `mtcars` is where optimism is largest. New `tests/testthat/test-vignette-citations.R` ties vignette and roxygen citations to `cairn/references/`; it runs under `devtools::test()` only — every `test_path("..","..",…)` skips under `R CMD check`.
+
+**Decisions:** none promoted. Local: name the estimand as bayle2026's conditional R_n over bates2023's marginal Err, luo2026 proving the marginal one not inferable at this ratio; correct `mtcars` rather than re-cut onto a wide example; full author-year citations, since `cairn/` is stripped from every shipped form.
+
+**Review:** three lenses, 28 candidates, independently scored; seven ≥80 all fixed — A1 (97) `references/gauran2025.md` cited "p. 1098"/"p. 1727", `pdftotext` line numbers read as pages in a 37-page document, re-located to pp. 17, 16–19, 23; A6/A8/A9 overstated or mis-stated cited numbers; B1 "is" for "estimates"; B2 roxygen contradicted the vignette; C1 the guard's header claimed CI coverage it lacks. Six sub-threshold fixed while adjacent, fifteen logged. A guard-doctrine §8 certification during implement had already forced a full rework of the citation guard. No lesson captured — the `pdftotext` trap generalizes to any cairn repo, so it is plugin doctrine, and LESSONS.md is at its cap with nothing here retiring a line.

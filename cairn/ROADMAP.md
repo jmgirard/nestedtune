@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 19 of 24 references pages carry no verification claim in their `Extraction:` status, a shelf-wide gap, 14 of them predating today. Since the last check: nothing in flight, and nine tier-1/2 sources were ingested, restating the G6 row)_
+_Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 18 of 25 references pages record no verification claim in their `Extraction:` status, shelf-wide and mostly pre-existing. Since the last check: M25 planned, implemented and merged as PR #26, and M20's terminal row was pruned to hold the 5-row cap)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M25 | The number has a name, and the docs say which | review | — | normal | milestones/M25-estimand-documented.md |
+| M25 | The number has a name, and the docs say which | done | — | normal | milestones/archive/M25-estimand-documented.md |
 | M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |
 | M23 | A worker is sent the fold, not six copies of the data | done | — | normal | milestones/archive/M23-lean-fold-dispatch.md |
 | M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |
 | M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |
-| M20 | The metric set a run scored under is provable, on every path and on the object | done | — | normal | milestones/archive/M20-metrics-observability.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
