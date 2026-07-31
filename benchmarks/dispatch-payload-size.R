@@ -40,52 +40,16 @@ cat(R.version.string, "|", R.version$platform, "\n")
 cat("rsample", as.character(packageVersion("rsample")),
     "| mirai", as.character(packageVersion("mirai")), "\n\n")
 
-# The fixture M23's criteria name. Numeric columns throughout, because R's
-# serializer memoises CHARSXPs through the global string cache -- a character
-# column would deduplicate across copies and hide the very duplication this
-# measures.
-fixture_data <- function(n = 5000, p = 20, seed = 1) {
-  set.seed(seed)
-  d <- data.frame(y = rnorm(n), matrix(rnorm(n * p), n, p))
-  names(d)[-1] <- paste0("x", seq_len(p))
-  d
+# The oracles and the fixture are defined ONCE, in the test helper, and sourced
+# here. The header of that file says this happens; it has to actually happen, or
+# the number a benchmark run prints and the number the suite asserts drift apart
+# -- which is the failure M16's ledger lesson is about, and copies of these
+# definitions had already diverged by one `stopifnot` before this line existed.
+helper <- file.path("tests", "testthat", "helper-payload-size.R")
+if (!file.exists(helper)) {
+  stop("run this from the repository root: ", helper, " not found")
 }
-
-nbytes <- function(x) length(serialize(x, NULL))
-
-# The wire bytes of a frame's first values, which appear once per copy of that
-# frame in a serialized stream. Doubles are written big-endian by R's XDR
-# format, so writeBin(endian = "big") reproduces them exactly.
-sentinel_of <- function(frame, column = 1L, k = 40L) {
-  writeBin(frame[[column]][seq_len(k)], raw(), endian = "big")
-}
-
-count_copies <- function(x, sentinel) {
-  length(grepRaw(sentinel, serialize(x, NULL), all = TRUE, fixed = TRUE))
-}
-
-# The closed form AC2 compares against: index vectors and nothing else. Derived
-# from what the payload must hold, never from the payload itself -- an inner
-# split lost to a bug would shrink measurement and prediction together if this
-# read lengths off the object.
-predicted_lean_bytes <- function(n, v, inner_v) {
-  outer_analysis <- n * (v - 1) / v
-  4 * (outer_analysis + inner_v * outer_analysis)
-}
-
-# A formula carries its environment, and R serializes an ordinary environment by
-# CONTENTS while globalenv() and namespaces go by reference. A workflow built at
-# a user's top level therefore weighs almost nothing, while the same workflow
-# built inside a function drags that function's frame -- including the design --
-# onto the wire, which measured 26,549,958 B here before this was pinned. The
-# formula is given an empty environment so the number describes the package
-# rather than this script's own scope.
-clean_workflow <- function() {
-  env <- new.env(parent = baseenv())
-  workflow() |>
-    add_formula(stats::as.formula("y ~ .", env = env)) |>
-    add_model(linear_reg())
-}
+source(helper)
 
 report <- function(label, design, data) {
   sentinel_shared <- sentinel_of(data)
@@ -101,23 +65,42 @@ report <- function(label, design, data) {
     inner_frame <- design$inner_resamples[[i]]$splits[[1]]$data
     data.frame(
       fold = i,
-      payload_bytes = nbytes(payload),
-      shared_copies = count_copies(payload, sentinel_shared),
-      inner_copies = count_copies(payload, sentinel_of(inner_frame))
+      payload_bytes = payload_bytes(payload),
+      shared_copies = count_data_copies(payload, sentinel_shared),
+      inner_copies = count_data_copies(payload, sentinel_of(inner_frame))
     )
   })
   rows <- do.call(rbind, rows)
   print(rows, row.names = FALSE)
 
-  args_bytes <- nbytes(list(object = clean_workflow(), grid = 3, metrics = NULL))
+  args_bytes <- payload_bytes(list(object = payload_fixture_workflow(), grid = 3, metrics = NULL))
   total <- sum(rows$payload_bytes) + n_folds * args_bytes
-  cat("  data serialized      :", nbytes(data), "B\n")
+  cat("  data serialized      :", payload_bytes(data), "B\n")
   cat("  .args per fold       :", args_bytes, "B\n")
-  cat("  TOTAL WIRE (run)     :", total, "B\n\n")
-  invisible(total)
+  cat("  TOTAL WIRE (run)     :", total, "B\n")
+
+  # The "after" half. Without this the script re-derives only the number the
+  # milestone replaced, and the one it claims cannot be reproduced by running it.
+  worker <- nestedtune:::fold_task
+  environment(worker) <- globalenv()
+  lean <- lapply(rows$fold, function(i) {
+    nestedtune:::lean_payload(
+      list(split = design$splits[[i]],
+           inner = design$inner_resamples[[i]], seeds = c(1L, 2L)),
+      shared = data
+    )
+  })
+  lean_args <- payload_bytes(list(
+    object = payload_fixture_workflow(), grid = 3, metrics = NULL,
+    shared = data, worker = worker
+  ))
+  lean_total <- sum(vapply(lean, payload_bytes, numeric(1))) + n_folds * lean_args
+  cat("  TOTAL WIRE (leaned)  :", lean_total, "B =",
+      sprintf("%.1f%%", 100 * lean_total / total), "of the above\n\n")
+  invisible(c(before = total, after = lean_total))
 }
 
-d <- fixture_data()
+d <- payload_fixture_data()
 
 cat("closed-form prediction for a leaned payload (n=5000, v=5, inner_v=5):",
     predicted_lean_bytes(5000, 5, 5), "B\n\n")

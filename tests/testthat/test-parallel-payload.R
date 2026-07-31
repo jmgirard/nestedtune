@@ -65,11 +65,55 @@ test_that("a leaned payload weighs what the index vectors alone predict", {
     measured <- payload_bytes(lean)
     predicted <- predicted_lean_bytes(n = 5000, v = 5, inner_v = 5)
 
-    expect_lt(abs(measured - predicted) / predicted, 0.15)
+    expect_lt(abs(measured - predicted) / predicted, 0.05)
     # The direction that matters independently of the band: whatever else it
     # holds, it is no longer carrying the data.
     expect_lt(measured, payload_bytes(shared))
   }
+})
+
+test_that("the dispatch gate recognises the payloads it must lean", {
+  # The gate decides whether ANY of this milestone happens: `dispatch_folds()`
+  # leans only when every payload passes `is_fold_payload()`. Nothing else here
+  # goes through that decision -- the byte oracles call `lean_payload()`
+  # directly, and a run that never leans is indistinguishable from one that
+  # leans and rehydrates, because rehydrating is what makes them identical. So a
+  # predicate that stopped recognising real fold payloads would turn the feature
+  # off in production with every other test in this file still green.
+  for (ctor in list(nested_resamples, rsample::nested_cv)) {
+    fx <- fixture_design(constructor = ctor, v = 3, inner_v = 3, n = 200, p = 3)
+    for (i in seq_len(nrow(fx$design))) {
+      expect_true(is_fold_payload(fat_payload(fx$design, i)))
+    }
+  }
+
+  # And the other direction, which is what keeps the fallback reachable: the
+  # stand-in payloads test-parallel-interrupt.R dispatches carry no split at
+  # all, and leaning them would error rather than degrade.
+  expect_false(is_fold_payload(list(value = 1)))
+  expect_false(is_fold_payload(list(marker = "f")))
+  # `$` partial-matching would answer these from the wrong fields.
+  expect_false(is_fold_payload(list(splits = 1, inner_resamples = 2)))
+})
+
+test_that("an inner rset whose splits hold different frames is refused leaning", {
+  # The invariant lean_payload() rests on: one frame per fold's inner splits,
+  # taken off the first and written back onto all. check_nested() does not
+  # enforce it, so the gate must -- otherwise a split is silently tuned on
+  # another split's rows in parallel and its own serially (IP2), and on rows the
+  # outer assessment set may hold (IP1).
+  d <- payload_fixture_data(n = 200, p = 3)
+  outer <- rsample::make_splits(list(analysis = 1:150, assessment = 151:200), d)
+  heterogeneous <- rsample::manual_rset(
+    list(
+      rsample::make_splits(list(analysis = 1:60, assessment = 61:100), d[1:100, ]),
+      rsample::make_splits(list(analysis = 1:60, assessment = 61:100), d[51:150, ])
+    ),
+    c("i1", "i2")
+  )
+  payload <- list(split = outer, inner = heterogeneous, seeds = c(1L, 2L))
+
+  expect_false(is_fold_payload(payload))
 })
 
 test_that("a fold's dispatch carries the data exactly once", {

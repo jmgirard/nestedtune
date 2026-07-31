@@ -200,3 +200,77 @@ macos-latest, windows-latest, build, and test-coverage.
 **Returns to `/milestone-implement`:** none. This is a first pass; the thrash
 rule does not fire.
 
+### Findings
+
+Three fresh-context lenses. The blame-history and prior-PR-comments lenses
+reported **zero findings** each — the first confirming the M03/M07/M15 comment
+blocks it was pointed at are byte-identical to `main` and that M16's ledger
+discipline is honoured, the second probing the GitHub review-comment API (empty)
+and reading the archived `## Review` sections for M07, M09, M10, M12, M14, M15,
+M16 and M20. The diff-bug lens reported 16, scored by a fresh scorer that did not
+generate them.
+
+**Actioned (scored >= 80), all four fixed on the branch:**
+
+- **F1 (93) — the one-frame-per-fold invariant was assumed but unenforced.**
+  `lean_payload()` takes the inner frame off `splits[[1]]` and
+  `rehydrate_payload()` writes it back onto every inner split, which is sound
+  only if they shared it. `check_nested()` never checked that, so a
+  `manual_rset()` of splits over different frames was admitted and then tuned on
+  the wrong rows in parallel and the right ones serially — demonstrated by
+  execution: serial chose `min_n = 15` / rmse 0.960, `daemons(2)` chose
+  `min_n = 5` / rmse 1.15, `identical()` FALSE. A direct IP2 breach and an IP1
+  exposure wherever the substituted frame holds outer assessment rows. Fixed by
+  making `is_fold_payload()` verify the invariant, so such a design takes the fat
+  path — slower and correct. Re-verified: the same design now dispatches
+  `parallel` and returns a result `identical()` to serial.
+- **F2 (90) — nothing proved the dispatch path leans at all.** Forcing
+  `is_fold_payload()` to return FALSE — turning the milestone into a production
+  no-op — left all 55 assertions green, because every byte oracle calls
+  `lean_payload()` directly and an un-leaned payload is indistinguishable from a
+  leaned-then-rehydrated one. Fixed with a test asserting the gate recognises
+  real fold payloads from both constructors and rejects the stand-in shapes.
+- **F3 (85) — the closed-form band did not catch the bug its header claimed.**
+  Dropping one inner split measures 81,796 B against a 96,000 B prediction, a
+  14.8% deviation that passed the `< 0.15` band by 0.2%. Band tightened to 0.05
+  against a measured 2.4% margin.
+- **F4 (82) — the helper said the benchmark sources it; the benchmark did not.**
+  It carried its own copies of all five oracles, already diverged by one
+  `stopifnot`, in the comment citing M16's drift lesson. The benchmark now
+  sources the helper, and gained the "after" measurement it lacked, so both
+  halves of the work-log figure are reproducible by running it.
+
+**Fixed opportunistically though below threshold**, being one-line changes to the
+predicate F1 and F2 required rewriting anyway: **F7 (55)** `all(logical(0))` is
+TRUE, so an empty dispatch reached `payloads[[1L]]` and a subscript error after
+the pre-flight had paid its round trip — now length-guarded; **F8 (60)** the
+predicate used `$`, which partial-matches, so it would have answered a payload
+carrying `splits`/`inner_resamples` — now `[[` and `%in% names()`, the
+discipline `is_fold_record()` uses and which its comment claimed parity with.
+
+**Logged, not actioned (scored < 80).** Twelve findings, surfaced rather than
+dropped: F15 (70) NEWS and roxygen state the identity claim unconditionally —
+dissolved by F1's fix, since the invariant is now enforced; F6 (62) a daemon
+running a pre-M23 installed copy reports every fold as a worker failure and the
+`requireNamespace()` pre-flight cannot distinguish it; F9 (58) one odd fold
+disables leaning for the whole run, `all()` being all-or-nothing where per-fold
+would do; F5 (50) no end-to-end daemon identity test for `rsample::nested_cv()`
+designs, the shape AC8 was added for, verified manually to hold; F13 (45)
+`lean_payload()` open-codes `split_data()`; F14 (45) `shared` is fold 1's frame
+by fiat, a performance-only concern if fold 1 is the odd one out; F16 (40) the
+rehydration mutation fails inside `vapply` rather than as a named assertion;
+F10 (30) `identical()` treats `0` and `-0` as equal; F11 (30) `outer_data` and
+`inner_data` are reserved payload names with no collision guard; F12 (25)
+stripping the worker's environment now silently applies to a mocked `fold_task`.
+
+**Re-verified after the fixes:** full suite 0 failures, `devtools::check()` 0
+errors / 0 warnings / 0 notes, `cairn_validate` all checks pass. The time-budget
+guard caught its own case along the way — the inserted tests moved
+`start_daemons` from line 180 to 224 and staled the ledger anchor, exactly the
+M16/M21 failure it exists to catch; re-anchored.
+
+**AC1 re-measured after the fixes**, from the committed harness: 25,714,635 B ->
+5,783,645 B = **22.5%**, under the 25% bar. The figure carries the srcref-laden
+task closure `pkgload::load_all()` produces; from an installed library it is
+18.3%.
+

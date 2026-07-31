@@ -77,14 +77,43 @@ reset_dispatch_record <- function() {
 # fast path when the frames are the same object (0.04 ms against 1.05 ms on a
 # 32 MB frame), and an equal-but-distinct frame answering TRUE is sound here,
 # since substituting one for the other is exactly what rehydration does.
+# Whether this is a fold payload that can be leaned without changing a result.
+#
+# Read with `[[` and `names()`, never `$`: `$` partial-matches on a plain list,
+# so `x$split` would answer a payload carrying `splits` and `x$inner` one
+# carrying `inner_resamples`. is_fold_record() uses `%in% names(x)` for the same
+# reason, and this is the discipline it claims parity with.
+#
+# The last clause is load-bearing rather than defensive. lean_payload() takes ONE
+# frame for the fold's inner splits and rehydrate_payload() writes it back onto
+# all of them, which is only sound if they shared it to begin with.
+# `nested_resamples()` guarantees that and validates it at construction
+# (R/nested-resamples.R:84), but check_nested() admits any object whose
+# `inner_resamples` elements are `rset`s -- including a `manual_rset()` of splits
+# over different frames. Such a design would otherwise be tuned on the wrong rows
+# in parallel and the right ones serially: a silent IP2 breach, and an IP1
+# exposure wherever the substituted frame holds outer assessment rows. Failing
+# the predicate sends the run down the fat path, which is slower and correct.
 is_fold_payload <- function(x) {
-  is.list(x) &&
-    inherits(x$split, "rsplit") &&
-    is.data.frame(x$split$data) &&
-    is.data.frame(x$inner) &&
-    is.list(x$inner$splits) &&
-    length(x$inner$splits) > 0L &&
-    is.data.frame(x$inner$splits[[1L]]$data)
+  if (!is.list(x) || !all(c("split", "inner") %in% names(x))) {
+    return(FALSE)
+  }
+  split <- x[["split"]]
+  inner <- x[["inner"]]
+  if (!inherits(split, "rsplit") || !is.data.frame(split$data) ||
+        !is.data.frame(inner) || !is.list(inner$splits) ||
+        length(inner$splits) == 0L) {
+    return(FALSE)
+  }
+  inner_data <- inner$splits[[1L]]$data
+  if (!is.data.frame(inner_data)) {
+    return(FALSE)
+  }
+  all(vapply(
+    inner$splits,
+    function(s) identical(s$data, inner_data),
+    logical(1)
+  ))
 }
 
 lean_payload <- function(payload, shared) {
@@ -168,7 +197,11 @@ dispatch_folds <- function(payloads, object, grid, metrics,
   # neither split nor inner rset -- deliberately, since what those exercise is
   # the dispatch mechanics and a real fold would cost a model fit apiece. The
   # shape is recognised positively, the same discipline is_fold_record() uses.
-  leaning <- all(vapply(payloads, is_fold_payload, logical(1)))
+  # `length()` first because `all(logical(0))` is TRUE, which would send an
+  # empty dispatch into `payloads[[1L]]` below and out through a subscript error
+  # -- after the pre-flight had already paid its round trip.
+  leaning <- length(payloads) > 0L &&
+    all(vapply(payloads, is_fold_payload, logical(1)))
 
   if (leaning) {
     shared <- payloads[[1L]]$split$data
