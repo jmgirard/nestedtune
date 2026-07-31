@@ -37,8 +37,9 @@
 # split representation, and would then fail for a reason that has nothing to do
 # with this package.
 
-fixture_design <- function(constructor = nested_resamples, v = 5, inner_v = 5) {
-  d <- payload_fixture_data()
+fixture_design <- function(constructor = nested_resamples, v = 5, inner_v = 5,
+                           n = 5000, p = 20) {
+  d <- payload_fixture_data(n = n, p = p)
   set.seed(2)
   list(
     data = d,
@@ -156,4 +157,71 @@ test_that("a design whose folds share no frame is leaned too", {
     expect_identical(count_data_copies(list(lean, shared), sentinel), 1L)
     expect_identical(rehydrate_payload(lean, shared), fat)
   }
+})
+
+test_that("a daemon receives the payload the serial branch would have passed", {
+  skip_if_no_daemons()
+
+  # The end-to-end half of the round trip. The tests above prove that
+  # rehydrating undoes leaning in this process; this one proves the rehydration
+  # actually happens in the OTHER one, which is the only place it matters and
+  # the only place an `identical()` assertion cannot reach directly.
+  #
+  # Small on purpose: what is under test is what the worker received, not a
+  # model fit, so the fixture is sized for dispatch rather than for the byte
+  # accounting the tests above need.
+  fx <- fixture_design(v = 3, inner_v = 3, n = 300, p = 4)
+  payloads <- lapply(
+    seq_len(nrow(fx$design)),
+    function(i) fat_payload(fx$design, i)
+  )
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+
+  # The mock runs inside a daemon and AFTER rehydration -- the worker is passed
+  # to the task by value, so a mocked binding reaches it (M07) and receives what
+  # the real one would. A mock that had to rehydrate itself would be reproducing
+  # the code path it exists to cover.
+  local_mocked_bindings(
+    fold_task = function(payload, object, grid, metrics) {
+      list(
+        completed = TRUE,
+        metrics = data.frame(
+          .metric = "outer_rows", .estimate = nrow(payload$split$data)
+        ),
+        selected = data.frame(
+          inner_rows = nrow(payload$inner$splits[[1L]]$data),
+          fields = length(payload)
+        ),
+        grid = data.frame(inner_rows = 1L, .config = "pre0_mod1_post0"),
+        notes = data.frame(
+          location = character(0), type = character(0), note = character(0)
+        )
+      )
+    }
+  )
+
+  out <- without_pkgload_warning(
+    dispatch_folds(payloads, object = NULL, grid = NULL, metrics = NULL)
+  )
+
+  expect_identical(last_dispatch(), "parallel")
+  # Every daemon saw the whole frame back on both the outer split and the inner
+  # splits -- a rehydration that ran on neither would report NULL and error, and
+  # one that ran on only the outer split would report the wrong inner count.
+  expect_identical(
+    vapply(out, function(x) x$metrics$.estimate, numeric(1)),
+    rep(as.double(nrow(fx$data)), length(payloads))
+  )
+  expect_identical(
+    vapply(out, function(x) x$selected$inner_rows, numeric(1)),
+    rep(as.double(nrow(fx$data)), length(payloads))
+  )
+  # And nothing of the leaning survived into what the worker was handed: the
+  # payload is back to its three fields, not five.
+  expect_identical(
+    vapply(out, function(x) x$selected$fields, numeric(1)),
+    rep(3, length(payloads))
+  )
 })

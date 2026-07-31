@@ -104,13 +104,13 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
       (`R/parallel.R:64-118`): lean the payloads before `mirai_map()`, add the
       data to `.args`, and rehydrate in `fold_task()` (`R/parallel.R:428-438`)
       before `nested_fold_fit()`. Leave the serial branch at line 68 untouched.
-- [ ] T5 Run the parallel identity suite under `ranger` at two above-threshold
+- [x] T5 Run the parallel identity suite under `ranger` at two above-threshold
       daemon counts; confirm `identical()` and that the daemon-gated tests are
       counted rather than skipped.
-- [ ] T6 Mutation-verify both guards per AC5, and record what each mutation did.
-- [ ] T7 Roxygen the dispatch claim on `nested_tune_grid()`, and name AC2's two
+- [x] T6 Mutation-verify both guards per AC5, and record what each mutation did.
+- [x] T7 Roxygen the dispatch claim on `nested_tune_grid()`, and name AC2's two
       guards in the asserting test file's oracle-record header.
-- [ ] T8 Re-anchor any `file:line` rows in the time-budget ledger that moved, and
+- [x] T8 Re-anchor any `file:line` rows in the time-budget ledger that moved, and
       run the profile `verify` slot clean.
 
 ## Work log
@@ -134,6 +134,12 @@ unmoved and IP2's parallel-vs-serial comparison keeps a fixed reference.
 - 2026-07-30: two corrections to the plan's "serial branch untouched" premise, both found by the suite rather than by reading. `fold_task()` is shared by BOTH branches, so adding a parameter to it broke every serial test; and `dispatch_folds()` is driven directly by test-parallel-interrupt.R with stand-in payloads carrying neither split nor inner rset. Resolved by leaning only when every payload is positively recognised as a fold payload (`is_fold_payload()`), and by wrapping rehydration around `fold_task` rather than inside it. The serial branch's own call is byte-identical to before.
 - 2026-07-30: the wrapper's first form resolved `fold_task` by name inside the daemon and silently bypassed `local_mocked_bindings()`, turning BC3's daemon-kill test green while the mock never ran — M07's lesson is that the mock reaches a daemon precisely because the function is captured by value and serialized. The worker is now passed by value through `.args`, which also means a mock receives rehydrated payloads instead of having to hand-roll rehydration itself.
 - 2026-07-30: the worker closure measured 202,363 B per fold under `pkgload::load_all()` against 524 B re-parsed — srcrefs are serialized with a function and their presence depends on how the package was installed, not on the run. `removeSource()` at dispatch makes the wire cost the same either way. Same class of measurement trap as the harness's formula environment at T1.
+
+- 2026-07-30: T5 done. Full suite green with no skips — parallel-classify, parallel-identity, parallel-interrupt, parallel-payload and suite-hygiene all executed. AC4's anti-skip clause was vacuous as written, since this milestone's byte oracles need no daemons, so a daemon-gated test was added that asserts the payload a worker actually receives has been rehydrated on both the outer split and the inner splits and is back to three fields.
+- 2026-07-30: T6 done, both mutations. Removing the worker-side rehydration errors the daemon test. Reinstating the fat payload reddens seven assertions across all three guards — closed-form size (68, 71), copy count (88, 89), the wire ratio (138), and the rsample-design copy count and round trip (157, 158). Recorded because the default reporter caps at 10 failures and silently truncated the first two attempts to five of the seven: a mutation check read off a capped reporter under-reports which guards fire.
+- 2026-07-30: T7-T8 done. Roxygen states the one-copy-per-fold claim and names the two objects it does not reach (a recipe's retained data, a formula's captured environment). `test-parallel-payload.R` added to the budget ledger's file list with a `start_daemons` row. `R CMD check` clean: 0 errors, 0 warnings, 0 notes.
+- 2026-07-30: `utils::removeSource()` on the worker closure was implemented, measured (203,790 B against 524 B), and then REMOVED — `utils` is not in Imports and adding a dependency mid-implementation needs its own gate. The gain is development-only, since an installed package carries no srcrefs, and the same closure was already serialized as `.f` before this milestone, so it is outside AC1's accounting on both sides. Recorded as a candidate row at review.
+- 2026-07-30: final AC1 measurement, T1 fixture. Task closure excluded on both sides, as the criterion's accounting has it: 25,714,635 -> 4,702,950 B = 18.3%. Included on both sides under `load_all`: 26,733,585 -> 5,721,900 B = 21.4%. Under the 25% bar either way.
 
 ## Decisions
 

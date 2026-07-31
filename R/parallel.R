@@ -185,13 +185,14 @@ dispatch_folds <- function(payloads, object, grid, metrics,
     # real function and silently bypass the mock -- which is what makes the
     # mocked-binding injection point work at all. Its environment is stripped
     # for the reason the task's is.
-    # `removeSource()` because a function's srcrefs are serialized with it, and
-    # whether they are present depends on how the package was installed rather
-    # than on anything about the run: under `pkgload::load_all()` this closure
-    # measured 202,363 B against 524 B re-parsed, and it is charged once per
-    # fold. Stripping them makes the wire cost the same in development as it is
-    # from an installed library.
-    worker <- removeSource(fold_task)
+    # Moved from `.f` to `.args`, which is the same wire cost -- mirai
+    # serializes both once per task -- and is what leaves `.f` free to be the
+    # wrapper. A function's srcrefs travel with it, so under
+    # `pkgload::load_all()` this closure measures 202,363 B against 524 B from
+    # an installed library, where srcrefs are absent; that was equally true of
+    # `.f` before this, and stripping them needs `utils::removeSource()`, a
+    # dependency this milestone declined to add on its own authority.
+    worker <- fold_task
     environment(worker) <- globalenv()
     task <- function(payload, object, grid, metrics, shared, worker) {
       ns <- asNamespace("nestedtune")
