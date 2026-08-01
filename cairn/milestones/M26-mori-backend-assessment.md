@@ -1,6 +1,6 @@
 # M26: The backend question has a measured answer before the design settles
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -107,7 +107,77 @@ shape → M27.
 - 2026-07-31: T7 — `devtools::test()` clean on the branch: FAIL 0 | WARN 0 | SKIP 0 | PASS 1615 (the `step_pca()` errors in the output are the deliberate failed-fold fixtures). No `R/` file was touched by this milestone, so the suite is the same one main carries; it is run as evidence that the branch changed nothing, not that anything new is covered.
 - 2026-07-31: T7 — ROADMAP candidate row added for routing fold data through mori, carrying P6's remote fallback as a stated condition rather than an afterthought, and cross-referencing the `mirai::everywhere()` preload row it would supersede. Search-first sweep done at plan time; no existing row covers adoption.
 - 2026-07-31: review opened draft PR #27; main had not moved, so no merge into the branch was needed. Review in progress: AC evidence gathered, three lenses and `devtools::check()` still running at this checkpoint.
+- 2026-07-31: review RETURNED the milestone (return 1 of this milestone). AC2 unverified twice over (the note never states the probe's divergences from `dispatch_folds()`; no ambient RNG kind is pinned), AC3 unverified (figures attributed to M23's fixture come from v=5/inner_v=3, not M23's v=5/inner_v=5, and the published 4-copy count contradicts M23's test-locked 6), AC5 unverified (a claim tagged `[not measured]`, a third category AC5 does not permit). Gates themselves were clean: `check()` Status OK, `cairn_validate` exit 0, suite 1615 passing. Three lenses produced 25 deduplicated findings; 14 scored >=80 and are actioned, 11 logged below threshold.
 
 ## Decisions
 
 ## Review
+
+**Reviewed 2026-07-31. Returned to `in-progress`: three acceptance criteria unverified.**
+PR #27 (draft). Local `devtools::check()` **Status: OK** (0 errors, 0 warnings, 0 notes).
+`devtools::document()` no diff. `cairn_validate` exit 0, all hard checks PASS, 18 pre-existing
+staleness advisories (this page not among them). No NEWS entry owed: nothing user-visible shipped.
+
+### Acceptance criteria
+
+- **AC1 — verified.** Note at `cairn/references/mori-backend-assessment.md` with Provenance block,
+  `INDEX.md` bullet (bullet form, `references index<->disk` PASS), 11 `— observed 2026-07-31` stamps.
+- **AC2 — NOT verified, two independent shortfalls.** (i) The criterion requires *the note* to state
+  how the probe's shape differs from `dispatch_folds()`; the three differences appear only in the probe
+  header, and the note carries no such enumeration (grep). (ii) The criterion requires ">= 2 worker
+  counts **under a pinned RNG kind**"; the probe never calls `RNGkind()` — `set.seed()` is bare at
+  `:98`, `:229`, `:264`. The worker-side pin it cites is the package's own, inherited rather than
+  asserted, so the requirement is met only vacuously.
+- **AC3 — NOT verified.** The note addresses all three premises, but its supporting figures are
+  attributed to "M23's own fixture" and are not from it: the probe builds v=5/inner_v=**3** under
+  `set.seed(1)`, where M23's `fixture_design()` (`tests/testthat/test-parallel-payload.R:40`) is
+  v=5/inner_v=**5** under `set.seed(2)`. Confirmed by closed form (`predicted_lean_bytes(5000,5,3)`
+  = 64,000 against measured 65,744; inner_v=5 would be 96,000) and by rebuilding at M23's true fixture,
+  which yields 6 copies / 5,141,166 B — matching M23's test-locked `expect_identical(..., 6L)` at
+  `test-parallel-payload.R:145` and contradicting the published 4 copies / 3,427,624 B.
+- **AC4 — verified.** P6 records the same-machine boundary; the Disposition names both the
+  remote-daemon-pool row and the `mirai::everywhere()` preload row.
+- **AC5 — NOT verified.** The draft exists and is marked unposted, but AC5 requires each claim marked
+  measured-here *or* inferred, and one claim carries a third tag (`[not measured]`) the legend never
+  declares; three further tags are wrong in the other direction (a structural argument tagged
+  `[measured]`, a documentation-read tagged `[measured, then inferred]`, a verified negative search
+  tagged `[inferred]`).
+- **AC6 — verified.** `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; full `check()` OK.
+
+### Independent review — three fresh-context lenses, then a scorer
+
+Diff-bug **[O]**, blame-history **[S]**, prior-review **[S]**; findings deduplicated to 25 and scored
+by a fourth **[S]** agent that generated none of them. **14 scored >= 80 and are actioned; 11 scored
+below threshold and are logged, not discarded.**
+
+Actioned, descending: D1 (95) tune#1188 attributed to "the tune maintainer" when its author is
+EmilHvitfeldt, and the draft addressed to topepo says "**Your** 18.9 GB to 4.23 GB figure",
+misattributing a colleague's benchmark · D2 (92) fixture mislabelled as M23's throughout note, ROADMAP
+row, work log and draft · D3 (91) published pre-M23 copy count of 4 contradicts M23's test-locked 6 ·
+D5 (90) the claim that the worker closure "cancels" across routes is false — `worker`/`shared` enter
+`.args` only inside `if (leaning)` (`R/parallel.R:250-256`), so it is a lean-route-only cost and the
+M23 reconciliation is mis-explained · D7 (88) AC2's note requirement · D9 (87) `is_fold_payload()` is
+the IP2/IP1 correctness gate (M23 F1, scored 93), not leanness machinery, yet note and draft count it
+among the "~60 lines" mori removes · D4 (86) the "~30-byte region name" is off by an order of magnitude
+(measured: 19-char name, 257 B shared object, ~165 B per extra reference) · D10 (86) no daemon-side
+check that mori transport occurred, so an ALTREP fallback to by-value would leave all arms `identical()` ·
+D8 (85) ambient RNG kind never pinned · D12 (85) note omits mori's Windows Win32 path and its
+`R (>= 4.3)` floor against this package's `R (>= 4.1)` · D6 (84) the probe cannot run as committed —
+`start_daemons()`/`without_pkgload_warning()` come from `helper-parallel.R`, never sourced, so the
+note's "re-derivable by `Rscript ...`" claim is false · D16 (84) four inaccurate claim tags in the
+draft · D11 (80) nothing asserts folds completed or that the identity booleans were TRUE · D14 (80)
+the GP2 oracle pair share one mechanism; M23's certified closed form is never evaluated.
+
+Logged below threshold: D18 (78) unbounded `mapped[]` collect · D19 (78) draft cites an untracked file ·
+D17 (76) daemon pool and shared regions leak on the error path · D15 (75) 67,253 B stated flatly
+outside P9 · D21 (74) `wire_report()` payloads unvalidated · D20 (72) may measure an installed package ·
+D13 (68) omits #1188's host-side `mem_alloc` datum · D22 (64) mostly mitigated, the by-value arm is the
+real dispatcher · D24 (62) P7's reading is defensible — `daemon_symbol_manifest()` and
+`daemon_probe_expr()` are parameterized by `package` · D25 (45) wrapped Extraction status, validation
+passes · D23 (25) refuted: `R/nested-tune-grid.R:318` is exactly the `sample.int()` draw, so the note's
+P1 citation is correct.
+
+Verified clean: no `R/` file touched; `mori_task` is a faithful replica of `fold_task`; identity
+reproduces at 2 and 3 workers; the `.args`-per-task accounting matches M23's convention; oracles reused
+from the helper rather than re-implemented; draft contains zero em dashes; D-011/IP2 and D-018 analysis
+sound; P8's rsample#283 distinction correct.
