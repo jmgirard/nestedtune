@@ -1,6 +1,6 @@
 # M29: The assessment says only what the manifest measured
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M26
 - **Driving RR:** —
@@ -93,10 +93,10 @@ nothing is owed.
       refresh the `INDEX.md` line if its summary drifts.
 - [x] T2: Delete the maintainer draft and sweep tracked references to it
       outside append-only history.
-- [ ] T3: Write the drift check with the per-document cited-figure
+- [x] T3: Write the drift check with the per-document cited-figure
       declarations; run it red against a perturbed scratch copy of the note,
       then green against the tree.
-- [ ] T4: Run `devtools::test()` clean.
+- [x] T4: Run `devtools::test()` clean.
 
 ## Work log
 
@@ -112,6 +112,8 @@ nothing is owed.
 - 2026-08-01: implement started; branch m29-mori-assessment-writeup. Amendment (gated): AC5 exempts this milestone's own file from the no-reference grep — the criterion and T2 must name the file they delete, so the strict bar failed on itself (missed by the criteria audit that proposed the wording).
 - 2026-08-01: T1 done — note rewritten against the manifest: all current figures are manifest values (exact-bytes renderings), block banner and seven inline correcteds collapsed, M23 reconciliation and the 3.87x capture moved to a marked [historical] subsection, adoption-delta section added, drift-check declaration comment added (name=rendering pairs, all 9 figures), premise-table repo-state cites dated. INDEX.md line still accurate, left alone. The 267–268 range, name-length counts, and the 160,187 B by-value comparison dropped (non-manifest values).
 - 2026-08-01: T2 done — `git rm benchmarks/tune-1188-mori-findings.md`; the no-reference grep already returns no hit outside this file (the M26 archive summary and the tune-969 reply drafts never named it by filename).
+- 2026-08-01: T3 done — helper-drift-manifest.R + test-drift-manifest.R: base-regex manifest parse (jsonlite declined, same reasoning test-ci-workflows.R records for yaml), name=rendering declarations in the note (9 figures) and the ROADMAP candidate row (5), half-ULP-at-printed-precision tolerance, declaration line excluded from the presence search (or every rendering finds itself). Both red shapes are permanent tests: a value perturbed in a scratch copy and a rendering vanished from prose while still declared. Skips from a built tarball; asserts checked >= 14 so a skipping harness cannot pass vacuously.
+- 2026-08-01: T4 done — devtools::test() clean: 1622 pass, 0 fail, 0 warn, 0 skip. Status → review.
 
 ## Decisions
 
