@@ -1,13 +1,13 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 18 of 25 references pages record no verification claim in their `Extraction:` status, shelf-wide and mostly pre-existing. Since the last check: M25 planned, implemented and merged as PR #26, and M20's terminal row was pruned to hold the 5-row cap)_
+_Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 18 of 25 references pages record no verification claim in their `Extraction:` status, shelf-wide and mostly pre-existing). Since the last check: M26 implemented and merged as PR #27 after five review passes, M29 downscoped to internal-note-only at the maintainer's gate, M21's terminal row pruned to hold the 5-row cap_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M26 | The wire figure survives re-derivation | review | — | normal | milestones/M26-mori-backend-assessment.md |
+| M26 | The wire figure survives re-derivation | done | — | normal | milestones/archive/M26-mori-backend-assessment.md |
 | M29 | The assessment says only what the manifest measured | planned | M26 | normal | milestones/M29-mori-assessment-writeup.md |
 | M27 | What the outer loop needs from the resampling object, in writing | planned | — | normal | milestones/M27-resampling-object-requirements.md |
 | M28 | A port inventory, not a package to translate | planned | — | normal | milestones/M28-port-inventory.md |
@@ -15,7 +15,6 @@ _Last hygiene check: 2026-07-31 (all 16 checks green; one advisory — 18 of 25 
 | M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |
 | M23 | A worker is sent the fold, not six copies of the data | done | — | normal | milestones/archive/M23-lean-fold-dispatch.md |
 | M22 | What selection saw has a name | done | — | normal | milestones/archive/M22-final-fit-accessors.md |
-| M21 | A run says which candidates it actually searched, fold by fold | done | — | normal | milestones/archive/M21-evaluated-grid-record.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
