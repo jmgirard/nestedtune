@@ -9,7 +9,7 @@ _Entries are bullet lines — `- page.md — what it covers` — not table rows;
 `cairn_validate`'s references check only recognizes the bullet form._
 
 - tidymodels-nested-cv-gaps.md — synthesis; what rsample/tune do and don't provide for nested CV, 8-row gap ledger (G1–G8), CRAN name collision.
-- mori-backend-assessment.md — synthesis; mori leaves the seed contract and the mirai choice untouched and reaches 0 copies on the wire, but it is same-machine, so it makes M23's lean path conditional rather than obsolete. 9-row premise ledger (P1–P9).
+- mori-backend-assessment.md — synthesis; mori leaves the seed contract and the mirai choice untouched and reaches 0 copies on the wire, but it is same-machine, so it makes M23's lean path conditional rather than obsolete. 10-row premise ledger (P1–P10).
 - bates2023.md — source; CV estimates average error not the model's own, and naive CV intervals under-cover; its "nested CV" is a variance-estimation device, not ours.
 - krstajic2014.md — source; four CV pitfalls, repeated nested CV for assessment, and the P-estimate — a nested estimate belongs to a (model, protocol) pair. Nearest external statement of IP4.
 - wainer2021.md — source; flat CV picks the same classifier as nested CV 62–71% of the time, so nesting is overzealous *for algorithm selection*; leaves the estimand argument intact.

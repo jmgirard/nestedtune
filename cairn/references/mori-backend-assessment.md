@@ -24,7 +24,7 @@ not to pre-empt it. Standing disclaimer: this is a reference, not an authority
 - `mori`'s `DESCRIPTION`: no hard package dependencies (`Depends: R (>= 4.3)`, `Suggests: mirai, testthat`), and shared memory via POSIX (Linux, macOS) **or a Win32 file mapping (Windows)** — observed 2026-07-31.
 - `tidymodels/tune` issue #1188, "proof of concept of adding {mori}", open, filed 2026-04-27 by **EmilHvitfeldt** (Emil Hvitfeldt), no comments. tune's maintainer is Max Kuhn; the benchmark in that issue is Emil's, not his — observed 2026-07-31.
 - Identity, transport and wire-cost measurements — `benchmarks/probe-mori-dispatch.R` in this repo — observed 2026-07-31.
-- The dispatch path assessed against — `R/parallel.R:118-179` (`is_fold_payload`/`lean_payload`/`rehydrate_payload`), `R/parallel.R:190` (`dispatch_folds`), `R/parallel.R:250-256` (what enters `.args`, and on which branch) — observed 2026-07-31.
+- The dispatch path assessed against — `R/parallel.R:118-138` (`is_fold_payload`), `:140-179` (`lean_payload`/`rehydrate_payload`), `:190` (`dispatch_folds`), `:243` (mirai charges `.f` per task exactly as `.args`) — observed 2026-07-31.
 - M23's committed figures, re-derived here — `tests/testthat/test-parallel-payload.R:40` (`fixture_design()`, v = 5, inner_v = 5, `set.seed(2)`) and `:145` (`expect_identical(count_data_copies(fat, sentinel), 6L)`) — observed 2026-07-31.
 
 ## What `mori` is
@@ -67,7 +67,10 @@ first, is wrong.
 
 ## How the probe differs from `dispatch_folds()`
 
-The identity finding below comes from three arms: the package's own
+This applies to the **identity** finding only. The wire figures above are
+captured from the real dispatcher and reconstruct nothing.
+
+The identity finding comes from three arms: the package's own
 `dispatch_folds()` serial branch, its parallel branch, and a **replica** of
 that parallel branch routing the frame through mori. Only the third is
 hand-rolled, and it departs from `R/parallel.R:190` in three ways a reader
@@ -102,55 +105,71 @@ change if mori were adopted) · `Conditional` (changed on some pools, not all) �
 | P2 | IP2 — same seed, same result, any worker count, parallel or serial | Held under mori at both worker counts on a ranger workflow, i.e. an engine whose randomness flows through R's RNG so the assertion is not vacuous (M02). The probe additionally asserts every fold completed, since three arms that all failed identically would compare equal too | `Untouched` |
 | P3 | D-018 — `mirai` is the outer-loop parallel backend | mori composes with mirai rather than replacing it. Adopting mori would not revisit the backend choice | `Untouched` |
 | P4 | The mirai-vs-`future` question raised on tune#969 | mori is not a scheduler, so it supplies no evidence either way. The question stays open | `Out of reach` |
-| P5 | M23 — per-fold data-bearing wire cost | Changed substantially: 6 copies → 0, and the data leaves the wire entirely. See the table below | `Changed` |
-| P6 | That `lean_payload()`/`rehydrate_payload()`/`is_fold_payload()` (`R/parallel.R:118-179`) could therefore be deleted | Two reasons they could not. **(a)** `is_fold_payload()` is not leanness machinery at all — it enforces the one-frame-per-fold invariant, and M23 review F1 (scored 93) recorded that without it a `manual_rset()` over differing frames is tuned on the wrong rows in parallel and the right ones serially: an IP2 breach with an IP1 exposure (`R/parallel.R:100-118`). mori needs that predicate exactly as much as leaning did. **(b)** mori is same-machine, so a remote pool cannot map the host's region and the by-value path must stay as its fallback. Adoption removes the blanking and rehydration, not the gate | `Conditional` |
-| P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:543`) | A daemon needs mori installed in its library. `daemon_symbol_manifest()` and `daemon_probe_expr()` are already parameterized by `package` (`R/parallel.R:391`, `:420`), so the existing probe can ask the question of a second package without new machinery — though it asks "can you load X and which of X's symbols are missing", which for mori is a namespace-presence question rather than a symbol one | `Changed` |
+| P5 | M23 — per-fold wire cost | Changed substantially: the data leaves the wire entirely (1 copy → 0), taking the per-fold total from 1,523,499 B to 393,841 B, a factor of 3.87. See the table below | `Changed` |
+| P6 | That `lean_payload()`/`rehydrate_payload()`/`is_fold_payload()` (`R/parallel.R:118-179`) could therefore be deleted | Two reasons they could not. **(a)** `is_fold_payload()` is not leanness machinery at all — it enforces the one-frame-per-fold invariant, and M23 review F1 (scored 93) recorded that without it a `manual_rset()` over differing frames is tuned on the wrong rows in parallel and the right ones serially: an IP2 breach with an IP1 exposure (`R/parallel.R:100-118`). mori needs that predicate exactly as much as leaning did, though the fat-path fallback it currently triggers has no mori analogue and adoption would have to say what replaces it. **(b)** mori is same-machine, so a remote pool cannot map the host's region and the by-value path must stay as its fallback. Adoption removes the blanking and rehydration, not the gate | `Conditional` |
+| P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:543`) | A daemon needs mori installed in its library, which the probe does not currently ask. Only `daemon_symbol_manifest()` takes a `package` argument (`R/parallel.R:391`); `daemon_probe_expr()` has no formals (`:420`) and `check_daemons_can_load()` has no `package` parameter, so probing a second package is new machinery rather than a new argument value — and M24 review F6 recorded a further constraint, that `asNamespace(package)` runs host-side, so the host must also have the probed package installed | `Changed` |
 | P8 | rsample#283 / M01 — memory scaling with the outer fold count | Not addressed. `nested_cv()`'s cost is analysis frames materialized **in-process** before any parallelism; mori addresses transfer to daemons. Different axis, and the package's founding gap is untouched by mori either way | `Out of reach` |
 | P9 | mori's own adoption cost | `Depends: R (>= 4.3)` against this package's `R (>= 4.1)` (`DESCRIPTION`), so adoption either raises the floor or makes mori conditional. No hard package dependencies otherwise, and Windows is supported via Win32 file mapping rather than being excluded | `Changed` |
-| P10 | Byte-exact reproducibility of the wire measurements | Lost on the mori route: a shared object serializes as its region name and the name encodes the creating process, so that route moves a few bytes per run. The fat and lean routes stay byte-exact, and the copy count is exact on every route, which is why it carries the claim | `Changed` |
+| P10 | Byte-exact reproducibility of the wire measurements | Unaffected. An earlier draft of this page claimed the mori route varied per run because the region name encodes the creating process; the name is fixed-width 19 characters, and the modelled mori bundle measured 100,589 B in three separate processes with three distinct region names. What does move between environments is the srcref-laden worker closure, which both routes carry equally | `Untouched` |
 
 ### The measurements behind P2, P5 and P10
 
 Per fold on M23's own fixture — `fixture_design()` at
 `tests/testthat/test-parallel-payload.R:40`: 5,000×21, v = 5 outer, inner_v = 5,
-`set.seed(2)`. `.args` is charged once per task, not once per run, so it is
-per-fold wire cost exactly as the payload is.
+`set.seed(2)`.
 
-Counted: the data-bearing terms, plus the worker closure **on the route that
-actually carries it**. The workflow, grid and metrics ride in `.args` on every
-route and cancel. The worker closure does not cancel — `dispatch_folds()` adds
-`worker` and `shared` to `.args` only on the leaning branch
-(`R/parallel.R:250-256`) — so it is a lean-route cost that neither the fat nor
-the mori route pays.
+**These figures are captured, not reconstructed.** Two earlier drafts of this
+page built the payload and `.args` by hand and compared those, and twice the
+published number failed to survive re-derivation — once because the fixture was
+not M23's, once because the hand-built accounting charged the worker closure to
+one route only. So the lean row is now taken by running the package's own
+`dispatch_folds()` and intercepting `mirai::mirai_map()` to record exactly what
+it was handed. mirai serializes `.f`, one element of `.x`, and `.args` per task,
+so a fold's wire cost is the sum of the three and no accounting convention is
+left to choose.
 
-| Route | Payload | `.args` | Total/fold | Copies of the data |
-|---|---|---|---|---|
-| fat (pre-M23) | 5,141,166 | 0 | 5,141,166 | 6 |
-| lean (current) | 98,346 | 1,132,051 | 1,230,397 | 1 |
-| mori | ~100,589 | 0 | ~100,589 | 0 |
+The mori row is **modelled**, necessarily — no dispatch sends it today — but
+modelled from that same captured bundle, substituting only what adoption would
+change: the shared frame replaces `.args$shared`, and the rehydrating wrapper
+collapses back to `fold_task` because there is nothing to rehydrate. The worker
+closure is carried on **both** rows, since a real adoption would still send the
+package's own worker.
 
-The mori figures carry a `~` because that route is not byte-reproducible (P10).
+| Route | `.f` | `.x` | `.args` | Total/fold | Copies of the data |
+|---|---|---|---|---|---|
+| lean (captured) | 291,418 | 98,346 | 1,133,735 | 1,523,499 | 1 |
+| mori (modelled) | 291,491 | 100,589 | 1,761 | 393,841 | 0 |
+
+**3.87×**, and the data is off the wire entirely. Two terms explain the whole
+gap: the worker closure, 291,491 B, common to both rows and cancelling; and the
+data, 840,540 B, which the lean route carries in `.args$shared` and mori does
+not. mori's `.args` is 1,761 B, which is exactly the workflow-plus-grid-plus-
+metrics term that also reconciles the fat route below.
 
 **Reconciliation against M23's committed totals.** M23 recorded 25,714,635 B →
-5,783,645 B over 5 folds. The fat route reconciles exactly: 25,714,635 / 5 =
-5,142,927 B/fold, against 5,141,166 B measured here, a difference of **1,761 B**
-— exactly M23's own per-fold `.args`, `list(object = workflow, grid = 3,
-metrics = NULL)`, measured at 1,761 B (the workflow alone is 1,672 B). Those are
-the route-independent terms this table excludes and M23's total included.
-The copy count matches M23's test-locked `6L` at `test-parallel-payload.R:145`.
-The lean route does **not** reconcile to the byte, and should not be expected
-to: its `.args` carries the worker closure, whose serialized size is
-srcref-dependent and therefore install-dependent (291,491 B under
-`pkgload::load_all()` here, against the 202,363 B M23 recorded). That term is
-route-independent in kind but environment-dependent in size.
+5,783,645 B over 5 folds. The pre-M23 fat route reconciles exactly: rebuilding
+it at this fixture gives 5,141,166 B/fold and 6 copies, matching M23's
+test-locked `6L` at `test-parallel-payload.R:145`, and 25,714,635 / 5 =
+5,142,927 B/fold, a difference of 1,761 B — exactly M23's own per-fold `.args`
+of `list(object = workflow, grid = 3, metrics = NULL)`, measured at 1,761 B.
 
-Three oracles, all from `tests/testthat/helper-payload-size.R`: a **closed
-form** predicting the lean payload from n/v/inner_v alone (96,000 B predicted
-against 98,346 B measured), a **copy count** found by searching the stream for
-the big-endian doubles of one numeric column, and the serialized byte totals.
-The closed form and the copy count share no arithmetic, which is the pair GP2
-asks for; the byte total reads the same `serialize()` stream the copy count
-does and is not independent of it.
+The lean total does **not** reconcile, for two reasons this page states rather
+than smooths over. M23's accounting summed payloads plus `.args` and never
+counted `.f`, which mirai charges per task exactly as `.args`; and the closure's
+serialized size is srcref-dependent, so it grew from the 202,363 B recorded at
+`R/parallel.R:246` to 291,491 B measured here. `R/parallel.R` grew from 26,759 B
+at M23 to 39,066 B at M24, the only commit touching it between, which accounts
+for the difference. M23's committed 5,783,645 B therefore under-reports today's
+real per-fold cost on two independent counts; that is a finding about the older
+record, not about mori, and it is filed as a ROADMAP candidate rather than
+corrected here.
+
+Two oracles back the lean payload, from `tests/testthat/helper-payload-size.R`:
+a **closed form** predicting it from n/v/inner_v alone (96,000 B predicted
+against 98,346 B measured, 2.4%, asserted against M23's own 5% band rather than
+printed), and a **copy count** found by searching the stream for the big-endian
+doubles of one numeric column. They share no arithmetic. The copy counts — 1 on
+the lean route, 0 on mori — are asserted, not printed.
 
 ## Disposition
 

@@ -48,41 +48,52 @@ no RNG surface: none of `unif_rand`, `norm_rand`, `GetRNGstate`,
 data reaches a worker, not what the worker draws.
 
 **Wire cost.** **[measured]** Per outer fold, on a 5,000 x 21 frame at v = 5
-outer and v = 5 inner. Counting the data-bearing terms, plus the worker closure
-on the route that actually carries it:
+outer and v = 5 inner. These are captured rather than reconstructed: I ran the
+wrapper's own dispatcher and intercepted `mirai_map()` to record exactly what it
+was handed. mirai serializes `.f`, one element of `.x`, and `.args` per task, so
+a fold's wire cost is the sum of the three.
 
-| route | payload | `.args` | total per fold | copies of the data |
-|---|---|---|---|---|
-| before the lean-dispatch work | 5,141,166 B | 0 | 5,141,166 B | 6 |
-| after it | 98,346 B | 1,132,051 B | 1,230,397 B | 1 |
-| via mori | ~100,589 B | 0 | ~100,589 B | 0 |
+| route | `.f` | `.x` | `.args` | total per fold | copies of the data |
+|---|---|---|---|---|---|
+| current (captured) | 291,418 B | 98,346 B | 1,133,735 B | 1,523,499 B | 1 |
+| via mori (modelled) | 291,491 B | 100,589 B | 1,761 B | 393,841 B | 0 |
 
-The copy count is measured directly by searching the serialized stream for the
-big-endian bytes of one numeric column, not inferred from the totals. The mori
-row carries a `~` because that route is not byte reproducible: a shared object
-serializes as its region name and the name encodes the creating process, so it
-moves a few bytes per run. The other two rows are exact.
+**[inferred]** The mori row is modelled, since no dispatch sends it today, but
+modelled from that same captured bundle: the shared frame replaces
+`.args$shared`, and the rehydrating wrapper collapses back to the plain worker
+because there is nothing to rehydrate. The worker closure is carried on both
+rows, since adoption would still send it.
+
+That is **3.87x**, and two terms explain all of it. The closure, 291,491 B, is
+common to both and cancels. The data, 840,540 B, is what the current path
+carries in `.args` and mori does not. The copy count is measured directly by
+searching the serialized stream for the big-endian bytes of one numeric column,
+and it is 1 against 0.
+
+I want to flag one thing about that closure, because it caught me out. It is
+srcref-laden under `load_all()` and it is charged per task, not per run, so on
+our numbers it is by far the largest term after the data itself. If you are
+weighing mori against other transport changes, stripping srcrefs from whatever
+you send is a comparable-sized lever and a much cheaper one.
 
 One number worth stating precisely, since it is easy to overstate: a shared
 reference is not free. The region name is 19 characters, but one shared object
-serializes to 267 B and each additional reference costs about 175 B. Against a
-frame that would otherwise travel whole, that is still a reduction of nearly
-three orders of magnitude.
+serializes to 267 B and each additional reference costs about 175 B.
 
-**First caveat: same machine.** **[measured]** mori is same-machine shared
-memory. A daemon on another host cannot map the region. So if you route fold
+**First caveat: same machine.** **[inferred]** mori is same-machine shared
+memory, read from its documentation rather than probed here. A daemon on another host cannot map the region. So if you route fold
 data through mori, the by-value path does not go away, it becomes the fallback
 for remote pools.
 
 **Second caveat, and the one I would flag hardest: the invariant check is not
 part of the leaning machinery.** **[measured]** In our wrapper the blanking and
-rehydration are about 60 lines, and mori does make those unnecessary. But a
+rehydration are 40 lines, and mori does make those unnecessary. But a
 separate predicate guards the precondition that every split in a fold indexes
 the *same* frame. Our own review found, by execution, that without it a
 `manual_rset()` over splits built on different frames gets tuned on the wrong
 rows in parallel and the right ones serially. Pointing every split at one shared
 object has exactly the same precondition, so that check has to survive whatever
-replaces the leaning. It would be easy to read a 12x wire improvement as
+replaces the leaning. It would be easy to read a 3.9x wire improvement as
 licence to delete the whole block.
 
 **Third caveat: it does not address the nested_cv memory problem.**
@@ -101,7 +112,7 @@ asserts this per run, checking that the daemon reports the host's own region
 name back rather than a materialized copy. What a daemon does need is mori
 installed in its library.
 
-**Adoption cost worth noting.** **[measured]** mori declares
+**Adoption cost worth noting.** **[inferred]** mori declares
 `Depends: R (>= 4.3)`. Anything taking it on either raises its own R floor or
 makes mori conditional. It has no hard package dependencies otherwise, and
 Windows is supported through a Win32 file mapping rather than being excluded.

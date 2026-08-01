@@ -18,7 +18,8 @@
 #   mori      a REPLICA of that parallel branch, sharing the frame via mori
 #
 # Only the third arm is hand-rolled; the first two are the package's own
-# dispatcher, called directly. All three return the same thing -- a list of fold
+# dispatcher, called directly. The WIRE section below hand-rolls nothing at all:
+# it captures what dispatch_folds() actually hands mirai_map(). All three return the same thing -- a list of fold
 # records from nested_fold_fit() -- so `identical()` across them is a comparison
 # of like with like rather than of two differently-assembled result objects.
 #
@@ -113,9 +114,18 @@ WORKER_COUNTS <- c(2L, 3L)
 # would build a different fixture and draw different seeds while every number
 # below claimed reproducibility (M18). The per-fold pin inside set_fold_seed()
 # is the package's own and is inherited, not asserted, by this script.
+# NOT `on.exit()`: at top level in an Rscript it registers against a frame that
+# never returns, so it silently never fires -- verified by execution, and it is
+# how an earlier draft of this script came to claim a restoration it did not
+# perform. `reg.finalizer(..., onexit = TRUE)` does run at session exit,
+# including after a `stopifnot()` abort.
 old_kind <- RNGkind()
-on.exit(RNGkind(old_kind[[1L]], old_kind[[2L]], old_kind[[3L]]), add = TRUE)
-on.exit(mirai::daemons(0), add = TRUE)
+cleanup <- function() {
+  try(mirai::daemons(0), silent = TRUE)
+  try(RNGkind(old_kind[[1L]], old_kind[[2L]], old_kind[[3L]]), silent = TRUE)
+  try(mori::prune_shared(), silent = TRUE)
+}
+reg.finalizer(environment(), function(e) cleanup(), onexit = TRUE)
 RNGkind("Mersenne-Twister", "Inversion", "Rejection")
 
 data <- make_reg_data()
@@ -146,7 +156,8 @@ completed_count <- function(records) {
 # ---- arm 3: the mori replica -------------------------------------------------
 
 # Point every split at one shared frame instead of blanking and rehydrating.
-# `share()` is idempotent, so the frame is shared once and re-used.
+# `share()` is idempotent on an ALREADY-SHARED object, not on the original, so
+# each call on `data` mints a new region; callers pass one shared object in.
 #
 # Guarded by the same invariant is_fold_payload() enforces -- see difference 1
 # in the header. Without this, a design whose inner splits index a different
@@ -285,105 +296,68 @@ cat("\n")
 #
 # Measured rather than assumed. The region NAME is short, but a serialized
 # shared object is not the name alone: it carries the ALTREP class and its
-# metadata too. An earlier draft of this probe quoted "~30 bytes", the name's
-# own length, as the per-reference wire cost -- wrong by an order of magnitude
-# in a document whose subject is wire cost (M26 review D4).
+# metadata too.
 
 cat("== what one shared reference costs on the wire ==\n")
 ref_frame <- payload_fixture_data(n = 10000, p = 1)
 ref_shared <- mori::share(ref_frame)
 one_ref <- length(serialize(ref_shared, NULL))
 four_refs <- length(serialize(list(ref_shared, ref_shared, ref_shared, ref_shared), NULL))
-cat(sprintf("region name: %s (%d characters)\n",
+cat(sprintf("region name: %s (%d characters, fixed width)\n",
             mori::shared_name(ref_shared), nchar(mori::shared_name(ref_shared))))
 cat(sprintf("one shared object serialized: %d B\n", one_ref))
 cat(sprintf("marginal cost per additional reference: %.0f B\n",
             (four_refs - one_ref) / 3))
-cat(sprintf("(the frame itself by value would be %d B)\n\n",
+cat(sprintf("against the same frame by value: %d B\n\n",
             length(serialize(ref_frame, NULL))))
 
-# ---- wire cost ---------------------------------------------------------------
+# ---- wire cost, measured off the REAL dispatch --------------------------------
 #
-# Three oracles, not two. helper-payload-size.R defines the pair M23 certified
-# under GP2 -- a CLOSED FORM predicting bytes from n/v/inner_v alone, and a
-# direct COPY COUNT found by searching the stream for the big-endian doubles of
-# one numeric column -- and they share no arithmetic. An earlier draft named
-# "serialized bytes" as one of the two, but the byte total and the copy count
-# both read the same serialize() stream, so that pair was one mechanism wearing
-# two hats (M26 review D14). The closed form is evaluated below.
+# Earlier drafts of this probe reconstructed the payload and `.args` by hand and
+# compared those. Twice that produced a published figure that did not survive
+# re-derivation: once because the fixture was not M23's, and once because the
+# hand-built accounting charged the worker closure to one route only. Both are
+# failures of the reconstruction, not of the measurement, so this section no
+# longer reconstructs anything.
+#
+# `capture_dispatch()` runs the package's own `dispatch_folds()` and intercepts
+# `mirai::mirai_map()` to record exactly what it was handed: `.f`, one element
+# of `.x`, and `.args`. mirai serializes all three per task (its `do_mirai()`
+# bundles `list(.f = .f, .x = elem, .args = .args, ...)`), so the per-fold wire
+# cost is the sum of the three and nothing is left to an accounting convention.
+#
+# What this cannot capture is the mori route, which does not exist: no dispatch
+# sends it today. That row is therefore MODELLED -- but modelled from the
+# captured bundle rather than from a parallel hand-built one, substituting only
+# what adoption would change: the shared frame replaces `.args$shared`, and the
+# rehydrating wrapper collapses back to `fold_task` because there is nothing to
+# rehydrate. The closure is carried on BOTH rows, since a real adoption would
+# send the package's own worker exactly as the lean path does.
 
-cat("== wire cost per fold: payload + `.args`, three routes ==\n")
-cat("`.args` is charged once per TASK, not once per run -- mirai::mirai_map()\n")
-cat("serializes it per task -- so it is per-fold wire cost exactly as the\n")
-cat("payload is, and a payload figure alone understates the lean route.\n\n")
-cat("Counted: the DATA-BEARING terms, plus the worker closure where the route\n")
-cat("actually carries it. The workflow, grid and metrics ride in `.args` on\n")
-cat("every route and cancel. The worker closure does NOT cancel -- \n")
-cat("dispatch_folds() adds `worker` and `shared` to `.args` only on the leaning\n")
-cat("branch (R/parallel.R:250-256), so it is a lean-route cost and neither the\n")
-cat("fat nor the mori route pays it.\n\n")
-cat("The fat and lean figures are reproducible to the byte. The mori ones are\n")
-cat("not: a shared object serializes as its region name, and the name encodes\n")
-cat("the creating process, so that route varies by a few bytes per run. The\n")
-cat("copy count is exact on every route and is the claim that matters here.\n\n")
-
-wire_report <- function(label, frame, design, v, inner_v) {
-  sentinel <- sentinel_of(frame)
-  set.seed(SEED)
-  seeds <- sample.int(.Machine$integer.max, 2L)
-  payload <- list(
-    split = design$splits[[1L]],
-    inner = design$inner_resamples[[1L]],
-    seeds = seeds
-  )
-  shared_mori <- mori::share(frame)
-
-  worker <- nestedtune:::fold_task
-  environment(worker) <- globalenv()
-
-  lean <- nestedtune:::lean_payload(payload, shared = frame)
-  mori_payload <- morify_payload(payload, shared = shared_mori, original = frame)
-
-  # A payload that measured well but resolved to the wrong rows would score
-  # perfectly on both oracles. Check the mori route still names the same rows
-  # the fat payload does before believing its bytes (M26 review D21).
-  stopifnot(identical(as.integer(mori_payload$split$in_id),
-                      as.integer(payload$split$in_id)))
-  stopifnot(identical(
-    rsample::analysis(mori_payload$inner$splits[[1L]]),
-    rsample::analysis(payload$inner$splits[[1L]])
-  ))
-
-  routes <- list(
-    fat = list(payload = payload, args = NULL),
-    lean = list(payload = lean, args = list(shared = frame, worker = worker)),
-    mori = list(payload = mori_payload, args = NULL)
-  )
-
-  cat("--", label, "--\n")
-  cat(sprintf("closed-form oracle for the lean payload (n=%d, v=%d, inner_v=%d): %d B\n",
-              nrow(frame), v, inner_v, predicted_lean_bytes(nrow(frame), v, inner_v)))
-  cat(sprintf("%-6s %14s %14s %14s %8s\n",
-              "route", "payload", ".args", "total/fold", "copies"))
-  for (nm in names(routes)) {
-    r <- routes[[nm]]
-    p_bytes <- payload_bytes(r$payload)
-    a_bytes <- if (is.null(r$args)) 0L else payload_bytes(r$args)
-    copies <- count_data_copies(r$payload, sentinel) +
-      if (is.null(r$args)) 0L else count_data_copies(r$args, sentinel)
-    cat(sprintf("%-6s %14d %14d %14d %8d\n",
-                nm, p_bytes, a_bytes, p_bytes + a_bytes, copies))
+capture_dispatch <- function(payloads, object, grid, metrics) {
+  captured <- NULL
+  orig <- mirai::mirai_map
+  fake <- function(.x, .f, .args, ...) {
+    captured <<- list(f = .f, x = .x, args = .args)
+    stop(structure(class = c("dispatch_captured", "error", "condition"),
+                   list(message = "captured", call = NULL)))
   }
-  cat("\n")
+  utils::assignInNamespace("mirai_map", fake, ns = "mirai")
+  on.exit(utils::assignInNamespace("mirai_map", orig, ns = "mirai"), add = TRUE)
+  tryCatch(
+    nestedtune:::dispatch_folds(payloads, object = object, grid = grid,
+                                metrics = metrics),
+    dispatch_captured = function(cnd) NULL
+  )
+  captured
 }
 
-wire_report("orchestration fixture (90x5, v=3/v=3)", data, nested, v = 3, inner_v = 3)
+cat("== wire cost per fold, measured off the real dispatch ==\n")
+cat("mirai serializes `.f`, one element of `.x`, and `.args` per task, so a\n")
+cat("fold's wire cost is the sum of the three. The lean row is CAPTURED from\n")
+cat("dispatch_folds(); the mori row is MODELLED from that same captured bundle,\n")
+cat("carrying the same worker closure, since adoption would still send it.\n\n")
 
-# M23's fixture, exactly: fixture_design() in tests/testthat/test-parallel-payload.R
-# is v = 5, inner_v = 5, n = 5000, p = 20 under set.seed(2). An earlier draft
-# used inner_v = 3 under set.seed(1) and still labelled it "M23's fixture",
-# which put a 4-copy fat count into three documents against M23's test-locked
-# 6L (test-parallel-payload.R:145) -- M26 review D2/D3.
 big_data <- payload_fixture_data()
 set.seed(2)
 big_design <- nested_resamples(
@@ -391,8 +365,62 @@ big_design <- nested_resamples(
   outside = rsample::vfold_cv(v = 5),
   inside = rsample::vfold_cv(v = 5)
 )
-wire_report("M23 fixture (5000x21, v=5/v=5, seed 2)", big_data, big_design,
-            v = 5, inner_v = 5)
+big_wf <- payload_fixture_workflow()
+big_sentinel <- sentinel_of(big_data)
+big_payloads <- lapply(seq_len(nrow(big_design)), function(i) {
+  list(split = big_design$splits[[i]],
+       inner = big_design$inner_resamples[[i]], seeds = c(1L, 2L))
+})
+
+start_daemons(2L)
+bundle <- capture_dispatch(big_payloads, big_wf, grid = 3, metrics = NULL)
+mirai::daemons(0)
+stopifnot(!is.null(bundle),
+          identical(sort(names(bundle$args)),
+                    sort(c("object", "grid", "metrics", "shared", "worker"))))
+
+lean_parts <- list(.f = bundle$f, .x = bundle$x[[1L]], .args = bundle$args)
+
+# The modelled mori bundle: same closure, no shared frame, no rehydration.
+mori_shared <- mori::share(big_data)
+mori_payload <- morify_payload(big_payloads[[1L]], shared = mori_shared,
+                               original = big_data)
+mori_parts <- list(
+  .f = bundle$args$worker,
+  .x = mori_payload,
+  .args = list(object = big_wf, grid = 3, metrics = NULL)
+)
+
+report_bundle <- function(label, parts, sentinel) {
+  b <- vapply(parts, function(x) length(serialize(x, NULL)), numeric(1))
+  copies <- sum(vapply(parts, function(x) count_data_copies(x, sentinel), numeric(1)))
+  cat(sprintf("%-6s %12.0f %12.0f %12.0f %14.0f %8.0f\n",
+              label, b[[".f"]], b[[".x"]], b[[".args"]], sum(b), copies))
+  invisible(sum(b))
+}
+
+cat(sprintf("%-6s %12s %12s %12s %14s %8s\n",
+            "route", ".f", ".x", ".args", "total/fold", "copies"))
+lean_total <- report_bundle("lean", lean_parts, big_sentinel)
+mori_total <- report_bundle("mori", mori_parts, big_sentinel)
+cat(sprintf("\nratio (lean / mori): %.2fx\n", lean_total / mori_total))
+cat(sprintf("the closure is common to both rows: %.0f B\n",
+            length(serialize(bundle$args$worker, NULL))))
+cat(sprintf("the data term the lean row carries and mori does not: %.0f B\n\n",
+            length(serialize(big_data, NULL))))
+
+# The closed-form oracle, compared rather than printed. M23's own test bounds it
+# at 5%; an oracle that is printed and never checked cannot fail.
+predicted <- predicted_lean_bytes(5000, 5, 5)
+measured_payload <- length(serialize(bundle$x[[1L]], NULL))
+cat(sprintf("closed-form oracle for the lean payload: %d B predicted, %d B measured (%.1f%%)\n",
+            predicted, measured_payload,
+            100 * abs(measured_payload - predicted) / predicted))
+stopifnot(abs(measured_payload - predicted) / predicted < 0.05)
+
+# The copy counts are the claim; assert them rather than printing them.
+stopifnot(sum(vapply(lean_parts, function(x) count_data_copies(x, big_sentinel), numeric(1))) == 1)
+stopifnot(sum(vapply(mori_parts, function(x) count_data_copies(x, big_sentinel), numeric(1))) == 0)
 
 cat("== summary ==\n")
 for (n_workers in names(results)) {
@@ -404,7 +432,3 @@ for (n_workers in names(results)) {
               if (r$transport$shared_in_daemon && r$transport$name_matches) "yes" else "NO"))
 }
 
-# Shared regions are freed when their objects are garbage-collected and on a
-# clean exit; prune_shared() recovers anything a killed process left behind.
-# Cheap insurance in a script that creates several regions.
-invisible(mori::prune_shared())
