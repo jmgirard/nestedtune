@@ -1,6 +1,6 @@
 # M26: The wire figure survives re-derivation
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -163,6 +163,7 @@ mirai-vs-`future` question.
 - 2026-08-01: rework 3 — F1/AC1 fixed: the sum-vs-single-stream assertion was a type tautology (`!identical()` on integer vs double); now a strict value inequality (`sum_of_parts > single stream`) on both rows, which fails when they agree. F4 fixed: the `identical(body(patched), body(orig))` "staleness guard" that `environment<-` makes unfalsifiable is removed; the comment now points at the bundle-shape assertion as the real guard. F8/AC4 fixed: the three manifest oracle strings with no assertion behind them now have them — the payload counted alone (0 copies, plus 1 in `.args$shared`), the shared object's stream (0 copies), and the four-reference list (0 copies).
 - 2026-08-01: rework 3 — F6/AC5 fixed: `lean_bundle_bytes`, `mori_bundle_bytes`, `gap_bytes` and `ratio_lean_over_mori` are now marked `install_dependent: true` — they embed the worker closure this milestone measured at 524 B installed against 291,491 B in dev, so their values follow the build state; the manifest's `package_state` names which state they were taken in.
 - 2026-08-01: rework 3 — F24/F25/F26 document corrections, current knowledge in place and marked: the ROADMAP mori row now carries the manifest's installed-state figures (941,687 / 103,119 / 9.13x) and the data-dominated gap explanation, replacing the refuted dev-state 3.87x and the disproved "closure cancels" sentence; the note's measurement section carries a superseded-figures correction banner pointing at the manifest, P10's fixed-width region-name claim is corrected to pid-dependent (19 and 20 chars measured), and the false "filed as a ROADMAP candidate" sentence is corrected (no row was filed; none is owed — the under-report dissolves in the installed state). The unposted draft gets a do-not-post banner; its fate is M29's.
+- 2026-08-01: rework 3 verified — probe exit 0 with every figure re-derived byte-identically (the manifest diff is exactly the four flag flips and one reworded oracle string); `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes; `cairn_validate` exit 0, all hard checks PASS (the 18 references-staleness advisories are shelf-wide and pre-existing). Status back to review.
 
 ## Decisions
 
