@@ -66,5 +66,49 @@ test_that("the check goes red when a cited figure drifts", {
   writeLines(lines, scratch2)
   result2 <- drift_failures(scratch2, figures)
   expect_length(result2$failures, 1L)
-  expect_match(result2$failures, "mori_bundle_bytes.*not printed")
+  expect_match(result2$failures, "mori_bundle_bytes.*printed 0 time")
+})
+
+test_that("a drifted duplicate cannot hide behind its surviving occurrence", {
+  # The M29 review's diff-bug lens demonstrated both of these masking shapes
+  # by execution against the substring-presence version of the check; the
+  # occurrence-count declarations (@N) are the fix, and these tests keep it.
+  manifest_path <- drift_repo_path("benchmarks", "mori-wire-manifest.json")
+  note_path <- drift_repo_path("cairn", "references", "mori-backend-assessment.md")
+  roadmap_path <- drift_repo_path("cairn", "ROADMAP.md")
+  skip_if_not(
+    file.exists(manifest_path) && file.exists(note_path) && file.exists(roadmap_path),
+    "repo-only files are absent from a built package"
+  )
+  figures <- drift_manifest_figures(manifest_path)
+
+  # The note prints worker_closure_bytes twice -- once as the current figure,
+  # once inside the [historical] contrast. Perturb only the current one.
+  scratch <- tempfile(fileext = ".md")
+  txt <- paste(readLines(note_path, warn = FALSE), collapse = "\n")
+  perturbed <- sub("524 B\ninstalled (`worker_closure_bytes`)",
+                   "999 B\ninstalled (`worker_closure_bytes`)",
+                   txt, fixed = TRUE)
+  if (identical(perturbed, txt)) {
+    perturbed <- sub("524 B installed (`worker_closure_bytes`)",
+                     "999 B installed (`worker_closure_bytes`)",
+                     txt, fixed = TRUE)
+  }
+  expect_false(identical(perturbed, txt))
+  writeLines(perturbed, scratch)
+  result <- drift_failures(scratch, figures)
+  expect_length(result$failures, 1L)
+  expect_match(result$failures, "worker_closure_bytes.*printed 1 time")
+
+  # The ROADMAP prints "524 B" in the mori candidate row and in the unrelated
+  # srcref row. Perturb only the mori row's occurrence.
+  scratch2 <- tempfile(fileext = ".md")
+  rl <- readLines(roadmap_path, warn = FALSE)
+  mori_row <- grep("is 524 B and near-negligible", rl)
+  expect_length(mori_row, 1L)
+  rl[mori_row] <- sub("is 524 B and", "is 999 B and", rl[mori_row], fixed = TRUE)
+  writeLines(rl, scratch2)
+  result2 <- drift_failures(scratch2, figures)
+  expect_length(result2$failures, 1L)
+  expect_match(result2$failures, "worker_closure_bytes.*printed 1 time")
 })

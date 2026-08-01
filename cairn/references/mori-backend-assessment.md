@@ -13,7 +13,7 @@ that manifest at the rewrite — observed 2026-08-01; the assessed external
 artifacts (mori 0.2.2, tune#1188) move independently of this repo and have not
 been re-read since 2026-07-31 — observed 2026-08-01.
 
-<!-- drift-check: lean_bundle_bytes=941,683 B; mori_bundle_bytes=103,109 B; lean_payload_bytes=98,342 B; ratio_lean_over_mori=9.13; gap_bytes=838,574 B; shared_reference_bytes=267 B; shared_marginal_bytes=175 B; worker_closure_bytes=524 B; sum_of_parts_overstatement_bytes=150 B -->
+<!-- drift-check: lean_bundle_bytes=941,683 B@2; mori_bundle_bytes=103,109 B@2; lean_payload_bytes=98,342 B; ratio_lean_over_mori=9.13@2; gap_bytes=838,574 B; shared_reference_bytes=267 B; shared_marginal_bytes=175 B; worker_closure_bytes=524 B@2; sum_of_parts_overstatement_bytes=150 B -->
 
 **Scope.** This page assesses what adopting `mori` would and would not change
 about this package's outer-loop dispatch, and is not a summary of any one
@@ -113,15 +113,15 @@ change if mori were adopted) · `Conditional` (changed on some pools, not all) �
 | # | Premise | What mori does to it | Tag |
 |---|---|---|---|
 | P1 | D-011 — per-fold RNG is two kind-pinned integer seeds drawn at entry, and the driver is net-zero on the caller's RNG state | Seeds are drawn host-side (`R/nested-tune-grid.R:318` — observed 2026-07-31) and travel as integers in the payload; `set_fold_seed()` runs worker-side inside `nested_fold_fit()`. mori changes only how the *data* reaches the worker and has no RNG surface to perturb either through. Measured: fold records `identical()` to serial at 2 and 3 workers | `Untouched` |
-| P2 | IP2 — same seed, same result, any worker count, parallel or serial | Held under mori at both worker counts on a ranger workflow, i.e. an engine whose randomness flows through R's RNG so the assertion is not vacuous (M02). The probe additionally asserts every fold completed, since three arms that all failed identically would compare equal too | `Untouched` |
+| P2 | IP2 — same seed, same result, any worker count, parallel or serial | Held under mori at both worker counts on a ranger workflow, i.e. an engine whose randomness flows through R's RNG so the assertion is not vacuous (M02). The probe additionally asserts every fold completed, since three arms that all failed identically would compare equal too — observed 2026-07-31 | `Untouched` |
 | P3 | D-018 — `mirai` is the outer-loop parallel backend | mori composes with mirai rather than replacing it. Adopting mori would not revisit the backend choice | `Untouched` |
 | P4 | The mirai-vs-`future` question raised on tune#969 | mori is not a scheduler, so it supplies no evidence either way. The question stays open | `Out of reach` |
-| P5 | M23 — per-fold wire cost | Changed substantially: the data leaves the wire entirely (1 copy → 0), taking the per-fold total from 941,683 B (`lean_bundle_bytes`) to 103,109 B (`mori_bundle_bytes`), a factor of 9.13 (`ratio_lean_over_mori`) — installed-state, single-stream capture | `Changed` |
+| P5 | M23 — per-fold wire cost | Changed substantially: the data leaves the wire entirely (1 copy → 0), taking the per-fold total from 941,683 B (`lean_bundle_bytes`) to 103,109 B (`mori_bundle_bytes`), a factor of 9.13 (`ratio_lean_over_mori`) — installed-state, single-stream capture — observed 2026-08-01 | `Changed` |
 | P6 | That `lean_payload()`/`rehydrate_payload()`/`is_fold_payload()` (`R/parallel.R:118-179` — observed 2026-07-31) could therefore be deleted | Two reasons they could not. **(a)** `is_fold_payload()` is not leanness machinery at all — it enforces the one-frame-per-fold invariant, and M23 review F1 (scored 93) recorded that without it a `manual_rset()` over differing frames is tuned on the wrong rows in parallel and the right ones serially: an IP2 breach with an IP1 exposure (`R/parallel.R:100-118`). mori needs that predicate exactly as much as leaning did, though the fat-path fallback it currently triggers has no mori analogue and adoption would have to say what replaces it. **(b)** mori is same-machine, so a remote pool cannot map the host's region and the by-value path must stay as its fallback. Adoption removes the blanking and rehydration, not the gate | `Conditional` |
 | P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:543` — observed 2026-07-31) | A daemon needs mori installed in its library, which the probe does not currently ask. Only `daemon_symbol_manifest()` takes a `package` argument (`R/parallel.R:391`); `daemon_probe_expr()` has no formals (`:420`) and `check_daemons_can_load()` has no `package` parameter, so probing a second package is new machinery rather than a new argument value — and M24 review F6 recorded a further constraint, that `asNamespace(package)` runs host-side, so the host must also have the probed package installed — observed 2026-07-31 | `Changed` |
-| P8 | rsample#283 / M01 — memory scaling with the outer fold count | Not addressed. `nested_cv()`'s cost is analysis frames materialized **in-process** before any parallelism; mori addresses transfer to daemons. Different axis, and the package's founding gap is untouched by mori either way | `Out of reach` |
+| P8 | rsample#283 / M01 — memory scaling with the outer fold count | Not addressed. `nested_cv()`'s cost is analysis frames materialized **in-process** before any parallelism; mori addresses transfer to daemons. Different axis, and the package's founding gap is untouched by mori either way — observed 2026-07-31 | `Out of reach` |
 | P9 | mori's own adoption cost | `Depends: R (>= 4.3)` against this package's `R (>= 4.1)` (`DESCRIPTION` — observed 2026-07-31), so adoption either raises the floor or makes mori conditional. No hard package dependencies otherwise, and Windows is supported via Win32 file mapping rather than being excluded | `Changed` |
-| P10 | Byte-exact reproducibility of the wire measurements | Unaffected in the installed state: the probe regenerates every manifest figure byte-identically within a process; across processes the totals move by a few bytes because the pid's hex string serializes inside the bundles, and the manifest's `reproducibility` field states the bound a drift check should use. The srcref-laden worker closure that moved between environments is a development-state artifact absent from the installed capture | `Untouched` |
+| P10 | Byte-exact reproducibility of the wire measurements | Unaffected in the installed state: the probe regenerates every manifest figure byte-identically within a process; across processes the totals move by a few bytes because the pid's hex string serializes inside the bundles, and the manifest's `reproducibility` field states the bound on that movement (a re-measurement bound — the committed documents are locked to the committed manifest at the precision they print, a separate and stricter comparison). The srcref-laden worker closure that moved between environments is a development-state artifact absent from the installed capture — observed 2026-08-01 | `Untouched` |
 
 ### The measurements behind P2, P5 and P10
 
@@ -129,9 +129,10 @@ Per fold on M23's own fixture — `fixture_design()`, now in
 `tests/testthat/helper-payload-size.R`: 5,000×21, v = 5 outer, inner_v = 5,
 `set.seed(2)`. Package state: installed to a temporary library with srcrefs
 stripped — the state `install.packages()` produces. The record is
-`benchmarks/mori-wire-manifest.json`: 9 figures, each carrying its fixture, an
-install-dependence flag, and asserted oracles (the probe's registry refuses an
-oracle string with no assertion behind it).
+`benchmarks/mori-wire-manifest.json`: 9 figures, each carrying its fixture and
+an install-dependence flag — the seven captured ones backed by asserted
+oracles (the probe's registry refuses an oracle string with no assertion
+behind it), the two derived ones computed from asserted quantities.
 
 **These figures are captured, not reconstructed.** The lean row is taken by
 running the package's own `dispatch_folds()` and intercepting
@@ -181,10 +182,12 @@ changed; no current claim rests on it.
   `6L`, and 25,714,635 / 5 = 5,142,927 B/fold — a difference of 1,761 B,
   exactly M23's own per-fold `.args`. The lean total did **not** reconcile
   against the development-state capture, which briefly suggested M23 had
-  under-reported the wire cost; the installed-state capture dissolved that —
-  the discrepancy was srcref and sum-of-parts accounting, development-state
-  artifacts (~451 B combined once srcrefs are stripped), so no under-report
-  survives in the state a user actually runs.
+  under-reported the wire cost. That suggestion was withdrawn rather than
+  filed: it rested on development-state closure sizes and sum-of-parts
+  accounting, and M23's committed totals were measured under M23's own
+  convention — payload and `.args` summed separately — a different quantity
+  from the manifest's single-stream bundle, so the two totals do not compare
+  term-by-term and support no under-report conclusion in either direction.
 - **M26's first capture (superseded).** A `pkgload::load_all()` capture summing
   separately serialized parts published 1,523,499 B lean, 393,841 B mori and a
   3.87× ratio. Both accounting premises were wrong: mirai performs one

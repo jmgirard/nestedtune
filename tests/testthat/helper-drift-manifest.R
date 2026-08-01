@@ -19,9 +19,13 @@ drift_manifest_figures <- function(path) {
 }
 
 # A document declares the manifest figures it cites in one comment line:
-#   <!-- drift-check: name=rendering|rendering; name=rendering -->
-# Returns a named list of rendering strings, or NULL when the document
-# carries no declaration.
+#   <!-- drift-check: name=rendering@N|rendering; name=rendering -->
+# `@N` declares how many times the rendering occurs in the document body
+# (default 1); the check requires the exact count, so a drifted duplicate --
+# one occurrence of a twice-printed figure edited away from the manifest --
+# still goes red instead of hiding behind the surviving occurrence.
+# Returns a named list of data frames (rendering, count), or NULL when the
+# document carries no declaration.
 drift_declared_renderings <- function(lines) {
   decl <- grep("<!-- drift-check:", lines, value = TRUE)
   if (length(decl) == 0) {
@@ -34,7 +38,14 @@ drift_declared_renderings <- function(lines) {
   parts <- regmatches(entries, regexec("^([A-Za-z0-9_]+)=(.+)$", entries))
   stopifnot(all(lengths(parts) == 3L))
   stats::setNames(
-    lapply(parts, function(p) strsplit(p[[3]], "|", fixed = TRUE)[[1]]),
+    lapply(parts, function(p) {
+      renderings <- strsplit(p[[3]], "|", fixed = TRUE)[[1]]
+      count <- rep(1L, length(renderings))
+      at <- grepl("@", renderings, fixed = TRUE)
+      count[at] <- as.integer(sub(".*@", "", renderings[at]))
+      stopifnot(!anyNA(count), count >= 1L)
+      data.frame(rendering = sub("@[0-9]+$", "", renderings), count = count)
+    }),
     vapply(parts, `[[`, "", 2L)
   )
 }
@@ -65,10 +76,10 @@ drift_rendering_value <- function(rendering) {
 
 # The check proper. Enumerates from the declaration (never parses prose for
 # what counts as a figure); a declared name the manifest lacks, a declared
-# rendering the document body no longer prints, and a rendering that misses
-# the manifest value at its printed precision are each a failure. The
-# declaration line itself is excluded from the presence search, or every
-# rendering would be found in its own declaration.
+# rendering printed a different number of times than declared, and a
+# rendering that misses the manifest value at its printed precision are each
+# a failure. The declaration line itself is excluded from the occurrence
+# count, or every rendering would find itself.
 drift_failures <- function(doc_path, figures) {
   lines <- readLines(doc_path, warn = FALSE)
   decl <- drift_declared_renderings(lines)
@@ -84,11 +95,17 @@ drift_failures <- function(doc_path, figures) {
       failures <- c(failures, sprintf("%s: not a manifest figure", nm))
       next
     }
-    for (rendering in decl[[nm]]) {
+    entry <- decl[[nm]]
+    for (i in seq_len(nrow(entry))) {
+      rendering <- entry$rendering[[i]]
+      expected <- entry$count[[i]]
       checked <- checked + 1L
-      if (!grepl(rendering, body, fixed = TRUE)) {
+      hits <- gregexpr(rendering, body, fixed = TRUE)[[1]]
+      found <- if (hits[[1]] == -1L) 0L else length(hits)
+      if (found != expected) {
         failures <- c(failures, sprintf(
-          "%s: declared rendering '%s' not printed in the document", nm, rendering
+          "%s: rendering '%s' printed %d time(s) against %d declared",
+          nm, rendering, found, expected
         ))
         next
       }
