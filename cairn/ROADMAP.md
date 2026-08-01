@@ -9,7 +9,7 @@ _Last hygiene check: 2026-08-01 (all 16 checks green; one advisory — 18 of 25 
 |---|---|---|---|---|---|
 | M26 | The wire figure survives re-derivation | done | — | normal | milestones/archive/M26-mori-backend-assessment.md |
 | M29 | The assessment says only what the manifest measured | done | M26 | normal | milestones/archive/M29-mori-assessment-writeup.md |
-| M27 | What the outer loop needs from the resampling object, in writing | in-progress | — | normal | milestones/M27-resampling-object-requirements.md |
+| M27 | What the outer loop needs from the resampling object, in writing | review | — | normal | milestones/M27-resampling-object-requirements.md |
 | M28 | A port inventory, not a package to translate | planned | — | normal | milestones/M28-port-inventory.md |
 | M25 | The number has a name, and the docs say which | done | — | normal | milestones/archive/M25-estimand-documented.md |
 | M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |

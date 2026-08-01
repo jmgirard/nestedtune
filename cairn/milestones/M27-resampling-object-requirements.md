@@ -1,11 +1,11 @@
 # M27: What the outer loop needs from the resampling object, in writing
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2, GP4
-- **Branch/PR:** —
+- **Branch/PR:** m27-resampling-object-requirements · https://github.com/jmgirard/nestedtune/pull/29
 
 ## Goal
 
@@ -34,7 +34,7 @@ on it.
 
 ## Acceptance criteria
 
-- [ ] AC1: A committed synthesis note at
+- [x] AC1: A committed synthesis note at
       `cairn/references/outer-loop-object-requirements.md`, authored from
       `templates/synthesis-note.md`, with a Provenance block, its `INDEX.md`
       bullet, and every claim about this repo's own state dated
@@ -42,7 +42,7 @@ on it.
       resampling object — column, field, attribute, or class — each cited
       `file:line`, and every citation resolves to a line performing the
       described read.
-- [ ] AC2: The note separately lists what the driver reconstructs because the
+- [x] AC2: The note separately lists what the driver reconstructs because the
       object does not carry it — at minimum the training data
       (`R/nested-resamples.R:218`), the one-shared-frame invariant
       (`R/parallel.R:129-137`), fold labels (`R/nested-results.R:324`), the
@@ -50,19 +50,19 @@ on it.
       re-evaluable inner spec (`R/checks.R:312`), and the fold↔seed binding
       (`R/nested-tune-grid.R:318`) — each naming what the object would have to
       carry for the reconstruction to disappear.
-- [ ] AC3: Peak in-process object size for `rsample::nested_cv()` against
+- [x] AC3: Peak in-process object size for `rsample::nested_cv()` against
       `nested_resamples()` is measured at ≥ 2 (n, v, inner_v) settings not
       covered by M13's 10×10 and 5×2, and serialized per-fold wire bytes are
       measured for the same two constructors under the current dispatch path.
       Each axis carries a closed-form model beside the measurement, as M13 and
       M23 both shipped, so the number has two independent oracle types (GP2).
-- [ ] AC4: Every place the package strips, re-adds, or dispatches around an
+- [x] AC4: Every place the package strips, re-adds, or dispatches around an
       rsample class, or writes an `rsplit` field for want of a public accessor,
       is listed with its `file:line` and the rsample behaviour that forces it.
-- [ ] AC5: An unposted draft writeup for the maintainer exists under
+- [x] AC5: An unposted draft writeup for the maintainer exists under
       `benchmarks/`, marking each claim as measured here or inferred, and naming
       which of its transfer-cost argument M26's finding could change.
-- [ ] AC6: The `verify` slot of `cairn/PROFILE.md` is clean.
+- [x] AC6: The `verify` slot of `cairn/PROFILE.md` is clean.
 
 ## Coverage
 
@@ -75,29 +75,54 @@ on it.
 
 ## Tasks
 
-- [ ] T1: Inventory every read of the resampling object across `R/checks.R`,
+- [x] T1: Inventory every read of the resampling object across `R/checks.R`,
       `R/nested-tune-grid.R`, `R/nested-resamples.R`, `R/parallel.R`,
       `R/nested-final-fit.R`, `R/nested-results.R`; verify each citation by
       re-reading the cited line.
-- [ ] T2: Inventory the reconstructions, each with the carrying field that would
+- [x] T2: Inventory the reconstructions, each with the carrying field that would
       remove it.
-- [ ] T3: Inventory the class-boundary workarounds and the rsample behaviour
+- [x] T3: Inventory the class-boundary workarounds and the rsample behaviour
       behind each.
-- [ ] T4: Extend `benchmarks/rsample-283-reprex.R` (or add a sibling) to cover
+- [x] T4: Extend `benchmarks/rsample-283-reprex.R` (or add a sibling) to cover
       the two new size settings and the wire-byte axis, with a closed-form model
       per axis.
-- [ ] T5: Run the measurements; record results against the models.
-- [ ] T6: Author the synthesis note; add its `INDEX.md` bullet.
-- [ ] T7: Draft the maintainer-facing writeup under `benchmarks/`, unposted.
-- [ ] T8: Run the profile's `verify` slot.
+- [x] T5: Run the measurements; record results against the models.
+- [x] T6: Author the synthesis note; add its `INDEX.md` bullet.
+- [x] T7: Draft the maintainer-facing writeup under `benchmarks/`, unposted.
+- [x] T8: Run the profile's `verify` slot.
 
 ## Work log
 
 - 2026-07-31: created by /milestone-plan.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings here — AC1 named no note path so the references-page rules did not bind; AC3's memory axis was satisfiable with no new measurement, M13 having already covered two settings; AC3's wire-byte axis named no comparison and stated no oracle against GP2. Path and Provenance fixed directly, the comparison named, the oracle required; the measure-vs-reuse choice went to the gate.
 - 2026-07-31: plan gate chose fresh measurement at uncovered sizes over reusing M13's numbers, because a criterion satisfiable with no new measurement is what the audit flagged; falsified by the new settings agreeing with M13's model closely enough that the argument never needed them.
+- 2026-08-01: implement gate: AC3's new settings are 5×5 and 20×5 on LetterRecognition (one practical scheme, one stressing the v-scaling term); T4 takes the sibling-script option so the committed #283 recipe stays byte-stable.
 - 2026-07-31: plan gate chose running in parallel with M26 over depending on it, because the maintainer signalled this thread first and the call is under three weeks out; falsified by M26 finding that shared memory removes the transfer-cost argument this note builds.
+
+- 2026-08-01: T1-T3 done in one authoring pass — the synthesis note's R (19 reads), C (7 reconstructions), W (11 workarounds) tables; every file:line read directly at 9b8dd07 before citing; a grep sweep confirmed no design reads outside the six files, and the "outside attr is test-only" claim was verified by grep.
+- 2026-08-01: T4-T5 — sibling script `benchmarks/outer-loop-object-requirements.R` (sources helper-payload-size.R, reuses the #283 models); memory axis 3.228x at 5x5 and 5.094x at 20x5 (model resid ≤1%), wire axis: a leaned nested_cv fold still carries its own analysis frame (~70% of its payload; copy-count oracle 1 vs 0), which leaning cannot remove; a raw shared-copy count at 20x5 read 4 from a sentinel coincidence, fixed by netting out the fold's own frame.
+- 2026-08-01: T6 — note complete with Provenance, Scope, Evidence snapshot, and Measurements; INDEX.md bullet added.
+- 2026-08-01: T7 — `benchmarks/resampling-object-writeup.md`, unposted, every claim tagged (measured)/(inferred); the mori caveat names the absolute wire figures and the serialized-shared-frame premise as what M26's finding changes, and argues shared memory strengthens rather than weakens the reindexing case.
+- 2026-08-01: T8 — devtools::test() clean: 1628 pass, 0 fail, 0 warn, 0 skip (no package code changed this milestone). Status → review.
+- 2026-08-01: review found the T4-T5 entry above quoted "~70% of its payload" with the wrong denominator — the fold's own frame is 672,540 B of its 754,858 B payload (89.1%); 70% is the payload gap over the reindexed fold's wire total. Note and writeup corrected in place; this line supersedes the work-log figure.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-01 on branch m27-resampling-object-requirements (PR #29).
+
+- AC1: `cairn/references/outer-loop-object-requirements.md` committed, template-shaped (Provenance with ingested date/milestone/pagination/extraction status, Scope with tracking disclaimer, Evidence snapshot); INDEX.md bullet present (references index<->disk PASS); repo-state claims carry `— observed 2026-08-01`; all 40 file:line citations across R/C/W tables re-resolved by command at review — every cited line performs the described read or write.
+- AC2: C table lists 7 reconstructions with the carrying field per row; the six criterion-named sites all present — split_data (C1), is_fold_payload invariant (C2), fold_ids (C3), id-by-subtraction (C4), eval_inside_spec (C5), seed binding (C6).
+- AC3: benchmark re-run fresh at review — 5x5 and 20x5 (neither covered by M13), obj_size 3.228x/5.094x vs model 3.247/5.142 (resid ≤1.02%); wire axis both constructors under the leaned dispatch path, payload model resid ≤2.39%, copy-count oracle 0 frames (nested_resamples) vs 1 own frame (nested_cv) — two independent oracle types per axis (closed form + live; closed form + copy count).
+- AC4: W table, 11 rows, each with file:line and the forcing rsample behaviour; citations re-resolved in the same command sweep as AC1.
+- AC5: `benchmarks/resampling-object-writeup.md` exists, header says "Not posted", every claim tagged (measured)/(inferred), and the mori caveat paragraph names the absolute wire figures and the serialized-shared-frame premise as what M26's finding changes.
+- AC6: devtools::test() 1628 pass / 0 fail / 0 warn / 0 skip; devtools::document() no diff; pkgdown::check_pkgdown() clean; cairn_validate all 16 checks PASS (staleness advisory pre-existing, new page not in it); no README.Rmd; NEWS: no entry owed, no user-visible change; devtools::check() 0 errors / 0 warnings / 0 notes (4m11s).
+
+Independent review (three lenses + scorer): blame-history 0 findings; prior-review 3; diff-bug 22 (its own re-run reproduced every number byte-identically and verified all R/C/W citations resolve). Scored by a fresh Sonnet scorer; 3 findings ≥80, all fixed on the branch:
+
+- FIXED (D1, 92): the "~70% of a nested_cv() fold's payload" figure used the wrong denominator — the frame is 672,540/754,858 = 89.1% (same at 20x5); 70% was the payload gap over the reindexed fold's wire total. Corrected in note + writeup; work log superseded.
+- FIXED (D2, 85): "that frame is the whole wire gap (~656.5 kB of ~656.5 kB)" was tautological and misattributed — the frame is 672,540 B and the 656,512 B gap is frame minus 16,028 B of extra explicit indices the reindexed fold carries. Sentence rewritten with both terms.
+- FIXED (D3, 90): script header claimed LetterRecognition's columns are integers so the wire sentinel can't serve; its 16 feature columns are doubles. Header now gives the real reason (continuity with the M23/M26 wire baseline).
+
+22 findings scored <80, logged not actioned: P1/D4/D21 duplicated or re-constructed definitions (closed forms retyped from rsample-283-reprex.R and helper, shared_ref rebuilt) — accepted, the sibling-script byte-stability choice from the implement gate cuts against sourcing the #283 script, and the models are printed beside measurements that would expose drift; P2/D5 no manifest/drift-check lock for M27 figures — accepted, the figures are script-backed like M13's, and the ACs asked for the M13 pattern, not M29's; P3 mori mention in an unposted draft — accepted, corrected figures, no prohibition recorded; D6 unique() fragility on fold disagreement — latent, script errs loudly which is acceptable for a benchmark; D7 own-frame 0 is a branch constant for the shared case — the identical() branch is itself the sharing test; D8 "exactly" overstates ratio linearity — arguable phrasing, the model column sits beside it; D9 class-vector sentence reads as both constructors carrying both classes — W5 states the true split; D10 "none behind a public accessor" too strong given complement()/as.data.frame(); D11 table rows not individually observed-dated — Provenance/Evidence snapshot carry the dates; D12 4-byte payload difference vs M26 manifest (98,346 vs 98,342, pid hex length per the manifest's reproducibility field); D13 header derivation pointer true for axis 1 only; D14 "under the current dispatch path" exercises the path's functions, not dispatch_folds() itself; D15 table column bases differ (sum vs per-fold); D16 writeup says C1-C7 but lists 5 compressed items; D17 "(measured) in the weak sense" caveat is stated inline; D18 work-log "≤1%" vs 1.02% worst residual — Review states it correctly; D19 hygiene-stamp denominator — unmodified line, out of scope; D20 work-log ordering cosmetics; D22 W3 cites a range starting on a comment line.
