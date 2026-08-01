@@ -304,3 +304,23 @@ Two lenses of three reported before this verdict was recorded; the diff-bug and 
 lenses were still running and their findings are not in this list. The disposition does not turn
 on them: the criterion failure above is verified by execution, and the return threshold is
 reached regardless.
+
+**Third lens reported after the verdict; findings appended rather than lost.** It confirmed the
+closure decomposition independently by re-running the capture (289,118 B, 25.6% of the gap,
+unexplained) and added four that sharpen the re-cut: the probe header claims "the WIRE section
+hand-rolls nothing at all" while the mori row is hand-assembled and the fixture design hand-rebuilt,
+and the note contradicts this eight lines after asserting it; the fixture *design* is re-typed at
+`probe:361-366` while the header claims it is sourced, leaving open the exact drift that produced
+pass 1's mislabelled fixture, because `fixture_design()` lives in a test file nothing can source;
+the headline totals and the 3.87x ratio are printed by `cat()` with nothing cross-checking them
+across the four files they appear in, against a note that says the probe "asserts its own findings
+rather than printing them"; and M12 review D (75) already recorded that a top-level `on.exit()`
+never fires, fixed in `benchmarks/mutation-sensitivity.R` and never harvested, so M26 paid to
+rediscover it. Each of these is an argument for the same re-cut: an identity a script checks,
+not a sentence a reader checks.
+
+It also cleared the interception technique explicitly: the mutation is host-side only, restored by
+a function-frame `on.exit()`, and cannot reach a daemon, so M07's mocked-binding trap and M12's
+daemon-substitution lesson do not fire. Driving `dispatch_folds()` rather than replicating it
+satisfies M07 F2 rather than regressing it, and the wire section now asserts the leaning branch was
+taken, closing M23 F2's mutation-insensitivity concern for this script.
