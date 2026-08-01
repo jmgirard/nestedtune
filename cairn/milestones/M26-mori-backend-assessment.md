@@ -49,11 +49,15 @@ mirai-vs-`future` question.
       terms named as explaining it, **to the byte**, with the assertion naming
       each term. A single-stream measurement has no rounding, so the tolerance
       is zero.
-- [ ] AC4: Every published figure is backed by two independent oracles per GP2:
-      the closed-form lean-payload prediction from n/v/inner_v, asserted against
-      M23's own 5% band (`tests/testthat/test-parallel-payload.R:67`), and the
-      direct copy count from `count_data_copies()`. Neither reads the other's
-      arithmetic.
+- [ ] AC4: Every published figure records in the manifest the independent
+      oracles asserted for it, and the probe asserts that every figure not
+      marked `derived` carries at least two that share no arithmetic. The
+      closed-form lean-payload prediction is asserted against M23's own 5% band
+      (`tests/testthat/test-parallel-payload.R:67`) and copy counts come from
+      `count_data_copies()`; where neither mechanism reaches a figure a third is
+      used and named. A `derived` figure is one computed wholly from other
+      published figures, which inherit the oracles; the manifest marks which,
+      and a document may not rest a claim on a `derived` figure alone.
 - [ ] AC5: The probe writes every figure it publishes to a committed
       machine-readable manifest, so a document can cite a measured value rather
       than transcribe one. Development-state figures are marked in the manifest
@@ -85,9 +89,9 @@ mirai-vs-`future` question.
       assert they differ.
 - [x] T4: Derive the gap identity and assert it closes to the byte, naming each
       term in the assertion.
-- [ ] T5: Wire both oracles to every published figure; assert the closed form
+- [x] T5: Wire both oracles to every published figure; assert the closed form
       against M23's 5% band.
-- [ ] T6: Emit the manifest — every figure, its fixture, and an
+- [x] T6: Emit the manifest — every figure, its fixture, and an
       install-dependent flag.
 - [ ] T7: Run the profile's `verify` slot and `devtools::check()`.
 
@@ -147,6 +151,9 @@ mirai-vs-`future` question.
 - 2026-08-01: T3 — single stream 941,687 B lean / 103,119 B mori; sum-of-parts 941,837 / 103,139, asserted to differ so publishing the sum fails. Honest qualification the note must carry: the sum-vs-single-stream error is 150 B (0.0%) in the installed state, not the 290,626 B the re-cut recorded — that figure was shared srcfile structure between two srcref-laden closures, so cause 1 is subsumed by cause 2 and is not independently material once installed.
 - 2026-08-01: T4 — the gap explanation is now a ladder the script walks, one substitution per rung, rather than a sentence: `.f` wrapper to worker +11 B, `.x` blanked payload to shared-region payload +2,249 B, `.args` dropping `shared` and `worker` -840,828 B, telescoping to -838,568 B exactly (`identical()`, tolerance zero). The ladder is asserted to land on the modelled mori bundle, and the dominant rung is cross-checked against the frame serialized alone (840,828 vs 840,540 B, 0.0%).
 - 2026-08-01: `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615 on a quiet machine. An earlier run scored FAIL 1 at `test-parallel-interrupt.R:82` (`interrupted` FALSE) while the probe was running concurrently — that test kills its own process with SIGINT and its comments warn it races the pre-flight on a loaded machine, so the concurrent `R CMD INSTALL` plus two daemon pools is the likely cause. No `R/` or test file was touched by this milestone.
+- 2026-08-01: T5 — the criterion's named pair does not reach every figure, so two further oracles were built rather than the gap papered over: frame-size INVARIANCE for the shared-reference costs (a 4x frame shares for 268 B against 268 B, 0.0%, while by value it is 640,187 B), and `removeSource()` STRIP-INVARIANCE for the worker closure (byte count `identical()` after stripping, so the srcref-state walk cannot have missed srcrefs in a corner of the language tree). Both share no arithmetic with the copy count.
+- 2026-08-01: AMENDMENT (substantive, gated) — AC4 replaced. As planned it required the closed form and the copy count behind every published figure; two of nine figures are computed wholly from other published figures (`ratio_lean_over_mori` = lean/mori, `sum_of_parts_overstatement_bytes` = two measurements of one bundle subtracted) and any second mechanism for them reads the arithmetic that produced them. The replacement marks those `derived`, has them inherit their sources' oracles, and makes the bar script-checked: every non-derived figure asserts >= 2 independent oracles, and a derived figure must name published non-derived sources, so derivation cannot chain. User chose the amendment over dropping the two figures, the ratio being the headline a reader wants.
+- 2026-08-01: T6 — `benchmarks/mori-wire-manifest.json` emitted and committed: 9 figures (7 measured, 2 derived), each with its value, its fixture, its asserted oracles, an `install_dependent` flag and its derivation. Hand-written JSON rather than a jsonlite dependency; validated as parseable. Published: lean 941,687 B, mori 103,119 B, gap 838,568 B, ratio 9.13x, lean payload 98,346 B, shared reference 268 B, marginal 176 B, worker closure 524 B, sum-of-parts overstatement 150 B.
 - 2026-08-01: /milestone-implement resumed the existing branch after the re-cut. `origin/main` had moved (`3acd9e6`, a candidate row closed) and was merged in; the merge guard first refused `git merge main` reading the direction backwards, and the user approved retrying against the remote ref. The two tune#969 reply drafts were committed at the same gate — `benchmarks/tune-1188-mori-findings.md:7` cites both by path and neither was tracked (D19/78 pass 1, E18/55 pass 2, unfixed through three passes). PR #27 is reused rather than reopened, retitled at review.
 
 ## Decisions

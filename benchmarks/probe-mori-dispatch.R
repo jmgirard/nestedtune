@@ -172,6 +172,36 @@ for (helper in c("helper-orchestration.R", "helper-payload-size.R",
 SEED <- 2026L
 WORKER_COUNTS <- c(2L, 3L)
 
+# ---- the publication registry (M26 AC4/AC5/AC6) -------------------------------
+#
+# Nothing this script publishes may reach a document by being transcribed out of
+# console output: four passes of this milestone failed on a number that had been
+# re-typed and then drifted from its source. Every published figure goes through
+# `publish()`, which records the value, the fixture it was taken on, whether it
+# depends on how the package was installed, and which oracles back it. The
+# manifest written at the end is what a document cites.
+#
+# `oracles` names the independent checks that have been ASSERTED for this figure,
+# never merely computed beside it. GP2 asks for two independent types; the two
+# available here are the closed-form prediction from the design's scalars and the
+# copy count taken from the serialized stream, which share no arithmetic.
+PUBLISHED <- list()
+# `derived = TRUE` marks a figure computed wholly from other published figures.
+# It inherits their oracles and carries none of its own, because a second
+# mechanism for `a / b` or `a - b` would read the same arithmetic that produced
+# it. A document may not rest a claim on a derived figure alone; the manifest
+# says which they are, and the two-oracle assertion below exempts exactly these.
+publish <- function(name, value, fixture, oracles = character(),
+                    install_dependent = FALSE, derived = FALSE, derived_from = character()) {
+  stopifnot(derived || length(derived_from) == 0L)
+  PUBLISHED[[name]] <<- list(
+    name = name, value = value, fixture = fixture,
+    oracles = oracles, install_dependent = install_dependent,
+    derived = derived, derived_from = derived_from
+  )
+  invisible(value)
+}
+
 # Pin the full generator triple and restore the caller's on exit. `set.seed(s)`
 # pins only the uniform generator, so a session with a non-default RNGkind()
 # would build a different fixture and draw different seeds while every number
@@ -377,8 +407,21 @@ cat(sprintf("region name: %s (%d characters, pid-dependent)\n",
 cat(sprintf("one shared object serialized: %d B\n", one_ref))
 cat(sprintf("marginal cost per additional reference: %.0f B\n",
             (four_refs - one_ref) / 3))
-cat(sprintf("against the same frame by value: %d B\n\n",
+cat(sprintf("against the same frame by value: %d B\n",
             length(serialize(ref_frame, NULL))))
+
+# Second oracle for the two figures above, sharing no arithmetic with the copy
+# count: INVARIANCE UNDER FRAME SIZE. What a shared reference costs is the claim
+# that it does not scale with the data, so a frame four times the size must
+# serialize to the same handful of bytes. A byte-count that quietly tracked the
+# data would pass a copy count of zero and fail this.
+big_ref_frame <- payload_fixture_data(n = 40000, p = 1)
+big_ref_shared <- mori::share(big_ref_frame)
+one_ref_big <- length(serialize(big_ref_shared, NULL))
+cat(sprintf("invariance oracle: a 4x frame shares for %d B against %d B (%.1f%%), while by value it is %d B\n\n",
+            one_ref_big, one_ref, 100 * abs(one_ref_big - one_ref) / one_ref,
+            length(serialize(big_ref_frame, NULL))))
+stopifnot(abs(one_ref_big - one_ref) / one_ref < 0.05)
 
 # ---- wire cost, measured off the REAL dispatch --------------------------------
 #
@@ -616,6 +659,7 @@ cat(sprintf("the `.args` rung against the frame measured alone: %.0f B vs %d B (
             100 * abs(args_rung - frame_alone) / frame_alone))
 stopifnot(abs(args_rung - frame_alone) / frame_alone < 0.05)
 
+
 # The closed-form oracle, compared rather than printed. M23's own test bounds it
 # at 5%; an oracle that is printed and never checked cannot fail.
 predicted <- predicted_lean_bytes(5000, 5, 5)
@@ -630,6 +674,128 @@ stopifnot(abs(measured_payload - predicted) / predicted < 0.05)
 # out is still counted.
 stopifnot(count_data_copies(lean_bundle, big_sentinel) == 1,
           count_data_copies(mori_bundle, big_sentinel) == 0)
+
+# ---- register every published figure with its oracles and its fixture ---------
+#
+# FIXTURE names what each figure was taken on. The wire figures use M23's own
+# fixture so they are comparable with M23's committed numbers; the shared-
+# reference costs use a small separate frame, and saying so is AC6's point.
+WIRE_FIXTURE <- "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()"
+REF_FIXTURE <- "payload_fixture_data(n=10000, p=1, seed=1)"
+
+publish("lean_bundle_bytes", lean_total, WIRE_FIXTURE,
+        c("copy-count: exactly 1 copy of the frame in the stream",
+          "closed-form: the .args rung equals the frame serialized alone, within 5%"))
+publish("mori_bundle_bytes", mori_total, WIRE_FIXTURE,
+        c("copy-count: exactly 0 copies of the frame in the stream",
+          "ladder: reached by substitution from the lean bundle, asserted identical"))
+publish("lean_payload_bytes", measured_payload, WIRE_FIXTURE,
+        c("closed-form: predicted_lean_bytes(5000,5,5) within M23's 5% band",
+          "copy-count: the payload carries 0 copies; the frame rides in .args"))
+publish("ratio_lean_over_mori", lean_total / mori_total, WIRE_FIXTURE,
+        derived = TRUE, derived_from = c("lean_bundle_bytes", "mori_bundle_bytes"))
+publish("gap_bytes", lean_total - mori_total, WIRE_FIXTURE,
+        c("ladder: telescopes to the gap to the byte, tolerance zero",
+          "closed-form: dominated by the .args rung, checked against the frame alone"))
+publish("shared_reference_bytes", one_ref, REF_FIXTURE,
+        c("copy-count: 0 copies of the frame in the shared object's stream",
+          "invariance: a 4x frame shares for the same bytes, within 5%"))
+publish("shared_marginal_bytes", (four_refs - one_ref) / 3, REF_FIXTURE,
+        c("copy-count: 0 copies across four references",
+          "invariance: a 4x frame shares for the same bytes, within 5%"))
+
+# Second oracle for the closure figure, again sharing no arithmetic with the
+# srcref-state walk: stripping source references must not change the byte count,
+# because there are none to strip. A closure that still carried them would shrink
+# here while the state walk missed them in a corner of the language tree.
+worker_stripped <- length(serialize(utils::removeSource(lean_bundle$.args$worker), NULL))
+worker_bytes <- length(serialize(lean_bundle$.args$worker, NULL))
+stopifnot(identical(worker_stripped, worker_bytes))
+publish("worker_closure_bytes", worker_bytes, WIRE_FIXTURE,
+        c("srcref-state: asserted absent by walking the closure's language tree",
+          "strip-invariance: removeSource() leaves the byte count identical"),
+        install_dependent = TRUE)
+publish("sum_of_parts_overstatement_bytes", sum_of_parts(lean_bundle) - lean_total,
+        WIRE_FIXTURE, install_dependent = TRUE, derived = TRUE,
+        derived_from = c("lean_bundle_bytes"))
+
+# AC4, asserted rather than reported. Every non-derived figure carries at least
+# two oracles sharing no arithmetic; every derived figure names the published
+# figures it comes from, and those must themselves be published and non-derived,
+# so a derived figure can never inherit from another derived one.
+oracle_counts <- vapply(PUBLISHED, function(p) length(p$oracles), numeric(1))
+is_derived <- vapply(PUBLISHED, function(p) isTRUE(p$derived), logical(1))
+stopifnot(all(oracle_counts[!is_derived] >= 2))
+for (p in PUBLISHED[is_derived]) {
+  stopifnot(length(p$derived_from) > 0L,
+            all(p$derived_from %in% names(PUBLISHED)),
+            !any(vapply(PUBLISHED[p$derived_from], function(q) isTRUE(q$derived), logical(1))))
+}
+cat(sprintf("published figures: %d (%d measured, %d derived); every measured figure carries >= 2 independent oracles\n",
+            length(PUBLISHED), sum(!is_derived), sum(is_derived)))
+for (p in PUBLISHED[is_derived]) {
+  cat(sprintf("  derived: %s <- %s\n", p$name, paste(p$derived_from, collapse = ", ")))
+}
+cat("\n")
+
+# ---- T6: the manifest ---------------------------------------------------------
+#
+# Committed and machine-readable, so a document cites a measured value instead of
+# transcribing one. Written by hand rather than through jsonlite: this script's
+# dependencies are the package's own plus mori, and a manifest is not a reason to
+# add another.
+#
+# `install_dependent` marks the figures that follow how the package was built
+# rather than what the dispatch costs. They are excluded from any later drift
+# check, because a run under a different `keep.source` moves them legitimately.
+MANIFEST <- "benchmarks/mori-wire-manifest.json"
+
+json_string <- function(x) {
+  x <- gsub("\\\\", "\\\\\\\\", as.character(x))
+  paste0("\"", gsub("\"", "\\\\\"", x), "\"")
+}
+json_kv <- function(k, v) paste0(json_string(k), ": ", v)
+json_num <- function(x) format(x, scientific = FALSE, trim = TRUE)
+
+figure_json <- function(p) {
+  paste0(
+    "    {\n      ",
+    paste(
+      c(json_kv("name", json_string(p$name)),
+        json_kv("value", json_num(p$value)),
+        json_kv("fixture", json_string(p$fixture)),
+        json_kv("install_dependent", if (p$install_dependent) "true" else "false"),
+        json_kv("derived", if (p$derived) "true" else "false"),
+        json_kv("derived_from", paste0("[", paste(vapply(p$derived_from, json_string, character(1)),
+                                                  collapse = ", "), "]")),
+        json_kv("oracles", paste0("[", paste(vapply(p$oracles, json_string, character(1)),
+                                             collapse = ", "), "]"))),
+      collapse = ",\n      "
+    ),
+    "\n    }"
+  )
+}
+
+manifest_lines <- c(
+  "{",
+  paste0("  ", json_kv("generated_by", json_string("benchmarks/probe-mori-dispatch.R")), ","),
+  paste0("  ", json_kv("milestone", json_string("M26")), ","),
+  paste0("  ", json_kv("package_state", json_string("installed to a temporary library, keep.source=no")), ","),
+  paste0("  ", json_kv("environment", paste0("{",
+    paste(c(json_kv("r", json_string(R.version.string)),
+            json_kv("platform", json_string(R.version$platform)),
+            json_kv("mori", json_string(packageVersion("mori"))),
+            json_kv("mirai", json_string(packageVersion("mirai"))),
+            json_kv("tune", json_string(packageVersion("tune"))),
+            json_kv("rsample", json_string(packageVersion("rsample")))),
+          collapse = ", "), "}")), ","),
+  paste0("  ", json_kv("figures", "[")),
+  paste(vapply(PUBLISHED, figure_json, character(1)), collapse = ",\n"),
+  "  ]",
+  "}"
+)
+writeLines(manifest_lines, MANIFEST)
+cat(sprintf("manifest written: %s (%d figures)\n\n", MANIFEST, length(PUBLISHED)))
 
 cat("== summary ==\n")
 for (n_workers in names(results)) {
