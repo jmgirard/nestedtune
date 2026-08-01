@@ -74,10 +74,10 @@ shape → M27.
 
 - [x] T1: Install `mori` 0.2.2; read its source, docs, and tune#1188; record the
       transfer mechanism and whether it has any RNG surface at all.
-- [ ] T2: Write `benchmarks/probe-mori-dispatch.R` — a standalone fold-dispatch
+- [x] T2: Write `benchmarks/probe-mori-dispatch.R` — a standalone fold-dispatch
       replica sending one design's folds by value and via `mori`, at ≥ 2 worker
       counts, RNG kind pinned as `set_fold_seed()` does (`R/nested-tune-grid.R:620`).
-- [ ] T3: Run the probe; record identity results and wire bytes, counting copies
+- [x] T3: Run the probe; record identity results and wire bytes, counting copies
       by `grepRaw()` as M23 did rather than inferring them from a total.
 - [ ] T4: Map findings onto D-011, D-018, M23's numbers, and the two adjacent
       candidate rows; state the same-machine consequence.
@@ -94,6 +94,9 @@ shape → M27.
 - 2026-07-31: plan gate chose a standalone probe replica over patching `R/parallel.R` on the branch and reverting, because the milestone stays research-only and a half-reverted runtime edit is the worse failure; falsified by the replica and `dispatch_folds()` being shown to differ in a way that changes the identity result.
 - 2026-07-31: T1 — mori 0.2.2 is 5 R functions, each a bare `.Call()` into 2,245 lines of C (`share`/`map_shared`/`is_shared`/`shared_name`/`prune_shared`); transport is POSIX shared memory behind ALTREP, and an ALTREP serialization hook makes a shared object travel as its ~30-byte region name. No RNG surface: `unif_rand|norm_rand|GetRNGstate|PutRNGstate|R_unif|rand|srand|random` match nothing in `src/*.c` or `src/*.h`, and no R-level function is stochastic.
 - 2026-07-31: T1 — `share()` succeeded in-process on every object this package dispatches, `identical()` holding each time, contrary to the doc's "environments, closures, language objects returned unchanged": data.frame 24,259 B -> 308 B, rsplit 25,879 -> 272, inner rset 77,932 -> 547, whole design 311,556 -> 744, workflow 1,532 -> 255 (serialized lengths, 500x6 fixture, v=3/v=3). Cross-process fidelity is unproven by this and is what T2/T3 must settle.
+- 2026-07-31: T2 — `benchmarks/probe-mori-dispatch.R` runs three arms over one design/workflow/grid/seed: the package's own `dispatch_folds()` serial branch, its parallel branch, and a mori replica. Only the third is hand-rolled; all three return `nested_fold_fit()` records, so `identical()` compares like with like. Engine is ranger, never lm, per M02's vacuity trap. Three stated differences from `dispatch_folds()`: no leaning (the point — mori needs none), no pre-flight/cancellation guard, no `record_dispatch()` seam.
+- 2026-07-31: T3 — identity holds: mori-dispatched fold records are `identical()` to the serial reference at 2 and 3 workers, as is the real by-value path. Wire cost per fold, data-bearing terms only, M23's 5000x21 v=5/v=3 fixture: fat 3,427,624 B / 4 copies, lean 65,744 + 840,540 = 906,284 B / 1 copy, mori 67,253 B / 0 copies — mori is 13.5x leaner than M23's lean path and puts no copy of the data on the wire at all. Figures exclude the workflow/grid/metrics/worker closure, which ride in `.args` identically on all three routes and cancel; that exclusion is why these do not sum to M23's committed 5,783,645 B.
+- 2026-07-31: T3 — the mori route is NOT byte-reproducible (3,525 vs 3,529 across runs): a shared object serializes as its region name and the name encodes the creating process. The copy count is exact on every route, which is why it carries the claim. Recorded in the probe rather than left for a reader to trip over.
 
 ## Decisions
 
