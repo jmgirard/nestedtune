@@ -1,91 +1,95 @@
-# M26: The backend question has a measured answer before the design settles
+# M26: The wire figure survives re-derivation
 
-- **Status:** in-progress
+- **Status:** planned
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
-- **Principles touched:** IP2, GP4
+- **Principles touched:** IP2, GP2, GP4
 - **Branch/PR:** `m26-mori-backend-assessment` · https://github.com/jmgirard/nestedtune/pull/27
 
 ## Goal
 
-Before the August call, we know by measurement whether `mori` changes the
-reproducibility and dispatch story this package's parallel path rests on.
+The per-fold wire comparison between the current dispatch and a mori-shaped one
+is measured as mirai actually serializes it, in the state a user actually runs,
+and the probe asserts its own headline rather than printing it.
 
 ## Scope
 
-**In:** `mori` 0.2.2 (CRAN, "share R objects across processes on the same
-machine via a shared memory name"), proposed for tune in tune#1188 with a
-measured 18.9 GB → 4.23 GB peak-RSS drop on `fit_resamples()`. Read its source
-and docs and record what it does and does not change about how an object
-reaches a mirai daemon. Measure serial/parallel identity and per-fold wire cost
-through a standalone probe. Map the findings onto the seed contract (D-011),
-the backend choice (D-018), and M23's measured payload numbers. Record the
-same-machine boundary. Commit a synthesis note; draft the maintainer-facing
-material.
+**In:** Re-cut after three returns; both thrash triggers fired and this is the
+measurement half of the split. The apparatus stays — the probe captures what
+`dispatch_folds()` hands `mirai_map()` by interception — and what changes is
+what is measured and what is asserted. Four failures of one shape (a published
+figure or its explanation not surviving re-derivation) are answered by pinning
+identities a script checks: the single-stream serialization mirai really
+performs, the installed-package state, a gap identity that closes to the byte,
+two oracles per figure, and a machine-readable manifest so no document
+transcribes a number by hand.
 
-**Out:** Adopting `mori` — any `DESCRIPTION` change is its own dependency gate
-and D-entry (tracking-rules), so it becomes a ROADMAP candidate here. Changing
-`R/parallel.R`'s dispatch path → deferred until adoption is decided.
-Benchmarking mirai against `future` or other schedulers → the multi-level
-parallelism question, which stays for the call. Anything about the outer loop's
-shape → M27.
+**Out:** The note, the maintainer draft, the lessons harvest, the handoff and
+the M23 candidate row → M29, which consumes this milestone's manifest. Adopting
+`mori` — a dependency gate and D-entry of its own. Changing `R/`. The
+mirai-vs-`future` question.
 
 ## Acceptance criteria
 
-- [ ] AC1: A committed synthesis note at
-      `cairn/references/mori-backend-assessment.md`, authored from
-      `templates/synthesis-note.md`, records what `mori` does and does not
-      change about how an R object reaches a mirai daemon, pinned to `mori`
-      0.2.2 and `mirai` 2.7.2, carrying a Provenance block and its `INDEX.md`
-      bullet, with every claim about this repo's own state dated
-      `— observed YYYY-MM-DD`.
-- [ ] AC2: A standalone probe under `benchmarks/` — reimplementing the
-      fold-dispatch shape rather than editing `R/` — sends one nested design's
-      folds to a mirai pool both through `mori` and through the existing
-      by-value path, at ≥ 2 worker counts under a pinned RNG kind, and the note
-      records whether the two runs are `identical()` to serial. The finding
-      counts whichever way it comes out, including `mori` touching no RNG
-      surface at all; the note states which of the probe's shape differs from
-      `dispatch_folds()` (`R/parallel.R:190`).
-- [ ] AC3: The note states, for each of D-011's two-kind-pinned-seeds contract,
-      D-018's backend choice, and M23's measured per-fold wire cost
-      (25,714,635 B → 5,783,645 B on a 5-fold 5,000×21 fixture), whether `mori`
-      leaves the premise untouched or would change it, each pinned to the
-      D-entry or `file:line` it rests on.
-- [ ] AC4: The note records `mori`'s same-machine boundary and names its
-      consequence for the ROADMAP candidate row on probing remote mirai daemon
-      pools, and for the `mirai::everywhere()` preload row that answers the same
-      question a third way.
-- [ ] AC5: An unposted draft for the maintainer exists under `benchmarks/`,
-      marking each claim as measured here or inferred.
-- [ ] AC6: The `verify` slot of `cairn/PROFILE.md` is clean.
+- [ ] AC1: The probe publishes per-fold wire cost as **one** serialization of
+      the object mirai hands `request()`, captured from the intercepted call
+      rather than assembled from a named shape (mirai wraps `.f`/`.x`/`.args`
+      with `._expr_.`, `._globals_.` and more, so a hardcoded member list goes
+      stale). It computes the sum of separately-serialized parts as well and
+      asserts the two differ, so publishing the sum fails rather than passes.
+- [ ] AC2: Figures are measured against the package **installed to a temporary
+      library**, not modelled from captured closures: the probe builds and
+      installs, loads from there, and captures. It asserts source references are
+      absent from the captured closures, so a run that silently measured the
+      development state fails. A `pkgload::load_all()` figure may be shown
+      beside it, labelled development-only.
+- [ ] AC3: The probe asserts a closing identity for its own headline — the
+      difference between the two routes' published totals equals the sum of the
+      terms named as explaining it, **to the byte**, with the assertion naming
+      each term. A single-stream measurement has no rounding, so the tolerance
+      is zero.
+- [ ] AC4: Every published figure is backed by two independent oracles per GP2:
+      the closed-form lean-payload prediction from n/v/inner_v, asserted against
+      M23's own 5% band (`tests/testthat/test-parallel-payload.R:67`), and the
+      direct copy count from `count_data_copies()`. Neither reads the other's
+      arithmetic.
+- [ ] AC5: The probe writes every figure it publishes to a committed
+      machine-readable manifest, so a document can cite a measured value rather
+      than transcribe one. Development-state figures are marked in the manifest
+      as install-dependent and excluded from any later drift check.
+- [ ] AC6: Each published measurement names the fixture it was taken on, and the
+      probe emits that attribution into the manifest beside the figure.
+- [ ] AC7: The `verify` slot of `cairn/PROFILE.md` is clean and
+      `devtools::check()` passes.
 
 ## Coverage
 
-- AC1 → T1, T5
-- AC2 → T2, T3
-- AC3 → T4, T5
-- AC4 → T1, T4
+- AC1 → T2, T3
+- AC2 → T1, T3
+- AC3 → T4
+- AC4 → T5
 - AC5 → T6
-- AC6 → T7
+- AC6 → T6
+- AC7 → T7
 
 ## Tasks
 
-- [x] T1: Install `mori` 0.2.2; read its source, docs, and tune#1188; record the
-      transfer mechanism and whether it has any RNG surface at all.
-- [x] T2: Write `benchmarks/probe-mori-dispatch.R` — a standalone fold-dispatch
-      replica sending one design's folds by value and via `mori`, at ≥ 2 worker
-      counts, RNG kind pinned as `set_fold_seed()` does (`R/nested-tune-grid.R:620`).
-- [x] T3: Run the probe; record identity results and wire bytes, counting copies
-      by `grepRaw()` as M23 did rather than inferring them from a total.
-- [x] T4: Map findings onto D-011, D-018, M23's numbers, and the two adjacent
-      candidate rows; state the same-machine consequence.
-- [x] T5: Author the synthesis note from `templates/synthesis-note.md`; add its
-      `INDEX.md` bullet.
-- [x] T6: Draft the maintainer-facing note under `benchmarks/`, unposted.
-- [x] T7: Run the profile's `verify` slot; add a ROADMAP candidate row for
-      adopting `mori` if the findings warrant one.
+- [ ] T1: Add a temp-library install step to the probe (`R CMD INSTALL` to a
+      throwaway lib, load from there), and assert source references are absent
+      from the captured closures.
+- [ ] T2: Change the capture to record the object mirai hands `request()`,
+      rather than reassembling `.f`/`.x`/`.args`; read mirai 2.7.2's
+      `do_mirai()` to find the interception point that yields it.
+- [ ] T3: Publish the single-stream total; compute the sum-of-parts too and
+      assert they differ.
+- [ ] T4: Derive the gap identity and assert it closes to the byte, naming each
+      term in the assertion.
+- [ ] T5: Wire both oracles to every published figure; assert the closed form
+      against M23's 5% band.
+- [ ] T6: Emit the manifest — every figure, its fixture, and an
+      install-dependent flag.
+- [ ] T7: Run the profile's `verify` slot and `devtools::check()`.
 
 ## Work log
 
@@ -129,6 +133,13 @@ shape → M27.
 - 2026-07-31: rework 2 — E5/E6 surfaced a finding about M23's own record rather than this milestone's: M23's committed 5,783,645 B never counted `.f`, and the closure grew from the 202,363 B at `R/parallel.R:246` to 291,491 B measured now, `R/parallel.R` having gone from 26,759 B at M23 to 39,066 B at M24. The note states both rather than smoothing the non-reconciliation, and the stale figure is left for its own candidate row rather than corrected here.
 - 2026-07-31: rework 2 verified — probe exit 0 with all assertions passing including the two new ones; `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `cairn_validate` exit 0. Status back to review.
 - 2026-07-31: review RETURNED the milestone a third time. AC3 fails again: the note's gap explanation accounts for 840,540 B of an actual 1,129,658 B gap because the lean route carries the worker closure twice (`.f` wrapper plus `.args$worker`) where the modelled mori row carries it once. Third appearance of the D5/E1 defect, each time fixed in the table and left in the prose. The note also claims a ROADMAP filing that does not exist. Thrash triggers (a) third return and (b) same criterion by a new mechanism of one shape BOTH fire; routing to `/milestone-plan` per (a), carrying (b)'s diagnosis.
+- 2026-08-01: RE-CUT by /milestone-plan after three returns; both thrash triggers had fired. Tasks and criteria are superseded wholesale and every criterion is unticked. The apparatus survives — capture what `dispatch_folds()` really hands `mirai_map()` — and what changes is what is measured and asserted.
+- 2026-08-01: the re-cut's cause, found by the pass-3 diff lens and verified by execution: summing separately-serialized `.f`/`.x`/`.args` double-counts 290,626 B of shared srcfile structure. Sum 1,523,499 against one serialization 1,232,873. mirai performs ONE serialization per task, so every figure published across three passes measured an object mirai never sends.
+- 2026-08-01: second cause, also verified: with source references stripped (the installed state `install.packages()` produces by default), the lean route is 941,437 B. Every ratio published so far was a `pkgload::load_all()` development artifact presented as the adoption case.
+- 2026-08-01: criteria audit ([O], fresh context) over the combined 11-criterion draft returned eleven findings. Taken directly: AC1's bundle shape was hardcoded and wrong — mirai wraps `.f`/`.x`/`.args` inside `list(._expr_., ._globals_., ...)` before `request()`, so the criterion now pins the identity rather than the members; AC1's assertion was a tautology, replaced with sum-vs-single-stream inequality; AC2's "assert the totals differ" was satisfiable only by an empirical outcome that depends on session `keep.source`, replaced with asserting srcref STATE; AC3's tolerance had no stater, now zero to the byte since a single-stream measurement does not round. Split and install-mechanism and oracle questions went to the gate.
+- 2026-08-01: plan gate chose measuring an actual temp-library install over `removeSource()` on captured closures, because a post-hoc model of the installed state is the reconstruct-then-publish shape that failed on passes 1 and 2; falsified by the install step proving unreproducible across platforms while the stripped model agrees with it.
+- 2026-08-01: plan gate chose restoring a second oracle over recording its omission as a GP2 trade, because four passes have now shown single-mechanism wire figures failing; falsified by the two oracles agreeing trivially because one is derived from the other.
+- 2026-08-01: plan gate chose splitting the write-up into M29 over one milestone, because both sizing tripwires fired; falsified by M29 proving unable to write anything without re-opening the measurement.
 
 ## Decisions
 
