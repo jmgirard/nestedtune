@@ -32,24 +32,24 @@ mirai-vs-`future` question.
 
 ## Acceptance criteria
 
-- [ ] AC1: The probe publishes per-fold wire cost as **one** serialization of
+- [x] AC1: The probe publishes per-fold wire cost as **one** serialization of
       the object mirai hands `request()`, captured from the intercepted call
       rather than assembled from a named shape (mirai wraps `.f`/`.x`/`.args`
       with `._expr_.`, `._globals_.` and more, so a hardcoded member list goes
       stale). It computes the sum of separately-serialized parts as well and
       asserts the two differ, so publishing the sum fails rather than passes.
-- [ ] AC2: Figures are measured against the package **installed to a temporary
+- [x] AC2: Figures are measured against the package **installed to a temporary
       library**, not modelled from captured closures: the probe builds and
       installs, loads from there, and captures. It asserts source references are
       absent from the captured closures, so a run that silently measured the
       development state fails. A `pkgload::load_all()` figure may be shown
       beside it, labelled development-only.
-- [ ] AC3: The probe asserts a closing identity for its own headline — the
+- [x] AC3: The probe asserts a closing identity for its own headline — the
       difference between the two routes' published totals equals the sum of the
       terms named as explaining it, **to the byte**, with the assertion naming
       each term. A single-stream measurement has no rounding, so the tolerance
       is zero.
-- [ ] AC4: Every published figure records in the manifest the independent
+- [x] AC4: Every published figure records in the manifest the independent
       oracles asserted for it, and the probe asserts that every figure not
       marked `derived` carries at least two that share no arithmetic. The
       closed-form lean-payload prediction is asserted against M23's own 5% band
@@ -58,13 +58,13 @@ mirai-vs-`future` question.
       used and named. A `derived` figure is one computed wholly from other
       published figures, which inherit the oracles; the manifest marks which,
       and a document may not rest a claim on a `derived` figure alone.
-- [ ] AC5: The probe writes every figure it publishes to a committed
+- [x] AC5: The probe writes every figure it publishes to a committed
       machine-readable manifest, so a document can cite a measured value rather
       than transcribe one. Development-state figures are marked in the manifest
       as install-dependent and excluded from any later drift check.
-- [ ] AC6: Each published measurement names the fixture it was taken on, and the
+- [x] AC6: Each published measurement names the fixture it was taken on, and the
       probe emits that attribution into the manifest beside the figure.
-- [ ] AC7: The `verify` slot of `cairn/PROFILE.md` is clean and
+- [x] AC7: The `verify` slot of `cairn/PROFILE.md` is clean and
       `devtools::check()` passes.
 
 ## Coverage
@@ -448,3 +448,42 @@ names a property the figure does not have (F6), a `stopifnot` that cannot fail d
 have now been spent, and each fixed the previous layer while introducing the next at one remove from
 the numbers. The plan gate's recorded alternatives are all about how to *measure*; none is about how
 the claims around the measurement are kept true, which is what has failed four times.
+
+### Fifth pass, 2026-08-01 — after the unblock and rework 3
+
+Gates: `devtools::check()` **Status: OK** (0 errors / 0 warnings / 0 notes); `devtools::test()`
+FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `devtools::document()` no diff; `cairn_validate` exit 0, all
+hard checks PASS (advisories: M29's inherited sizing tripwire, the 18 pre-existing shelf-wide
+staleness lines); probe exit 0 with every assertion passing and every figure re-derived
+byte-identically — the manifest diff against pass 4 is exactly the four intended flag flips plus one
+reworded oracle string, no value moved.
+
+- **AC1 — verified.** Single-stream capture unchanged from pass 4 (bundle intercepted at
+  `request()`, member shape asserted, probe:543-549). The sum-vs-differ assertion is now
+  `sum_of_parts(bundle) > total` on both rows (probe:599-602); the pass-4 type tautology is gone.
+  Falsifiability verified by execution this pass: `941687L > 941687` evaluates FALSE, so the
+  `stopifnot` aborts when the two agree — the assertion has a failing state and the measured
+  overstatement is 150 B lean / 20 B mori.
+- **AC2 — verified.** Temp-library install (`R CMD INSTALL --with-keep.source=no`,
+  `R_KEEP_PKG_SOURCE=no`) unchanged from pass 4; this run's log: "source references in the captured
+  closures: .f FALSE, .args$worker FALSE", asserted at probe:565. Detector mutation-tested at pass 4.
+- **AC3 — verified, strength as recorded at pass 4.** The telescoping identity closes to the byte
+  naming each rung; the falsifiable half is `mori_bundle_independent` (member-by-member in mirai's
+  order, `identical()` to both the ladder endpoint and the substituted bundle, probe:665-669) plus
+  the `.args`-rung cross-check (840,828 vs 840,540 B, 0.0%).
+- **AC4 — verified.** Every manifest oracle string now maps to an assertion the probe runs, checked
+  string-by-string this pass: lean bundle (copy-count probe:709 == 1; `.args` rung vs frame :694),
+  mori bundle (copy-count :710 == 0; ladder identity :667-668), lean payload (closed form :704, 96,000
+  vs 98,346, 2.4%, inside M23's 5% band; payload counted alone :711 == 0), gap (ladder :683; rung
+  cross-check :694), shared reference and marginal (copy-counts :404-406 == 0 single and across four
+  refs, new this pass; 4x invariance :430, 268 vs 268 B, 0.0%), worker closure (srcref walk :565;
+  strip-invariance :747). Each pair shares no arithmetic. The two derived figures name only
+  non-derived published sources, asserted probe:763-767.
+- **AC5 — verified.** Manifest committed and machine-readable (parsed with jsonlite this pass: 9
+  figures, 7 measured, 2 derived). The install-dependent marks now cover every figure whose value
+  embeds the worker closure — the four headline figures joined `worker_closure_bytes` and the
+  overstatement; `lean_payload_bytes` and the two shared-reference figures, which carry no closure,
+  stay drift-checkable.
+- **AC6 — verified.** Every figure names its fixture; the two fixture strings separate the wire
+  figures (M23's `fixture_design()`) from the shared-reference ones (10000x1 frame).
+- **AC7 — verified.** Gates as above, run fresh this session.
