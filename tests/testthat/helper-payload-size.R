@@ -63,6 +63,26 @@ payload_fixture_data <- function(n = 5000, p = 20, seed = 1) {
   d
 }
 
+# The design M23's criteria name, built once for every consumer.
+#
+# It lived in test-parallel-payload.R until M26. A test file is sourced by
+# testthat and by nothing else, so `benchmarks/probe-mori-dispatch.R` could not
+# call it and re-typed the same five lines by hand -- while its header claimed
+# the fixture was "defined once, in the test helpers, and sourced here rather
+# than copied" and the assessment note attributed the published figures to
+# `fixture_design()` by name. The two copies agreed when M26 checked, and
+# nothing would have said so had they stopped agreeing; a mislabelled fixture is
+# what failed M26's first review pass. Here, both consumers call one definition.
+fixture_design <- function(constructor = nested_resamples, v = 5, inner_v = 5,
+                           n = 5000, p = 20) {
+  d <- payload_fixture_data(n = n, p = p)
+  set.seed(2)
+  list(
+    data = d,
+    design = constructor(d, rsample::vfold_cv(v = v), rsample::vfold_cv(v = inner_v))
+  )
+}
+
 # A workflow whose formula carries an EMPTY environment.
 #
 # A formula captures the environment it was written in, and R serializes an

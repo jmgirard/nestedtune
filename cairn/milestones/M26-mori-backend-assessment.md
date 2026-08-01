@@ -1,6 +1,6 @@
 # M26: The wire figure survives re-derivation
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -154,6 +154,8 @@ mirai-vs-`future` question.
 - 2026-08-01: T5 — the criterion's named pair does not reach every figure, so two further oracles were built rather than the gap papered over: frame-size INVARIANCE for the shared-reference costs (a 4x frame shares for 268 B against 268 B, 0.0%, while by value it is 640,187 B), and `removeSource()` STRIP-INVARIANCE for the worker closure (byte count `identical()` after stripping, so the srcref-state walk cannot have missed srcrefs in a corner of the language tree). Both share no arithmetic with the copy count.
 - 2026-08-01: AMENDMENT (substantive, gated) — AC4 replaced. As planned it required the closed form and the copy count behind every published figure; two of nine figures are computed wholly from other published figures (`ratio_lean_over_mori` = lean/mori, `sum_of_parts_overstatement_bytes` = two measurements of one bundle subtracted) and any second mechanism for them reads the arithmetic that produced them. The replacement marks those `derived`, has them inherit their sources' oracles, and makes the bar script-checked: every non-derived figure asserts >= 2 independent oracles, and a derived figure must name published non-derived sources, so derivation cannot chain. User chose the amendment over dropping the two figures, the ratio being the headline a reader wants.
 - 2026-08-01: T6 — `benchmarks/mori-wire-manifest.json` emitted and committed: 9 figures (7 measured, 2 derived), each with its value, its fixture, its asserted oracles, an `install_dependent` flag and its derivation. Hand-written JSON rather than a jsonlite dependency; validated as parseable. Published: lean 941,687 B, mori 103,119 B, gap 838,568 B, ratio 9.13x, lean payload 98,346 B, shared reference 268 B, marginal 176 B, worker closure 524 B, sum-of-parts overstatement 150 B.
+- 2026-08-01: review RETURNED the milestone a fourth time. AC1 unverified (its assertion is a type tautology, `identical()` on an integer against a double, so it cannot fail); AC4 unverified (three manifest oracle strings name assertions that do not exist); AC5 unverified (the four headline figures embed the worker closure and are marked not install-dependent). Gates clean throughout and the manifest regenerated with a zero diff. Trigger (a) holds at return 4 with a re-cut already spent; trigger (b) fires a third time with a changed diagnosis — the measurement is sound and what now fails is claims that do not correspond to what was checked.
+- 2026-08-01: review fixed F15/P1 (80) in place: `fixture_design()` moved from `test-parallel-payload.R` to `helper-payload-size.R` so the probe can source it instead of re-typing the design, and the renumbered budgeted wait was corrected in `helper-time-budget.R`. Suite green, 1615 passing. Also added `mori_bundle_independent`, a member-by-member construction that gives AC3's identity a half that can actually fail.
 - 2026-08-01: T7 — `devtools::document()` no diff; `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes in 4m 0.6s; `cairn_validate` exit 0, all hard checks PASS. Probe exits 0 with every assertion passing. Status to review. Advisory not owned by this milestone: `sizing (split tripwires)` flags M29 at 8 acceptance criteria against the 7 tripwire, inherited from the re-cut plan and amendable only through M29's own plan gate.
 - 2026-08-01: /milestone-implement resumed the existing branch after the re-cut. `origin/main` had moved (`3acd9e6`, a candidate row closed) and was merged in; the merge guard first refused `git merge main` reading the direction backwards, and the user approved retrying against the remote ref. The two tune#969 reply drafts were committed at the same gate — `benchmarks/tune-1188-mori-findings.md:7` cites both by path and neither was tracked (D19/78 pass 1, E18/55 pass 2, unfixed through three passes). PR #27 is reused rather than reopened, retitled at review.
 
@@ -351,3 +353,92 @@ a function-frame `on.exit()`, and cannot reach a daemon, so M07's mocked-binding
 daemon-substitution lesson do not fire. Driving `dispatch_folds()` rather than replicating it
 satisfies M07 F2 rather than regressing it, and the wire section now asserts the leaning branch was
 taken, closing M23 F2's mutation-insensitivity concern for this script.
+
+### Fourth pass, 2026-08-01 — returned again (return 4). Trigger (a) holds; trigger (b) fires a third time.
+
+Gates all clean for the fourth time: `devtools::check()` **Status: OK** (0/0/0, 4m 9.6s);
+`devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `cairn_validate` exit 0; `document()` no
+diff; probe exit 0. Re-running the probe regenerated `benchmarks/mori-wire-manifest.json` with a
+**zero diff** — every figure re-derived identically, which is the one thing the re-cut set out to buy
+and did buy.
+
+**AC1 — NOT verified.** The criterion requires the probe to compute the sum of separately-serialized
+parts "and assert the two differ, so publishing the sum fails rather than passes". The assertion is
+`!identical(lean_total, sum_of_parts(lean_bundle))` at `probe:593-596`. `wire_bytes()` returns an
+**integer** and `sum_of_parts()` a **double**, and `identical()` is type-strict, so the expression is
+unconditionally TRUE whatever the byte counts are — verified by execution (`identical(100L, 100)` is
+FALSE). The criterion names its own failure mode and the assertion has no failing state. This is the
+second tautology to occupy AC1's slot: the re-cut's own criteria audit recorded replacing a
+tautology here, and the replacement is one too.
+**AC2 — verified.** The probe installs the working tree to a temporary library
+(`R CMD INSTALL --with-keep.source=no`, `R_KEEP_PKG_SOURCE=no` set explicitly) and asserts srcref
+state on both captured closures. The detector was mutation-tested at review: TRUE on a closure parsed
+with `keep.source = TRUE`, FALSE with it off and FALSE after `removeSource()`, so the assertion is
+not vacuous.
+**AC3 — verified, with its strength stated.** The probe asserts the gap decomposition closes to the
+byte, naming each term. Recorded plainly because three passes died here: the telescoping assertion
+**cannot fail** — the rungs chain, so the deltas sum to the gap as arithmetic. Review added a
+falsifiable companion (`mori_bundle_independent`, built member-by-member in mirai's order rather than
+by substitution) and that is what now carries the criterion, together with the `.args`-rung
+cross-check against the frame serialized alone.
+**AC4 — NOT verified.** The amended criterion requires the manifest to record "the independent
+oracles **asserted** for it", and the registry's own comment repeats that oracles are "checks that
+have been ASSERTED for this figure, never merely computed beside it". `count_data_copies()` is called
+three times in the whole script and asserted only on `lean_bundle` and `mori_bundle`
+(`probe:703-704`). Three manifest oracle strings therefore describe assertions that do not exist:
+`lean_payload_bytes` oracle 2, `shared_reference_bytes` oracle 1, `shared_marginal_bytes` oracle 1.
+The script's own AC4 check counts strings rather than assertions, so it passes over the gap.
+**AC5 — NOT verified.** The criterion requires development-state figures marked install-dependent.
+`lean_bundle_bytes`, `mori_bundle_bytes`, `gap_bytes` and `ratio_lean_over_mori` all contain the
+worker closure — the figure this milestone measured at 524 B installed against 291,491 B under
+`load_all()` — and all four are marked `install_dependent: false`, while `worker_closure_bytes`
+alone is marked true. The four headline figures are the install-dependent ones.
+**AC6 — verified.** Every manifest figure names a fixture; the two fixture strings distinguish the
+wire figures from the shared-reference ones.
+**AC7 — verified.** Gates as above.
+
+Three lenses again, deduplicated to 47 findings, scored by a fourth agent that generated none.
+**9 scored >= 80; 2 of those were fixed during this pass and 7 remain open.**
+
+Actioned and open: F1 (92) AC1's assertion is a type tautology · F24 (92) the ROADMAP row, the
+assessment note and the maintainer draft all publish 1,523,499 / 393,841 / 3.87x / 291,491 against
+this same diff's manifest at 941,687 / 103,119 / 9.13x / 524 · F25 (88) the ROADMAP row reproduces
+verbatim the "the closure is common and cancels" sentence pass 3 disproved · F8 (86) three manifest
+oracles were never asserted · F4 (85) `stopifnot(identical(body(patched), body(orig)))` cannot fail,
+because `environment<-` never touches a body, yet is described as a staleness guard · F26 (85) the
+note's P10 asserts a fixed-width 19-character region name while the probe in the same diff measures
+it pid-dependent at 19 and 20 · F6 (82) the four headline figures' install-dependence flags are
+inverted.
+
+Fixed during this pass: F15/P1 (80) the fixture design was re-typed inline against a header claiming
+it was sourced — pass 1's exact failure mechanism, raised by the pass-3 lens and never triaged.
+`fixture_design()` moved from `test-parallel-payload.R` (a test file nothing can source) to
+`helper-payload-size.R`, and the probe now calls it, so the suite's design and the published figures
+are one definition. The move renumbered a budgeted wait and staled a time-budget ledger row, exactly
+as LESSONS records from M16/M21; the ledger row was renumbered in the same pass and the suite is
+green.
+
+Logged below threshold, 38 findings, the nearest: F7 (78) `sum_of_parts_overstatement_bytes` is
+marked derived but its value uses an unpublished quantity · F11 (78) the `.args`-rung 5% band is
+~42,000 B against a 524 B term, too slack to detect what it guards, and is mislabelled "closed-form" ·
+F17c (78) the probe measures with base `serialize()` (XDR) rather than nanonext's `send_mode = 1L`
+encoder, and nothing checks they agree · F27 (78) "the WIRE section hand-rolls nothing at all" is
+still false and still stale · F13 (76) the published per-fold cost is fold 1 only and nothing says so ·
+F20 (68) the manifest records no package version, SHA or timestamp, so a drift check cannot tell
+drift from a different revision · F30 (68) six work-log claims describe tautological assertions as
+real checks · F32 (65) the manifest's 175.6667 is transcribed as 176 in the work log and 175 in the
+note.
+
+**Trigger (a) holds — this is return 4, past the third-return threshold.** The work log already
+records a re-cut spent on this milestone, so re-plan-or-split is the move that just failed and is not
+offered again.
+
+**Trigger (b) fires a third time, and the diagnosis has changed.** The measurement is now sound: the
+figures re-derive, the manifest regenerates byte-identically, and the fixture is sourced rather than
+retyped. What fails now is a different layer of the same shape — **claims that do not correspond to
+what was checked**. An assertion string in a manifest with no assertion behind it (F8), a flag that
+names a property the figure does not have (F6), a `stopifnot` that cannot fail described as a guard
+(F1, F4), and three documents publishing figures the same commit refutes (F24, F25, F26). Four passes
+have now been spent, and each fixed the previous layer while introducing the next at one remove from
+the numbers. The plan gate's recorded alternatives are all about how to *measure*; none is about how
+the claims around the measurement are kept true, which is what has failed four times.

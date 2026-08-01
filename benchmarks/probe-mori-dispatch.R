@@ -521,13 +521,14 @@ cat("mirai serializes ONE bundle per task. The lean row is CAPTURED at the\n")
 cat("`request()` call dispatch_folds() reaches; the mori row is MODELLED by\n")
 cat("substituting into that same captured bundle.\n\n")
 
-big_data <- payload_fixture_data()
-set.seed(2)
-big_design <- nested_resamples(
-  big_data,
-  outside = rsample::vfold_cv(v = 5),
-  inside = rsample::vfold_cv(v = 5)
-)
+# `fixture_design()` itself, not five lines that look like it. It was re-typed
+# here until M26 review, because it lived in a test file this script cannot
+# source; it now lives in helper-payload-size.R, which this script does source,
+# so the design the suite asserts against and the design these figures are taken
+# on are one definition and cannot drift apart.
+big_fixture <- fixture_design(v = 5, inner_v = 5)
+big_data <- big_fixture$data
+big_design <- big_fixture$design
 big_wf <- payload_fixture_workflow()
 big_sentinel <- sentinel_of(big_data)
 big_payloads <- lapply(seq_len(nrow(big_design)), function(i) {
@@ -632,10 +633,34 @@ for (rung in list(
   ladder[[rung$name]] <- before - wire_bytes(step)
 }
 
-# The ladder must land exactly on the modelled mori bundle, not merely near it.
-# Without this the deltas would telescope to whatever the last rung produced and
-# the identity would be true of the wrong destination.
-stopifnot(identical(wire_bytes(step), mori_total))
+# Two assertions here, and they are NOT of equal strength. Saying so, because
+# three passes of this milestone died on a claim that read stronger than it was.
+#
+# The telescoping one below CANNOT FAIL. Each rung is `before - after` and the
+# rungs chain, so the deltas sum to `lean_total - wire_bytes(step)` as a matter
+# of arithmetic. It is a consistency check on the printing, not evidence.
+#
+# This one CAN fail, and is what the identity rests on: the ladder's endpoint is
+# compared against a mori bundle built by an INDEPENDENT route -- named member by
+# member in mirai's own order, from the captured parts, rather than by
+# substituting into `lean_bundle`. A dropped member, a reordering, or a
+# substitution that quietly kept `shared` alive shows up here as a byte
+# difference; against a bundle derived from the same substitutions it could not.
+mori_bundle_independent <- list(
+  .f = lean_bundle$.args$worker,
+  .x = morify_payload(big_payloads[[1L]], shared = mori_shared, original = big_data),
+  .args = list(object = lean_bundle$.args$object,
+               grid = lean_bundle$.args$grid,
+               metrics = lean_bundle$.args$metrics),
+  .mirai_within_map = lean_bundle$.mirai_within_map,
+  ._expr_. = lean_bundle$._expr_.,
+  ._globals_. = lean_bundle$._globals_.
+)
+stopifnot(
+  identical(names(mori_bundle_independent), names(lean_bundle)),
+  identical(wire_bytes(mori_bundle_independent), mori_total),
+  identical(wire_bytes(step), mori_total)
+)
 
 cat("== how the gap decomposes (one substitution per rung, in this order) ==\n")
 for (nm in names(ladder)) {
@@ -645,7 +670,10 @@ cat(sprintf("  %12s\n", "------------"))
 cat(sprintf("  %+12.0f B   lean %.0f -> mori %.0f\n\n",
             mori_total - lean_total, lean_total, mori_total))
 
-# AC3: to the byte, tolerance zero. A single-stream measurement does not round.
+# AC3's stated identity: to the byte, tolerance zero. Kept because the criterion
+# asks for it and because it catches a printing bug, but see above -- it is the
+# assertion that cannot fail. The falsifiable half is the independent
+# reconstruction above and the frame cross-check below.
 stopifnot(identical(lean_total - mori_total, sum(unlist(ladder))))
 
 # And the dominant rung is tied to an independently measured quantity rather than
