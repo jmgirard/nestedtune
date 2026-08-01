@@ -87,7 +87,7 @@ on it.
       the two new size settings and the wire-byte axis, with a closed-form model
       per axis.
 - [x] T5: Run the measurements; record results against the models.
-- [ ] T6: Author the synthesis note; add its `INDEX.md` bullet.
+- [x] T6: Author the synthesis note; add its `INDEX.md` bullet.
 - [ ] T7: Draft the maintainer-facing writeup under `benchmarks/`, unposted.
 - [ ] T8: Run the profile's `verify` slot.
 
@@ -101,6 +101,7 @@ on it.
 
 - 2026-08-01: T1-T3 done in one authoring pass — the synthesis note's R (19 reads), C (7 reconstructions), W (11 workarounds) tables; every file:line read directly at 9b8dd07 before citing; a grep sweep confirmed no design reads outside the six files, and the "outside attr is test-only" claim was verified by grep.
 - 2026-08-01: T4-T5 — sibling script `benchmarks/outer-loop-object-requirements.R` (sources helper-payload-size.R, reuses the #283 models); memory axis 3.228x at 5x5 and 5.094x at 20x5 (model resid ≤1%), wire axis: a leaned nested_cv fold still carries its own analysis frame (~70% of its payload; copy-count oracle 1 vs 0), which leaning cannot remove; a raw shared-copy count at 20x5 read 4 from a sentinel coincidence, fixed by netting out the fold's own frame.
+- 2026-08-01: T6 — note complete with Provenance, Scope, Evidence snapshot, and Measurements; INDEX.md bullet added.
 
 ## Decisions
 
