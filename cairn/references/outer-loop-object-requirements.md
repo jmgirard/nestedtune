@@ -153,10 +153,13 @@ the frame's own wire bytes in the stream, net of a sentinel-coincidence
 the script documents): a leaned `nested_resamples()` fold carries no frame
 at all, while a leaned `nested_cv()` fold still carries one — its own
 materialized analysis frame, which leaning cannot remove because the
-object, not the dispatcher, owns that copy. That frame is the whole wire
-gap between the constructors: ~656.5 kB of the ~656.5 kB 5×5 difference,
-~70% of a `nested_cv()` fold's payload. Reindexing removes it by
-construction; no dispatch-side leaning can.
+object, not the dispatcher, owns that copy. That frame is ~89% of a
+`nested_cv()` fold's payload (672,540 B of 754,858 B at 5×5; 798,540 B of
+895,859 B at 20×5). The payload gap between the constructors — 656,512 B
+at 5×5 — is that frame less the 16,028 B of extra explicit indices the
+reindexed fold carries (its inner splits store an explicit `out_id` where
+`nested_cv()`'s derive the complement, W3). Reindexing removes the frame
+by construction; no dispatch-side leaning can.
 
 ## Disposition
 

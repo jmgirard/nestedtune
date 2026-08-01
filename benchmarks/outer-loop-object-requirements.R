@@ -27,9 +27,9 @@
 # 5x2) -- so the models are tested at a practical scheme and at a high outer
 # count that stresses the v-scaling data term, which is the term rsample#283
 # is about. Axis 2 runs on the M23 payload fixture (5000x21 doubles), the
-# frame every wire figure in this repo is quoted on, at the same two settings;
-# LetterRecognition cannot serve there because the copy-count sentinel needs a
-# double column and its columns are integers.
+# frame every wire figure in this repo is quoted on, at the same two settings,
+# so its numbers compose with M23's and M26's rather than starting a second
+# baseline.
 
 stopifnot(requireNamespace("rsample", quietly = TRUE),
           requireNamespace("mlbench", quietly = TRUE),

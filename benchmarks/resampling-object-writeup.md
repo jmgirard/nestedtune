@@ -42,8 +42,8 @@ strips the redundant frame copies a fold's splits carry and rebuilds them
 worker-side, so this is measured *after* that mitigation: a reindexed
 fold's payload is index vectors only (~98 kB at 5×5; zero embedded frames
 by a byte-level copy count), while a `nested_cv()` fold still carries its
-own materialized analysis frame (~755 kB at 5×5, ~70% of its payload; copy
-count 1). That frame is not removable by any dispatch-side trick
+own materialized analysis frame (~673 kB of a ~755 kB payload at 5×5, ~89%
+of it; copy count 1). That frame is not removable by any dispatch-side trick
 **(inferred)**: the object owns the copy — each fold's inner splits index
 a frame that exists nowhere else — so only the object's shape can remove
 it. Reindexing removes it by construction.
