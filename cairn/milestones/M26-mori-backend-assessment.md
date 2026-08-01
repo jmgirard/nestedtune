@@ -1,6 +1,6 @@
 # M26: The backend question has a measured answer before the design settles
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -128,6 +128,7 @@ shape → M27.
 - 2026-07-31: rework 2 — below-threshold taken: E9 (the closed form is now ASSERTED against M23's own 5% band, 96,000 predicted vs 98,346 measured, and both copy counts are asserted rather than printed), E13 (P6 now records that the predicate's fat-path fallback has no mori analogue and adoption must say what replaces it), E19 (`share()` idempotence comment corrected — it is idempotent on an already-shared object, not on the original).
 - 2026-07-31: rework 2 — E5/E6 surfaced a finding about M23's own record rather than this milestone's: M23's committed 5,783,645 B never counted `.f`, and the closure grew from the 202,363 B at `R/parallel.R:246` to 291,491 B measured now, `R/parallel.R` having gone from 26,759 B at M23 to 39,066 B at M24. The note states both rather than smoothing the non-reconciliation, and the stale figure is left for its own candidate row rather than corrected here.
 - 2026-07-31: rework 2 verified — probe exit 0 with all assertions passing including the two new ones; `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `cairn_validate` exit 0. Status back to review.
+- 2026-07-31: review RETURNED the milestone a third time. AC3 fails again: the note's gap explanation accounts for 840,540 B of an actual 1,129,658 B gap because the lean route carries the worker closure twice (`.f` wrapper plus `.args$worker`) where the modelled mori row carries it once. Third appearance of the D5/E1 defect, each time fixed in the table and left in the prose. The note also claims a ROADMAP filing that does not exist. Thrash triggers (a) third return and (b) same criterion by a new mechanism of one shape BOTH fire; routing to `/milestone-plan` per (a), carrying (b)'s diagnosis.
 
 ## Decisions
 
@@ -266,3 +267,40 @@ probe replica over patching `R/parallel.R` on the branch and reverting", with th
 result". The replica did differ from `dispatch_folds()` in a way that changed a result — the
 wire result rather than the identity result — so the recorded falsifier was aimed one axis away
 from where the failure landed. That alternative is what trigger (b) asks be reconsidered.
+
+### Third pass, 2026-07-31 — returned again (return 3). Thrash triggers (a) AND (b) both fire.
+
+Gates all clean for the third time: `devtools::check()` **Status: OK**; `devtools::test()` 1615 pass;
+`cairn_validate` exit 0; `document()` no diff; probe exit 0 with every assertion passing. The
+approach change worked on its own terms — the captured figures are internally consistent, every
+row sum is exact, the ratio re-derives, and all three documents agree.
+
+**AC3 fails a third time, by a third mechanism of the same shape.** The note's explanatory
+sentence says the gap is explained by "the closure, 291,491 B, common to both rows and
+cancelling; and the data, 840,540 B". Measured: 1,523,499 - 393,841 = **1,129,658**, not 840,540.
+The lean route carries the closure TWICE — the wrapper `.f` at 291,418 B plus `.args$worker` at
+291,491 B — where the modelled mori row carries it once, so 289,118 B of the gap, 26% of it, is
+unexplained by the sentence that claims to explain all of it. The same defect was D5 (90) on
+pass 1 and E1 (93) on pass 2; both times it was corrected in the table and left standing in the
+prose, and it has now reached the unposted external draft.
+
+Also verified: the note states the M23 under-reporting finding "is filed as a ROADMAP candidate
+rather than corrected here". No such row exists — the Candidates list gained exactly one row this
+milestone, for mori adoption. A finding is recorded as tracked and is not.
+
+**Trigger (a): third return.** Per the rule this is a mis-planned milestone and no further retry
+is queued under the current plan; it routes through `/milestone-plan`. The work log records an
+approach change but no re-cut, so re-plan-or-split is still the available remedy.
+
+**Trigger (b), second firing.** AC3 has now failed three times, each by a new mechanism of one
+shape: a published wire figure that does not survive re-derivation. Pass 1 the fixture, pass 2 the
+closure attribution in the table, pass 3 the closure attribution in the prose. The measurement
+itself is now sound; what keeps failing is the prose written over it. That is the diagnosis a
+re-cut should carry in: the criterion asks the note to *state* a comparison, and three passes
+suggest the stating, not the measuring, is what needs a different shape — a criterion that pins a
+derivable identity rather than a narrative would be checkable by script.
+
+Two lenses of three reported before this verdict was recorded; the diff-bug and prior-review
+lenses were still running and their findings are not in this list. The disposition does not turn
+on them: the criterion failure above is verified by execution, and the return threshold is
+reached regardless.
