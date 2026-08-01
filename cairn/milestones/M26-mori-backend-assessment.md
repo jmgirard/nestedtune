@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP4
-- **Branch/PR:** `m26-mori-backend-assessment`
+- **Branch/PR:** `m26-mori-backend-assessment` · https://github.com/jmgirard/nestedtune/pull/27
 
 ## Goal
 
@@ -106,6 +106,7 @@ shape → M27.
 - 2026-07-31: T6 — `benchmarks/tune-1188-mori-findings.md` drafted and unposted, following through on the mori offer in `tune-969-reply-2.md`. Every claim marked [measured] or [inferred]; written without em dashes per the standing request (checked mechanically). It leads with the two caveats rather than the 13.5x, because the ratio alone invites the deletion reading P6 rules out.
 - 2026-07-31: T7 — `devtools::test()` clean on the branch: FAIL 0 | WARN 0 | SKIP 0 | PASS 1615 (the `step_pca()` errors in the output are the deliberate failed-fold fixtures). No `R/` file was touched by this milestone, so the suite is the same one main carries; it is run as evidence that the branch changed nothing, not that anything new is covered.
 - 2026-07-31: T7 — ROADMAP candidate row added for routing fold data through mori, carrying P6's remote fallback as a stated condition rather than an afterthought, and cross-referencing the `mirai::everywhere()` preload row it would supersede. Search-first sweep done at plan time; no existing row covers adoption.
+- 2026-07-31: review opened draft PR #27; main had not moved, so no merge into the branch was needed. Review in progress: AC evidence gathered, three lenses and `devtools::check()` still running at this checkpoint.
 
 ## Decisions
 
