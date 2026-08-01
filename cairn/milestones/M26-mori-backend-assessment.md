@@ -81,7 +81,7 @@ shape → M27.
       by `grepRaw()` as M23 did rather than inferring them from a total.
 - [x] T4: Map findings onto D-011, D-018, M23's numbers, and the two adjacent
       candidate rows; state the same-machine consequence.
-- [ ] T5: Author the synthesis note from `templates/synthesis-note.md`; add its
+- [x] T5: Author the synthesis note from `templates/synthesis-note.md`; add its
       `INDEX.md` bullet.
 - [ ] T6: Draft the maintainer-facing note under `benchmarks/`, unposted.
 - [ ] T7: Run the profile's `verify` slot; add a ROADMAP candidate row for
@@ -101,6 +101,7 @@ shape → M27.
 - 2026-07-31: T4 — D-011 untouched: seeds are drawn host-side (`R/nested-tune-grid.R:318`) and travel as integers, `set_fold_seed()` runs worker-side, and mori has no RNG surface to perturb either through. D-018 untouched, and for a reason worth stating: mori is not a scheduler and not an alternative to mirai but an object-transport mechanism composing with it, so it does NOT bear on the mirai-vs-future question — that stays open.
 - 2026-07-31: T4 — M23's premise would change, but conditionally, not wholesale. mori takes the per-fold data cost to 0 copies without `lean_payload()`/`rehydrate_payload()`/`is_fold_payload()` (`R/parallel.R:118-179`, ~60 lines) at all. It cannot replace them, though: mori is same-machine, so a pool with remote daemons cannot map the host's region and the by-value lean path has to stay as the remote fallback. Adoption would make M23's machinery conditional, never obsolete — which is the reading a bare 13.5x would invite and the one to head off.
 - 2026-07-31: T4 — the `mirai::everywhere()` preload candidate row is dominated on its own terms if mori is adopted: that shape buys one-copy-per-daemon with daemon state, cleanup and a stale-object hazard, where mori is one-copy-per-machine with no daemon state, automatic GC and lazy mapping, and its motivation (cutting per-fold `.args` transfer) is exactly what mori zeroes. The remote-daemon-pool row is the constraint above and gains a reason to stay open.
+- 2026-07-31: T5 — `cairn/references/mori-backend-assessment.md` committed with its `INDEX.md` bullet; 9-row premise ledger (P1-P9) tagged Untouched/Changed/Conditional/Out of reach, plus a Disposition mapping every row and five dated open questions. `cairn_validate` clean, and the page does not join the staleness advisory: its Extraction status carries a `read directly` verification claim with a date.
 - 2026-07-31: T4 — rsample#283 and M01 are untouched, contrary to the natural reading that shared memory answers the memory gap: `nested_cv()`'s cost is analysis frames materialized IN-PROCESS before any parallelism, where mori addresses transfer to daemons. Different axis, and the note says so explicitly. Unmeasured and flagged: `share()` writes the frame into a shared region, so the host transiently holds original plus shared copy; peak host memory under mori is not measured here, and tune#1188's 18.9 GB -> 4.23 GB is their whole-tree figure on `fit_resamples()`, not ours.
 
 ## Decisions
