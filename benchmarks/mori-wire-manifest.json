@@ -1,0 +1,90 @@
+{
+  "generated_by": "benchmarks/probe-mori-dispatch.R",
+  "milestone": "M26",
+  "package_state": "installed to a temporary library, keep.source=no",
+  "reproducibility": "byte-identical within a process; across processes the wire totals move by the pid's hex-string length, which serializes inside the captured bundle (four occurrences, payload included) plus once per shared reference in the mori figures -- lean measured 941,683-941,687 B across three pids. A drift check should compare wire figures within ~20 B, never to the byte across processes",
+  "environment": {"r": "R version 4.6.1 (2026-06-24)", "platform": "aarch64-apple-darwin25.4.0", "mori": "0.2.2", "mirai": "2.7.2", "tune": "2.1.0", "rsample": "1.3.2"},
+  "figures": [
+    {
+      "name": "lean_bundle_bytes",
+      "value": 941683,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": true,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["copy-count: exactly 1 copy of the frame in the stream", "frame cross-check: the .args rung equals the frame serialized alone, within 5%"]
+    },
+    {
+      "name": "mori_bundle_bytes",
+      "value": 103109,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": true,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["copy-count: exactly 0 copies of the frame in the stream", "independent-reconstruction: a bundle assembled member-by-member in mirai's order serializes to the same bytes"]
+    },
+    {
+      "name": "lean_payload_bytes",
+      "value": 98342,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": false,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["closed-form: predicted_lean_bytes() from the design's scalars, within M23's 5% band", "copy-count: the payload alone carries 0 copies; the frame rides in .args"]
+    },
+    {
+      "name": "ratio_lean_over_mori",
+      "value": 9.132888,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": true,
+      "derived": true,
+      "derived_from": ["lean_bundle_bytes", "mori_bundle_bytes"],
+      "oracles": []
+    },
+    {
+      "name": "gap_bytes",
+      "value": 838574,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": true,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["independent-reconstruction: the gap re-derives to the byte from the member-by-member bundle", "frame cross-check: the .args rung equals the frame serialized alone, within 5%"]
+    },
+    {
+      "name": "shared_reference_bytes",
+      "value": 267,
+      "fixture": "payload_fixture_data(n=10000, p=1, seed=1)",
+      "install_dependent": false,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["copy-count: 0 copies of the frame in the shared object's stream", "invariance: a 4x frame shares for the same bytes, within 5%"]
+    },
+    {
+      "name": "shared_marginal_bytes",
+      "value": 174.6667,
+      "fixture": "payload_fixture_data(n=10000, p=1, seed=1)",
+      "install_dependent": false,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["copy-count: 0 copies across four references", "invariance: a 4x frame's marginal reference cost matches, within 5%"]
+    },
+    {
+      "name": "worker_closure_bytes",
+      "value": 524,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": true,
+      "derived": false,
+      "derived_from": [],
+      "oracles": ["srcref-state: asserted absent by walking the closure's language tree", "strip-invariance: removeSource() leaves the byte count identical"]
+    },
+    {
+      "name": "sum_of_parts_overstatement_bytes",
+      "value": 150,
+      "fixture": "fixture_design(v=5, inner_v=5): 5000x21 frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+      "install_dependent": true,
+      "derived": true,
+      "derived_from": ["lean_bundle_bytes"],
+      "oracles": []
+    }
+  ]
+}

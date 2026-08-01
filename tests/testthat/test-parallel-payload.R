@@ -37,15 +37,10 @@
 # split representation, and would then fail for a reason that has nothing to do
 # with this package.
 
-fixture_design <- function(constructor = nested_resamples, v = 5, inner_v = 5,
-                           n = 5000, p = 20) {
-  d <- payload_fixture_data(n = n, p = p)
-  set.seed(2)
-  list(
-    data = d,
-    design = constructor(d, rsample::vfold_cv(v = v), rsample::vfold_cv(v = inner_v))
-  )
-}
+# `fixture_design()` moved to helper-payload-size.R at M26, so a benchmark can
+# source it. It lived here, in a test file nothing outside testthat can source,
+# which is why benchmarks/probe-mori-dispatch.R re-typed the design by hand and
+# then attributed its figures to a definition it had never called.
 
 # The payload shape M23 replaced: split and inner rset passed whole.
 fat_payload <- function(design, i) {
