@@ -1,6 +1,6 @@
 # M27: What the outer loop needs from the resampling object, in writing
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
