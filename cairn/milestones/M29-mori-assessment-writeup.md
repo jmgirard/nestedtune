@@ -1,11 +1,11 @@
 # M29: The assessment says only what the manifest measured
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M26
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** m29-mori-assessment-writeup
 
 ## Goal
 
@@ -71,8 +71,8 @@ nothing is owed.
       unmeasured deltas, citing no figure for them.
 - [ ] AC5: `benchmarks/tune-1188-mori-findings.md` is deleted from the tree
       (git holds it), and `grep -rn 'tune-1188-mori-findings'` over the
-      tracked tree returns no hit outside append-only work-log and Review
-      text.
+      tracked tree returns no hit outside this milestone's own file and
+      append-only work-log and Review text.
 - [ ] AC6: `Rscript -e 'devtools::test()'` is clean, with the AC2 drift check
       running under it.
 
@@ -109,6 +109,7 @@ nothing is owed.
 - 2026-08-01: gate: historical figures kept marked-as-history over strict manifest-only — preserves the reconciliation argument the no-measurement rule could never rebuild; falsified if review finds a history-marked figure supporting a current claim.
 - 2026-08-01: gate: draft deleted over kept-stamped — audience gone, git holds it; falsified if the posting question reopens before the port settles.
 - 2026-08-01: gate: drift check as a testthat test over a benchmarks/ script — runs unprompted on every suite and in CI, skipping when repo-only files are absent; falsified if the skip logic ever masks a real drift a hand-run script would have caught.
+- 2026-08-01: implement started; branch m29-mori-assessment-writeup. Amendment (gated): AC5 exempts this milestone's own file from the no-reference grep — the criterion and T2 must name the file they delete, so the strict bar failed on itself (missed by the criteria audit that proposed the wording).
 
 ## Decisions
 
