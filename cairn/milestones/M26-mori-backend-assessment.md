@@ -1,6 +1,6 @@
 # M26: The wire figure survives re-derivation
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -93,7 +93,7 @@ mirai-vs-`future` question.
       against M23's 5% band.
 - [x] T6: Emit the manifest — every figure, its fixture, and an
       install-dependent flag.
-- [ ] T7: Run the profile's `verify` slot and `devtools::check()`.
+- [x] T7: Run the profile's `verify` slot and `devtools::check()`.
 
 ## Work log
 
@@ -154,6 +154,7 @@ mirai-vs-`future` question.
 - 2026-08-01: T5 — the criterion's named pair does not reach every figure, so two further oracles were built rather than the gap papered over: frame-size INVARIANCE for the shared-reference costs (a 4x frame shares for 268 B against 268 B, 0.0%, while by value it is 640,187 B), and `removeSource()` STRIP-INVARIANCE for the worker closure (byte count `identical()` after stripping, so the srcref-state walk cannot have missed srcrefs in a corner of the language tree). Both share no arithmetic with the copy count.
 - 2026-08-01: AMENDMENT (substantive, gated) — AC4 replaced. As planned it required the closed form and the copy count behind every published figure; two of nine figures are computed wholly from other published figures (`ratio_lean_over_mori` = lean/mori, `sum_of_parts_overstatement_bytes` = two measurements of one bundle subtracted) and any second mechanism for them reads the arithmetic that produced them. The replacement marks those `derived`, has them inherit their sources' oracles, and makes the bar script-checked: every non-derived figure asserts >= 2 independent oracles, and a derived figure must name published non-derived sources, so derivation cannot chain. User chose the amendment over dropping the two figures, the ratio being the headline a reader wants.
 - 2026-08-01: T6 — `benchmarks/mori-wire-manifest.json` emitted and committed: 9 figures (7 measured, 2 derived), each with its value, its fixture, its asserted oracles, an `install_dependent` flag and its derivation. Hand-written JSON rather than a jsonlite dependency; validated as parseable. Published: lean 941,687 B, mori 103,119 B, gap 838,568 B, ratio 9.13x, lean payload 98,346 B, shared reference 268 B, marginal 176 B, worker closure 524 B, sum-of-parts overstatement 150 B.
+- 2026-08-01: T7 — `devtools::document()` no diff; `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes in 4m 0.6s; `cairn_validate` exit 0, all hard checks PASS. Probe exits 0 with every assertion passing. Status to review. Advisory not owned by this milestone: `sizing (split tripwires)` flags M29 at 8 acceptance criteria against the 7 tripwire, inherited from the re-cut plan and amendable only through M29's own plan gate.
 - 2026-08-01: /milestone-implement resumed the existing branch after the re-cut. `origin/main` had moved (`3acd9e6`, a candidate row closed) and was merged in; the merge guard first refused `git merge main` reading the direction backwards, and the user approved retrying against the remote ref. The two tune#969 reply drafts were committed at the same gate — `benchmarks/tune-1188-mori-findings.md:7` cites both by path and neither was tracked (D19/78 pass 1, E18/55 pass 2, unfixed through three passes). PR #27 is reused rather than reopened, retitled at review.
 
 ## Decisions
