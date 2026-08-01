@@ -91,7 +91,7 @@ nothing is owed.
       layers, mark historical figures as history, add the adoption-delta
       section, date the repo-state claims, update the Provenance block, and
       refresh the `INDEX.md` line if its summary drifts.
-- [ ] T2: Delete the maintainer draft and sweep tracked references to it
+- [x] T2: Delete the maintainer draft and sweep tracked references to it
       outside append-only history.
 - [ ] T3: Write the drift check with the per-document cited-figure
       declarations; run it red against a perturbed scratch copy of the note,
@@ -111,6 +111,7 @@ nothing is owed.
 - 2026-08-01: gate: drift check as a testthat test over a benchmarks/ script — runs unprompted on every suite and in CI, skipping when repo-only files are absent; falsified if the skip logic ever masks a real drift a hand-run script would have caught.
 - 2026-08-01: implement started; branch m29-mori-assessment-writeup. Amendment (gated): AC5 exempts this milestone's own file from the no-reference grep — the criterion and T2 must name the file they delete, so the strict bar failed on itself (missed by the criteria audit that proposed the wording).
 - 2026-08-01: T1 done — note rewritten against the manifest: all current figures are manifest values (exact-bytes renderings), block banner and seven inline correcteds collapsed, M23 reconciliation and the 3.87x capture moved to a marked [historical] subsection, adoption-delta section added, drift-check declaration comment added (name=rendering pairs, all 9 figures), premise-table repo-state cites dated. INDEX.md line still accurate, left alone. The 267–268 range, name-length counts, and the 160,187 B by-value comparison dropped (non-manifest values).
+- 2026-08-01: T2 done — `git rm benchmarks/tune-1188-mori-findings.md`; the no-reference grep already returns no hit outside this file (the M26 archive summary and the tune-969 reply drafts never named it by filename).
 
 ## Decisions
 
