@@ -75,15 +75,15 @@ mirai-vs-`future` question.
 
 ## Tasks
 
-- [ ] T1: Add a temp-library install step to the probe (`R CMD INSTALL` to a
+- [x] T1: Add a temp-library install step to the probe (`R CMD INSTALL` to a
       throwaway lib, load from there), and assert source references are absent
       from the captured closures.
-- [ ] T2: Change the capture to record the object mirai hands `request()`,
+- [x] T2: Change the capture to record the object mirai hands `request()`,
       rather than reassembling `.f`/`.x`/`.args`; read mirai 2.7.2's
       `do_mirai()` to find the interception point that yields it.
-- [ ] T3: Publish the single-stream total; compute the sum-of-parts too and
+- [x] T3: Publish the single-stream total; compute the sum-of-parts too and
       assert they differ.
-- [ ] T4: Derive the gap identity and assert it closes to the byte, naming each
+- [x] T4: Derive the gap identity and assert it closes to the byte, naming each
       term in the assertion.
 - [ ] T5: Wire both oracles to every published figure; assert the closed form
       against M23's 5% band.
@@ -140,6 +140,13 @@ mirai-vs-`future` question.
 - 2026-08-01: plan gate chose measuring an actual temp-library install over `removeSource()` on captured closures, because a post-hoc model of the installed state is the reconstruct-then-publish shape that failed on passes 1 and 2; falsified by the install step proving unreproducible across platforms while the stripped model agrees with it.
 - 2026-08-01: plan gate chose restoring a second oracle over recording its omission as a GP2 trade, because four passes have now shown single-mechanism wire figures failing; falsified by the two oracles agreeing trivially because one is derived from the other.
 - 2026-08-01: plan gate chose splitting the write-up into M29 over one milestone, because both sizing tripwires fired; falsified by M29 proving unable to write anything without re-opening the measurement.
+- 2026-08-01: T1 — the probe now installs the working tree to a throwaway library (`R CMD INSTALL --with-keep.source=no`, `R_KEEP_PKG_SOURCE=no` set explicitly so a developer's `~/.Renviron` cannot reintroduce srcrefs) and measures that copy; `R_LIBS` is prepended so daemons find it, since `prime_daemons()` deliberately no-ops off a dev package (`helper-parallel.R:52`). srcref state is asserted on both captured closures rather than inferred from a size comparison, which would pass or fail on session `keep.source`.
+- 2026-08-01: T1 — the installed state changes the headline, confirming the re-cut's second stated cause. The worker closure is 524 B installed against 291,491 B under `load_all()`, and the `.f` wrapper 451 B against 291,418 B; the lean bundle is 941,687 B and the ratio 9.13x, where three passes published 3.87x. Every earlier figure was a development artifact presented as the adoption case.
+- 2026-08-01: T2 — read mirai 2.7.2: `mirai_map()` calls `do_mirai()` per element, which builds `data <- c(list(.f=, .x=elem, .args=, .mirai_within_map=TRUE), list(._expr_.=, ._globals_.=))` and hands that ONE list to `request(..., send_mode = 1L)`. Intercepted by rebinding `do_mirai` to an environment adding only a capturing `request`, mirai's own body asserted `identical()` — so the bundle is assembled by mirai, not reconstructed here. `request` itself cannot be replaced: it is imported from nanonext and has no binding in mirai's namespace.
+- 2026-08-01: T2 — the interception found a defect the old `mirai_map()` seam could not see: `dispatch_folds()` reaches `request()` BEFORE any fold does, because its pre-flight probe uses `mirai::everywhere()`, which routes through `do_mirai()` too. Capturing the first call published the pre-flight bundle as a fold's wire cost. The shim now discriminates on `.mirai_within_map`, the member `mirai_map()` alone sets, and passes everything else through to the real `request`.
+- 2026-08-01: T3 — single stream 941,687 B lean / 103,119 B mori; sum-of-parts 941,837 / 103,139, asserted to differ so publishing the sum fails. Honest qualification the note must carry: the sum-vs-single-stream error is 150 B (0.0%) in the installed state, not the 290,626 B the re-cut recorded — that figure was shared srcfile structure between two srcref-laden closures, so cause 1 is subsumed by cause 2 and is not independently material once installed.
+- 2026-08-01: T4 — the gap explanation is now a ladder the script walks, one substitution per rung, rather than a sentence: `.f` wrapper to worker +11 B, `.x` blanked payload to shared-region payload +2,249 B, `.args` dropping `shared` and `worker` -840,828 B, telescoping to -838,568 B exactly (`identical()`, tolerance zero). The ladder is asserted to land on the modelled mori bundle, and the dominant rung is cross-checked against the frame serialized alone (840,828 vs 840,540 B, 0.0%).
+- 2026-08-01: `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615 on a quiet machine. An earlier run scored FAIL 1 at `test-parallel-interrupt.R:82` (`interrupted` FALSE) while the probe was running concurrently — that test kills its own process with SIGINT and its comments warn it races the pre-flight on a loaded machine, so the concurrent `R CMD INSTALL` plus two daemon pools is the likely cause. No `R/` or test file was touched by this milestone.
 - 2026-08-01: /milestone-implement resumed the existing branch after the re-cut. `origin/main` had moved (`3acd9e6`, a candidate row closed) and was merged in; the merge guard first refused `git merge main` reading the direction backwards, and the user approved retrying against the remote ref. The two tune#969 reply drafts were committed at the same gate — `benchmarks/tune-1188-mori-findings.md:7` cites both by path and neither was tracked (D19/78 pass 1, E18/55 pass 2, unfixed through three passes). PR #27 is reused rather than reopened, retitled at review.
 
 ## Decisions
