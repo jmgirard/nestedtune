@@ -131,15 +131,16 @@ mori_task <- function(payload, object, grid, metrics) {
   )
 }
 
-# A daemon must have mori loaded before it can deserialize an ALTREP object
-# mori created; the unserialize hook lives in mori's DLL. Built with str2lang()
-# from a string rather than passed as an expression: everywhere() captures its
-# argument unevaluated and serializes it, so under covr the HOST's rewritten
-# body would travel and a daemon without covr would raise on it (M10).
-load_mori_everywhere <- function() {
-  mirai::everywhere(.expr = str2lang("loadNamespace('mori')"))
-  invisible(NULL)
-}
+# No preload is needed on the daemons, which is worth stating because the
+# opposite is the natural assumption: mori's unserialize hook lives in its DLL,
+# so one expects a daemon to need `everywhere(loadNamespace('mori'))` first.
+# It does not. R records the owning package on an ALTREP class and loads that
+# namespace itself when deserializing, verified by execution against mirai
+# 2.7.2 -- a daemon with mori merely INSTALLED (never attached, no preload
+# call) received a shared frame, reported `is_shared()` TRUE and the same
+# region name as the host, and summed the column correctly. What a daemon does
+# still need is mori installed in its library, which is the same requirement
+# check_daemons_can_load() already exists to check for nestedtune itself.
 
 dispatch_via_mori <- function(payloads, shared) {
   payloads <- lapply(payloads, morify_payload, shared = shared)
@@ -172,7 +173,6 @@ cat(sprintf("serial reference: %d fold records, %d completed\n\n",
 results <- list()
 for (n_workers in WORKER_COUNTS) {
   start_daemons(n_workers)
-  load_mori_everywhere()
 
   by_value <- without_pkgload_warning(
     nestedtune:::dispatch_folds(
