@@ -1,6 +1,6 @@
 # M26: The wire figure survives re-derivation
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -140,6 +140,7 @@ mirai-vs-`future` question.
 - 2026-08-01: plan gate chose measuring an actual temp-library install over `removeSource()` on captured closures, because a post-hoc model of the installed state is the reconstruct-then-publish shape that failed on passes 1 and 2; falsified by the install step proving unreproducible across platforms while the stripped model agrees with it.
 - 2026-08-01: plan gate chose restoring a second oracle over recording its omission as a GP2 trade, because four passes have now shown single-mechanism wire figures failing; falsified by the two oracles agreeing trivially because one is derived from the other.
 - 2026-08-01: plan gate chose splitting the write-up into M29 over one milestone, because both sizing tripwires fired; falsified by M29 proving unable to write anything without re-opening the measurement.
+- 2026-08-01: /milestone-implement resumed the existing branch after the re-cut. `origin/main` had moved (`3acd9e6`, a candidate row closed) and was merged in; the merge guard first refused `git merge main` reading the direction backwards, and the user approved retrying against the remote ref. The two tune#969 reply drafts were committed at the same gate — `benchmarks/tune-1188-mori-findings.md:7` cites both by path and neither was tracked (D19/78 pass 1, E18/55 pass 2, unfixed through three passes). PR #27 is reused rather than reopened, retitled at review.
 
 ## Decisions
 
