@@ -1,6 +1,6 @@
 # M26: The backend question has a measured answer before the design settles
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -119,6 +119,7 @@ shape → M27.
 - 2026-07-31: rework — D7 fixed: the note now carries its own 'How the probe differs from `dispatch_folds()`' section, which is what AC2 asked for and the script header alone did not satisfy. D12 fixed: mori's Windows Win32 path and its `R (>= 4.3)` floor against this package's `R (>= 4.1)` are recorded as P9. D13 fixed: #1188's host-side `mem_alloc` 6.22 MB -> 16.5 GB datum now appears in the open question it bears on. D16 fixed: the draft's tags are now only `[measured]`/`[inferred]`, 8 and 3.
 - 2026-07-31: rework — below-threshold findings taken anyway where cheap: D17 (`on.exit` daemon and RNG restoration, plus `prune_shared()`), D18 (`collect_mirai()` matching the real dispatcher rather than `map[]`), D21 (`wire_report()` now asserts the mori payload resolves to the same rows before believing its bytes), D15 (`~` marks on the non-reproducible mori figures in note and draft). D19 left: the draft cites the two uncommitted reply drafts and now says so inline. D23 refuted at review and correctly left alone.
 - 2026-07-31: rework verified — probe reruns clean and asserts its own findings (exit 0); `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615. Status back to review.
+- 2026-07-31: review RETURNED the milestone a second time (return 2 of this milestone). AC3 unverified: the fat route now reconciles exactly to M23's committed total, but the lean row is inflated ~291,000 B because `mirai_map()` charges `.f` per task exactly as `.args` and the non-leaning branch sends `fold_task` as `.f`, so the published 12.2x is an accounting artifact. Gates were clean throughout. 26 deduplicated findings, 9 scored >=80. Thrash trigger (b) fires: AC3 has failed twice by two mechanisms of one shape, and the plan gate's recorded alternative (measure the real path rather than a replica) is what the rule asks be reconsidered.
 
 ## Decisions
 
@@ -192,3 +193,68 @@ Verified clean: no `R/` file touched; `mori_task` is a faithful replica of `fold
 reproduces at 2 and 3 workers; the `.args`-per-task accounting matches M23's convention; oracles reused
 from the helper rather than re-implemented; draft contains zero em dashes; D-011/IP2 and D-018 analysis
 sound; P8's rsample#283 distinction correct.
+
+### Second pass, 2026-07-31 — returned again (return 2)
+
+Gates all clean: `devtools::check()` **Status: OK**; `devtools::test()` 1615 pass;
+`cairn_validate` exit 0; `document()` no diff; probe exit 0 with its own assertions passing.
+
+**AC1 verified** — note present with Provenance, 12 dated observations, `INDEX.md` bullet
+(`references index<->disk` PASS). The bullet's *content* is wrong (E8) but it exists.
+**AC2 verified** — probe standalone, 0 files changed under `R/`, both routes at 2 and 3
+workers, ambient RNG triple pinned at `probe:119` before fixture construction, and the note
+now carries its own "How the probe differs from `dispatch_folds()`" section (`:68`), which is
+what failed last pass.
+**AC3 NOT verified** — the note states the premise for each of D-011, D-018 and M23's wire
+cost, and the fat route now reconciles exactly (25,714,635/5 = 5,142,927 against 5,141,166
+measured; the 1,761 B difference is M23's own per-fold `.args`, measured at 1,761 B). But the
+lean row is inflated by ~291,000 B: `mirai_map()` charges `.f` per task exactly as `.args`
+(`R/parallel.R:243` says so), and the non-leaning branch sets `.f = fold_task` (`:259`), so the
+fat route pays the closure too. The published 12.2x is an accounting artifact; a uniform
+convention gives 9.3x (excluded both sides) or 3.1x (included both sides).
+**AC4 verified** — P6 records the same-machine boundary; Disposition names both rows.
+**AC5 verified on its letter** — every claim carries one of the two permitted tags (8
+`[measured]`, 3 `[inferred]`), unlike last pass's third category. Four tags are misapplied
+(E11), actioned as a defect rather than a criterion failure.
+**AC6 verified** — check OK, suite 1615, document no diff.
+
+Three lenses again, deduplicated to 26 findings, scored by a fourth agent that generated none.
+**9 scored >= 80 and are actioned; 17 logged below threshold.**
+
+Actioned: E1 (93) the worker closure is charged to lean only though every route pays it via
+`.f`, inflating the lean row and the 12.2x headline in note, ROADMAP row, work log and the
+external draft · E3 (90) P10's "moves a few bytes per run" is false at the published fixture —
+100,589 B in three processes with three distinct region names, the name being fixed-width 19
+characters; the earlier variance came from the pre-rework fixture and was carried forward
+unchecked · E12 (87) the draft's "about 60 lines" is `118-179`, which includes the very
+predicate the same paragraph says must be kept; `lean_payload()` + `rehydrate_payload()` is 40
+lines · E8 (85) `INDEX.md` says "9-row premise ledger (P1-P9)" against P1-P10 · E2 (84) the
+note contradicts itself, `:123` "neither the fat nor the mori route pays" against `:144-145`
+"route-independent in kind" · E7 (84) `daemon_probe_expr <- function()` has no formals, so
+P7's "parameterized by `package`" is half false — this was D24 (62) last pass, cleared on a
+premise that is wrong · E11 (82) four draft tags misapplied, including a documentation read
+tagged `[measured]` · E14 (82) the ROADMAP row pins `is_fold_payload()` to `R/parallel.R:118-179`
+in the sentence arguing it is not one of the three functions that range covers · E4 (80) the
+probe's top-level `on.exit()` never fires in `Rscript`, so the RNG restore and daemon cleanup
+the D8/D17 rework claims are dead code.
+
+Logged below threshold: E13 (76) the "not leanness machinery at all" reclassification overshoots
+M23's record · E17 (76) no HANDOFF block, against M13's precedent · E10 (72) unbounded
+`collect_mirai()` · E19 (72) `share()` is not idempotent on the original, so regions accumulate ·
+E5 (70) the lean reconciliation cites 202,363 B where 216,119 B closes the arithmetic · E6 (70)
+M24 raised the closure cost to 291,491 B and the stale 202,363/203,790 records were left standing ·
+E9 (70) wire findings printed not asserted, and a 960-vs-2,704 oracle disagreement passes silently ·
+E16 (68) nothing harvested to LESSONS despite 34/50 lines used · E22 (66) unanchored ratio ·
+E20 (60) transport check adjacent to the measured path · E21 (60) the mori byte figure has one
+oracle · E25 (58) "5 R functions" is the exported count · E26 (58) the sibling benchmark keeps the
+loading idiom this probe calls a defect · E18 (55) draft cites untracked files · E15 (45) and
+E23 (45) superseded figures in IP4 history, correct handling · E24 (40) established convention.
+
+**Thrash trigger (b) fires.** AC3 has now failed twice, each by a new mechanism of the same
+shape: a published wire figure that does not survive re-derivation (pass 1, the wrong fixture;
+pass 2, the closure accounting). The plan gate recorded its rejected alternative as "a standalone
+probe replica over patching `R/parallel.R` on the branch and reverting", with the falsifier
+"the replica and `dispatch_folds()` being shown to differ in a way that changes the identity
+result". The replica did differ from `dispatch_folds()` in a way that changed a result — the
+wire result rather than the identity result — so the recorded falsifier was aimed one axis away
+from where the failure landed. That alternative is what trigger (b) asks be reconsidered.
