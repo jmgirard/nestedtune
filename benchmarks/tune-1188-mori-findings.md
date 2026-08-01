@@ -3,11 +3,20 @@
 Drafted 2026-07-31 by M26, corrected after review the same day. **Not posted.**
 Posting is the maintainer's call.
 
-**SUPERSEDED FIGURES — do not post or cite as written (2026-08-01).** The wire
-numbers below (3.87x and its components) are a development-state capture that
-double-counts srcref structure; the installed-state, single-stream record is
-`benchmarks/mori-wire-manifest.json` (lean 941,687 B / 1 copy, mori 103,119 B /
-0 copies, **9.13x**). M29 decides this draft's fate against that manifest.
+**SUPERSEDED FIGURES AND CLAIMS — do not post or cite as written
+(2026-08-01).** The wire numbers below (3.87x and its components) are a
+development-state capture that double-counts srcref structure; the
+installed-state, single-stream record is `benchmarks/mori-wire-manifest.json`
+(lean 941,687 B / 1 copy, mori 103,119 B / 0 copies, **9.13x**). Three claims
+below are refuted, not merely stale: (1) "a fold's wire cost is the sum of the
+three" — mirai performs ONE serialization per task, and the sum of separately
+serialized parts measures an object mirai never sends; (2) "the closure ... is
+common to both and cancels" — disproved at review, the current path carries it
+twice; (3) the closure being "by far the largest term after the data" and the
+srcref-stripping lever advice — a `load_all()` artifact; installed, the closure
+is 524 B (0.06% of the bundle) and the lever buys nothing. A shared reference
+is 268 B, ~176 B marginal, and the region name's length is pid-dependent (19
+and 20 observed). M29 decides this draft's fate against the manifest.
 
 Follows through on the mori offer in the second reply draft to topepo on
 tune#969 (`benchmarks/tune-969-reply.md` and `tune-969-reply-2.md`, both

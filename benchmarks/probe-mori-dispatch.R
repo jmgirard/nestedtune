@@ -2,7 +2,7 @@
 #
 #   Rscript benchmarks/probe-mori-dispatch.R
 #
-# M26 (AC2/AC3). The question is not whether mori is faster -- tune#1188 already
+# M26 (the re-cut criteria, AC1-AC6). The question is not whether mori is faster -- tune#1188 already
 # measured that on `fit_resamples()` -- but whether it disturbs IP2: the same
 # seed producing the same result regardless of worker count and regardless of
 # whether execution is parallel or serial. mori has no RNG surface to disturb it
@@ -18,13 +18,17 @@
 #   mori      a REPLICA of that parallel branch, sharing the frame via mori
 #
 # Only the third arm is hand-rolled; the first two are the package's own
-# dispatcher, called directly. The WIRE section below hand-rolls nothing at all:
-# it captures what dispatch_folds() actually hands mirai_map(). All three return the same thing -- a list of fold
+# dispatcher, called directly. In the WIRE section below the LEAN row is
+# captured, not assembled: `dispatch_folds()` runs for real and the bundle is
+# recorded at the `request()` call inside mirai's `do_mirai()`. The MORI rows
+# are modelled -- by substitution into that captured bundle, and independently
+# member-by-member -- because no dispatch sends them today; the section says so
+# where it builds them. All three arms return the same thing -- a list of fold
 # records from nested_fold_fit() -- so `identical()` across them is a comparison
 # of like with like rather than of two differently-assembled result objects.
 #
-# How the mori arm DIFFERS from dispatch_folds() (M26 AC2 requires this stated;
-# the same list appears in cairn/references/mori-backend-assessment.md, which is
+# How the mori arm DIFFERS from dispatch_folds() (recorded for the reader; the
+# same list appears in cairn/references/mori-backend-assessment.md, which is
 # where a reader of the assessment meets it):
 #
 #   1. No leaning, and NO INVARIANT GATE. dispatch_folds() blanks `$data` on the
@@ -201,6 +205,36 @@ publish <- function(name, value, fixture, oracles = character(),
   )
   invisible(value)
 }
+
+# An oracle string is recorded HERE, at the moment its assertion actually runs,
+# and the AC4 gate at the end requires every oracle a figure publishes to be in
+# this set. Pass 4 found three manifest oracle strings naming assertions that
+# did not exist; pass 5 found the gate that let them through -- it counted
+# strings in a vector, so a string with nothing behind it passed. Tying the
+# string to the `stopifnot()` that asserts it makes that class of drift fail
+# the run: `assert_oracle()` is the only writer, and it asserts before it
+# records. Each string is defined once below and used verbatim at both the
+# assertion site and the publish site, so the two cannot disagree.
+ORACLES_ASSERTED <- character()
+assert_oracle <- function(oracle, expr) {
+  stopifnot(expr)
+  ORACLES_ASSERTED <<- unique(c(ORACLES_ASSERTED, oracle))
+  invisible(TRUE)
+}
+
+O_LEAN_COPY    <- "copy-count: exactly 1 copy of the frame in the stream"
+O_MORI_COPY    <- "copy-count: exactly 0 copies of the frame in the stream"
+O_PAYLOAD_CF   <- "closed-form: predicted_lean_bytes() from the design's scalars, within M23's 5% band"
+O_PAYLOAD_COPY <- "copy-count: the payload alone carries 0 copies; the frame rides in .args"
+O_RUNG_FRAME   <- "frame cross-check: the .args rung equals the frame serialized alone, within 5%"
+O_MORI_INDEP   <- "independent-reconstruction: a bundle assembled member-by-member in mirai's order serializes to the same bytes"
+O_GAP_INDEP    <- "independent-reconstruction: the gap re-derives to the byte from the member-by-member bundle"
+O_REF_COPY     <- "copy-count: 0 copies of the frame in the shared object's stream"
+O_MARG_COPY    <- "copy-count: 0 copies across four references"
+O_REF_INV      <- "invariance: a 4x frame shares for the same bytes, within 5%"
+O_MARG_INV     <- "invariance: a 4x frame's marginal reference cost matches, within 5%"
+O_WORKER_SRC   <- "srcref-state: asserted absent by walking the closure's language tree"
+O_WORKER_STRIP <- "strip-invariance: removeSource() leaves the byte count identical"
 
 # Pin the full generator triple and restore the caller's on exit. `set.seed(s)`
 # pins only the uniform generator, so a session with a non-default RNGkind()
@@ -400,9 +434,10 @@ four_refs <- length(serialize(list(ref_shared, ref_shared, ref_shared, ref_share
 # The copy-count oracles these two figures publish, asserted rather than only
 # named in the manifest: a shared object's stream carries the region reference,
 # never the frame's data -- once for one reference and still zero across four.
-stopifnot(count_data_copies(ref_shared, ref_sentinel) == 0,
-          count_data_copies(list(ref_shared, ref_shared, ref_shared, ref_shared),
-                            ref_sentinel) == 0)
+assert_oracle(O_REF_COPY, count_data_copies(ref_shared, ref_sentinel) == 0)
+assert_oracle(O_MARG_COPY,
+              count_data_copies(list(ref_shared, ref_shared, ref_shared, ref_shared),
+                                ref_sentinel) == 0)
 # NOT fixed width, against what an earlier pass asserted: the name embeds the
 # creating process id in hex, so its length follows the pid. Measured 19
 # characters and 20 characters in two consecutive runs of this script. The width
@@ -425,10 +460,22 @@ cat(sprintf("against the same frame by value: %d B\n",
 big_ref_frame <- payload_fixture_data(n = 40000, p = 1)
 big_ref_shared <- mori::share(big_ref_frame)
 one_ref_big <- length(serialize(big_ref_shared, NULL))
-cat(sprintf("invariance oracle: a 4x frame shares for %d B against %d B (%.1f%%), while by value it is %d B\n\n",
+four_refs_big <- length(serialize(list(big_ref_shared, big_ref_shared,
+                                       big_ref_shared, big_ref_shared), NULL))
+marginal_ref <- (four_refs - one_ref) / 3
+marginal_ref_big <- (four_refs_big - one_ref_big) / 3
+cat(sprintf("invariance oracle: a 4x frame shares for %d B against %d B (%.1f%%), while by value it is %d B\n",
             one_ref_big, one_ref, 100 * abs(one_ref_big - one_ref) / one_ref,
             length(serialize(big_ref_frame, NULL))))
-stopifnot(abs(one_ref_big - one_ref) / one_ref < 0.05)
+cat(sprintf("marginal invariance oracle: %.1f B per extra reference on the 4x frame against %.1f B (%.1f%%)\n\n",
+            marginal_ref_big, marginal_ref,
+            100 * abs(marginal_ref_big - marginal_ref) / marginal_ref))
+assert_oracle(O_REF_INV, abs(one_ref_big - one_ref) / one_ref < 0.05)
+# The marginal figure's OWN invariance, on the marginal quantity itself. Pass 5
+# found the earlier manifest crediting this figure with the single-reference
+# invariance above, an assertion that never touched the marginal cost.
+assert_oracle(O_MARG_INV,
+              abs(marginal_ref_big - marginal_ref) / marginal_ref < 0.05)
 
 # ---- wire cost, measured off the REAL dispatch --------------------------------
 #
@@ -533,7 +580,9 @@ cat("substituting into that same captured bundle.\n\n")
 # source; it now lives in helper-payload-size.R, which this script does source,
 # so the design the suite asserts against and the design these figures are taken
 # on are one definition and cannot drift apart.
-big_fixture <- fixture_design(v = 5, inner_v = 5)
+WIRE_V <- 5L
+WIRE_INNER_V <- 5L
+big_fixture <- fixture_design(v = WIRE_V, inner_v = WIRE_INNER_V)
 big_data <- big_fixture$data
 big_design <- big_fixture$design
 big_wf <- payload_fixture_workflow()
@@ -563,7 +612,7 @@ srcref_state <- c(.f = has_srcref(lean_bundle$.f),
                   worker = has_srcref(lean_bundle$.args$worker))
 cat(sprintf("source references in the captured closures: .f %s, .args$worker %s\n\n",
             srcref_state[[".f"]], srcref_state[["worker"]]))
-stopifnot(!any(srcref_state))
+assert_oracle(O_WORKER_SRC, !any(srcref_state))
 
 # The modelled mori bundle, built by SUBSTITUTION into the captured one rather
 # than assembled beside it -- every member adoption would not change is carried
@@ -593,19 +642,15 @@ report_bundle <- function(label, b, sentinel) {
 lean_total <- report_bundle("lean", lean_bundle, big_sentinel)
 mori_total <- report_bundle("mori", mori_bundle, big_sentinel)
 
-# AC1. Publishing the sum must FAIL rather than pass: the two are different
-# numbers for the same bundle, because separately-serialized members each carry
-# their own copy of structure (and per-stream headers) the single stream pays
-# once. Three earlier passes published the sum. Asserted as a strict VALUE
-# inequality on both rows -- `>` coerces integer against double, where the
-# `!identical()` a fourth pass used was a type tautology that could not fail
-# (`wire_bytes()` returns integer, `sum_of_parts()` double). This fails when
-# the two agree, so a future edit that quietly reverts to summing is caught
-# here rather than in review.
-stopifnot(
-  sum_of_parts(lean_bundle) > lean_total,
-  sum_of_parts(mori_bundle) > mori_total
-)
+# AC1. Publishing the sum must FAIL rather than pass. Two guards have occupied
+# this slot and neither could fail: pass 4's `!identical()` was a type tautology
+# (integer against double), and a `sum > single` inequality is a structural one
+# -- each separately serialized member pays its own stream header, so the sum
+# exceeds the single stream for any multi-member bundle whatever the bytes say.
+# The guard that can fail is on the PUBLISHED value, asserted after the
+# registry is populated (see "AC1 publishing guard" below): the value a
+# document cites must equal the single stream and must differ from the sum of
+# parts, so an edit that publishes the sum aborts the run.
 cat(sprintf("\nsum-of-parts overstates the lean bundle by %.0f B (%.1f%%); it is not a wire cost\n",
             sum_of_parts(lean_bundle) - lean_total,
             100 * (sum_of_parts(lean_bundle) - lean_total) / lean_total))
@@ -669,9 +714,15 @@ mori_bundle_independent <- list(
 )
 stopifnot(
   identical(names(mori_bundle_independent), names(lean_bundle)),
-  identical(wire_bytes(mori_bundle_independent), mori_total),
   identical(wire_bytes(step), mori_total)
 )
+# The falsifiable checks the manifest credits, recorded as oracles at their
+# assertion site. Both rest on the member-by-member bundle: a dropped member, a
+# reordering, or a substitution that kept `shared` alive diverges here.
+assert_oracle(O_MORI_INDEP, identical(wire_bytes(mori_bundle_independent), mori_total))
+assert_oracle(O_GAP_INDEP,
+              identical(lean_total - wire_bytes(mori_bundle_independent),
+                        lean_total - mori_total))
 
 cat("== how the gap decomposes (one substitution per rung, in this order) ==\n")
 for (nm in names(ladder)) {
@@ -696,35 +747,45 @@ args_rung <- ladder[[".args: drop `shared` (the frame) and `worker` (now .f)"]]
 cat(sprintf("the `.args` rung against the frame measured alone: %.0f B vs %d B (%.1f%%)\n\n",
             args_rung, frame_alone,
             100 * abs(args_rung - frame_alone) / frame_alone))
-stopifnot(abs(args_rung - frame_alone) / frame_alone < 0.05)
+assert_oracle(O_RUNG_FRAME, abs(args_rung - frame_alone) / frame_alone < 0.05)
 
 
 # The closed-form oracle, compared rather than printed. M23's own test bounds it
-# at 5%; an oracle that is printed and never checked cannot fail.
-predicted <- predicted_lean_bytes(5000, 5, 5)
+# at 5%; an oracle that is printed and never checked cannot fail. The scalars
+# are read from the fixture rather than re-typed, so a changed default in
+# `fixture_design()` moves the prediction with the design instead of leaving a
+# hardcoded 5000 predicting for a design no longer measured.
+predicted <- predicted_lean_bytes(nrow(big_data), WIRE_V, WIRE_INNER_V)
 measured_payload <- length(serialize(lean_bundle$.x, NULL))
 cat(sprintf("closed-form oracle for the lean payload: %d B predicted, %d B measured (%.1f%%)\n",
             predicted, measured_payload,
             100 * abs(measured_payload - predicted) / predicted))
-stopifnot(abs(measured_payload - predicted) / predicted < 0.05)
+assert_oracle(O_PAYLOAD_CF, abs(measured_payload - predicted) / predicted < 0.05)
 
 # The copy counts are the claim; assert them rather than printing them. Counted
 # over the WHOLE bundle, so a copy hiding in a member the table does not break
 # out is still counted. The payload is also counted alone: its manifest oracle
 # says it carries 0 copies with the frame riding in `.args`, so that is asserted
 # too, not merely implied by the bundle-wide count of 1.
-stopifnot(count_data_copies(lean_bundle, big_sentinel) == 1,
-          count_data_copies(mori_bundle, big_sentinel) == 0,
-          count_data_copies(lean_bundle$.x, big_sentinel) == 0,
-          count_data_copies(lean_bundle$.args$shared, big_sentinel) == 1)
+assert_oracle(O_LEAN_COPY, count_data_copies(lean_bundle, big_sentinel) == 1)
+assert_oracle(O_MORI_COPY, count_data_copies(mori_bundle, big_sentinel) == 0)
+assert_oracle(O_PAYLOAD_COPY, count_data_copies(lean_bundle$.x, big_sentinel) == 0)
+stopifnot(count_data_copies(lean_bundle$.args$shared, big_sentinel) == 1)
 
 # ---- register every published figure with its oracles and its fixture ---------
 #
 # FIXTURE names what each figure was taken on. The wire figures use M23's own
 # fixture so they are comparable with M23's committed numbers; the shared-
 # reference costs use a small separate frame, and saying so is AC6's point.
-WIRE_FIXTURE <- "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()"
-REF_FIXTURE <- "payload_fixture_data(n=10000, p=1, seed=1)"
+# Derived from the objects measured, not re-typed: pass 1 failed on a fixture
+# string that described a design the probe was not using. "fold 1" says which
+# bundle the wire figures are: `capture_dispatch()` records the first fold's
+# task, and fold sizes need not be identical when n %% v != 0.
+WIRE_FIXTURE <- sprintf(
+  "fixture_design(v=%d, inner_v=%d): %dx%d frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
+  WIRE_V, WIRE_INNER_V, nrow(big_data), ncol(big_data))
+REF_FIXTURE <- sprintf("payload_fixture_data(n=%d, p=%d, seed=1)",
+                       nrow(ref_frame), ncol(ref_frame) - 1L)
 
 # The four headline figures embed the worker closure -- the quantity this
 # milestone measured at 524 B installed against 291,491 B under `load_all()` --
@@ -732,29 +793,23 @@ REF_FIXTURE <- "payload_fixture_data(n=10000, p=1, seed=1)"
 # install-dependent. The manifest's `package_state` says which state they were
 # taken in; a drift check must reproduce that state or exclude them.
 publish("lean_bundle_bytes", lean_total, WIRE_FIXTURE,
-        c("copy-count: exactly 1 copy of the frame in the stream",
-          "closed-form: the .args rung equals the frame serialized alone, within 5%"),
+        c(O_LEAN_COPY, O_RUNG_FRAME),
         install_dependent = TRUE)
 publish("mori_bundle_bytes", mori_total, WIRE_FIXTURE,
-        c("copy-count: exactly 0 copies of the frame in the stream",
-          "ladder: reached by substitution from the lean bundle, asserted identical"),
+        c(O_MORI_COPY, O_MORI_INDEP),
         install_dependent = TRUE)
 publish("lean_payload_bytes", measured_payload, WIRE_FIXTURE,
-        c("closed-form: predicted_lean_bytes(5000,5,5) within M23's 5% band",
-          "copy-count: the payload alone carries 0 copies; the frame rides in .args"))
+        c(O_PAYLOAD_CF, O_PAYLOAD_COPY))
 publish("ratio_lean_over_mori", lean_total / mori_total, WIRE_FIXTURE,
         install_dependent = TRUE,
         derived = TRUE, derived_from = c("lean_bundle_bytes", "mori_bundle_bytes"))
 publish("gap_bytes", lean_total - mori_total, WIRE_FIXTURE,
-        c("ladder: telescopes to the gap to the byte, tolerance zero",
-          "closed-form: dominated by the .args rung, checked against the frame alone"),
+        c(O_GAP_INDEP, O_RUNG_FRAME),
         install_dependent = TRUE)
 publish("shared_reference_bytes", one_ref, REF_FIXTURE,
-        c("copy-count: 0 copies of the frame in the shared object's stream",
-          "invariance: a 4x frame shares for the same bytes, within 5%"))
-publish("shared_marginal_bytes", (four_refs - one_ref) / 3, REF_FIXTURE,
-        c("copy-count: 0 copies across four references",
-          "invariance: a 4x frame shares for the same bytes, within 5%"))
+        c(O_REF_COPY, O_REF_INV))
+publish("shared_marginal_bytes", marginal_ref, REF_FIXTURE,
+        c(O_MARG_COPY, O_MARG_INV))
 
 # Second oracle for the closure figure, again sharing no arithmetic with the
 # srcref-state walk: stripping source references must not change the byte count,
@@ -762,22 +817,39 @@ publish("shared_marginal_bytes", (four_refs - one_ref) / 3, REF_FIXTURE,
 # here while the state walk missed them in a corner of the language tree.
 worker_stripped <- length(serialize(utils::removeSource(lean_bundle$.args$worker), NULL))
 worker_bytes <- length(serialize(lean_bundle$.args$worker, NULL))
-stopifnot(identical(worker_stripped, worker_bytes))
+assert_oracle(O_WORKER_STRIP, identical(worker_stripped, worker_bytes))
 publish("worker_closure_bytes", worker_bytes, WIRE_FIXTURE,
-        c("srcref-state: asserted absent by walking the closure's language tree",
-          "strip-invariance: removeSource() leaves the byte count identical"),
+        c(O_WORKER_SRC, O_WORKER_STRIP),
         install_dependent = TRUE)
 publish("sum_of_parts_overstatement_bytes", sum_of_parts(lean_bundle) - lean_total,
         WIRE_FIXTURE, install_dependent = TRUE, derived = TRUE,
         derived_from = c("lean_bundle_bytes"))
 
-# AC4, asserted rather than reported. Every non-derived figure carries at least
+# AC1 publishing guard -- the value a document will cite is the single stream,
+# never the sum of parts. `==`/`!=` compare on value (integer coerces against
+# double), so an edit that publishes the sum makes a conjunct FALSE and the run
+# aborts. This is the guard with a reachable failing state; the sum-vs-single
+# inequality itself is structural for a multi-member bundle and guards nothing.
+stopifnot(
+  PUBLISHED[["lean_bundle_bytes"]]$value == lean_total,
+  PUBLISHED[["lean_bundle_bytes"]]$value != sum_of_parts(lean_bundle),
+  PUBLISHED[["mori_bundle_bytes"]]$value == mori_total,
+  PUBLISHED[["mori_bundle_bytes"]]$value != sum_of_parts(mori_bundle)
+)
+
+# AC4, asserted rather than reported. Every oracle string a figure publishes
+# must have been recorded by `assert_oracle()` at a passing assertion this run
+# -- a string with no assertion behind it fails here, which is the gate pass 4
+# found missing (it counted strings). Every non-derived figure carries at least
 # two oracles sharing no arithmetic; every derived figure names the published
 # figures it comes from, and those must themselves be published and non-derived,
 # so a derived figure can never inherit from another derived one.
 oracle_counts <- vapply(PUBLISHED, function(p) length(p$oracles), numeric(1))
 is_derived <- vapply(PUBLISHED, function(p) isTRUE(p$derived), logical(1))
 stopifnot(all(oracle_counts[!is_derived] >= 2))
+for (p in PUBLISHED) {
+  stopifnot(all(p$oracles %in% ORACLES_ASSERTED))
+}
 for (p in PUBLISHED[is_derived]) {
   stopifnot(length(p$derived_from) > 0L,
             all(p$derived_from %in% names(PUBLISHED)),
