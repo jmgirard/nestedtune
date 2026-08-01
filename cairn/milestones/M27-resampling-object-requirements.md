@@ -88,7 +88,7 @@ on it.
       per axis.
 - [x] T5: Run the measurements; record results against the models.
 - [x] T6: Author the synthesis note; add its `INDEX.md` bullet.
-- [ ] T7: Draft the maintainer-facing writeup under `benchmarks/`, unposted.
+- [x] T7: Draft the maintainer-facing writeup under `benchmarks/`, unposted.
 - [ ] T8: Run the profile's `verify` slot.
 
 ## Work log
@@ -102,6 +102,7 @@ on it.
 - 2026-08-01: T1-T3 done in one authoring pass — the synthesis note's R (19 reads), C (7 reconstructions), W (11 workarounds) tables; every file:line read directly at 9b8dd07 before citing; a grep sweep confirmed no design reads outside the six files, and the "outside attr is test-only" claim was verified by grep.
 - 2026-08-01: T4-T5 — sibling script `benchmarks/outer-loop-object-requirements.R` (sources helper-payload-size.R, reuses the #283 models); memory axis 3.228x at 5x5 and 5.094x at 20x5 (model resid ≤1%), wire axis: a leaned nested_cv fold still carries its own analysis frame (~70% of its payload; copy-count oracle 1 vs 0), which leaning cannot remove; a raw shared-copy count at 20x5 read 4 from a sentinel coincidence, fixed by netting out the fold's own frame.
 - 2026-08-01: T6 — note complete with Provenance, Scope, Evidence snapshot, and Measurements; INDEX.md bullet added.
+- 2026-08-01: T7 — `benchmarks/resampling-object-writeup.md`, unposted, every claim tagged (measured)/(inferred); the mori caveat names the absolute wire figures and the serialized-shared-frame premise as what M26's finding changes, and argues shared memory strengthens rather than weakens the reindexing case.
 
 ## Decisions
 
