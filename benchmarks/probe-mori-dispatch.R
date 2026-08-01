@@ -393,9 +393,16 @@ cat("\n")
 
 cat("== what one shared reference costs on the wire ==\n")
 ref_frame <- payload_fixture_data(n = 10000, p = 1)
+ref_sentinel <- sentinel_of(ref_frame)
 ref_shared <- mori::share(ref_frame)
 one_ref <- length(serialize(ref_shared, NULL))
 four_refs <- length(serialize(list(ref_shared, ref_shared, ref_shared, ref_shared), NULL))
+# The copy-count oracles these two figures publish, asserted rather than only
+# named in the manifest: a shared object's stream carries the region reference,
+# never the frame's data -- once for one reference and still zero across four.
+stopifnot(count_data_copies(ref_shared, ref_sentinel) == 0,
+          count_data_copies(list(ref_shared, ref_shared, ref_shared, ref_shared),
+                            ref_sentinel) == 0)
 # NOT fixed width, against what an earlier pass asserted: the name embeds the
 # creating process id in hex, so its length follows the pid. Measured 19
 # characters and 20 characters in two consecutive runs of this script. The width
@@ -492,10 +499,10 @@ capture_dispatch <- function(payloads, object, grid, metrics) {
   }
   patched <- orig
   environment(patched) <- shim
-  # If mirai reshapes `do_mirai()` upstream this still captures whatever it
-  # builds, but a body that is no longer mirai's own would mean the shim went
-  # stale and the capture is this script's construction again.
-  stopifnot(identical(body(patched), body(orig)))
+  # `environment<-` cannot change a body, so there is nothing to assert here:
+  # the capture runs mirai's own `do_mirai()` body by construction. The
+  # staleness guard is downstream -- the bundle-shape assertion on the captured
+  # object -- which fails if mirai reshapes what `do_mirai()` builds.
   utils::assignInNamespace("do_mirai", patched, ns = "mirai")
   on.exit(utils::assignInNamespace("do_mirai", orig, ns = "mirai"), add = TRUE)
   tryCatch(
@@ -588,12 +595,16 @@ mori_total <- report_bundle("mori", mori_bundle, big_sentinel)
 
 # AC1. Publishing the sum must FAIL rather than pass: the two are different
 # numbers for the same bundle, because separately-serialized members each carry
-# their own copy of structure the single stream shares once. Three earlier passes
-# published the sum. Asserted as an inequality on both rows, so a future edit
-# that quietly reverts to summing is caught here rather than in review.
+# their own copy of structure (and per-stream headers) the single stream pays
+# once. Three earlier passes published the sum. Asserted as a strict VALUE
+# inequality on both rows -- `>` coerces integer against double, where the
+# `!identical()` a fourth pass used was a type tautology that could not fail
+# (`wire_bytes()` returns integer, `sum_of_parts()` double). This fails when
+# the two agree, so a future edit that quietly reverts to summing is caught
+# here rather than in review.
 stopifnot(
-  !identical(lean_total, sum_of_parts(lean_bundle)),
-  !identical(mori_total, sum_of_parts(mori_bundle))
+  sum_of_parts(lean_bundle) > lean_total,
+  sum_of_parts(mori_bundle) > mori_total
 )
 cat(sprintf("\nsum-of-parts overstates the lean bundle by %.0f B (%.1f%%); it is not a wire cost\n",
             sum_of_parts(lean_bundle) - lean_total,
@@ -699,9 +710,13 @@ stopifnot(abs(measured_payload - predicted) / predicted < 0.05)
 
 # The copy counts are the claim; assert them rather than printing them. Counted
 # over the WHOLE bundle, so a copy hiding in a member the table does not break
-# out is still counted.
+# out is still counted. The payload is also counted alone: its manifest oracle
+# says it carries 0 copies with the frame riding in `.args`, so that is asserted
+# too, not merely implied by the bundle-wide count of 1.
 stopifnot(count_data_copies(lean_bundle, big_sentinel) == 1,
-          count_data_copies(mori_bundle, big_sentinel) == 0)
+          count_data_copies(mori_bundle, big_sentinel) == 0,
+          count_data_copies(lean_bundle$.x, big_sentinel) == 0,
+          count_data_copies(lean_bundle$.args$shared, big_sentinel) == 1)
 
 # ---- register every published figure with its oracles and its fixture ---------
 #
@@ -711,20 +726,29 @@ stopifnot(count_data_copies(lean_bundle, big_sentinel) == 1,
 WIRE_FIXTURE <- "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()"
 REF_FIXTURE <- "payload_fixture_data(n=10000, p=1, seed=1)"
 
+# The four headline figures embed the worker closure -- the quantity this
+# milestone measured at 524 B installed against 291,491 B under `load_all()` --
+# so their values follow how the package was built and they are marked
+# install-dependent. The manifest's `package_state` says which state they were
+# taken in; a drift check must reproduce that state or exclude them.
 publish("lean_bundle_bytes", lean_total, WIRE_FIXTURE,
         c("copy-count: exactly 1 copy of the frame in the stream",
-          "closed-form: the .args rung equals the frame serialized alone, within 5%"))
+          "closed-form: the .args rung equals the frame serialized alone, within 5%"),
+        install_dependent = TRUE)
 publish("mori_bundle_bytes", mori_total, WIRE_FIXTURE,
         c("copy-count: exactly 0 copies of the frame in the stream",
-          "ladder: reached by substitution from the lean bundle, asserted identical"))
+          "ladder: reached by substitution from the lean bundle, asserted identical"),
+        install_dependent = TRUE)
 publish("lean_payload_bytes", measured_payload, WIRE_FIXTURE,
         c("closed-form: predicted_lean_bytes(5000,5,5) within M23's 5% band",
-          "copy-count: the payload carries 0 copies; the frame rides in .args"))
+          "copy-count: the payload alone carries 0 copies; the frame rides in .args"))
 publish("ratio_lean_over_mori", lean_total / mori_total, WIRE_FIXTURE,
+        install_dependent = TRUE,
         derived = TRUE, derived_from = c("lean_bundle_bytes", "mori_bundle_bytes"))
 publish("gap_bytes", lean_total - mori_total, WIRE_FIXTURE,
         c("ladder: telescopes to the gap to the byte, tolerance zero",
-          "closed-form: dominated by the .args rung, checked against the frame alone"))
+          "closed-form: dominated by the .args rung, checked against the frame alone"),
+        install_dependent = TRUE)
 publish("shared_reference_bytes", one_ref, REF_FIXTURE,
         c("copy-count: 0 copies of the frame in the shared object's stream",
           "invariance: a 4x frame shares for the same bytes, within 5%"))

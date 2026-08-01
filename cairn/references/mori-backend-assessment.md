@@ -110,9 +110,22 @@ change if mori were adopted) · `Conditional` (changed on some pools, not all) �
 | P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:543`) | A daemon needs mori installed in its library, which the probe does not currently ask. Only `daemon_symbol_manifest()` takes a `package` argument (`R/parallel.R:391`); `daemon_probe_expr()` has no formals (`:420`) and `check_daemons_can_load()` has no `package` parameter, so probing a second package is new machinery rather than a new argument value — and M24 review F6 recorded a further constraint, that `asNamespace(package)` runs host-side, so the host must also have the probed package installed | `Changed` |
 | P8 | rsample#283 / M01 — memory scaling with the outer fold count | Not addressed. `nested_cv()`'s cost is analysis frames materialized **in-process** before any parallelism; mori addresses transfer to daemons. Different axis, and the package's founding gap is untouched by mori either way | `Out of reach` |
 | P9 | mori's own adoption cost | `Depends: R (>= 4.3)` against this package's `R (>= 4.1)` (`DESCRIPTION`), so adoption either raises the floor or makes mori conditional. No hard package dependencies otherwise, and Windows is supported via Win32 file mapping rather than being excluded | `Changed` |
-| P10 | Byte-exact reproducibility of the wire measurements | Unaffected. An earlier draft of this page claimed the mori route varied per run because the region name encodes the creating process; the name is fixed-width 19 characters, and the modelled mori bundle measured 100,589 B in three separate processes with three distinct region names. What does move between environments is the srcref-laden worker closure, which both routes carry equally | `Untouched` |
+| P10 | Byte-exact reproducibility of the wire measurements | Unaffected in the installed state: the probe regenerates every manifest figure byte-identically across runs. One earlier claim corrected twice: the region name is **not** fixed-width — it embeds the creating process id in hex, so its length follows the pid (measured 19 and 20 characters in consecutive runs; the serialized cost, not the name width, is what carries the claim) _(corrected 2026-08-01; a prior correction had asserted fixed-width 19)_. What moves between *environments* is the srcref-laden worker closure, a development-state artifact absent from the installed capture | `Untouched` |
 
 ### The measurements behind P2, P5 and P10
+
+> **Correction, 2026-08-01.** The wire figures in this section are a
+> `pkgload::load_all()` development-state capture, and the milestone that
+> produced them subsequently showed both of this section's accounting premises
+> wrong: mirai performs **one** serialization per task (summing separately
+> serialized `.f`/`.x`/`.args` measures an object mirai never sends), and the
+> srcref-laden closure sizes here are a development artifact (524 B installed
+> against 291,491 B under `load_all()`). The measured record is
+> `benchmarks/mori-wire-manifest.json` — installed state, single-stream: lean
+> 941,687 B / 1 copy, mori 103,119 B / 0 copies, ratio **9.13×**, gap 838,568 B
+> asserted to the byte and dominated by the data itself. M29 rewrites this page
+> from that manifest; until then, cite the manifest, not this section. Git
+> holds the original text.
 
 Per fold on M23's own fixture — `fixture_design()` at
 `tests/testthat/test-parallel-payload.R:40`: 5,000×21, v = 5 outer, inner_v = 5,
@@ -160,9 +173,12 @@ serialized size is srcref-dependent, so it grew from the 202,363 B recorded at
 `R/parallel.R:246` to 291,491 B measured here. `R/parallel.R` grew from 26,759 B
 at M23 to 39,066 B at M24, the only commit touching it between, which accounts
 for the difference. M23's committed 5,783,645 B therefore under-reports today's
-real per-fold cost on two independent counts; that is a finding about the older
-record, not about mori, and it is filed as a ROADMAP candidate rather than
-corrected here.
+real per-fold cost on two independent counts _(corrected 2026-08-01: this page
+claimed that finding was "filed as a ROADMAP candidate"; no such row was ever
+filed, and none is owed — the installed-state capture showed both counts are
+development-state artifacts, ~451 B combined once srcrefs are stripped, so the
+under-report dissolves in the state a user actually runs; see the correction
+banner above)_.
 
 Two oracles back the lean payload, from `tests/testthat/helper-payload-size.R`:
 a **closed form** predicting it from n/v/inner_v alone (96,000 B predicted

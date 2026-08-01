@@ -3,6 +3,12 @@
 Drafted 2026-07-31 by M26, corrected after review the same day. **Not posted.**
 Posting is the maintainer's call.
 
+**SUPERSEDED FIGURES — do not post or cite as written (2026-08-01).** The wire
+numbers below (3.87x and its components) are a development-state capture that
+double-counts srcref structure; the installed-state, single-stream record is
+`benchmarks/mori-wire-manifest.json` (lean 941,687 B / 1 copy, mori 103,119 B /
+0 copies, **9.13x**). M29 decides this draft's fate against that manifest.
+
 Follows through on the mori offer in the second reply draft to topepo on
 tune#969 (`benchmarks/tune-969-reply.md` and `tune-969-reply-2.md`, both
 uncommitted at the time of writing), which said mori had not been evaluated and

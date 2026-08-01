@@ -8,7 +8,7 @@
       "name": "lean_bundle_bytes",
       "value": 941687,
       "fixture": "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()",
-      "install_dependent": false,
+      "install_dependent": true,
       "derived": false,
       "derived_from": [],
       "oracles": ["copy-count: exactly 1 copy of the frame in the stream", "closed-form: the .args rung equals the frame serialized alone, within 5%"]
@@ -17,7 +17,7 @@
       "name": "mori_bundle_bytes",
       "value": 103119,
       "fixture": "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()",
-      "install_dependent": false,
+      "install_dependent": true,
       "derived": false,
       "derived_from": [],
       "oracles": ["copy-count: exactly 0 copies of the frame in the stream", "ladder: reached by substitution from the lean bundle, asserted identical"]
@@ -29,13 +29,13 @@
       "install_dependent": false,
       "derived": false,
       "derived_from": [],
-      "oracles": ["closed-form: predicted_lean_bytes(5000,5,5) within M23's 5% band", "copy-count: the payload carries 0 copies; the frame rides in .args"]
+      "oracles": ["closed-form: predicted_lean_bytes(5000,5,5) within M23's 5% band", "copy-count: the payload alone carries 0 copies; the frame rides in .args"]
     },
     {
       "name": "ratio_lean_over_mori",
       "value": 9.132042,
       "fixture": "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()",
-      "install_dependent": false,
+      "install_dependent": true,
       "derived": true,
       "derived_from": ["lean_bundle_bytes", "mori_bundle_bytes"],
       "oracles": []
@@ -44,7 +44,7 @@
       "name": "gap_bytes",
       "value": 838568,
       "fixture": "payload_fixture_data(n=5000, p=20, seed=1); nested_resamples(v=5, inner_v=5, set.seed(2)); payload_fixture_workflow()",
-      "install_dependent": false,
+      "install_dependent": true,
       "derived": false,
       "derived_from": [],
       "oracles": ["ladder: telescopes to the gap to the byte, tolerance zero", "closed-form: dominated by the .args rung, checked against the frame alone"]
