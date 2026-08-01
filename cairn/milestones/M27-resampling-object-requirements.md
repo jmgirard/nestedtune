@@ -62,7 +62,7 @@ on it.
 - [x] AC5: An unposted draft writeup for the maintainer exists under
       `benchmarks/`, marking each claim as measured here or inferred, and naming
       which of its transfer-cost argument M26's finding could change.
-- [ ] AC6: The `verify` slot of `cairn/PROFILE.md` is clean.
+- [x] AC6: The `verify` slot of `cairn/PROFILE.md` is clean.
 
 ## Coverage
 
@@ -116,4 +116,4 @@ Reviewed 2026-08-01 on branch m27-resampling-object-requirements (PR #29).
 - AC3: benchmark re-run fresh at review — 5x5 and 20x5 (neither covered by M13), obj_size 3.228x/5.094x vs model 3.247/5.142 (resid ≤1.02%); wire axis both constructors under the leaned dispatch path, payload model resid ≤2.39%, copy-count oracle 0 frames (nested_resamples) vs 1 own frame (nested_cv) — two independent oracle types per axis (closed form + live; closed form + copy count).
 - AC4: W table, 11 rows, each with file:line and the forcing rsample behaviour; citations re-resolved in the same command sweep as AC1.
 - AC5: `benchmarks/resampling-object-writeup.md` exists, header says "Not posted", every claim tagged (measured)/(inferred), and the mori caveat paragraph names the absolute wire figures and the serialized-shared-frame premise as what M26's finding changes.
-- AC6: devtools::test() 1628 pass / 0 fail / 0 warn / 0 skip; devtools::document() no diff; pkgdown::check_pkgdown() clean; cairn_validate all 16 checks PASS (staleness advisory pre-existing, new page not in it); no README.Rmd; NEWS: no entry owed, no user-visible change; devtools::check() recorded below.
+- AC6: devtools::test() 1628 pass / 0 fail / 0 warn / 0 skip; devtools::document() no diff; pkgdown::check_pkgdown() clean; cairn_validate all 16 checks PASS (staleness advisory pre-existing, new page not in it); no README.Rmd; NEWS: no entry owed, no user-visible change; devtools::check() 0 errors / 0 warnings / 0 notes (4m11s).
