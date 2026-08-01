@@ -134,7 +134,9 @@ The mori figures carry a `~` because that route is not byte-reproducible (P10).
 **Reconciliation against M23's committed totals.** M23 recorded 25,714,635 B →
 5,783,645 B over 5 folds. The fat route reconciles exactly: 25,714,635 / 5 =
 5,142,927 B/fold, against 5,141,166 B measured here, a difference of **1,761 B**
-— precisely the workflow term, which this table excludes and M23's included.
+— exactly M23's own per-fold `.args`, `list(object = workflow, grid = 3,
+metrics = NULL)`, measured at 1,761 B (the workflow alone is 1,672 B). Those are
+the route-independent terms this table excludes and M23's total included.
 The copy count matches M23's test-locked `6L` at `test-parallel-payload.R:145`.
 The lean route does **not** reconcile to the byte, and should not be expected
 to: its `.args` carries the worker closure, whose serialized size is
