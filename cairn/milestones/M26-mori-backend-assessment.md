@@ -164,6 +164,8 @@ mirai-vs-`future` question.
 - 2026-08-01: rework 3 — F6/AC5 fixed: `lean_bundle_bytes`, `mori_bundle_bytes`, `gap_bytes` and `ratio_lean_over_mori` are now marked `install_dependent: true` — they embed the worker closure this milestone measured at 524 B installed against 291,491 B in dev, so their values follow the build state; the manifest's `package_state` names which state they were taken in.
 - 2026-08-01: rework 3 — F24/F25/F26 document corrections, current knowledge in place and marked: the ROADMAP mori row now carries the manifest's installed-state figures (941,687 / 103,119 / 9.13x) and the data-dominated gap explanation, replacing the refuted dev-state 3.87x and the disproved "closure cancels" sentence; the note's measurement section carries a superseded-figures correction banner pointing at the manifest, P10's fixed-width region-name claim is corrected to pid-dependent (19 and 20 chars measured), and the false "filed as a ROADMAP candidate" sentence is corrected (no row was filed; none is owed — the under-report dissolves in the installed state). The unposted draft gets a do-not-post banner; its fate is M29's.
 - 2026-08-01: rework 3 verified — probe exit 0 with every figure re-derived byte-identically (the manifest diff is exactly the four flag flips and one reworded oracle string); `devtools::test()` FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes; `cairn_validate` exit 0, all hard checks PASS (the 18 references-staleness advisories are shelf-wide and pre-existing). Status back to review.
+- 2026-08-01: review pass 5, three lenses + scorer — 32 deduplicated findings, 20 >= 80: 19 fixed in-pass, 1 rejected with reason (the manifest-as-oracle-registry shape is what the plan gate chose). Load-bearing fixes: an `assert_oracle()` registry ties every manifest oracle string to a passing assertion and the AC4 gate refuses unbacked strings; the marginal figure gains the invariance oracle it was falsely credited with; AC1's guard moved to the published value, the first occupant of that slot with a reachable failing state; the note's ledger row, cancels sentence, and both documents' reference-cost figures corrected to the manifest.
+- 2026-08-01: review pass 5 — reruns across three further pids found the wire totals move by the pid's serialized hex-string length (lean 941,683-941,687 B, model exact over four runs: four occurrences in the bundle, one more per shared reference). Within-process regeneration is byte-identical. Recorded in the manifest's new `reproducibility` field with a ~20 B drift-comparison bound for M29, and every document figure rounded to the precision that survives re-derivation.
 
 ## Decisions
 
@@ -487,3 +489,78 @@ reworded oracle string, no value moved.
 - **AC6 — verified.** Every figure names its fixture; the two fixture strings separate the wire
   figures (M23's `fixture_design()`) from the shared-reference ones (10000x1 frame).
 - **AC7 — verified.** Gates as above, run fresh this session.
+
+#### Pass 5 continued — three-lens findings, corrections to the evidence above, triage
+
+Three fresh-context lenses (diff-bug [O], blame-history [S], prior-review [S]) reported 36 raw
+findings, deduplicated to 32, scored by a fourth [S] agent that generated none. **20 scored >= 80;
+19 were fixed in this pass and 1 rejected with reason; 12 logged below threshold.** The prior-review
+lens independently verified five of the seven pass-4 findings (F1, F8, F4, F26, F6) genuinely closed
+by rework 3 and caught the two that were only half-closed (the note's ledger row and cancels
+sentence), both fixed now.
+
+**The evidence block above is corrected on three points, per findings G23 (96), G24 (90) and G1
+(80):** (i) its probe line citations described a revision that was not the committed one; (ii) it
+attributed the 4x-invariance oracle to the marginal figure, whose invariance was in fact never
+asserted; (iii) its AC1 falsifiability demonstration showed the operator's semantics, not a
+reachable failing state — the `sum > single` inequality is structural for a multi-member bundle.
+Re-verified against the final committed probe:
+
+- **AC1** — capture and bundle-shape assertion probe:599-604; the guard is now on the PUBLISHED
+  value (probe:828-838): it must equal the single stream and differ from the sum of parts, so an
+  edit that publishes the sum aborts — a reachable failing state, unlike both prior occupants.
+- **AC4** — mechanized: `assert_oracle()` records each oracle string at its passing assertion, and
+  the gate (probe:846-852) refuses any published oracle string not so recorded, closing the
+  count-strings mechanism (G7). All 13 oracle strings asserted at probe:437, 438, 473, 477
+  (marginal invariance, new — its absence was G2/G24), 615, 722, 723, 750, 763, 770, 771, 772, 820.
+- **AC5** — the "re-derived byte-identically" claim above is corrected: three further runs showed
+  cross-process totals move by the pid's serialized hex-string length (lean 941,683-941,687 B over
+  four runs, four occurrences in the bundle plus one per shared reference — model fits all runs
+  exactly). Within a process, regeneration is byte-identical. The manifest now records this bound in
+  a `reproducibility` field so M29's drift check compares within ~20 B instead of false-alarming,
+  and all document figures are rounded to the precision that survives re-derivation.
+
+**Actioned (fixed this pass), descending:** G23 (96) wrong line citations in the pass-5 record ·
+G2 (90) marginal invariance oracle never asserted — now computed on the 4x frame and asserted ·
+G3 (90) gap oracle string named the unfalsifiable telescoping check — now names the
+independent-reconstruction check, asserted · G24 (90) evidence misattribution, corrected above ·
+G7 (88) AC4 gate counted strings — replaced by the assert_oracle registry · G9 (85) note cited
+`fixture_design()` at a file:line this diff had moved · G17 (85) note's "wire figures above ...
+reconstruct nothing" self-contradiction · G19 (85) Disposition cited `~` marks that do not exist ·
+G4 (84) mori oracle string credited the weak half of its pair — now names the member-by-member
+reconstruction · G11/P1 (83) P5 ledger row still published 3.87x unflagged — corrected in place ·
+G16 (82) draft's srcref-lever advice refuted installed — named in the draft banner · G21 (82)
+ROADMAP row transcribed unpublished quantities and cited the unfalsifiable assertion as evidence —
+now cites manifest figure names and the independent reconstruction · G1 (80) AC1 structural
+tautology — publishing-value guard · G10/H1+G14 (80) 267/268, 175/176 and 19-character claims in
+note and draft against the manifest — corrected with the cross-run variance stated · G15 (80)
+draft still asserted the refuted sum-of-three mechanism — named as refuted in its banner · G20 (80)
+note's "asserts rather than prints" overclaim — reworded to what the registry actually enforces ·
+G31 (80) stale Extraction stamp — re-dated with the 2026-08-01 re-read recorded · G33 (80) payload
+copy-count conflation — reworded.
+
+**Rejected with reason:** G26 (85) — the manifest as an oracle registry outside the test suite
+contradicts DESIGN's "oracle records live in the asserting test file" convention, and the suite's
+PASS 1615 indeed pins none of AC4's oracles. Rejected because the plan gate chose exactly this
+shape: a standalone probe (a temp-library install plus two daemon pools cannot run inside
+`devtools::test()`) publishing to a committed manifest, whose enforcement surface is M29's drift
+check; and the package is being ported (M28), so building CI machinery to run the probe would be
+production-preparedness the maintainer has deprioritized. The convention governs suite-asserted
+oracles for `R/` behavior, which this milestone deliberately does not touch.
+
+**Below threshold, logged (12):** G5 (78) frame cross-check band ±42 kB, slack (relabelled from
+"closed-form" to "frame cross-check" anyway) · G6 (78) overstatement derived from an unpublished
+quantity · G18 (78) probe header overclaims, rewritten anyway · G28 (78) XDR vs nanonext encoder
+unreconciled · G12 (76) cancels sentence under the banner — corrected in place anyway · G27 (76)
+fold-1-only, now stated in the fixture string · G25 (70) hardcoded closed-form scalars — derived
+from the fixture anyway · G13/G22 (68) draft cancels sentence / marginal-vs-modelled-.x
+unreconciled · G32 (64) banner weights the two causes equally · G8 (55) drift-scope consequence of
+the flag flips, stated in the AC5 evidence above · G29 (55) stale header AC references, fixed
+anyway · G30 (48) refuted — the three line ranges serve different citation purposes.
+
+**New finding from this pass's own reruns:** the cross-process pid-length variance above, absorbed
+into AC5's evidence and the manifest's `reproducibility` field.
+
+Gates after all fixes: probe exit 0 (runs 2-4, three distinct pids, model exact); `devtools::test()`
+FAIL 0 | WARN 0 | SKIP 0 | PASS 1615; `cairn_validate` exit 0; manifest parses (jsonlite), 9
+figures, reproducibility field present.

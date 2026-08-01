@@ -905,6 +905,13 @@ manifest_lines <- c(
   paste0("  ", json_kv("generated_by", json_string("benchmarks/probe-mori-dispatch.R")), ","),
   paste0("  ", json_kv("milestone", json_string("M26")), ","),
   paste0("  ", json_kv("package_state", json_string("installed to a temporary library, keep.source=no")), ","),
+  paste0("  ", json_kv("reproducibility", json_string(paste0(
+    "byte-identical within a process; across processes the wire totals move ",
+    "by the pid's hex-string length, which serializes inside the captured ",
+    "bundle (four occurrences, payload included) plus once per shared ",
+    "reference in the mori figures -- lean measured 941,683-941,687 B across ",
+    "three pids. A drift check should compare wire figures within ~20 B, ",
+    "never to the byte across processes"))), ","),
   paste0("  ", json_kv("environment", paste0("{",
     paste(c(json_kv("r", json_string(R.version.string)),
             json_kv("platform", json_string(R.version$platform)),

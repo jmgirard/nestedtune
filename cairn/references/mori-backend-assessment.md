@@ -41,13 +41,13 @@ freed when the last reference goes away or the session exits cleanly;
 **What a shared reference actually costs on the wire**, measured rather than
 assumed _(figures corrected 2026-08-01 to the manifest)_: the region name is
 pid-dependent — 19 and 20 characters observed, see P10 — one shared object
-serializes to **268 B** (`shared_reference_bytes`), and each additional
-reference in the same stream costs about **176 B** (`shared_marginal_bytes`,
-175.7). The name's own length is not the wire cost — a serialized shared
-object carries the ALTREP class and its metadata too. Against a 160,187 B
-frame by value, that is a reduction of nearly three orders of magnitude,
-but it is ~176 B per reference and not the ~30 B an earlier draft of this page
-claimed.
+serializes to **~268 B** (`shared_reference_bytes`, 267–268 across runs with
+the name's length), and each additional reference in the same stream costs
+about **~175 B** (`shared_marginal_bytes`). The name's own length is not the
+wire cost — a serialized shared object carries the ALTREP class and its
+metadata too. Against a 160,187 B frame by value, that is a reduction of
+nearly three orders of magnitude, but it is ~175 B per reference and not the
+~30 B an earlier draft of this page claimed.
 
 Three further properties matter here and none is obvious from the description.
 
@@ -109,7 +109,7 @@ change if mori were adopted) · `Conditional` (changed on some pools, not all) �
 | P2 | IP2 — same seed, same result, any worker count, parallel or serial | Held under mori at both worker counts on a ranger workflow, i.e. an engine whose randomness flows through R's RNG so the assertion is not vacuous (M02). The probe additionally asserts every fold completed, since three arms that all failed identically would compare equal too | `Untouched` |
 | P3 | D-018 — `mirai` is the outer-loop parallel backend | mori composes with mirai rather than replacing it. Adopting mori would not revisit the backend choice | `Untouched` |
 | P4 | The mirai-vs-`future` question raised on tune#969 | mori is not a scheduler, so it supplies no evidence either way. The question stays open | `Out of reach` |
-| P5 | M23 — per-fold wire cost | Changed substantially: the data leaves the wire entirely (1 copy → 0), taking the per-fold total from 941,687 B to 103,119 B, a factor of 9.13 _(corrected 2026-08-01 to the manifest's installed-state single-stream capture; the 1,523,499/393,841/3.87 originals were a dev-state sum-of-parts artifact — see the correction banner below)_ | `Changed` |
+| P5 | M23 — per-fold wire cost | Changed substantially: the data leaves the wire entirely (1 copy → 0), taking the per-fold total from ~941.7 kB to ~103.1 kB, a factor of 9.13 _(corrected 2026-08-01 to the manifest's installed-state single-stream capture; the 1,523,499/393,841/3.87 originals were a dev-state sum-of-parts artifact — see the correction banner below)_ | `Changed` |
 | P6 | That `lean_payload()`/`rehydrate_payload()`/`is_fold_payload()` (`R/parallel.R:118-179`) could therefore be deleted | Two reasons they could not. **(a)** `is_fold_payload()` is not leanness machinery at all — it enforces the one-frame-per-fold invariant, and M23 review F1 (scored 93) recorded that without it a `manual_rset()` over differing frames is tuned on the wrong rows in parallel and the right ones serially: an IP2 breach with an IP1 exposure (`R/parallel.R:100-118`). mori needs that predicate exactly as much as leaning did, though the fat-path fallback it currently triggers has no mori analogue and adoption would have to say what replaces it. **(b)** mori is same-machine, so a remote pool cannot map the host's region and the by-value path must stay as its fallback. Adoption removes the blanking and rehydration, not the gate | `Conditional` |
 | P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:543`) | A daemon needs mori installed in its library, which the probe does not currently ask. Only `daemon_symbol_manifest()` takes a `package` argument (`R/parallel.R:391`); `daemon_probe_expr()` has no formals (`:420`) and `check_daemons_can_load()` has no `package` parameter, so probing a second package is new machinery rather than a new argument value — and M24 review F6 recorded a further constraint, that `asNamespace(package)` runs host-side, so the host must also have the probed package installed | `Changed` |
 | P8 | rsample#283 / M01 — memory scaling with the outer fold count | Not addressed. `nested_cv()`'s cost is analysis frames materialized **in-process** before any parallelism; mori addresses transfer to daemons. Different axis, and the package's founding gap is untouched by mori either way | `Out of reach` |
@@ -126,10 +126,12 @@ change if mori were adopted) · `Conditional` (changed on some pools, not all) �
 > srcref-laden closure sizes here are a development artifact (524 B installed
 > against 291,491 B under `load_all()`). The measured record is
 > `benchmarks/mori-wire-manifest.json` — installed state, single-stream: lean
-> 941,687 B / 1 copy, mori 103,119 B / 0 copies, ratio **9.13×**, gap 838,568 B
-> asserted to the byte and dominated by the data itself. M29 rewrites this page
-> from that manifest; until then, cite the manifest, not this section. Git
-> holds the original text.
+> ~941.7 kB / 1 copy, mori ~103.1 kB / 0 copies, ratio **9.13×**, gap
+> ~838.6 kB re-derived to the byte within each run and dominated by the data
+> itself (exact totals move a few bytes across processes with the pid's
+> serialized hex length; the manifest's `reproducibility` field states the
+> bound). M29 rewrites this page from that manifest; until then, cite the
+> manifest, not this section. Git holds the original text.
 
 Per fold on M23's own fixture — `fixture_design()`, now in
 `tests/testthat/helper-payload-size.R`: 5,000×21, v = 5 outer, inner_v = 5,
@@ -163,7 +165,7 @@ both rows and cancelling" — was disproved at review pass 3: the lean route
 carries the closure twice, as the `.f` wrapper and as `.args$worker`, so it
 does not cancel, and 289,118 B of this table's gap was unexplained. In the
 manifest's installed state the question dissolves: the closure is 524 B, the
-gap is 838,568 B, and it is dominated by the data the lean route carries and
+gap is ~838.6 kB, and it is dominated by the data the lean route carries and
 mori does not.)_ mori's `.args` is 1,761 B, which is exactly the
 workflow-plus-grid-plus-metrics term that also reconciles the fat route below.
 
@@ -190,7 +192,7 @@ banner above)_.
 
 Two oracles back the lean payload, from `tests/testthat/helper-payload-size.R`:
 a **closed form** predicting it from n/v/inner_v alone (96,000 B predicted
-against 98,346 B measured, 2.4%, asserted against M23's own 5% band rather than
+against ~98.3 kB measured, 2.4%, asserted against M23's own 5% band rather than
 printed), and a **copy count** found by searching the stream for the big-endian
 doubles of one numeric column. They share no arithmetic. The payload's own
 asserted copy count is 0 — the frame rides in `.args`, not in the payload;
@@ -204,7 +206,7 @@ figures.
 - P4 — the multi-level parallelism question is unaffected and stays for the maintainer conversation.
 - P5, P6, P7, P9 — these are what an adoption decision turns on. They land on a ROADMAP candidate row, which carries P6's two retention reasons and P9's R-floor cost as conditions rather than afterthoughts; adoption itself is a dependency gate and a D-entry, deliberately not taken here.
 - P8 — recorded specifically to head off the misreading that shared memory answers rsample#283. Nothing to action.
-- P10 — resolved: byte-exact reproducibility holds in the installed state (the manifest regenerates with a zero diff), and the probe records the region name as pid-dependent rather than fixed-width _(corrected 2026-08-01; this line previously cited `~` marks that were removed at rework 2 and a non-determinism that turned out to be a dev-state artifact)_.
+- P10 — resolved with a stated bound: every identity and oracle re-asserts on every run, and totals reproduce byte-exactly within a process, while across processes they move by a few bytes (~0.001%) because the pid's hex string serializes inside the bundles — the region name is pid-dependent, not fixed-width _(corrected 2026-08-01, twice: this line previously cited `~` marks removed at rework 2, and its first correction claimed a zero-diff regeneration that a same-day cross-process rerun disproved)_.
 - The `mirai::everywhere()` preload candidate row is dominated on its own terms if mori is adopted: that shape buys one-copy-per-daemon with daemon state, cleanup and a stale-object hazard, where mori is one-copy-per-machine with no daemon state, automatic GC and lazy mapping — and the row's motivation, cutting per-fold `.args` transfer, is exactly what mori zeroes. The row is cross-referenced to M26 rather than closed, because closing it is part of the adoption decision.
 - The remote-daemon-pool candidate row gains a reason to stay open: P6(b) makes it the case that decides whether the by-value path can ever be retired.
 
