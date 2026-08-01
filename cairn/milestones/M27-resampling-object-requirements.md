@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2, GP4
-- **Branch/PR:** —
+- **Branch/PR:** m27-resampling-object-requirements
 
 ## Goal
 
@@ -75,13 +75,13 @@ on it.
 
 ## Tasks
 
-- [ ] T1: Inventory every read of the resampling object across `R/checks.R`,
+- [x] T1: Inventory every read of the resampling object across `R/checks.R`,
       `R/nested-tune-grid.R`, `R/nested-resamples.R`, `R/parallel.R`,
       `R/nested-final-fit.R`, `R/nested-results.R`; verify each citation by
       re-reading the cited line.
-- [ ] T2: Inventory the reconstructions, each with the carrying field that would
+- [x] T2: Inventory the reconstructions, each with the carrying field that would
       remove it.
-- [ ] T3: Inventory the class-boundary workarounds and the rsample behaviour
+- [x] T3: Inventory the class-boundary workarounds and the rsample behaviour
       behind each.
 - [ ] T4: Extend `benchmarks/rsample-283-reprex.R` (or add a sibling) to cover
       the two new size settings and the wire-byte axis, with a closed-form model
@@ -96,7 +96,10 @@ on it.
 - 2026-07-31: created by /milestone-plan.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings here — AC1 named no note path so the references-page rules did not bind; AC3's memory axis was satisfiable with no new measurement, M13 having already covered two settings; AC3's wire-byte axis named no comparison and stated no oracle against GP2. Path and Provenance fixed directly, the comparison named, the oracle required; the measure-vs-reuse choice went to the gate.
 - 2026-07-31: plan gate chose fresh measurement at uncovered sizes over reusing M13's numbers, because a criterion satisfiable with no new measurement is what the audit flagged; falsified by the new settings agreeing with M13's model closely enough that the argument never needed them.
+- 2026-08-01: implement gate: AC3's new settings are 5×5 and 20×5 on LetterRecognition (one practical scheme, one stressing the v-scaling term); T4 takes the sibling-script option so the committed #283 recipe stays byte-stable.
 - 2026-07-31: plan gate chose running in parallel with M26 over depending on it, because the maintainer signalled this thread first and the call is under three weeks out; falsified by M26 finding that shared memory removes the transfer-cost argument this note builds.
+
+- 2026-08-01: T1-T3 done in one authoring pass — the synthesis note's R (19 reads), C (7 reconstructions), W (11 workarounds) tables; every file:line read directly at 9b8dd07 before citing; a grep sweep confirmed no design reads outside the six files, and the "outside attr is test-only" claim was verified by grep.
 
 ## Decisions
 
