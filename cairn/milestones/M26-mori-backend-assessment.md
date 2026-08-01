@@ -1,6 +1,6 @@
 # M26: The backend question has a measured answer before the design settles
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -83,8 +83,8 @@ shape → M27.
       candidate rows; state the same-machine consequence.
 - [x] T5: Author the synthesis note from `templates/synthesis-note.md`; add its
       `INDEX.md` bullet.
-- [ ] T6: Draft the maintainer-facing note under `benchmarks/`, unposted.
-- [ ] T7: Run the profile's `verify` slot; add a ROADMAP candidate row for
+- [x] T6: Draft the maintainer-facing note under `benchmarks/`, unposted.
+- [x] T7: Run the profile's `verify` slot; add a ROADMAP candidate row for
       adopting `mori` if the findings warrant one.
 
 ## Work log
@@ -103,6 +103,9 @@ shape → M27.
 - 2026-07-31: T4 — the `mirai::everywhere()` preload candidate row is dominated on its own terms if mori is adopted: that shape buys one-copy-per-daemon with daemon state, cleanup and a stale-object hazard, where mori is one-copy-per-machine with no daemon state, automatic GC and lazy mapping, and its motivation (cutting per-fold `.args` transfer) is exactly what mori zeroes. The remote-daemon-pool row is the constraint above and gains a reason to stay open.
 - 2026-07-31: T5 — `cairn/references/mori-backend-assessment.md` committed with its `INDEX.md` bullet; 9-row premise ledger (P1-P9) tagged Untouched/Changed/Conditional/Out of reach, plus a Disposition mapping every row and five dated open questions. `cairn_validate` clean, and the page does not join the staleness advisory: its Extraction status carries a `read directly` verification claim with a date.
 - 2026-07-31: T4 — rsample#283 and M01 are untouched, contrary to the natural reading that shared memory answers the memory gap: `nested_cv()`'s cost is analysis frames materialized IN-PROCESS before any parallelism, where mori addresses transfer to daemons. Different axis, and the note says so explicitly. Unmeasured and flagged: `share()` writes the frame into a shared region, so the host transiently holds original plus shared copy; peak host memory under mori is not measured here, and tune#1188's 18.9 GB -> 4.23 GB is their whole-tree figure on `fit_resamples()`, not ours.
+- 2026-07-31: T6 — `benchmarks/tune-1188-mori-findings.md` drafted and unposted, following through on the mori offer in `tune-969-reply-2.md`. Every claim marked [measured] or [inferred]; written without em dashes per the standing request (checked mechanically). It leads with the two caveats rather than the 13.5x, because the ratio alone invites the deletion reading P6 rules out.
+- 2026-07-31: T7 — `devtools::test()` clean on the branch: FAIL 0 | WARN 0 | SKIP 0 | PASS 1615 (the `step_pca()` errors in the output are the deliberate failed-fold fixtures). No `R/` file was touched by this milestone, so the suite is the same one main carries; it is run as evidence that the branch changed nothing, not that anything new is covered.
+- 2026-07-31: T7 — ROADMAP candidate row added for routing fold data through mori, carrying P6's remote fallback as a stated condition rather than an afterthought, and cross-referencing the `mirai::everywhere()` preload row it would supersede. Search-first sweep done at plan time; no existing row covers adoption.
 
 ## Decisions
 
