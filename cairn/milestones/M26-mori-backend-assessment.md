@@ -1,11 +1,11 @@
 # M26: The backend question has a measured answer before the design settles
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP4
-- **Branch/PR:** —
+- **Branch/PR:** `m26-mori-backend-assessment`
 
 ## Goal
 
@@ -72,7 +72,7 @@ shape → M27.
 
 ## Tasks
 
-- [ ] T1: Install `mori` 0.2.2; read its source, docs, and tune#1188; record the
+- [x] T1: Install `mori` 0.2.2; read its source, docs, and tune#1188; record the
       transfer mechanism and whether it has any RNG surface at all.
 - [ ] T2: Write `benchmarks/probe-mori-dispatch.R` — a standalone fold-dispatch
       replica sending one design's folds by value and via `mori`, at ≥ 2 worker
@@ -92,6 +92,8 @@ shape → M27.
 - 2026-07-31: created by /milestone-plan.
 - 2026-07-31: criteria audit ([O], fresh context) returned two findings here — AC2's "mori-carrying daemon pool" was satisfiable by a pool that never sent an object through mori, and its only reachable evidence conflicted with the Scope Out ban on editing `R/parallel.R`; AC5 was existence-only with nothing constraining per-claim marking. AC2 went to the gate, AC5 was fixed to M27 AC5's wording.
 - 2026-07-31: plan gate chose a standalone probe replica over patching `R/parallel.R` on the branch and reverting, because the milestone stays research-only and a half-reverted runtime edit is the worse failure; falsified by the replica and `dispatch_folds()` being shown to differ in a way that changes the identity result.
+- 2026-07-31: T1 — mori 0.2.2 is 5 R functions, each a bare `.Call()` into 2,245 lines of C (`share`/`map_shared`/`is_shared`/`shared_name`/`prune_shared`); transport is POSIX shared memory behind ALTREP, and an ALTREP serialization hook makes a shared object travel as its ~30-byte region name. No RNG surface: `unif_rand|norm_rand|GetRNGstate|PutRNGstate|R_unif|rand|srand|random` match nothing in `src/*.c` or `src/*.h`, and no R-level function is stochastic.
+- 2026-07-31: T1 — `share()` succeeded in-process on every object this package dispatches, `identical()` holding each time, contrary to the doc's "environments, closures, language objects returned unchanged": data.frame 24,259 B -> 308 B, rsplit 25,879 -> 272, inner rset 77,932 -> 547, whole design 311,556 -> 744, workflow 1,532 -> 255 (serialized lengths, 500x6 fixture, v=3/v=3). Cross-process fidelity is unproven by this and is what T2/T3 must settle.
 
 ## Decisions
 
