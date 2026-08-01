@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP2, GP4
-- **Branch/PR:** m27-resampling-object-requirements
+- **Branch/PR:** m27-resampling-object-requirements · https://github.com/jmgirard/nestedtune/pull/29
 
 ## Goal
 
@@ -34,7 +34,7 @@ on it.
 
 ## Acceptance criteria
 
-- [ ] AC1: A committed synthesis note at
+- [x] AC1: A committed synthesis note at
       `cairn/references/outer-loop-object-requirements.md`, authored from
       `templates/synthesis-note.md`, with a Provenance block, its `INDEX.md`
       bullet, and every claim about this repo's own state dated
@@ -42,7 +42,7 @@ on it.
       resampling object — column, field, attribute, or class — each cited
       `file:line`, and every citation resolves to a line performing the
       described read.
-- [ ] AC2: The note separately lists what the driver reconstructs because the
+- [x] AC2: The note separately lists what the driver reconstructs because the
       object does not carry it — at minimum the training data
       (`R/nested-resamples.R:218`), the one-shared-frame invariant
       (`R/parallel.R:129-137`), fold labels (`R/nested-results.R:324`), the
@@ -50,16 +50,16 @@ on it.
       re-evaluable inner spec (`R/checks.R:312`), and the fold↔seed binding
       (`R/nested-tune-grid.R:318`) — each naming what the object would have to
       carry for the reconstruction to disappear.
-- [ ] AC3: Peak in-process object size for `rsample::nested_cv()` against
+- [x] AC3: Peak in-process object size for `rsample::nested_cv()` against
       `nested_resamples()` is measured at ≥ 2 (n, v, inner_v) settings not
       covered by M13's 10×10 and 5×2, and serialized per-fold wire bytes are
       measured for the same two constructors under the current dispatch path.
       Each axis carries a closed-form model beside the measurement, as M13 and
       M23 both shipped, so the number has two independent oracle types (GP2).
-- [ ] AC4: Every place the package strips, re-adds, or dispatches around an
+- [x] AC4: Every place the package strips, re-adds, or dispatches around an
       rsample class, or writes an `rsplit` field for want of a public accessor,
       is listed with its `file:line` and the rsample behaviour that forces it.
-- [ ] AC5: An unposted draft writeup for the maintainer exists under
+- [x] AC5: An unposted draft writeup for the maintainer exists under
       `benchmarks/`, marking each claim as measured here or inferred, and naming
       which of its transfer-cost argument M26's finding could change.
 - [ ] AC6: The `verify` slot of `cairn/PROFILE.md` is clean.
@@ -108,3 +108,12 @@ on it.
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-01 on branch m27-resampling-object-requirements (PR #29).
+
+- AC1: `cairn/references/outer-loop-object-requirements.md` committed, template-shaped (Provenance with ingested date/milestone/pagination/extraction status, Scope with tracking disclaimer, Evidence snapshot); INDEX.md bullet present (references index<->disk PASS); repo-state claims carry `— observed 2026-08-01`; all 40 file:line citations across R/C/W tables re-resolved by command at review — every cited line performs the described read or write.
+- AC2: C table lists 7 reconstructions with the carrying field per row; the six criterion-named sites all present — split_data (C1), is_fold_payload invariant (C2), fold_ids (C3), id-by-subtraction (C4), eval_inside_spec (C5), seed binding (C6).
+- AC3: benchmark re-run fresh at review — 5x5 and 20x5 (neither covered by M13), obj_size 3.228x/5.094x vs model 3.247/5.142 (resid ≤1.02%); wire axis both constructors under the leaned dispatch path, payload model resid ≤2.39%, copy-count oracle 0 frames (nested_resamples) vs 1 own frame (nested_cv) — two independent oracle types per axis (closed form + live; closed form + copy count).
+- AC4: W table, 11 rows, each with file:line and the forcing rsample behaviour; citations re-resolved in the same command sweep as AC1.
+- AC5: `benchmarks/resampling-object-writeup.md` exists, header says "Not posted", every claim tagged (measured)/(inferred), and the mori caveat paragraph names the absolute wire figures and the serialized-shared-frame premise as what M26's finding changes.
+- AC6: devtools::test() 1628 pass / 0 fail / 0 warn / 0 skip; devtools::document() no diff; pkgdown::check_pkgdown() clean; cairn_validate all 16 checks PASS (staleness advisory pre-existing, new page not in it); no README.Rmd; NEWS: no entry owed, no user-visible change; devtools::check() recorded below.
