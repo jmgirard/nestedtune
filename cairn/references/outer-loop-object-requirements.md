@@ -113,8 +113,50 @@ Each row names the site and the rsample behaviour that forces it.
 
 ## Measurements
 
-See `benchmarks/outer-loop-object-requirements.R` (T4/T5; results recorded
-here when run).
+From `benchmarks/outer-loop-object-requirements.R` — R 4.6.1 / rsample
+1.3.2 / nestedtune 0.0.0.9000, seed 35222, run on this branch — observed
+2026-08-01. Each axis carries a closed-form model beside the live number
+(GP2); the models are the two `rsample-283-reprex.R` derives, extended to
+the wire.
+
+**Axis 1 — in-process object size**, `lobstr::obj_size()` on
+`mlbench::LetterRecognition` (20,000 × 17; 2,644,640 B), at two settings
+M13's script does not cover:
+
+| scheme | `nested_cv()` bytes | model resid | `nested_resamples()` bytes | model resid | ratio | model ratio |
+|---|---|---|---|---|---|---|
+| 5×5 | 14,842,960 | −0.13% | 4,597,576 | −0.72% | 3.228 | 3.247 |
+| 20×5 | 60,547,376 | −0.09% | 11,885,552 | −1.02% | 5.094 | 5.142 |
+
+The ratio scales with v exactly as the model's `data_bytes × v` term says —
+the reindexing benefit on this axis is roughly (v−1) avoided copies of the
+data, so it grows with the outer fold count and is already 3.2× at the
+practical 5×5.
+
+**Axis 2 — per-fold wire bytes under the current dispatch path**
+(`dispatch_folds()` with leaning, R/parallel.R), on the M23 payload
+fixture (5,000 × 21 doubles; serializes to 840,540 B, model 840,000 B,
+−0.06%). Per fold what crosses is the leaned payload plus the shared frame
+riding in `.args`, which mirai serializes once per task; the workflow term
+is the user's object, independent of constructor, measured at M23 and not
+counted here:
+
+| scheme | constructor | payload/fold | model resid | wire/fold | model | shared copies | own-frame copies |
+|---|---|---|---|---|---|---|---|
+| 5×5 | `nested_resamples()` | 98,346 | −2.39% | 938,886 | 936,000 | 0 | 0 |
+| 5×5 | `nested_cv()` | 754,858 | −0.38% | 1,595,398 | 1,592,000 | 0 | 1 |
+| 20×5 | `nested_resamples()` | 116,347 | −2.02% | 956,887 | 954,000 | 0 | 0 |
+| 20×5 | `nested_cv()` | 895,859 | −0.32% | 1,736,399 | 1,733,000 | 0 | 1 |
+
+The copy counts are the second, independent oracle type (occurrences of
+the frame's own wire bytes in the stream, net of a sentinel-coincidence
+the script documents): a leaned `nested_resamples()` fold carries no frame
+at all, while a leaned `nested_cv()` fold still carries one — its own
+materialized analysis frame, which leaning cannot remove because the
+object, not the dispatcher, owns that copy. That frame is the whole wire
+gap between the constructors: ~656.5 kB of the ~656.5 kB 5×5 difference,
+~70% of a `nested_cv()` fold's payload. Reindexing removes it by
+construction; no dispatch-side leaning can.
 
 ## Disposition
 

@@ -83,10 +83,10 @@ on it.
       remove it.
 - [x] T3: Inventory the class-boundary workarounds and the rsample behaviour
       behind each.
-- [ ] T4: Extend `benchmarks/rsample-283-reprex.R` (or add a sibling) to cover
+- [x] T4: Extend `benchmarks/rsample-283-reprex.R` (or add a sibling) to cover
       the two new size settings and the wire-byte axis, with a closed-form model
       per axis.
-- [ ] T5: Run the measurements; record results against the models.
+- [x] T5: Run the measurements; record results against the models.
 - [ ] T6: Author the synthesis note; add its `INDEX.md` bullet.
 - [ ] T7: Draft the maintainer-facing writeup under `benchmarks/`, unposted.
 - [ ] T8: Run the profile's `verify` slot.
@@ -100,6 +100,7 @@ on it.
 - 2026-07-31: plan gate chose running in parallel with M26 over depending on it, because the maintainer signalled this thread first and the call is under three weeks out; falsified by M26 finding that shared memory removes the transfer-cost argument this note builds.
 
 - 2026-08-01: T1-T3 done in one authoring pass — the synthesis note's R (19 reads), C (7 reconstructions), W (11 workarounds) tables; every file:line read directly at 9b8dd07 before citing; a grep sweep confirmed no design reads outside the six files, and the "outside attr is test-only" claim was verified by grep.
+- 2026-08-01: T4-T5 — sibling script `benchmarks/outer-loop-object-requirements.R` (sources helper-payload-size.R, reuses the #283 models); memory axis 3.228x at 5x5 and 5.094x at 20x5 (model resid ≤1%), wire axis: a leaned nested_cv fold still carries its own analysis frame (~70% of its payload; copy-count oracle 1 vs 0), which leaning cannot remove; a raw shared-copy count at 20x5 read 4 from a sentinel coincidence, fixed by netting out the fold's own frame.
 
 ## Decisions
 
