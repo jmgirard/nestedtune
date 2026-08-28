@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-08-28 (all 16 checks green; advisories — 18 references pages record no verification claim, unchanged, and both byte budgets remain over after a compression pass that is now spent: ROADMAP.md against 24,000 and LESSONS.md 21,870 B against 20,000, closing the rest needs pruning rows and retiring lessons, and retirement needs a suite run this machine cannot do — tune, rsample, parsnip, workflows and mirai are absent from the R 4.6 library. Since the last check: the maintainer meeting settled the upstream posture (D-025), the organization transfer turned out to be already complete (D-026), M28 was re-cut against both, and M30 was planned for the stale addresses the transfer left behind)_
+_Last hygiene check: 2026-08-28 (all 16 checks green; advisories — 18 references pages record no verification claim, unchanged, and both byte budgets remain over after a compression pass that is now spent: ROADMAP.md against 24,000 and LESSONS.md 21,870 B against 20,000, closing the rest needs pruning rows and retiring lessons, and retirement needs a suite run _(corrected M30: the suite does run on this machine — tune, rsample, parsnip, workflows and mirai are all installed under R 4.6.1, so the stamp's absence claim was already false or has since been fixed)_. Since the last check: the maintainer meeting settled the upstream posture (D-025), the organization transfer turned out to be already complete (D-026), M28 was re-cut against both, and M30 was planned for the stale addresses the transfer left behind)_
 
 ## Milestones
 
@@ -11,7 +11,7 @@ _Last hygiene check: 2026-08-28 (all 16 checks green; advisories — 18 referenc
 | M29 | The assessment says only what the manifest measured | done | M26 | normal | milestones/archive/M29-mori-assessment-writeup.md |
 | M27 | What the outer loop needs from the resampling object, in writing | done | — | normal | milestones/archive/M27-resampling-object-requirements.md |
 | M28 | What we keep, what is only glue, and what belongs to rsample | planned | — | normal | milestones/M28-code-inventory.md |
-| M30 | Every address the package shows names its new home | in-progress | — | high | milestones/M30-address-rename.md |
+| M30 | Every address the package shows names its new home | review | — | high | milestones/M30-address-rename.md |
 | M25 | The number has a name, and the docs say which | done | — | normal | milestones/archive/M25-estimand-documented.md |
 | M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
