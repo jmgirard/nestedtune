@@ -1,0 +1,109 @@
+# M30: Every address the package shows names its new home
+
+- **Status:** planned
+- **Priority:** high
+- **Depends on:** —
+- **Driving RR:** —
+- **Principles touched:** —
+- **Branch/PR:** —
+
+## Goal
+
+Every address the package shows the outside world names
+`tidymodels/nestedtune` and the documentation site it actually publishes to, so
+nothing a user, CRAN, or the check farm reads points at the old owner or
+survives only on a GitHub redirect.
+
+## Scope
+
+Surface tier: **user-facing** — `DESCRIPTION`, `README.md`, the generated
+`man/` page and the published pkgdown site are all read by people outside this
+repo.
+
+**In:** The stale-address half of the organization-housekeeping candidate row.
+`DESCRIPTION`'s `URL:` and `BugReports:`; `_pkgdown.yml`'s `url:`; the README's
+two badges, their link targets, the `pak::pak()` installation line and the guide
+link; the unposted upstream draft `benchmarks/rsample-283-comment.md`; the title
+line of `.github/ci-usage-baseline.md`; a `NEWS.md` entry for the move, plus a
+reword of its one sentence naming the old site address. `man/` is regenerated
+from `DESCRIPTION` by roxygen, never hand-edited. The documentation address is
+`https://nestedtune.tidymodels.org/`, chosen at the plan gate; the milestone is
+not done until that address and the badge targets actually resolve.
+
+**Out:** The organization-convention half — a contributing guide, a code of
+conduct, the shared pkgdown template, and whatever CI idiom the org expects →
+stays on the candidate row, which this milestone does not graduate. Anything
+about the `gh-pages` content already published under the old address, or
+site hygiene beyond the `url:` field → its own milestone, planned from whatever
+T8 finds. Any release or submission → release timing is user-declared and
+nothing here proposes one. `cairn/` is not rewritten.
+
+## Acceptance criteria
+
+- [ ] AC1: `grep -rIn 'jmgirard' . --exclude-dir=.git --exclude-dir=cairn
+      --exclude-dir=docs`, run from the repository root, returns no matches.
+      `cairn/` is excluded because its decision entries, work logs and archives
+      are history the tracking rulebook supersedes rather than edits, and its
+      current-knowledge files name the old address only inside dated records of
+      it; `docs/` is excluded as a gitignored local build artifact.
+- [ ] AC2: `DESCRIPTION`'s `URL:` field names
+      `https://github.com/tidymodels/nestedtune` and
+      `https://nestedtune.tidymodels.org/`, its `BugReports:` field names
+      `https://github.com/tidymodels/nestedtune/issues`, and
+      `man/nestedtune-package.Rd` lists those same three addresses.
+- [ ] AC3: `_pkgdown.yml`'s `url:` value is the URL token
+      `https://nestedtune.tidymodels.org/`, byte-identical to the documentation
+      entry in `DESCRIPTION`'s `URL:` field.
+- [ ] AC4: `urlchecker::url_check()` over the package root reports no
+      unreachable URL, and a fetch of `https://nestedtune.tidymodels.org/`, the
+      R-CMD-check badge target and the codecov badge target each returns an HTTP
+      status below 400.
+- [ ] AC5: `NEWS.md` carries an entry stating that the package's home moved to
+      the tidymodels organization and naming the new documentation address, and
+      its existing sentence describing where `DESCRIPTION` and the README have
+      pointed no longer names a specific address.
+
+## Coverage
+
+- AC1 → T2, T3, T4, T5, T6, T7, T9
+- AC2 → T2, T7
+- AC3 → T3
+- AC4 → T1, T8, T9
+- AC5 → T6
+
+## Tasks
+
+- [ ] T1: Install the R dependencies this machine lacks — `tune`, `rsample`,
+      `parsnip`, `workflows`, `mirai`, `ranger`, `recipes`, `yardstick`,
+      `lobstr`, `mlbench`, `vdiffr`, `R6`, `knitr`, `rmarkdown`, `urlchecker` —
+      so `devtools::document()`, `devtools::check()` and `url_check()` can run
+      at all; record the versions installed.
+- [ ] T2: Update `DESCRIPTION`'s `URL:` and `BugReports:`.
+- [ ] T3: Update `_pkgdown.yml`'s `url:`.
+- [ ] T4: Update `README.md` — the R-CMD-check badge and its link, the codecov
+      badge and its link, the `pak::pak()` installation line, and the guide link.
+- [ ] T5: Update `benchmarks/rsample-283-comment.md` and the title line of
+      `.github/ci-usage-baseline.md`.
+- [ ] T6: Add the `NEWS.md` entry for the move, and reword the existing sentence
+      so it refers to the site without naming an address.
+- [ ] T7: Run `devtools::document()` so `man/nestedtune-package.Rd` regenerates
+      from the new `DESCRIPTION`; never hand-edit it.
+- [ ] T8: Get the site actually served at `https://nestedtune.tidymodels.org/`
+      (a DNS record plus the repository's Pages custom-domain setting) and the
+      codecov project re-linked under the new owner. Both need access this
+      session does not have; if the user cannot obtain it, move the milestone to
+      `blocked` and name which of the two is missing.
+- [ ] T9: Re-run the AC1 sweep, `urlchecker::url_check()`, and the three
+      address fetches; record every output.
+
+## Work log
+
+- 2026-08-28: created by /milestone-plan, absorbing the address half of the organization-housekeeping candidate row added earlier the same day; the row keeps its convention half and is not graduated here.
+- 2026-08-28: criteria audit ([O], fresh context, full mode — user-facing tier) returned five findings. Three fixed directly: AC1 required its own grep be "stated verbatim in the milestone file", binding a record-keeping act rather than the deliverable (moved to the evidence line); AC1's coverage map reached 13 of the 14 sweep matches, missing `NEWS.md:143` entirely, so the criterion could not have been met by its tasks (folded into T6); AC2 promised the generated `man/` page had been produced *by* `document()` and that a second run was clean, the first binding provenance and the second duplicating the standing consistency gate (narrowed to the file's content).
+- 2026-08-28: the audit also corrected two claims the plan had made — the sweep returns 14 matches, not 13, and IP4 in this repo is a statistical principle about the estimate describing the design executed, not a history rule, so the `cairn/` exclusion was re-justified against the tracking rulebook and against the fact that `ROADMAP.md` is current-knowledge and holds a stale address of its own.
+- 2026-08-28: the audit's fourth finding was that AC4 as drafted was vacuous — "no check output naming a URL" is satisfied by a run in which the URL check never happened, since `R CMD check` fetches URLs only under `--as-cran` with a network and the CI action's `error-on: "new"` does not fail on NOTEs. Repaired to positive evidence via `urlchecker::url_check()` plus recorded fetches. This repo has already shipped the failure that finding describes: the advertised site 404'd with no `gh-pages` branch at all.
+- 2026-08-28: plan gate settled three questions. The documentation address is `https://nestedtune.tidymodels.org/` over `https://tidymodels.github.io/nestedtune/`, because the org convention is what sibling packages use and the alternative would be replaced later at the cost of a second rename; falsified by the custom domain proving unobtainable, which sends the choice back. The changelog sentence is reworded to drop its address rather than having the new address substituted in, because substitution would make a user-facing sentence assert something that never happened; falsified by a reader needing the historical address to follow the entry. And the milestone must see the addresses resolve rather than stopping at the file edits, accepting that it may sit `blocked` on access this session does not have; falsified if the DNS and codecov setup turns out to belong to a different owner entirely, which would move T8 out of scope.
+
+## Decisions
+
+## Review
