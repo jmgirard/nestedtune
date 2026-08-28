@@ -86,7 +86,7 @@ nothing here proposes one. `cairn/` is not rewritten.
       `.github/ci-usage-baseline.md`.
 - [x] T6: Add the `NEWS.md` entry for the move, and reword the existing sentence
       so it refers to the site without naming an address.
-- [ ] T7: Run `devtools::document()` so `man/nestedtune-package.Rd` regenerates
+- [x] T7: Run `devtools::document()` so `man/nestedtune-package.Rd` regenerates
       from the new `DESCRIPTION`; never hand-edit it.
 - [ ] T8: Get the site actually served at `https://nestedtune.tidymodels.org/`
       (a DNS record plus the repository's Pages custom-domain setting) and the
@@ -116,6 +116,21 @@ nothing here proposes one. `cairn/` is not rewritten.
 
 - 2026-08-28: T6 — `NEWS.md` gains a first entry for the move, naming both new addresses and recording what was checked of the old ones: `https://github.com/jmgirard/nestedtune` answers 301 to the new repository, `https://jmgirard.github.io/nestedtune/` answers 404. The earlier entry's sentence now reads "`DESCRIPTION` and the README have pointed at the site since the guide was added", naming no address.
 
+- 2026-08-28: T7 — `devtools::document()` rewrote `man/nestedtune-package.Rd`'s three Useful-links entries to the new addresses. It also emitted two changes the milestone did not ask for; kept, and recorded in this file's Decisions section. `devtools::test()` after regeneration: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`.
+
 ## Decisions
+
+### Regenerating `man/` also carried roxygen2 8.1.0's own output changes
+
+`devtools::document()` on this machine runs roxygen2 8.1.0 against the
+`RoxygenNote: 8.0.0` the last documenting milestone recorded. Beside the three
+addresses T7 exists to update, it made two changes M30 did not ask for:
+`RoxygenNote: 8.0.0` in `DESCRIPTION` became `Config/roxygen2/version: 8.1.0`,
+and `NAMESPACE`'s two `importFrom(tune, ...)` lines became one multi-argument
+call spread over three lines. Both are kept rather than reverted. Reverting
+them would make the review consistency check — `document()` produces no diff —
+fail, since the same roxygen would rewrite them again on the next run; the only
+other route is downgrading an installed development tool to protect a diff.
+The suite after the regeneration is `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`.
 
 ## Review
