@@ -88,7 +88,7 @@ nothing here proposes one. `cairn/` is not rewritten.
       so it refers to the site without naming an address.
 - [x] T7: Run `devtools::document()` so `man/nestedtune-package.Rd` regenerates
       from the new `DESCRIPTION`; never hand-edit it.
-- [ ] T8: Get the site actually served at `https://nestedtune.tidymodels.org/`
+- [x] T8: Get the site actually served at `https://nestedtune.tidymodels.org/`
       (a DNS record plus the repository's Pages custom-domain setting) and the
       codecov project re-linked under the new owner. Both need access this
       session does not have; if the user cannot obtain it, move the milestone to
@@ -117,6 +117,8 @@ nothing here proposes one. `cairn/` is not rewritten.
 - 2026-08-28: T6 — `NEWS.md` gains a first entry for the move, naming both new addresses and recording what was checked of the old ones: `https://github.com/jmgirard/nestedtune` answers 301 to the new repository, `https://jmgirard.github.io/nestedtune/` answers 404. The earlier entry's sentence now reads "`DESCRIPTION` and the README have pointed at the site since the guide was added", naming no address.
 
 - 2026-08-28: T7 — `devtools::document()` rewrote `man/nestedtune-package.Rd`'s three Useful-links entries to the new addresses. It also emitted two changes the milestone did not ask for; kept, and recorded in this file's Decisions section. `devtools::test()` after regeneration: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`.
+
+- 2026-08-28: T8 — the site half was already done and needed no access. `gh api repos/tidymodels/nestedtune/pages` reports `status: built`, `cname: nestedtune.tidymodels.org`, source branch `gh-pages`, `https_enforced: true` with an approved certificate to 2026-11-26; `gh-pages` carries a `CNAME` file reading `nestedtune.tidymodels.org`; `dig` resolves the host to `tidymodels.github.io` and the Pages addresses; and the served page's title is `Nested Cross-Validation for Tidymodels • nestedtune`. The deploy action runs with `clean: false`, so it does not remove that `CNAME`. The coverage half is not done and is left so by the gate decision above: the badge under the new name renders `unknown`. A `CODECOV_TOKEN` repository secret dated 2026-07-27 survived the transfer, but whether it still authorizes uploads under the new owner is not established here. `test-coverage.yaml` sets `fail_ci_if_error` true off pull requests, so a token that no longer works turns that workflow red on the next default-branch run rather than failing quietly.
 
 ## Decisions
 
