@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-08-01 (all 16 checks green; one advisory — 18 references pages record no verification claim in their `Extraction:` status, shelf-wide and pre-existing). Since the last check: M27 implemented and merged as PR #29 (the outer-loop object-requirements note, its benchmark sibling, and the unposted maintainer writeup; three review findings fixed pre-merge), M23's terminal row pruned to hold the 5-row cap_
+_Last hygiene check: 2026-08-28 (all 16 checks green; three advisories — the 18 references pages recording no verification claim, unchanged and pre-existing, plus two byte budgets now over: ROADMAP.md 30,363 B against 24,000 and LESSONS.md 23,454 B against 20,000, both surfaced to the maintainer undecided. Since the last check: no milestone work; the maintainer meeting settled the upstream posture question, which is awaiting a recorded decision and a disposition for M28)_
 
 ## Milestones
 
