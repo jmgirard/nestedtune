@@ -1,8 +1,8 @@
 # nestedtune
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/jmgirard/nestedtune/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jmgirard/nestedtune/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/jmgirard/nestedtune/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/nestedtune)
+[![R-CMD-check](https://github.com/tidymodels/nestedtune/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tidymodels/nestedtune/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/tidymodels/nestedtune/graph/badge.svg)](https://app.codecov.io/gh/tidymodels/nestedtune)
 <!-- badges: end -->
 
 Nested cross-validation for the tidymodels ecosystem.
@@ -15,7 +15,7 @@ outer folds.
 
 ``` r
 # install.packages("pak")
-pak::pak("jmgirard/nestedtune")
+pak::pak("tidymodels/nestedtune")
 ```
 
 ## Building a nested resampling design
@@ -107,5 +107,5 @@ predict(extract_workflow(final), new_data = mtcars[1:3, ])
 Why the estimate belongs to the procedure rather than to the model, and what to
 write up, is the subject of [the guide][guide].
 
-[guide]: https://jmgirard.github.io/nestedtune/articles/nested-cv.html
+[guide]: https://nestedtune.tidymodels.org/articles/nested-cv.html
 [issue]: https://github.com/tidymodels/rsample/issues/283
