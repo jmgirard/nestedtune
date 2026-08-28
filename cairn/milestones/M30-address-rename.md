@@ -78,7 +78,7 @@ nothing here proposes one. `cairn/` is not rewritten.
       `lobstr`, `mlbench`, `vdiffr`, `R6`, `knitr`, `rmarkdown`, `urlchecker` —
       so `devtools::document()`, `devtools::check()` and `url_check()` can run
       at all; record the versions installed.
-- [ ] T2: Update `DESCRIPTION`'s `URL:` and `BugReports:`.
+- [x] T2: Update `DESCRIPTION`'s `URL:` and `BugReports:`.
 - [ ] T3: Update `_pkgdown.yml`'s `url:`.
 - [ ] T4: Update `README.md` — the R-CMD-check badge and its link, the codecov
       badge and its link, the `pak::pak()` installation line, and the guide link.
@@ -105,6 +105,8 @@ nothing here proposes one. `cairn/` is not rewritten.
 - 2026-08-28: plan gate settled three questions. The documentation address is `https://nestedtune.tidymodels.org/` over `https://tidymodels.github.io/nestedtune/`, because the org convention is what sibling packages use and the alternative would be replaced later at the cost of a second rename; falsified by the custom domain proving unobtainable, which sends the choice back. The changelog sentence is reworded to drop its address rather than having the new address substituted in, because substitution would make a user-facing sentence assert something that never happened; falsified by a reader needing the historical address to follow the entry. And the milestone must see the addresses resolve rather than stopping at the file edits, accepting that it may sit `blocked` on access this session does not have; falsified if the DNS and codecov setup turns out to belong to a different owner entirely, which would move T8 out of scope.
 - 2026-08-28: implement gate asked one question, the rest of the plan's choices being settled. The coverage badge under the new owner renders `unknown` — `codecov.io/gh/tidymodels/nestedtune/graph/badge.svg` answers 200 with the word `unknown`, while the old slug still renders `98%`, so no report has been uploaded under the new name. User selected repointing the badge now and letting the first default-branch coverage run after merge fill the number in, over holding the milestone until the service is confirmed connected or dropping the badge. AC4 is unamended: it asks for an HTTP status below 400, which both the badge image and its link target already return.
 - 2026-08-28: T1 needed no installation — every package the task lists is already present under R 4.6.1: tune 2.1.0, rsample 1.3.2, parsnip 1.6.0, workflows 1.3.0, mirai 2.7.2, ranger 0.18.0, recipes 1.4.0, yardstick 1.4.0, lobstr 1.2.1, mlbench 2.1.11, vdiffr 1.0.9, R6 2.6.1, knitr 1.51, rmarkdown 2.31, urlchecker 2.0.0. The ROADMAP hygiene stamp recording five of them as absent from this library is stale.
+
+- 2026-08-28: T2 — `DESCRIPTION`'s `URL:` now lists `https://github.com/tidymodels/nestedtune` and `https://nestedtune.tidymodels.org/`, `BugReports:` `https://github.com/tidymodels/nestedtune/issues`. Field order kept as it was; the four sibling packages read for a convention split two-two on whether the site or the repository comes first, so there is none to follow.
 
 ## Decisions
 
