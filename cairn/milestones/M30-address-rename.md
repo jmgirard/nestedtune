@@ -84,7 +84,7 @@ nothing here proposes one. `cairn/` is not rewritten.
       badge and its link, the `pak::pak()` installation line, and the guide link.
 - [x] T5: Update `benchmarks/rsample-283-comment.md` and the title line of
       `.github/ci-usage-baseline.md`.
-- [ ] T6: Add the `NEWS.md` entry for the move, and reword the existing sentence
+- [x] T6: Add the `NEWS.md` entry for the move, and reword the existing sentence
       so it refers to the site without naming an address.
 - [ ] T7: Run `devtools::document()` so `man/nestedtune-package.Rd` regenerates
       from the new `DESCRIPTION`; never hand-edit it.
@@ -113,6 +113,8 @@ nothing here proposes one. `cairn/` is not rewritten.
 - 2026-08-28: T4 — README's two badges, both link targets, the `pak::pak()` line and the `[guide]` link definition now name `tidymodels/nestedtune` and `https://nestedtune.tidymodels.org/`. There is no `README.Rmd` in this repo, so `README.md` is the source and no knit step applies.
 
 - 2026-08-28: T5 — the unposted rsample#283 draft's one link and `.github/ci-usage-baseline.md`'s title line both name `tidymodels/nestedtune`. The baseline's measurements are unchanged; only the repository it names moved.
+
+- 2026-08-28: T6 — `NEWS.md` gains a first entry for the move, naming both new addresses and recording what was checked of the old ones: `https://github.com/jmgirard/nestedtune` answers 301 to the new repository, `https://jmgirard.github.io/nestedtune/` answers 404. The earlier entry's sentence now reads "`DESCRIPTION` and the README have pointed at the site since the guide was added", naming no address.
 
 ## Decisions
 
