@@ -11,7 +11,7 @@ _Last hygiene check: 2026-08-28 (all 16 checks green; advisories — 18 referenc
 | M29 | The assessment says only what the manifest measured | done | M26 | normal | milestones/archive/M29-mori-assessment-writeup.md |
 | M27 | What the outer loop needs from the resampling object, in writing | done | — | normal | milestones/archive/M27-resampling-object-requirements.md |
 | M28 | What we keep, what is only glue, and what belongs to rsample | planned | — | normal | milestones/M28-code-inventory.md |
-| M30 | Every address the package shows names its new home | planned | — | high | milestones/M30-address-rename.md |
+| M30 | Every address the package shows names its new home | in-progress | — | high | milestones/M30-address-rename.md |
 | M25 | The number has a name, and the docs say which | done | — | normal | milestones/archive/M25-estimand-documented.md |
 | M24 | The pre-flight tells the truth about the pool | done | — | normal | milestones/archive/M24-preflight-capability-probe.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
