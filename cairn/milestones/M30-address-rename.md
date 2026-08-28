@@ -93,7 +93,7 @@ nothing here proposes one. `cairn/` is not rewritten.
       codecov project re-linked under the new owner. Both need access this
       session does not have; if the user cannot obtain it, move the milestone to
       `blocked` and name which of the two is missing.
-- [ ] T9: Re-run the AC1 sweep, `urlchecker::url_check()`, and the three
+- [x] T9: Re-run the AC1 sweep, `urlchecker::url_check()`, and the three
       address fetches; record every output.
 
 ## Work log
@@ -119,6 +119,8 @@ nothing here proposes one. `cairn/` is not rewritten.
 - 2026-08-28: T7 — `devtools::document()` rewrote `man/nestedtune-package.Rd`'s three Useful-links entries to the new addresses. It also emitted two changes the milestone did not ask for; kept, and recorded in this file's Decisions section. `devtools::test()` after regeneration: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`.
 
 - 2026-08-28: T8 — the site half was already done and needed no access. `gh api repos/tidymodels/nestedtune/pages` reports `status: built`, `cname: nestedtune.tidymodels.org`, source branch `gh-pages`, `https_enforced: true` with an approved certificate to 2026-11-26; `gh-pages` carries a `CNAME` file reading `nestedtune.tidymodels.org`; `dig` resolves the host to `tidymodels.github.io` and the Pages addresses; and the served page's title is `Nested Cross-Validation for Tidymodels • nestedtune`. The deploy action runs with `clean: false`, so it does not remove that `CNAME`. The coverage half is not done and is left so by the gate decision above: the badge under the new name renders `unknown`. A `CODECOV_TOKEN` repository secret dated 2026-07-27 survived the transfer, but whether it still authorizes uploads under the new owner is not established here. `test-coverage.yaml` sets `fail_ci_if_error` true off pull requests, so a token that no longer works turns that workflow red on the next default-branch run rather than failing quietly.
+
+- 2026-08-28: T9 — the AC1 sweep now returns no matches (grep exit 1). `urlchecker::url_check(".")` over the package root fetched 7 URLs and reported `All URLs are correct!`. Fetches, all following redirects, all 200: `https://nestedtune.tidymodels.org/`; the R-CMD-check badge image and its link target under `github.com/tidymodels/nestedtune`; the codecov badge image and `app.codecov.io/gh/tidymodels/nestedtune`.
 
 ## Decisions
 
