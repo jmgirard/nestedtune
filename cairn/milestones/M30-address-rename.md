@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m030-address-rename`
+- **Branch/PR:** `m030-address-rename` / https://github.com/tidymodels/nestedtune/pull/31
 
 ## Goal
 
@@ -40,25 +40,25 @@ nothing here proposes one. `cairn/` is not rewritten.
 
 ## Acceptance criteria
 
-- [ ] AC1: `grep -rIn 'jmgirard' . --exclude-dir=.git --exclude-dir=cairn
+- [x] AC1: `grep -rIn 'jmgirard' . --exclude-dir=.git --exclude-dir=cairn
       --exclude-dir=docs`, run from the repository root, returns no matches.
       `cairn/` is excluded because its decision entries, work logs and archives
       are history the tracking rulebook supersedes rather than edits, and its
       current-knowledge files name the old address only inside dated records of
       it; `docs/` is excluded as a gitignored local build artifact.
-- [ ] AC2: `DESCRIPTION`'s `URL:` field names
+- [x] AC2: `DESCRIPTION`'s `URL:` field names
       `https://github.com/tidymodels/nestedtune` and
       `https://nestedtune.tidymodels.org/`, its `BugReports:` field names
       `https://github.com/tidymodels/nestedtune/issues`, and
       `man/nestedtune-package.Rd` lists those same three addresses.
-- [ ] AC3: `_pkgdown.yml`'s `url:` value is the URL token
+- [x] AC3: `_pkgdown.yml`'s `url:` value is the URL token
       `https://nestedtune.tidymodels.org/`, byte-identical to the documentation
       entry in `DESCRIPTION`'s `URL:` field.
-- [ ] AC4: `urlchecker::url_check()` over the package root reports no
+- [x] AC4: `urlchecker::url_check()` over the package root reports no
       unreachable URL, and a fetch of `https://nestedtune.tidymodels.org/`, the
       R-CMD-check badge target and the codecov badge target each returns an HTTP
       status below 400.
-- [ ] AC5: `NEWS.md` carries an entry stating that the package's home moved to
+- [x] AC5: `NEWS.md` carries an entry stating that the package's home moved to
       the tidymodels organization and naming the new documentation address, and
       its existing sentence describing where `DESCRIPTION` and the README have
       pointed no longer names a specific address.
@@ -140,3 +140,124 @@ other route is downgrading an installed development tool to protect a diff.
 The suite after the regeneration is `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`.
 
 ## Review
+
+### Acceptance criteria
+
+- **AC1 — pass.** `grep -rIn 'jmgirard' . --exclude-dir=.git --exclude-dir=cairn
+  --exclude-dir=docs` run from the repository root on 2026-08-28 printed nothing
+  and exited 1 (no match).
+- **AC2 — pass.** `DESCRIPTION:13-14` `URL:` lists
+  `https://github.com/tidymodels/nestedtune` and
+  `https://nestedtune.tidymodels.org/`; `DESCRIPTION:15` `BugReports:` is
+  `https://github.com/tidymodels/nestedtune/issues`.
+  `man/nestedtune-package.Rd:14-16` carries the same three addresses as its
+  three `\url{}` entries.
+- **AC3 — pass.** `_pkgdown.yml:1` is `url: https://nestedtune.tidymodels.org/`.
+  Shell string comparison of that value against `DESCRIPTION:14`'s documentation
+  entry: both 34 bytes, equal.
+- **AC4 — pass.** `urlchecker::url_check(".")` over the package root fetched 7
+  URLs and reported `All URLs are correct!`. `curl -sL -o /dev/null -w
+  '%{http_code}'` on 2026-08-28: `https://nestedtune.tidymodels.org/` 200; the
+  R-CMD-check badge image and its workflow link target 200 and 200; the codecov
+  badge image and `https://app.codecov.io/gh/tidymodels/nestedtune` 200 and 200.
+- **AC5 — pass.** `NEWS.md:3-8` is a new first entry stating the package has
+  moved to the tidymodels organization and naming
+  `https://nestedtune.tidymodels.org/` as the documentation site. `NEWS.md:149`
+  now reads "`DESCRIPTION` and the README have pointed at the site since the
+  guide was added", naming no address; the diff shows the removed text had named
+  `https://jmgirard.github.io/nestedtune/`.
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0 — all 16 checks PASS. Advisories only: 18
+  `references staleness` WARNs (pre-existing, untouched by this milestone) and
+  five OK informational lines. `release window` did not fire.
+- No `DESIGN.md` principle changed (`Principles touched: —`), so `cairn_impact.py`
+  is not run.
+- Toolchain slot (`r-package` `consistency-gate`): `devtools::document()`
+  produces no diff (working tree clean but for this milestone file);
+  `NAMESPACE`, `man/` regenerate rather than hand-edited, confirmed by that
+  no-diff run; no `README.Rmd` exists, so `README.md` is the source and no knit
+  step applies; `pkgdown::check_pkgdown()` — "No problems found."; `NEWS.md`
+  (the declared changelog) carries the move entry and names no milestone number;
+  the branch adds no top-level file, so no `.Rbuildignore` entry is owed;
+  `devtools::check()` — `Status: OK`, 0 errors, 0 warnings, 0 notes.
+  `devtools::test()` at the last task commit — `[ FAIL 0 | WARN 0 | SKIP 0 |
+  PASS 1628 ]`.
+
+### Independent review
+
+Surface tier is user-facing, so the full three-lens fan-out ran in fresh
+contexts: [O] diff-bug, [S] blame-history, [S] prior-review-record.
+
+[S] blame-history: no finding. Every non-mechanical edit traces to a disclosed,
+evidenced decision in the branch's own commits; nothing undoes a past
+milestone's intent or contradicts a D-entry or lesson.
+
+[S] prior-review-record: "no prior-review evidence". Archived `## Review`
+sections exist for five milestones touching these files (M06, M10, M11, M13,
+M17) but all concern unrelated substance. The GitHub probe found two real
+inline comments, both on PR #30 and both on workflow files this diff does not
+touch.
+
+[O] diff-bug returned six findings, ranked. It independently re-verified AC1,
+AC2, AC3, the `url_check()` run, all five fetches, the old-address 301/404, and
+that `document()` on a clean copy of HEAD reproduces `DESCRIPTION` and
+`NAMESPACE` byte-for-byte.
+
+1. **The published site still serves the old owner everywhere.**
+   `https://nestedtune.tidymodels.org/` returns pages whose nav, both badges,
+   issues link and sitemap all name `jmgirard/nestedtune`, and whose guide link
+   404s. Verified here by fetching the live page. **Disposition: rejected as
+   out of scope, recorded.** The Scope's Out list places "anything about the
+   `gh-pages` content already published under the old address" in its own
+   milestone. The site is built from a pre-M30 commit; the diff touches
+   `DESCRIPTION`, `README.md`, `NEWS.md`, `_pkgdown.yml`, `NAMESPACE` and
+   `man/`, none of them on `pkgdown.yaml`'s `paths-ignore` list, so the merge
+   push to the default branch rebuilds and republishes the site with the new
+   addresses.
+2. **The README's coverage badge renders `unknown`,** and
+   `test-coverage.yaml` sets `fail_ci_if_error` true off pull requests, so a
+   `CODECOV_TOKEN` that no longer authorizes uploads under the new owner turns
+   the first default-branch run red rather than failing quietly.
+   **Disposition: rejected — the implement gate decided this knowingly**
+   (work log, 2026-08-28), choosing to repoint now and let the first
+   post-merge coverage run fill the number in. The CI-reddening risk is
+   already recorded in T8's work-log line.
+3. **`RoxygenNote: 8.0.0` became `Config/roxygen2/version: 8.1.0` and
+   `NAMESPACE`'s two `importFrom` lines were reflowed** — out-of-scope
+   metadata riding in on T7, effectively raising the repo's roxygen floor with
+   no cross-cutting decision entry. **Disposition: rejected, recorded.** The
+   choice is milestone-local and the rulebook houses milestone-local decisions
+   in the milestone file, where this one already sits with its reasoning.
+   Reverting would fail the standing `document()` no-diff gate.
+4. **The reworded `NEWS.md` sentence has a false referent.** "`DESCRIPTION`
+   and the README have pointed at the site since the guide was added" — a
+   present-day reader resolves "the site" to the new address named six lines
+   above, but at that time they pointed at the old one. **Disposition: fixed
+   now** — reworded to "a documentation site", which carries neither a false
+   address nor a false referent. AC5 re-verified after the fix: the sentence
+   still names no address, and the AC1 sweep still returns nothing.
+5. **`.github/ci-usage-baseline.md`'s retitle names a repository the
+   measurements were not taken under** (window `[2026-07-26, 2026-07-27)`,
+   when the repo was under the old owner). **Disposition: rejected — an
+   intentional change the plan called for** (T5 names this title line
+   explicitly). GitHub carries run history through a transfer, so the runs the
+   baseline measured are reachable under the new slug.
+6. **AC4's evidence is weaker than its wording suggests** — "an HTTP status
+   below 400" is satisfied by a badge rendering `unknown` and by the stale site
+   of finding 1. **Disposition: rejected as a criterion-quality observation.**
+   AC4 as written is bounded and met; the finding argues it is weak, not that
+   it is wrong, so it is neither a defect return nor an amendment return.
+   Captured as a lesson at the hygiene pass instead.
+
+No finding meets the return floor: none demonstrates an acceptance criterion
+failing inside its named procedure's domain, and none is a load-bearing defect
+in what the package does for its users.
+
+### Work log (review)
+
+- 2026-08-28: review gathered fresh evidence for all five criteria; all pass.
+  Consistency gate clean. Three-lens fan-out returned six findings, one fixed
+  now (the `NEWS.md` referent), five rejected with reasons above. No return
+  floor met.

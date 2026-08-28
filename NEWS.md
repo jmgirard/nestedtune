@@ -147,8 +147,8 @@
 * The reference pages and `vignette("nested-cv")` are now built into a
   documentation website, rebuilt whenever a change lands on the default branch
   that the package itself can see. `DESCRIPTION` and the README have pointed
-  at the site since the guide was added; it goes live once GitHub Pages is
-  switched on for the repository.
+  at a documentation site since the guide was added; it goes live once GitHub
+  Pages is switched on for the repository.
 
 * Interrupting a parallel run now asks the folds it had already sent to the
   workers to stop. Before, the interrupt gave you your prompt back but left
