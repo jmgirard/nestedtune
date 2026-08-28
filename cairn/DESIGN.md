@@ -201,11 +201,16 @@ _Not at principle strength, by decision: surfacing what other tools hide
 obligation among a set of prohibitions — and nothing at principle strength
 defends it if default output gets crowded._
 
-_Posture toward upstream's prototype (tune#969) is settled by D-024: port the
-outer loop and retire this package if tune wants it upstream, otherwise stay a
-companion asking only that tune's `nested_cv` refusal remain top-level. (This
-line recorded the question as open, deliberately not invented by the interview;
-corrected 2026-07-30 when the maintainer replied — git holds the original.)_
+_Posture toward upstream's prototype (tune#969) is settled by D-025: this
+package continues, and the repository moves into the `tidymodels` organization
+as `tidymodels/nestedtune` with its current maintainer retained. The outer loop
+is not ported into tune. What the package asks of tune is unchanged and costs
+tune nothing — that the `nested_cv` refusal stay a top-level refusal, each
+`inner_resamples` element still accepted as an ordinary `rset` — but it is now
+an ask between packages in one organization. (This line first recorded the
+question as open, deliberately not invented by the interview; corrected
+2026-07-30 when the maintainer replied, and corrected again 2026-08-28 when the
+maintainer meeting settled it — git holds both earlier versions.)_
 
 ## Architecture
 

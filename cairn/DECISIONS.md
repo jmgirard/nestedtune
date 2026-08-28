@@ -719,6 +719,53 @@ this entry obliges a reply by then. Clause (3) binds `/cairn-release` in the
 sense that the release-walk is not to be entered while clause (1) is live; it
 creates no release milestone and nominates nothing.
 
+### D-025 (2026-08-28): nestedtune stays a package and moves into the tidymodels organization with the current maintainer retained — supersedes D-024's clause (1) and the submission condition clause (3) attached to it
+
+**Context:** D-024 recorded three clauses at the user's gate: (1) if tune wanted
+the outer loop upstream, nestedtune would port it and be retired; (2) otherwise
+it stays a companion asking only that tune's `nested_cv` refusal remain
+top-level; (3) no CRAN submission while clause (1) was live, so the package
+could not be published and then retired. Clause (1) was written against an
+unanswered question — topepo had said on tune#969 that the stalled `nested`
+branch was a bandwidth problem and that he was open to collaboration, and
+D-024's own Consequences noted the 2026-08-14 availability date was "his stated
+availability, not a commitment either way". He and the user met, and the
+question is now answered.
+
+**Decision:** nestedtune remains its own package and its own repository. The
+repository transfers to the `tidymodels` organization as `tidymodels/nestedtune`,
+with Jeffrey Girard remaining owner and primary maintainer. The outer loop is
+not ported into tune and the package is not retired, so D-024 clause (1) is
+dead; clause (3) was conditioned on clause (1) being live and therefore lapses
+with it, leaving release timing governed by nothing but the user's own
+declaration (D-050). Clause (2) is superseded rather than confirmed: it framed
+the alternative to retirement as staying an outside companion, and organization
+membership is a third shape it did not anticipate. What clause (2) asked of tune
+still holds and costs tune nothing — that the `nested_cv` refusal stay a
+top-level refusal, each `inner_resamples` element still accepted as an ordinary
+`rset` — but it is now an ask between packages in one organization rather than
+across a boundary.
+
+**Consequences:** D-002's contract boundary is unchanged, and the failure mode
+D-024 attached to it — "clause (1) says what happens when the delegate wants the
+caller too" — no longer has a live trigger; the boundary now holds because both
+packages are maintained in the same place and duplicating tune's loop would be
+visible to the same maintainers. D-003's deprecation waiver is untouched: it was
+tied to version 1.0, not to a CRAN release, and D-024 explicitly rejected tying
+it to the first release. The `cairn/DESIGN.md` line stating the old posture as
+settled is corrected in place under D-045's current-knowledge rule, pointing
+here; git holds both earlier versions. M28's plan is re-cut by the same planning
+pass that writes this entry — the port inventory it was scoped to produce has no
+recipient, and the inventory becomes a record of what to ask tune and rsample
+for now that the asks are intramural. Nothing here schedules or nominates a
+release: lifting clause (3) removes a prohibition and creates no window. The
+transfer has not happened yet, so the repository URL, `DESCRIPTION`'s `URL` and
+`BugReports` fields, the pkgdown configuration, the README badges, and the local
+git remote all still name `jmgirard/nestedtune` and are corrected when the move
+lands, tracked as a candidate row rather than planned against an address that
+does not exist.
+
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
