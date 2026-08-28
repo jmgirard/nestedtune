@@ -82,7 +82,7 @@ nothing here proposes one. `cairn/` is not rewritten.
 - [x] T3: Update `_pkgdown.yml`'s `url:`.
 - [x] T4: Update `README.md` — the R-CMD-check badge and its link, the codecov
       badge and its link, the `pak::pak()` installation line, and the guide link.
-- [ ] T5: Update `benchmarks/rsample-283-comment.md` and the title line of
+- [x] T5: Update `benchmarks/rsample-283-comment.md` and the title line of
       `.github/ci-usage-baseline.md`.
 - [ ] T6: Add the `NEWS.md` entry for the move, and reword the existing sentence
       so it refers to the site without naming an address.
@@ -111,6 +111,8 @@ nothing here proposes one. `cairn/` is not rewritten.
 - 2026-08-28: T3 — `_pkgdown.yml`'s `url:` is `https://nestedtune.tidymodels.org/`, the same token `DESCRIPTION` carries. The edit was made alongside T2's and so landed in T2's commit rather than its own.
 
 - 2026-08-28: T4 — README's two badges, both link targets, the `pak::pak()` line and the `[guide]` link definition now name `tidymodels/nestedtune` and `https://nestedtune.tidymodels.org/`. There is no `README.Rmd` in this repo, so `README.md` is the source and no knit step applies.
+
+- 2026-08-28: T5 — the unposted rsample#283 draft's one link and `.github/ci-usage-baseline.md`'s title line both name `tidymodels/nestedtune`. The baseline's measurements are unchanged; only the repository it names moved.
 
 ## Decisions
 

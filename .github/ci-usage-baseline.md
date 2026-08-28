@@ -1,4 +1,4 @@
-# CI usage — jmgirard/nestedtune
+# CI usage — tidymodels/nestedtune
 
 Window `[2026-07-26T00:00:00Z, 2026-07-27T07:00:00Z)`, runs with status `completed`. Default branch `main`.
 
