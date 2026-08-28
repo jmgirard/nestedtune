@@ -79,7 +79,7 @@ nothing here proposes one. `cairn/` is not rewritten.
       so `devtools::document()`, `devtools::check()` and `url_check()` can run
       at all; record the versions installed.
 - [x] T2: Update `DESCRIPTION`'s `URL:` and `BugReports:`.
-- [ ] T3: Update `_pkgdown.yml`'s `url:`.
+- [x] T3: Update `_pkgdown.yml`'s `url:`.
 - [ ] T4: Update `README.md` — the R-CMD-check badge and its link, the codecov
       badge and its link, the `pak::pak()` installation line, and the guide link.
 - [ ] T5: Update `benchmarks/rsample-283-comment.md` and the title line of
@@ -107,6 +107,8 @@ nothing here proposes one. `cairn/` is not rewritten.
 - 2026-08-28: T1 needed no installation — every package the task lists is already present under R 4.6.1: tune 2.1.0, rsample 1.3.2, parsnip 1.6.0, workflows 1.3.0, mirai 2.7.2, ranger 0.18.0, recipes 1.4.0, yardstick 1.4.0, lobstr 1.2.1, mlbench 2.1.11, vdiffr 1.0.9, R6 2.6.1, knitr 1.51, rmarkdown 2.31, urlchecker 2.0.0. The ROADMAP hygiene stamp recording five of them as absent from this library is stale.
 
 - 2026-08-28: T2 — `DESCRIPTION`'s `URL:` now lists `https://github.com/tidymodels/nestedtune` and `https://nestedtune.tidymodels.org/`, `BugReports:` `https://github.com/tidymodels/nestedtune/issues`. Field order kept as it was; the four sibling packages read for a convention split two-two on whether the site or the repository comes first, so there is none to follow.
+
+- 2026-08-28: T3 — `_pkgdown.yml`'s `url:` is `https://nestedtune.tidymodels.org/`, the same token `DESCRIPTION` carries. The edit was made alongside T2's and so landed in T2's commit rather than its own.
 
 ## Decisions
 
