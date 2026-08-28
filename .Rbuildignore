@@ -9,3 +9,6 @@
 ^docs$
 ^pkgdown$
 ^benchmarks$
+^codecov\.yml$
+^[.]?air[.]toml$
+^\.vscode$

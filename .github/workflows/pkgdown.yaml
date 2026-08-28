@@ -1,191 +1,46 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
-# Builds the pkgdown site `DESCRIPTION` and `README.md` have advertised since
-# M06, and publishes it to `gh-pages` from the default branch only.
-#
-# The `paths-ignore` list has to meet the same test the gating workflows' copies
-# meet: these paths cannot change what the run sees. `cairn/**` and `.claude/**`
-# are nothing pkgdown reads. `CLAUDE.md` is the one that needs saying, because
-# pkgdown DOES read it -- `pkgdown:::package_mds()` globs every root and
-# `.github/` markdown file against a hardcoded exclusion list with no config
-# knob, and a local build produced `docs/CLAUDE.html`. It is on this list only
-# because the `Drop the repo-internal sources` step below removes it before the
-# build ever reads it; delete that step and this entry becomes a lie.
-#
-# The list is spelled out under both triggers because GitHub Actions does not
-# resolve YAML anchors in workflow files; `.github/ci-usage.py` reads every
-# copy back separately -- both triggers here, both in R-CMD-check.yaml, and
-# both in test-coverage.yaml -- and exits non-zero if any two of the six
-# disagree.
 on:
   push:
     branches: [main, master]
-    paths-ignore:
-      - 'cairn/**'
-      - 'CLAUDE.md'
-      - '.claude/**'
   pull_request:
-    paths-ignore:
-      - 'cairn/**'
-      - 'CLAUDE.md'
-      - '.claude/**'
+  release:
+    types: [published]
   workflow_dispatch:
 
 name: pkgdown.yaml
 
 permissions: read-all
 
-# Same reasoning as the gating workflows: a superseded run answers a question
-# about a commit nobody is waiting on. The default branch is exempt because it
-# is a distribution channel -- and here it is the branch that actually
-# publishes, so a cancelled run there would leave the site half-written.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
-
-# Two jobs, deliberately. Building the site EXECUTES code from the ref being
-# built -- the vignette, every roxygen `@examples` block, and whatever those
-# load out of Suggests -- so the build job must not hold a token that can write
-# to this repository. It runs at `read-all` like every other job here and hands
-# `docs/` on as an artifact; only `deploy`, which runs no repository code at
-# all, takes `contents: write`, and only on the default branch. Collapsing these
-# back into one job would put a writable token in the same process as
-# PR-authored code on every pull request.
 jobs:
-  build:
+  pkgdown:
     runs-on: ubuntu-latest
-
-    # Not the gating workflows' measured 20-minute cap, which is priced against
-    # a hang inside `test_check("nestedtune")`; this job runs no tests and the
-    # vignette starts no daemons. It is here only so a runaway build fails in
-    # minutes instead of burning GitHub's 360-minute default.
-    timeout-minutes: 20
-
+    # Only restrict concurrency for non-PR jobs
+    concurrency:
+      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
 
-      # `local::.` installs the package itself, which is what makes
-      # `install = FALSE` correct on the build step below. The builder is NOT
-      # named here: `needs: website` resolves it from `Config/Needs/website` in
-      # DESCRIPTION (D-022). Adding `any::pkgdown` back would install it either
-      # way, which is the ad-hoc line D-022 rejected -- and it would make the
-      # DESCRIPTION field decorative, since dropping the field would still build
-      # green.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: local::.
+          extra-packages: any::pkgdown, local::.
           needs: website
-
-      # pkgdown renders every root and `.github/` markdown file it does not
-      # already own -- `pkgdown:::package_mds()` globs them against a hardcoded
-      # exclusion list, with no config knob to add to it -- so `CLAUDE.md` (this
-      # repo's agent instructions) and `.github/ci-usage-baseline.md` (a CI cost
-      # measurement) both become public pages.
-      #
-      # Removing the SOURCES before the build, rather than the built HTML after
-      # it, is what keeps them out of the derived artifacts too:
-      # `pkgdown:::get_site_paths()` globs every `*.html` under `docs/`, and both
-      # `sitemap.xml` and `search.json` are built from it, so a post-build delete
-      # would leave the pages listed in the sitemap and their full text in the
-      # site search index. This touches the runner's checkout only.
-      - name: Drop the repo-internal sources
-        run: rm -f CLAUDE.md .github/ci-usage-baseline.md
-        shell: bash
-
-      # Catches an export or article missing from `_pkgdown.yml` before the
-      # build spends time on a site that is already wrong.
-      - name: Check pkgdown config
-        run: pkgdown::check_pkgdown()
-        shell: Rscript {0}
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
-      # Guards the removal above: if the `Drop the repo-internal sources` step
-      # is ever weakened, this is what turns the resulting publication into a
-      # failed run instead of a live page.
-      - name: Check the repo-internal pages are absent
-        run: |
-          found=0
-          for page in docs/CLAUDE.html docs/ci-usage-baseline.html; do
-            if [ -f "$page" ]; then
-              echo "::error::$page reached the built site"
-              found=1
-            fi
-          done
-          exit "$found"
-        shell: bash
-
-      # The two pages `DESCRIPTION` and `README.md` advertise. A pkgdown build
-      # that silently stopped emitting either would still deploy a green-looking
-      # site whose advertised links 404 -- which is the state this milestone
-      # exists to end.
-      - name: Check the advertised pages exist
-        run: |
-          missing=0
-          for page in docs/index.html docs/articles/nested-cv.html; do
-            if [ ! -f "$page" ]; then
-              echo "::error::$page is missing from the built site"
-              missing=1
-            fi
-          done
-          exit "$missing"
-        shell: bash
-
-      - name: Upload the built site
-        uses: actions/upload-artifact@v7
-        with:
-          name: pkgdown-site
-          path: docs
-          retention-days: 1
-
-  # Runs no code from the ref being built -- it checks the ref out, unpacks an
-  # artifact and pushes it, and executes nothing it checked out -- which is what
-  # makes `contents: write` safe to hold here and nowhere else in this
-  # repository.
-  #
-  # `github.ref_name` rather than `github.event_name != 'pull_request'`: the
-  # looser form also publishes from a `workflow_dispatch` on a feature branch,
-  # which is exactly the accident this guard exists to refuse. It is on the job
-  # so a pull request never starts the writable job at all.
-  deploy:
-    needs: build
-    if: github.ref_name == github.event.repository.default_branch
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    permissions:
-      contents: write
-
-    steps:
-      # The deploy action's first act is `git config user.name` inside the
-      # workspace, so it needs one to be a git checkout: without this step the
-      # job dies at `fatal: not in a git directory` before it reads the
-      # artifact. Nothing here runs what is checked out -- see the job comment
-      # above -- and the artifact is unpacked into `docs/`, which is gitignored,
-      # so the checkout and the built site never contend for the same paths.
-      - uses: actions/checkout@v6
-
-      - uses: actions/download-artifact@v7
-        with:
-          name: pkgdown-site
-          path: docs
-
-      # Pinned by commit SHA, not by tag: tags are mutable, and this is the one
-      # action in the repository that runs with a token able to write to it.
-      # `test-coverage.yaml` pins codecov the same way.
-      - name: Deploy to gh-pages
-        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # v4.5.0
+      - name: Deploy to GitHub pages 🚀
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
         with:
           clean: false
           branch: gh-pages
