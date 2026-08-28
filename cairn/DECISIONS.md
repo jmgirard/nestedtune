@@ -766,6 +766,38 @@ lands, tracked as a candidate row rather than planned against an address that
 does not exist.
 
 
+### D-026 (2026-08-28): the organization transfer is already complete — corrects the transfer-status facts D-025 stated an hour earlier, and supersedes nothing else in it
+
+**Context:** D-025 was written from the user's description of the maintainer
+meeting and from the local git remote, both of which read as future tense, and
+it stated that "the transfer has not happened yet". The very next push — the one
+that committed D-025 — was answered by GitHub with `This repository moved.
+Please use the new location: https://github.com/tidymodels/nestedtune.git`, and
+the push succeeded through the redirect. The move was therefore already done
+when D-025 claimed it was pending. Independent confirmation through `gh` was
+attempted and could not be obtained: the network timed out. The server's own
+redirect on a successful authenticated push is the evidence this entry rests on.
+
+**Decision:** The canonical repository is `tidymodels/nestedtune` as of
+2026-08-28 or earlier; the exact transfer date is not established here and no
+claim is made about it. D-025's substance — the package continues, the outer
+loop is not ported, clause (3)'s submission condition lapses, the ask of tune is
+unchanged — stands untouched; only its transfer-status facts are corrected. The
+local git remote is re-pointed at the new URL in the same commit as this entry,
+so pushes stop relying on a redirect.
+
+**Consequences:** The candidate row D-025 created said the housekeeping work
+"unblocks when the transfer completes" — that condition is met, so the row is
+corrected in place under D-045's current-knowledge rule and is promotable now
+rather than later; whether to promote it is the user's call and no milestone is
+planned here. M28's Scope Out is amended in the same pass for the same reason.
+`DESCRIPTION`'s `URL` and `BugReports`, `_pkgdown.yml`, and the README badges
+still name `jmgirard/nestedtune`; those are package metadata rather than
+tracking records, so they are not touched by this docs-only commit and belong to
+whatever milestone takes the housekeeping row. Nothing here changes release
+timing, which stays user-declared.
+
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

@@ -37,8 +37,8 @@ organization transfer lands, and the user's call, not this milestone's.
 Performing any refactor the inventory suggests → its own milestone, planned
 from the note. Transfer mechanics — the git remote, `DESCRIPTION`'s `URL` and
 `BugReports`, the pkgdown configuration, README badges, a contributing guide and
-code of conduct → the ROADMAP candidate row this plan adds, which unblocks when
-the transfer completes. Any release or submission work → release timing is
+code of conduct → the ROADMAP candidate row this plan adds, which D-026 records
+as already unblocked, the transfer having landed. Any release or submission work → release timing is
 user-declared and nothing here proposes one.
 
 ## Acceptance criteria
@@ -111,6 +111,8 @@ user-declared and nothing here proposes one.
 - 2026-08-28: criteria audit ([O], fresh context, reduced mode — internal tier, no tripwire tags) returned four findings, all fixed directly. AC1's "every claim about this repo's own state carries an observation date" quantified over which sentences are state claims, which no procedure partitions — narrowed to the Provenance block's dated extraction status, the general habit moved to T6. AC5 carved out three re-exported generics by name, an exemption registry a fourth re-export would silently defeat — replaced with the rule that generates it. AC6's "so no ask reads as a handover" quantified over readers' construals — replaced with a framing sentence the draft contains. AC7 ("the `verify` slot runs clean") bound an instrument, not the deliverable: the deliverable is markdown, so a green suite is true before the milestone starts — dropped as a criterion, kept as T8.
 - 2026-08-28: plan gate chose the upstream-asks framing over a purely descriptive internal-maintenance inventory, because organization membership is what makes the asks worth writing and a description alone discards the part the settlement changed; falsified by tune or rsample declining the asks on grounds the inventory could have anticipated.
 - 2026-08-28: AC7's alternative repair — a criterion that the new paths carry `.Rbuildignore` coverage so `R CMD check` sees no new NOTE — was weighed and rejected: `^cairn$` and `^benchmarks$` are both already ignored (verified today), so the criterion could not fail.
+
+- 2026-08-28: the push committing this plan was answered by GitHub's moved-repository redirect, so the organization transfer was already complete; D-026 records the correction and the Scope Out clause about the housekeeping row unblocking later was amended to match. Nothing about this milestone's own scope changed.
 
 ## Decisions
 
