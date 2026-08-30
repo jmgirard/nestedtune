@@ -16,8 +16,12 @@ are the ordinary requests one package in an organization makes of its siblings
 once it stops guessing and reads their source. Each one names code nestedtune
 carries today that a sibling could make unnecessary — either because the sibling
 already does the same work behind a name it will not promise, or because the
-sibling builds an object nestedtune has to work around. Granting all of them
-would leave nestedtune with 79 of its 106 top-level functions. It would change
+sibling builds an object nestedtune has to work around. The asks reach 28
+functions: all 16 the inventory buckets `glue` and all 12 it buckets
+`resampling-layer`. Twenty-seven of those go entirely; `check_nested()`
+survives R-A2 in part, three of its refusals being nestedtune's own concern
+(see there, where it is listed by number). So granting every ask leaves nestedtune with **79 of its 106
+top-level functions**, one of them a thinner `check_nested()`. It would change
 the public surface in exactly one place: R-A1 takes the memory-lean nested
 constructor into rsample, and `nested_resamples()` is an exported function of
 this package, so that ask — and only that ask — retires something users call by
@@ -26,32 +30,34 @@ there.
 
 The asks are grouped by theme rather than one per function, because a maintainer
 acts on a change, not on a list of our helper names. Every `glue` and
-`resampling-layer` entry in the inventory appears under exactly one ask below,
-and the one entry no upstream change retires is stated as such rather than
-padded into an ask that would not do it.
+`resampling-layer` entry in the inventory appears under exactly one ask below.
 
-**One correction worth stating up front, because it changes what several of
-these asks are.** An earlier draft asked tune to *export* helpers it turns out to
-export already. Nine of the tune symbols the inventory cites are in tune's
-`NAMESPACE` at v2.1.0 — `check_workflow` (:191), `.has_preprocessor` (:157),
-`.has_spec` (:161), `.check_grid` (:136), `check_metrics` (:186),
-`check_metrics_arg` (:187), `choose_framework` (:193), `get_mirai_workers`
-(:237), `mirai_installed` (:265) — and every one of them carries
-`#' @keywords internal`, documented under `empty_ellipses`, `internal-parallel`
-or `choose_metric`. So the code is callable today and the thing missing is not
-visibility but a promise. Where that is the whole story, the ask below asks for
-the promise. Where nestedtune's version also does something tune's does not, the
-inventory moved the entry out of `glue` into `ambiguous` and it is not claimed as
-a retirement here.
+**One correction worth stating up front, because it changes what most of these
+asks are.** An earlier draft asked tune to *export* helpers it turns out to
+export already. The inventory now rests on a sweep of tune's whole 152-name
+`export()` surface at v2.1.0 rather than on the symbols it happened to cite, and
+that sweep finds **twelve** relevant symbols already exported: `check_workflow`
+(:191), `.has_preprocessor` (:157), `.has_spec` (:161), `.check_grid` (:136),
+`check_metrics` (:186), `check_metrics_arg` (:187), `choose_framework` (:193),
+`get_mirai_workers` (:237), `mirai_installed` (:265),
+`.config_key_from_metrics` (:138), `load_pkgs` (:247), and `new_bare_tibble`
+(:267). Every one carries `#' @keywords internal`, documented under
+`empty_ellipses`, `internal-parallel`, `choose_metric`, or its own block.
+
+So the code is callable today and the thing missing is not visibility but a
+promise. **Almost nothing here is an export request.** Where the promise is the
+whole story, the ask asks for the promise. Where nestedtune's version also does
+something tune's does not, the inventory moved the entry out of `glue` into
+`ambiguous` and it is not claimed as a retirement here.
 
 ---
 
 # Asks to `tune`
 
-## T-A1 — Promise the pre-fit argument checks, and export the one that is missing
+## T-A1 — Promise the developer-facing helpers nestedtune duplicates
 
 **Retires: F002 `has_preprocessor()`, F003 `check_model_spec()`,
-F011 `check_metrics()`** — 3 functions, ~31 lines.
+F011 `check_metrics()`, F061 `new_tbl()`** — 4 functions, ~38 lines.
 
 nestedtune validates `object`, `grid` and `metrics` before it starts a run,
 because it tunes once per outer fold: a malformed grid that tune would reject per
@@ -71,10 +77,26 @@ say which of these developer-facing helpers a downstream package may depend on,
 and to deprecate rather than remove them. A short "these are stable for
 downstream use" note in `empty_ellipses` and `choose_metric` would do it.
 
-**Not exported at all.** `check_installs()` over `is_installed()`
-(`R/checks.R:234`, `:229`) is genuinely unreachable from outside, and F003 exists
-for no other reason. The ask there is the ordinary one: export it, or fold it
-into a promised pre-fit entry point.
+**The engine-package check is reachable too, by another name.**
+`check_installs()` over `is_installed()` (`R/checks.R:234`, `:229`) is indeed
+unexported — but `load_pkgs()` (`R/load_ns.R:11`, `NAMESPACE:247`) is exported,
+and its `model_spec` method asks `required_pkgs()` and refuses through
+`.load_namespace()` (`:41`, also exported), which aborts naming the packages that
+could not be loaded. That is F003's whole job. It loads rather than only
+checking, and it adds tune's infra packages — neither of which matters at a
+pre-fit check, since tune loads them a moment later anyway. So there is nothing
+to export here either: `load_pkgs` carries `#' @keywords internal`
+(`R/load_ns.R:9`), and the ask is the same promise as above.
+
+**The same promise retires a constructor, not just checks.** F061 `new_tbl()`
+builds a bare tibble by hand — three classes and compact row names — to avoid
+taking a `tibble` dependency for the sake of a constructor. tune exports
+`new_bare_tibble()` (`R/utils.R:82`, `NAMESPACE:267`), which is
+`vctrs::new_data_frame()` then `tibble::new_tibble()`: the same object, from a
+caller that needs no `tibble` of its own. It is `@keywords internal` in this very
+block (`R/utils.R:80`), so it is retired by this ask and by nothing else
+upstream. It is listed here rather than under a heading of its own because the
+promise that reaches it is this one.
 
 **The convenient shape, if tune wants one.** A single entry point that validates
 a `(workflow, grid, metrics)` triple up front and returns the expanded grid would
@@ -119,22 +141,33 @@ reconstructed record and present only in the notes. That is the consequence of
 deriving the grid from what scored, and it does not go away by trying harder from
 outside.
 
-It does go away without tune, one other way, and this ask is honest about it:
-`.check_grid()` is exported (`NAMESPACE:136`), so nestedtune could expand each
-fold's grid itself and hand the frame to `tune_grid()`, retiring F070–F073 and
-the hole with them. What that costs is resting the outer loop on a
-`@keywords internal` export — the same unpromised surface T-A1 is about. So the
-choice is between tune recording the grid and tune promising `.check_grid()`;
-either closes this, and doing neither leaves the reconstruction where it is.
+**tune already exports the reconstruction, and this ask is honest about it.**
+`.config_key_from_metrics()` (`R/collect.R:618`, `NAMESPACE:138`) does what
+`scored_candidates_impl()` does: it keeps the tibble `.metrics`, unchops them,
+selects the tuning parameter names plus `.config`, and returns the unique rows.
+nestedtune could call it today and delete all four functions. Two neighbours in
+the same block reach the same end differently — `.check_grid()`
+(`NAMESPACE:136`) would let nestedtune expand each fold's grid itself and hand
+the frame to `tune_grid()`, retiring the hole as well, and
+`estimate_tune_results()` (`R/collect.R:645`) sits there too.
 
-The ask, in preference order: attach the expanded grid to the returned object —
-an attribute or a list element, whatever fits tune's own conventions, since it is
-data tune already holds — or failing that, promise `.check_grid()`.
+What every one of those costs is the same thing: they are `@keywords internal`
+members of `empty_ellipses`, so the outer loop's record of what it searched would
+rest on a surface tune reserves the right to change. That is T-A1's ask, not a
+separate one — which is why this ask is *not* "export something". It is either
+of two things, in preference order: attach the expanded grid to the returned
+object — an attribute or a list element, whatever fits tune's own conventions,
+since it is data tune already holds, and it is the only route that also closes
+the hole above — or, failing that, let T-A1's promise cover
+`.config_key_from_metrics()` and `.check_grid()`, and nestedtune deletes these
+four and keeps the hole.
 
 ## T-A3 — Export the note and metric tibble constructors
 
-**Retires: F075 `own_note()`, F076 `tune_notes()`, F077 `bind_notes()`,
-F078 `empty_notes()`, F079 `empty_metrics()`** — 5 functions, ~45 lines.
+**Retires: F075 `own_note()`, F077 `bind_notes()`, F078 `empty_notes()`
+outright, and F079 `empty_metrics()` and F076 `tune_notes()` conditionally** —
+5 functions, ~45 lines, of which ~21 (F076 and F079) depend on how far tune wants
+to go. See the three parts below.
 
 nestedtune records a per-fold note frame in tune's own shape: `location`, `type`,
 `note`, `trace`. It builds that frame by hand, reads tune's notes back out
@@ -144,10 +177,28 @@ builds and appends the same structures internally — `new_note()`
 (`R/logging.R:320`), `append_log_notes()` (`R/logging.R:282`),
 `remove_log_notes()` (`:414`), `has_log_notes()` (`:274`).
 
-The ask: export the note constructor and the append helper, and document the
-zero-row shape of a notes tibble and of a metrics tibble. Any package that
-composes tune results into a larger object needs to produce empty ones that
-downstream `rbind`-shaped code will accept, and today it guesses at the columns.
+The ask has three parts, and only the first is an export request — the sweep
+found no exported counterpart for any of this, unlike T-A1 and T-A2.
+
+1. **Export `new_note()` and `append_log_notes()`** (`R/logging.R:320`, `:282`).
+   Neither is in tune's `NAMESPACE`. These retire F075 `own_note()` and F078
+   `empty_notes()` outright — `new_note()`'s own defaults are what
+   `empty_notes()` hand-builds.
+2. **Document the zero-row shape of a notes tibble and of a metrics tibble.**
+   Any package composing tune results into a larger object must produce empty
+   ones that downstream `rbind`-shaped code accepts, and today it guesses at the
+   columns. Documenting the shape does not delete F079 `empty_metrics()` — the
+   constructor still has to be written — but it makes writing it correct rather
+   than inferred, and a zero-row constructor alongside `new_note()` would delete
+   it.
+3. **A stage-tagging hook, or nothing.** F076 `tune_notes()` reads notes back
+   through `tune::collect_notes()` and re-tags each row as
+   `paste0(stage, inner_id, ": ", notes$location)`, because a nested run needs to
+   say which loop and which inner resample a note came from.
+   `append_log_notes()` takes a raw result's notes and a plain `location`, so it
+   does not cover the re-tagging. If tune has no appetite for a location
+   convention that composes, F076 stays here, and this ask retires four of the
+   five rather than all five.
 
 ## T-A4 — Promise the parallel-backend decision
 
@@ -176,14 +227,30 @@ functions do not model at all.
 
 The ask: promise `choose_framework()` — say that a downstream package may call it
 to learn which framework tune would use for a given `(object, control)`, and that
-its removal would go through a deprecation cycle. Nothing needs to be written;
-one line of documentation retires three of our functions.
+its removal would go through a deprecation cycle. Nothing needs to be written.
+
+That retires F084 and F085 and most of F083, but not all of it, and the ask
+should not claim otherwise. `is_mirai_installed()` has a second caller inside
+this package: `pool_is_cancellable()` (`R/parallel.R:47`, an inventory `core`
+entry) asks the plain question "is mirai installed at all", which
+`choose_framework()`'s return value cannot answer — it names a framework, not an
+installation. Promising `mirai_installed()` (`NAMESPACE:265`) alongside
+`choose_framework()` closes that too, and both sit in the same
+`internal-parallel` block, so it is one promise covering the block rather than
+two asks. `choose_framework()` also knows about a `future` branch nestedtune's
+three functions do not model at all, which is a second reason to read tune's
+answer rather than mirror its rule.
 
 ## T-A5 — Keep the `nested_cv` refusal top-level (a request to change nothing)
 
 **Retires nothing.** This is the one ask on the list that asks tune to hold still
-rather than to move, and `cairn/DECISIONS.md` records it as live: D-024
-clause (2), explicitly preserved by D-025 when the rest of D-024 was superseded.
+rather than to move, and `cairn/DECISIONS.md` records its substance as live.
+D-025 supersedes D-024 clause (2) in form — "Clause (2) is superseded rather than
+confirmed: it framed the alternative to retirement as staying an outside
+companion, and organization membership is a third shape it did not anticipate"
+(`DECISIONS.md:741-743`) — while keeping what it asked of tune: "What clause (2)
+asked of tune still holds and costs tune nothing … but it is now an ask between
+packages in one organization rather than across a boundary" (`:743-747`).
 
 `check_rset()` (`R/checks.R:4`, `NAMESPACE:189`) refuses a `nested_cv` at the top
 level — `R/checks.R:19-21` — and `tune_grid()` calls it once on `resamples`
@@ -198,22 +265,6 @@ it be additive rather than a change to what `check_rset()` accepts of an ordinar
 `rset`. This costs tune no new API and no commitment beyond not regressing, and
 it is the only thing D-024 ever asked for.
 
-## Not retired by any ask to tune
-
-**F061 `new_tbl()`** (`R/nested-results.R:119`, ~7 lines) builds a tibble by
-setting three classes and compact row names by hand, to avoid depending on
-`tibble` for the sake of a constructor. It is `glue` in the inventory's sense —
-tune declares `tibble (>= 3.1.0)` in its `Imports` (`DESCRIPTION:37`), so inside
-tune the dependency is already paid — but **no ask to tune retires it.** It is
-retired, if ever, by nestedtune adding `tibble` to its own `Imports`, which is a
-local dependency decision requiring its own gate. T-A2 and T-A3 would remove most
-of its call sites (the note, metric and candidate constructors); three would
-remain, in the results object and its two summarizers.
-
-It is listed here rather than dropped so that every `glue` entry in the inventory
-is accounted for, including the one whose honest answer is "nothing upstream".
-
----
 
 # Asks to `rsample`
 
@@ -345,7 +396,7 @@ the wrong rows silently.
 **Retires: F067 `fold_ids()`** — 1 function, ~7 lines.
 
 Two methods refuse this case outright, with the same three lines —
-`labels.rset()` (`R/labels.R:14-17`) and `labels.vfold_cv()` (`:28-30`):
+`labels.rset()` (`R/labels.R:15-17`) and `labels.vfold_cv()` (`:28-30`):
 
 ```r
 if (inherits(object, "nested_cv")) {
