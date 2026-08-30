@@ -10,7 +10,7 @@ _Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references
 | M26 | The wire figure survives re-derivation | done | — | normal | milestones/archive/M26-mori-backend-assessment.md |
 | M29 | The assessment says only what the manifest measured | done | M26 | normal | milestones/archive/M29-mori-assessment-writeup.md |
 | M27 | What the outer loop needs from the resampling object, in writing | done | — | normal | milestones/archive/M27-resampling-object-requirements.md |
-| M28 | What we keep, what is only glue, and what belongs to rsample | in-progress | — | normal | milestones/M28-code-inventory.md |
+| M28 | What we keep, what is only glue, and what belongs to rsample | review | — | normal | milestones/M28-code-inventory.md |
 | M30 | Every address the package shows names its new home | done | — | high | milestones/archive/M30-address-rename.md |
 | M25 | The number has a name, and the docs say which | done | — | normal | milestones/archive/M25-estimand-documented.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent

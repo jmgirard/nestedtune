@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -64,10 +64,12 @@ user-declared and nothing here proposes one.
       `S3method()` line in the file is accounted for, and every `export()` line
       naming a symbol the extraction procedure's output does not define is
       listed as a re-export and excluded from the function inventory.
-- [ ] AC6: An unposted draft under `benchmarks/` names, for every `glue` and
-      `resampling-layer` entry in the note, the upstream ask that would retire
-      it, and carries a framing sentence placed ahead of the ask list stating
-      that this package continues.
+- [x] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
+      `resampling-layer` entry in the note exactly once, each entry either
+      placed under the upstream ask that would retire it or recorded as
+      retired by no upstream ask together with what would retire it instead.
+      The draft carries a framing sentence placed ahead of the ask list
+      stating that this package continues.
 
 ## Coverage
 
@@ -127,6 +129,8 @@ user-declared and nothing here proposes one.
 - 2026-08-30: F061 `new_tbl()` is the one `glue` entry no upstream ask retires - it goes when this package adds `tibble` to Imports, a local dependency decision needing its own gate. The draft states that under its own heading rather than padding it into an ask that would not do it, so every `glue` entry is still accounted for. T-A2 and T-A3 would remove most of its call sites; three would remain.
 - 2026-08-30: T8 - `devtools::test()` clean: FAIL 0, WARN 0, SKIP 0, PASS 1628. No `R/` file changed on this branch, so `devtools::document()` was not required.
 - 2026-08-30: amendment return: AC6 — "names, for every `glue` and `resampling-layer` entry in the note, the upstream ask that would retire it". F061 `new_tbl()` is a `glue` entry no upstream ask retires; the draft records that honestly under its own heading, so the clause as written is unmeetable without inventing an ask. AC1-AC5 verified with fresh evidence and the consistency gate is clean; the amendment is the only work convened.
+- 2026-08-30: amendment return: AC6 — "An unposted draft under `benchmarks/` accounts for every `glue` and `resampling-layer` entry in the note exactly once, each entry either placed under the upstream ask that would retire it or recorded as retired by no upstream ask together with what would retire it instead. The draft carries a framing sentence placed ahead of the ask list stating that this package continues." Narrowing repair chosen at the mini gate over a widening that would have bound the local dependency fix and a follow-up row; the criteria set is the same size and no criterion was added. The draft is unchanged — it already accounted for F061 under its own heading.
+- 2026-08-30: criteria audit of the amended AC6 ([O], fresh context, reduced mode — internal tier, no tripwire tags) returned no findings: the quantified domain is the note's 19 `glue` and 12 `resampling-layer` ledger rows, which AC1's extraction procedure enumerates; the no-ask clause is a general rule, not a registry naming F061; and both clauses state properties of the draft rather than of a checker.
 
 ## Decisions
 
