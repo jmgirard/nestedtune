@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -51,7 +51,7 @@ user-declared and nothing here proposes one.
       exactly once, with `file:line`, export status, approximate line count, and
       exactly one bucket drawn from core / glue / resampling-layer / furniture /
       ambiguous.
-- [x] AC2: Every entry the note buckets `glue` names the fact about being inside
+- [ ] AC2: Every entry the note buckets `glue` names the fact about being inside
       `tune` that would make the code unnecessary, cited to tune's own source
       (file and function name at a stated tune version), to a comment in this
       repo, or to a behaviour the note records having observed.
@@ -64,7 +64,7 @@ user-declared and nothing here proposes one.
       `S3method()` line in the file is accounted for, and every `export()` line
       naming a symbol the extraction procedure's output does not define is
       listed as a re-export and excluded from the function inventory.
-- [x] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
+- [ ] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
       `resampling-layer` entry in the note exactly once, each entry either
       placed under the upstream ask that would retire it or recorded as
       retired by no upstream ask together with what would retire it instead.
@@ -131,6 +131,8 @@ user-declared and nothing here proposes one.
 - 2026-08-30: amendment return: AC6 — "names, for every `glue` and `resampling-layer` entry in the note, the upstream ask that would retire it". F061 `new_tbl()` is a `glue` entry no upstream ask retires; the draft records that honestly under its own heading, so the clause as written is unmeetable without inventing an ask. AC1-AC5 verified with fresh evidence and the consistency gate is clean; the amendment is the only work convened.
 - 2026-08-30: amendment return: AC6 — "An unposted draft under `benchmarks/` accounts for every `glue` and `resampling-layer` entry in the note exactly once, each entry either placed under the upstream ask that would retire it or recorded as retired by no upstream ask together with what would retire it instead. The draft carries a framing sentence placed ahead of the ask list stating that this package continues." Narrowing repair chosen at the mini gate over a widening that would have bound the local dependency fix and a follow-up row; the criteria set is the same size and no criterion was added. The draft is unchanged — it already accounted for F061 under its own heading.
 - 2026-08-30: criteria audit of the amended AC6 ([O], fresh context, reduced mode — internal tier, no tripwire tags) returned no findings: the quantified domain is the note's 19 `glue` and 12 `resampling-layer` ledger rows, which AC1's extraction procedure enumerates; the no-ask clause is a general rule, not a registry naming F061; and both clauses state properties of the draft rather than of a checker.
+
+- 2026-08-30: defect return: AC2 and AC6 fail. The fresh-context [O] reviewer found that nine of the tune symbols the note cites as the fact removing a `glue` entry are **exported** at tune v2.1.0 — `check_workflow` (NAMESPACE:191), `.has_preprocessor` (:157), `.has_spec` (:161), `.check_grid` (:136), `check_metrics` (:186), `check_metrics_arg` (:187), `mirai_installed` (:265), `get_mirai_workers` (:237), `choose_framework` (:193) — re-verified here against the pinned clone at `4c74638`. So for F001, F002, F006, F007, F011, F083, F084 and F085 the note names no fact *about being inside tune*: the code is callable today as `tune::<name>()` and those entries are not `glue` in the note's own sense. AC2 fails inside its own domain. AC6 fails with it: F083-F085 sit under T-A4 and F002 under T-A1, asks that would not retire them, and they are not recorded as retired by no upstream ask. `check_installs`, `check_extra_tune_parameters`, `is_installed` and the four logging helpers are genuinely unexported and unaffected. First defect return on this milestone; the two prior returns were AC6 amendments and stay off this count.
 
 ## Decisions
 
@@ -318,3 +320,102 @@ has no user-visible change, so `NEWS.md` is owed no entry.
 `cairn/references/code-inventory.md`) with no script, hook, or other executable
 surface — so single-reviewer mode: one fresh-context [O] diff-bug lens, the other
 two skipped.
+
+### Independent review — single [O] diff-bug lens, 16 findings
+
+Every reported finding and its disposition, ranked as the reviewer ranked them.
+The reviewer's own mechanical pass agreed with the gate's: 106/106 ledger rows
+correct for name, `file:line`, line count and export status; the `NAMESPACE`
+reconciliation correct; every cited upstream site resolving; every
+"Retires: … N functions, ~M lines" sum arithmetically right.
+
+**F1 (AC-failing). `benchmarks/upstream-asks.md:104-124` — T-A4 asks tune to
+export what tune already exports.** `choose_framework` (tune NAMESPACE:193),
+`mirai_installed` (:265) and `get_mirai_workers` (:237) are exported at v2.1.0.
+Re-verified at the gate. F083-F085 could be deleted today with no upstream
+change, so their `glue` rationale is wrong. → **returns the milestone.**
+
+**F2 (AC-failing). `benchmarks/upstream-asks.md:44-51` — "all unexported" is
+false for three of five.** tune exports `check_workflow` (:191), `.check_grid`
+(:136) and `check_metrics` (:186); `.check_grid(grid, workflow, pset)` already
+validates the triple and returns the expanded grid. Re-verified. → **returns.**
+
+**F3 (AC-failing). `cairn/references/code-inventory.md:216-220` — "Inside tune
+the unexported helper is in hand" is false for F002.** `.has_preprocessor` is
+exported at tune NAMESPACE:157, `.has_spec` at :161. Re-verified. → **returns.**
+
+**F4. `benchmarks/upstream-asks.md:52-58` — F002's stated reason is the wrong
+function's comment.** The draft draws on `R/checks.R:30-36`, which sits inside
+`check_workflow()` and explains the model-spec check; F002 has its own comment at
+`R/checks.R:73-81` giving a different, export-proof reason (`add_case_weights()`
+also files under `pre`, so the counting form is a different question). → fix in
+the return; it is part of the same F002 rework.
+
+**F5. `benchmarks/upstream-asks.md:45` — asks for the export of a function
+soft-deprecated at the read version.** `check_metrics()` opens with
+`lifecycle::deprecate_warn("2.1.0", …, "check_metrics_arg()")` (tune
+R/checks.R:397-398). Re-verified. → fix in the return.
+
+**F6. `benchmarks/upstream-asks.md:20-21` vs `:147-149`, `:300-302` — internal
+contradiction about the public surface.** Line 21 claims granting everything
+leaves "the same public surface", but R-A1 retires F025 `nested_resamples()`,
+which the ledger marks `exported` and the draft itself calls the constructor the
+package exists to offer. → fix in the return.
+
+**F7. `cairn/references/code-inventory.md:47` — "173 occurrences of `function(`"
+is stale.** The count at `89d8418` is 153; 173 came from the July plan's work
+log and is presented under an "observed 2026-08-30" provenance. Re-verified at
+the gate (`grep -o 'function(' R/*.R | wc -l` → 153). → fix in the return.
+
+**F8. `benchmarks/upstream-asks.md:273-275`, `code-inventory.md:337-341` —
+rsample already has the id-combining rule.** `labels.vfold_cv()` (rsample
+R/labels.R:27-41) pastes `id` and `id2` when `repeats > 1`, and a repeated design
+dispatches there, not to `labels.rset`. Re-verified. → fix in the return.
+
+**F9. `benchmarks/upstream-asks.md:78-82` — "only tune can close" is
+overstated.** With `.check_grid()` exported, nestedtune could expand per fold
+itself and pass the frame to `tune_grid()`, retiring F070-F073 without upstream.
+→ fix in the return; same premise as F2.
+
+**F10. `cairn/references/code-inventory.md:211-213` — "raising for the same
+shapes" is not true of F001.** nestedtune's `check_workflow()` refuses an
+already-fitted workflow (`R/checks.R:20-28`); tune's has no such branch and does
+not name the caller's call. The "~65 lines" retirement figure is unreachable.
+→ fix in the return.
+
+**F11. `benchmarks/upstream-asks.md:178-179, 193-195` — R-A2's retirement claim
+is overstated.** `check_nested()` also refuses a non-data-frame, a zero-fold
+design, and a design with no `^id` column, the last existing for this package's
+own results object; none survives being pushed upstream. → fix in the return.
+
+**F12. `cairn/references/code-inventory.md:455-457` — Disposition names a
+non-existent ambiguous entry.** It cites "the resampling-layer half of the
+payload discussion"; F090-F092 are bucketed `resampling-layer`, not `ambiguous`.
+→ fix in the return.
+
+**F13. `benchmarks/upstream-asks.md` — omits the one ask DECISIONS records as
+live.** D-024 clause (2), explicitly preserved by D-025, asks tune to keep the
+`nested_cv` refusal top-level with each `inner_resamples` element still accepted
+as an ordinary `rset`. Confirmed at the gate against `cairn/DECISIONS.md:675`
+and `:722`. The draft's exclusions section does not mention it. → fix in the
+return; a draft presenting itself as the ask list must carry it.
+
+**F14. `cairn/references/code-inventory.md:265-274` — the cited threshold line is
+off.** `:117` is `choose_framework()`'s opening line; the `>= 2` threshold is at
+tune R/parallel.R:146-147. → fix in the return.
+
+**F15. `cairn/references/code-inventory.md:4-5` — "read / read-only" duplicated
+word.** Editorial. → fix in the return.
+
+**F16. `cairn/references/code-inventory.md:192` — addendum line count.**
+`[.nested_results` spans :69-104, 36 lines, recorded as ~37; within the "~"
+convention and the one figure the verifying script does not reach. → reject:
+inside the stated approximation convention, and no reader is misled.
+
+**Outcome: defect return.** F1, F2 and F3 each demonstrate AC2 failing inside its
+own domain — the note names, for eight `glue` entries, a fact that is not about
+being inside tune, because the tune symbol is already exported. AC6 fails with
+them, those entries sitting under asks that would not retire them and not being
+recorded as retired by no upstream ask. Status back to `in-progress`; AC2 and AC6
+unticked. AC1, AC3, AC4 and AC5 keep their verified evidence above and are not
+re-opened. F4-F15 ride the same rework rather than being filed separately.
