@@ -1,11 +1,11 @@
 # M31: Both red CI jobs go green, so a merge is possible again
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m031-ci-back-to-green`
+- **Branch/PR:** `m031-ci-back-to-green` / https://github.com/tidymodels/nestedtune/pull/39
 
 ## Goal
 
@@ -83,7 +83,7 @@ leg → M11's dropped matrix-cut candidate row.
 
 ## Tasks
 
-- [ ] T1 Make the `macos-latest` leg alone obtain `gower` from source, so the
+- [x] T1 Make the `macos-latest` leg alone obtain `gower` from source, so the
       OpenMP-linked RSPM arm64 binary is never dlopened. Scope the change to
       that leg — the other four legs' resolution path is unchanged. Verify by a
       pushed run reaching `check-r-package`. If a source install does not take,
@@ -91,7 +91,7 @@ leg → M11's dropped matrix-cut candidate row.
       install; switching the macOS leg's repository off RSPM binaries
       wholesale) and record each attempt's run id and outcome in the work log
       before choosing.
-- [ ] T2 In `.github/workflows/R-CMD-check.yaml`, raise the job-level
+- [x] T2 In `.github/workflows/R-CMD-check.yaml`, raise the job-level
       `timeout-minutes` enough for a cold source build of the devel dependency
       set, and declare `timeout-minutes: 20` on the `check-r-package` step so
       M12's hang bound stays on the step the two 52- and 40-minute hangs
@@ -101,7 +101,7 @@ leg → M11's dropped matrix-cut candidate row.
       other workflows cross-reference that single cap in comments
       (`test-coverage.yaml`, `stress-daemon-tests.yaml`); both are corrected
       here.
-- [ ] T3 Capture the devel cold-start evidence on the FIRST run after T2, which
+- [x] T3 Capture the devel cold-start evidence on the FIRST run after T2, which
       is the only one that will log `Cache not found for input keys` — once it
       completes, `R package cache save` writes the cache and later runs hit it.
       Record the completed wall-clock and the cache-save step's conclusion.
@@ -111,7 +111,7 @@ leg → M11's dropped matrix-cut candidate row.
       cap separately, and anchor the description so the M16 drift lesson
       applies: a bound copied from a call site into a record needs something
       that re-reads the call site.
-- [ ] T5 Run the gates and record the evidence: `devtools::test()` and
+- [x] T5 Run the gates and record the evidence: `devtools::test()` and
       `devtools::check()` locally, then one full `R-CMD-check.yaml` run with all
       five legs green, plus the AC2 log greps and the AC5 diff listing.
 
@@ -126,6 +126,11 @@ leg → M11's dropped matrix-cut candidate row.
 - 2026-08-30: T2 edit landed — job cap 20 → 60, and `timeout-minutes: 20` declared on the `check-r-package` step so the hang bound stays on the step both hangs occurred in; the cap comment now states both numbers and why they differ. Cold-devel evidence re-derived from job 99321348438 of run 33335421506: `Cache not found for input keys`, `Will install 129 packages`, killed mid-`Building vdiffr` with 114 builds started, 20m05s job wall-clock, before `R package cache save` ran. Question gate chose 60 minutes over 45 and 90. Tick pends a pushed run.
 - 2026-08-30: minor amendment — T2 gained a discovered sub-task. `test-coverage.yaml` said "Same cap as R-CMD-check, and for the same reason" and `stress-daemon-tests.yaml` said "far above R-CMD-check's 20"; both were true only of the single job cap T2 replaced, so both comments are rewritten to name the step cap.
 - 2026-08-30: T4 done — the test-doctrine slot's fourth divergence now states the job cap and the step cap separately, for both gating workflows, and directs the reader to re-read the call sites with `grep -n timeout-minutes .github/workflows/*.yaml` before trusting the numbers, which is what the M16 drift lesson asks of a bound copied into a record. The rewrite pushed `cairn/PROFILE.md` to 121 lines against the 120 cap, so the heaviest compressible slot (greenfield-openers) was compressed in one pass; the file is 116 lines, 7,559 bytes.
+- 2026-08-30: PR #39 opened as a draft. `R-CMD-check.yaml`'s `push` trigger is restricted to `main`/`master`, so `pull_request` is the only event that produces a run on a milestone branch; the draft exists to get one and review converts it.
+- 2026-08-30: T1 done — run 33340129444, macOS job 99334128983 logs `Got gower 1.0.2 (source)`, `Building gower 1.0.2`, `Installed gower 1.0.2`, and the leg passed in 7m51s. Zero lines match `symbol not found in flat namespace` and zero match `ERROR: package installation failed`. The source install took, so neither alternative named at the plan gate (Homebrew libomp; switching the leg off RSPM binaries wholesale) was priced.
+- 2026-08-30: T2 done — same run's devel job 99334129149 passed in 23m34s, 3m34s past the cap it used to die at. The other four legs ran 7m51s to 9m19s, under both caps.
+- 2026-08-30: T3 done — devel job 99334129149 logged `Cache not found for input keys` at 22:49:37, ran 22:48:30 to 23:12:04, and its `Post Run r-lib/actions/setup-r-dependencies@v2` step reports success with `Cache saved with key: Ubuntu 24.04.4 LTS-R version 4.7.0 ...`. The deadlock is broken: the run that pays the cold build now survives to write the cache the next run reads.
+- 2026-08-30: T5 done — `devtools::test()` reports `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`; `devtools::check()` reports 0 errors, 0 warnings, 0 notes in 2m51.6s. Run 33340129444 reports `success` for all five jobs named by `matrix.config`. `git diff --name-only main...HEAD` lists six paths, all under `.github/` or `cairn/`. Status set to review.
 
 ## Decisions
 

@@ -13,7 +13,7 @@ _Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references
 | M28 | What we keep, what is only glue, and what belongs to rsample | planned | — | normal | milestones/M28-code-inventory.md |
 | M30 | Every address the package shows names its new home | done | — | high | milestones/archive/M30-address-rename.md |
 | M25 | The number has a name, and the docs say which | done | — | normal | milestones/archive/M25-estimand-documented.md |
-| M31 | Both red CI jobs go green, so a merge is possible again | in-progress | — | high | milestones/M31-ci-back-to-green.md |
+| M31 | Both red CI jobs go green, so a merge is possible again | review | — | high | milestones/M31-ci-back-to-green.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
