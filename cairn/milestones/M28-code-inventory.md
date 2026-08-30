@@ -440,3 +440,108 @@ them, those entries sitting under asks that would not retire them and not being
 recorded as retired by no upstream ask. Status back to `in-progress`; AC2 and AC6
 unticked. AC1, AC3, AC4 and AC5 keep their verified evidence above and are not
 re-opened. F4-F15 ride the same rework rather than being filed separately.
+
+---
+
+**Re-review after the AC2/AC6 defect return — evidence gathered 2026-08-30 on
+branch `m028-code-inventory` at `a24d5b7`, against `origin/main` (0 behind, 12
+ahead; `main` has no unpushed commits and did not move since the branch was
+cut).** PR https://github.com/tidymodels/nestedtune/pull/38 (draft). Every
+criterion below was re-executed against the artifacts at this commit; nothing is
+carried forward from the two earlier passes.
+
+**AC1 — verified.** `cairn/references/code-inventory.md` is committed and
+authored from `templates/synthesis-note.md` (Provenance, Scope, Evidence
+snapshot, "What the inventory is", ledger, Disposition, Open questions all
+present). The Provenance `Extraction:` line reads "read directly from `R/*.R` at
+`89d8418` … — observed 2026-08-30" — a verification verb and a date; the
+`cairn_validate` `references staleness` advisory does not name the page. The note
+states the extraction procedure verbatim as AC1 spells it. `git diff
+89d8418..HEAD -- R/ NAMESPACE` is empty, so the commit the note names still
+describes the tree. Re-running the procedure emits 106 definitions; a script
+parsed the ledger and found 106 rows, no duplicate IDs or names, ledger name set
+equal to the extracted name set, every `file:line` identical to the extraction
+output, and every bucket one of the five (32 core, 38 furniture, 16 glue, 12
+resampling-layer, 8 ambiguous). Line counts were checked mechanically, not
+sampled: a script walked each of the 106 definitions from its stated line to the
+next closing brace at column one and compared the span to the ledger figure —
+**106 of 106 matched exactly**, including the addendum's `[.nested_results`
+at 37.
+
+**AC2 — verified.** All 16 `glue` row IDs appear in the `glue` section. The
+section's premise — the one the defect return sent back — is now stated in a
+preamble and is correct as re-checked against a fresh shallow clone of
+`tidymodels/tune` at tag `v2.1.0`, HEAD `4c74638`, the commit the note names:
+nine cited tune symbols are exported (`check_workflow` `NAMESPACE:191`,
+`.has_preprocessor` `:157`, `.has_spec` `:161`, `.check_grid` `:136`,
+`check_metrics` `:186`, `check_metrics_arg` `:187`, `choose_framework` `:193`,
+`get_mirai_workers` `:237`, `mirai_installed` `:265` — all nine confirmed present
+in `NAMESPACE`), and each is documented under one of three `@keywords internal`
+doc blocks (`empty_ellipses`, `internal-parallel`, `choose_metric`), confirmed by
+walking each symbol's own roxygen block. The fact each `glue` entry now names is
+the absent stability promise rather than absent visibility, which is a fact about
+being inside tune inside AC2's domain. The seven symbols the note treats as
+genuinely unexported are genuinely absent from `NAMESPACE`: `check_installs`,
+`is_installed`, `check_extra_tune_parameters`, `new_note`, `append_log_notes`,
+`remove_log_notes`, `has_log_notes`. All 38 cited upstream sites resolve to the
+named function or expression, including `check_metrics`'s
+`lifecycle::deprecate_warn("2.1.0", …)` at `R/checks.R:398`, the `>= 2` threshold
+at `R/parallel.R:146`, and `tibble (>= 3.1.0)` at `DESCRIPTION:37`. The four
+citations to this repo's own comments — which AC2 also allows — resolve as well
+(`R/checks.R:73-81`, `R/nested-tune-grid.R:418-427`, `R/nested-results.R:116-118`,
+`R/parallel.R:4-7`).
+
+**AC3 — verified.** All 12 `resampling-layer` row IDs appear in that section,
+each naming what rsample's surface would have to accept. Re-resolved against a
+fresh clone of `tidymodels/rsample` at tag `v1.3.2`, HEAD `658545c` — the stated
+commit. Every cited site resolves: `nested_cv` `R/nested_cv.R:50`, the two
+`warn(boot_msg)` lines `:71` and `:77`, the unchecked `map(outside$splits,
+inside_resample, …)` `:88`, `attr(out, "inside") <- cl$inside` `:93`, the
+`as.data.frame(src)` copy in `inside_resample()` `:98-101`, `analysis`
+`R/rsplit.R:113`, `assessment` `:133`, `complement` `R/complement.R:22`, both
+`nested_cv` aborts in `R/labels.R:14-17` and `:28-30`, and the repeated-design
+paste at `R/labels.R:31-36` — the fact the return's F8 asked for. The two
+citations to this repo's own comments (`R/nested-resamples.R:216-217`,
+`R/parallel.R:78-84`) resolve too.
+
+**AC4 — verified.** All 8 `ambiguous` row IDs (F001, F006, F007, F051, F052,
+F053, F059, F106) appear in the `ambiguous` section, each stating what pulls it
+toward two buckets rather than being forced into one; `[.nested_results` gets the
+same treatment in the addendum. The three the defect return moved here (F001,
+F006, F007) each name the residue tune's exported counterpart does not cover —
+the already-fitted refusal at `R/checks.R:20-29` (confirmed absent from tune's
+own `check_workflow()` at `R/checks.R:314`) and the once-per-design timing the
+comment at `R/checks.R:228-233` records.
+
+**AC5 — verified.** `NAMESPACE` at this commit carries 8 `export()` and 10
+`S3method()` lines; the note accounts for all 18. The 5 exports mapped to ledger
+entries check out by ID and name (F025 `nested_resamples`, F068
+`nested_tune_grid`, F021 `nested_final_fit`, F012 `extract_tune_results`, F015
+`extract_scored_candidates`), each carrying export status `exported`, and those
+are the only 5 rows in the ledger with that status. The 3 the extraction output
+does not define (`autoplot`, `collect_metrics`, `extract_workflow`) are listed as
+re-exports and excluded; `R/reexports.R` holds exactly three bare `pkg::generic`
+statements. The 9 mapped S3 methods check out by ID and name; the tenth,
+`S3method("[",nested_results)`, is reconciled against the addendum. The exclusion
+is written as a subtraction rule over the procedure's output, not a name
+registry.
+
+**AC6 — verified.** The draft exists at `benchmarks/upstream-asks.md`, unposted
+(line 3 says so, and nothing has been opened upstream). Its framing sentence
+"nestedtune continues as a package" is at line 13, ahead of the first ask heading
+(`## T-A1 …`, line 51). A script cross-checked all 28 `glue` and
+`resampling-layer` row IDs against the draft's level-2 sections: every one appears
+under **exactly one** section — T-A1 3, T-A2 4, T-A3 5, T-A4 3, R-A1 3, R-A2 3,
+R-A3 1, R-A4 4, R-A5 1, and F061 under "Not retired by any ask to tune", which
+names what retires it instead (nestedtune adding `tibble` to its own `Imports`, a
+local dependency decision needing its own gate) and records that T-A2 and T-A3
+would remove most of its call sites with three remaining. No target ID appears in
+the preamble or in two sections. Every "Retires: … N functions, ~M lines" figure
+was recomputed from the ledger's own line counts: **all 9 correct**, both the
+function count and the line total. The three asks the defect return said would
+not retire what they claimed are fixed — T-A4 now asks for a promise rather than
+an export and says all three tune functions are already exported; T-A1 splits
+"exported but not promised" from "not exported at all" and explicitly does not
+claim F001/F006/F007; and T-A5 carries the D-024 clause (2) ask, confirmed live
+at `cairn/DECISIONS.md:675` and preserved by D-025 at `:722`, with its four
+`check_rset` citations resolving in the tune clone.
