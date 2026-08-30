@@ -1,11 +1,11 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** m028-code-inventory
+- **Branch/PR:** m028-code-inventory · https://github.com/tidymodels/nestedtune/pull/38
 
 ## Goal
 
@@ -43,7 +43,7 @@ user-declared and nothing here proposes one.
 
 ## Acceptance criteria
 
-- [ ] AC1: A committed synthesis note at `cairn/references/code-inventory.md`,
+- [x] AC1: A committed synthesis note at `cairn/references/code-inventory.md`,
       authored from `templates/synthesis-note.md`, carrying a Provenance block
       whose extraction status names a date. The note states its extraction
       procedure verbatim — `grep -nE '^[A-Za-z._][A-Za-z0-9._]* <- function'
@@ -51,16 +51,16 @@ user-declared and nothing here proposes one.
       exactly once, with `file:line`, export status, approximate line count, and
       exactly one bucket drawn from core / glue / resampling-layer / furniture /
       ambiguous.
-- [ ] AC2: Every entry the note buckets `glue` names the fact about being inside
+- [x] AC2: Every entry the note buckets `glue` names the fact about being inside
       `tune` that would make the code unnecessary, cited to tune's own source
       (file and function name at a stated tune version), to a comment in this
       repo, or to a behaviour the note records having observed.
-- [ ] AC3: Every entry the note buckets `resampling-layer` names what
+- [x] AC3: Every entry the note buckets `resampling-layer` names what
       `rsample`'s own surface would have to accept for the code to live there,
       cited the same three ways AC2 allows.
-- [ ] AC4: Every entry the note buckets `ambiguous` states the reason it resists
+- [x] AC4: Every entry the note buckets `ambiguous` states the reason it resists
       a single bucket, rather than being forced into one.
-- [ ] AC5: The note reconciles against `NAMESPACE`: every `export()` and
+- [x] AC5: The note reconciles against `NAMESPACE`: every `export()` and
       `S3method()` line in the file is accounted for, and every `export()` line
       naming a symbol the extraction procedure's output does not define is
       listed as a re-export and excluded from the function inventory.
@@ -126,7 +126,91 @@ user-declared and nothing here proposes one.
 - 2026-08-30: T7 - `benchmarks/upstream-asks.md` drafted, unposted, grouped by theme: four asks to tune (T-A1 pre-fit checks, T-A2 record the expanded grid, T-A3 note and metric constructors, T-A4 the parallel-backend decision) and five to rsample (R-A1 index-remapping nested design, R-A2 validate what `nested_cv()` builds, R-A3 re-run the stored inner spec, R-A4 the frame an rset indexes, R-A5 `labels()` for a nested design). A script checks each of the 31 `glue` and `resampling-layer` entries against the draft text: all 31 appear, each under exactly one ask.
 - 2026-08-30: F061 `new_tbl()` is the one `glue` entry no upstream ask retires - it goes when this package adds `tibble` to Imports, a local dependency decision needing its own gate. The draft states that under its own heading rather than padding it into an ask that would not do it, so every `glue` entry is still accounted for. T-A2 and T-A3 would remove most of its call sites; three would remain.
 - 2026-08-30: T8 - `devtools::test()` clean: FAIL 0, WARN 0, SKIP 0, PASS 1628. No `R/` file changed on this branch, so `devtools::document()` was not required.
+- 2026-08-30: amendment return: AC6 — "names, for every `glue` and `resampling-layer` entry in the note, the upstream ask that would retire it". F061 `new_tbl()` is a `glue` entry no upstream ask retires; the draft records that honestly under its own heading, so the clause as written is unmeetable without inventing an ask. AC1-AC5 verified with fresh evidence and the consistency gate is clean; the amendment is the only work convened.
 
 ## Decisions
 
 ## Review
+
+**Evidence gathered 2026-08-30 on branch `m028-code-inventory` at `e04a9ee`,
+against `origin/main` (branch 0 behind, 4 ahead).** PR
+https://github.com/tidymodels/nestedtune/pull/38 (draft).
+
+**AC1 — verified.** `cairn/references/code-inventory.md` is committed and carries
+the template's sections (Provenance, Scope, Evidence snapshot, "What the
+inventory is", ledger, Disposition, Open questions), with the Provenance
+`Extraction:` status on one physical line reading "read directly from `R/*.R` at
+`89d8418` … — observed 2026-08-30" (a verification verb plus a date; the
+`cairn_validate` `references staleness` advisory does not list the page). The
+note states the extraction procedure verbatim as AC1 spells it. Re-running that
+procedure now emits 106 definitions; a script parsed the note's ledger and found
+106 rows, no duplicate names, the extracted name set equal to the ledger name
+set, every `file:line` identical to the extraction output, and every bucket one
+of the five. Line counts spot-checked at 8 definitions (`R/checks.R:7`, `:82`,
+`:108`; `R/parallel.R:543`, `:823`, `:118`; `R/nested-results.R:8`, `:119`) —
+each matched the ledger figure exactly.
+
+**AC2 — verified.** All 19 `glue` row IDs appear in the `glue` section, each
+naming a fact about being inside tune. The citations were re-checked against a
+fresh shallow clone of `tidymodels/tune` at tag `v2.1.0`, whose HEAD is
+`4c74638` — the commit the note states. All 17 cited file:line sites resolve to
+the named function or expression: `check_workflow` R/checks.R:314,
+`.has_preprocessor` R/grid_helpers.R:116, `check_installs` R/checks.R:234,
+`is_installed` :229, `.check_grid` :67, the `dials::grid_space_filling()` call
+:145, the `.check_grid()` binding R/tune_grid.R:375,
+`check_extra_tune_parameters` R/checks.R:361, `check_metrics` :397,
+`check_metrics_arg` R/metric-selection.R:307, `new_note` R/logging.R:320,
+`append_log_notes` :282, `remove_log_notes` :414, `has_log_notes` :274,
+`mirai_installed` R/parallel.R:51, `get_mirai_workers` :87, `choose_framework`
+:117, and `tibble (>= 3.1.0)` at DESCRIPTION:37.
+
+**AC3 — verified.** All 12 `resampling-layer` row IDs appear in that section,
+each naming what rsample's surface would have to accept. Re-checked against a
+fresh clone of `tidymodels/rsample` at tag `v1.3.2`, HEAD `658545c` — the stated
+commit. Every cited site resolves: `nested_cv` R/nested_cv.R:50, the two
+`warn(boot_msg)` lines :71 and :77, the unchecked `map(outside$splits,
+inside_resample, …)` :88, `attr(out, "inside") <- cl$inside` :93, the
+`as.data.frame(src)` copy inside `inside_resample()` :98-101, `analysis`
+R/rsplit.R:113, `assessment` :133, `complement` R/complement.R:22, the
+`nested_cv` abort in `labels.rset()` R/labels.R:14-17, and `pretty.nested_cv`
+R/printing.R:112.
+
+**AC4 — verified.** All 5 `ambiguous` row IDs (F051, F052, F053, F059, F106)
+appear in the `ambiguous` section, each stating what pulls it toward two buckets
+rather than being forced into one; `[.nested_results` is carried in the addendum
+with the same treatment.
+
+**AC5 — verified.** `NAMESPACE` at this commit carries 8 `export()` and 10
+`S3method()` lines. The note accounts for all 18: 5 exports name ledger entries
+(`nested_resamples` F025, `nested_tune_grid` F068, `nested_final_fit` F021,
+`extract_tune_results` F012, `extract_scored_candidates` F015); the 3 the
+extraction output does not define (`autoplot`, `collect_metrics`,
+`extract_workflow`) are listed as re-exports and excluded, and `R/reexports.R`
+confirms each as a bare `pkg::generic` statement; 9 S3 methods name ledger
+entries and the tenth, `S3method("[",nested_results)`, is reconciled against the
+addendum. The exclusion is stated as a subtraction rule, not a name registry.
+
+**AC6 — fails as written.** The draft exists at `benchmarks/upstream-asks.md`,
+unposted, and its framing sentence "nestedtune continues as a package" sits at
+line 13, ahead of the first ask heading at line 31. A script confirms all 31
+`glue` and `resampling-layer` row IDs appear in the draft, each under exactly one
+heading. But AC6 requires the draft to name, *for every* such entry, "the
+upstream ask that would retire it", and for F061 `new_tbl()` no upstream ask
+exists: the draft says so under its own heading, "Not retired by any ask to
+tune", recording that F061 is retired only by this package adding `tibble` to its
+own `Imports`. That is the true answer, and the criterion as written cannot be
+met without inventing an ask that would not do the job. The criterion is wrong,
+not the work — routed to the gated criterion-amendment protocol rather than read
+charitably.
+
+**Consistency gate — clean, and recorded although the amendment return stops the
+phase before the reviewer fan-out.** `cairn_validate.py` exits 0, all checks
+pass; 18 `references staleness` advisories, unchanged in count and none naming
+the new page. No `DESIGN.md` principle changed, so `cairn_impact.py` is skipped.
+Toolchain slot (`r-package`): `devtools::document()` leaves no diff;
+`R CMD check` via `devtools::check()` is 0 errors, 0 warnings, 0 notes in
+2m 44s; `pkgdown::check_pkgdown()` finds no problems; no `README.Rmd` exists, so
+that check is not applicable; `benchmarks/` already carries an `.Rbuildignore`
+entry (`^benchmarks$`); the milestone has no user-visible change, so `NEWS.md`
+is owed no entry. No file under `R/`, `man/`, or `NAMESPACE` differs from
+`origin/main`.
