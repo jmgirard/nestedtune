@@ -2,6 +2,14 @@
 
 ## nestedtune 0.0.0.9000
 
+- The package has moved to the tidymodels organization. It now lives at
+  <https://github.com/tidymodels/nestedtune>, its documentation site is
+  served at <https://nestedtune.tidymodels.org/>, and `DESCRIPTION`, the
+  README badges and the installation instructions name those addresses.
+  The old repository address redirects to the new one; the old
+  documentation address does not, so a bookmark of the site needs
+  updating.
+
 - The documentation now names the quantity a nested run estimates,
   instead of describing it.
   [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
@@ -58,15 +66,15 @@
   the ones a serial run passes, and the serial path is untouched.
 
 - The object
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   returns now has two named accessors for the tuning run behind it.
-  [`extract_tune_results()`](https://jmgirard.github.io/nestedtune/reference/extract_tune_results.md)
+  [`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md)
   returns that run — the record of what parameter selection actually saw
   when the procedure was re-run on your whole dataset — and
-  [`extract_scored_candidates()`](https://jmgirard.github.io/nestedtune/reference/extract_scored_candidates.md)
+  [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)
   returns the candidate settings it scored, in the same shape as the
   per-fold `.grid` tables on a
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   result, so the two can be compared directly. Both were reachable
   before only by reaching into the object’s internals. Note what the
   first one’s numbers are worth: every metric inside that tuning run was
@@ -75,14 +83,14 @@
   from
   [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
   on the
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   result remains the number to report. Handing either accessor an object
   it cannot answer for — a
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   result, say — now produces an error saying so, rather than R’s bare
   “no applicable method”.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   results now record which parameter candidates each outer fold actually
   searched, in a new `.grid` column holding one table per fold. Until
   now the object recorded only the grid you *asked* for, and the two are
@@ -102,7 +110,7 @@
   instead — tune keeps no other record of it.
 
 - The object
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   returns now documents the two attributes it has always carried.
   `attr(x, "grid")` and `attr(x, "metrics")` record what the run was
   asked to do: `grid` holds the argument as you gave it, so it is a grid
@@ -111,24 +119,24 @@
   absent rather than `NULL` when you passed no metric set. Subsetting
   rows leaves both unchanged.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   and
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   now refuse a malformed design before fitting anything, naming the
   column and the position of the first offending element. A design whose
   `splits` or `inner_resamples` column held something other than a split
   or a resampling object used to cost a full run and come back reporting
   that every outer fold had failed — or, on
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
   fail with a message from base R that named nothing you wrote.
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
   builds such a design without complaint when its `inside` argument
   produces no `rset`, which is the usual way to arrive at one. A design
   either function refuses, both refuse.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   and
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   now also refuse a workflow that has a model but no preprocessor,
   pointing at
   [`workflows::add_formula()`](https://workflows.tidymodels.org/reference/add_formula.html),
@@ -139,11 +147,11 @@
   fail once per outer fold with an error raised inside `workflows`.
 
 - When
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   cannot re-run a design’s stored inner specification, the error now
   names your call rather than an internal function of the package.
 
-- [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+- [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   now refuses an `inside` specification that does not produce an `rset`.
   Passing one used to build a design anyway: its `inner_resamples`
   column held whatever the specification returned, nothing complained,
@@ -161,9 +169,9 @@
   condition class or on the whole message string sees a different
   condition than before.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   and
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   now say for themselves that a workflow has no model in it, and point
   at
   [`workflows::add_model()`](https://workflows.tidymodels.org/reference/add_model.html).
@@ -179,13 +187,12 @@
   site was ever served.
 
 - The reference pages and
-  [`vignette("nested-cv")`](https://jmgirard.github.io/nestedtune/articles/nested-cv.md)
+  [`vignette("nested-cv")`](https://nestedtune.tidymodels.org/articles/nested-cv.md)
   are now built into a documentation website, rebuilt whenever a change
   lands on the default branch that the package itself can see.
-  `DESCRIPTION` and the README have pointed at
-  <https://jmgirard.github.io/nestedtune/> since the guide was added;
-  the site goes live there once GitHub Pages is switched on for the
-  repository.
+  `DESCRIPTION` and the README have pointed at a documentation site
+  since the guide was added; it goes live once GitHub Pages is switched
+  on for the repository.
 
 - Interrupting a parallel run now asks the folds it had already sent to
   the workers to stop. Before, the interrupt gave you your prompt back
@@ -282,7 +289,7 @@
   completed, or asking for the parameters view of a design with no tuned
   parameters, is refused with a message saying which it was.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   now runs its outer folds in parallel. Start workers with
   `mirai::daemons(n)` before the call and the loop uses them; there is
   no argument to set, and no daemons means the serial behaviour is
@@ -296,13 +303,13 @@
   ran it. A fold whose worker dies is recorded as a failed fold like any
   other, and the run finishes.
 
-- [`?nested_tune_grid`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`?nested_tune_grid`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   gains a “Parallel execution” section covering what workers do and do
   not inherit from your session, and why the package must be installed
   where they can load it.
 
 - A new guide,
-  [`vignette("nested-cv")`](https://jmgirard.github.io/nestedtune/articles/nested-cv.md),
+  [`vignette("nested-cv")`](https://nestedtune.tidymodels.org/articles/nested-cv.md),
   runs the whole path — build a nested design, run the loop, read what
   each fold selected, fit the model to deploy — as code you can run, and
   says plainly what to report for that model and why. It puts the nested
@@ -312,7 +319,7 @@
   true fails the check rather than ageing quietly.
 
 - New
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   builds the model you actually deploy. It runs the same tuning
   procedure the nested estimate describes, this time with the whole
   dataset in hand: it re-evaluates the design’s inner resampling
@@ -325,7 +332,7 @@
   estimate from
   [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
   on the
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   result for it — the documentation says why, and what that number does
   and does not claim.
   [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html),
@@ -373,7 +380,7 @@
   non-empty `.notes` means the fold worked, but chose its parameters on
   less of the inner design than was requested.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   now checks a data-frame `grid` against the workflow before fitting
   anything: a column that is not marked for tuning, or a tuned parameter
   with no column, is refused immediately and by name. Either mistake is
@@ -387,7 +394,7 @@
   design that did not run.
 
 - Added
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md),
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
   which runs the nested cross-validation loop end to end. For each outer
   fold it tunes on that fold’s inner resamples with
   [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html),
@@ -401,7 +408,7 @@
   method for those results, returning either the per-fold metrics or
   their summary across outer folds.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   is reproducible from a single
   [`set.seed()`](https://rdrr.io/r/base/Random.html) before the call. It
   derives one tuning seed and one outer-fit seed per fold up front, so a
@@ -410,7 +417,7 @@
   state exactly as it found it.
 
 - Added
-  [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md),
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md),
   a constructor for nested resampling designs that does not keep a copy
   of the data for every outer fold. For the same seed and the same
   specifications it selects the same rows as
@@ -423,7 +430,7 @@
   resampling, a 50-fold outer design holds 10× the source data rather
   than 57×.
 
-- [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+- [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   refuses an outer bootstrap rather than warning about it. The same
   observation can otherwise land in both the inner analysis and the
   inner assessment set, which makes the design invalid rather than

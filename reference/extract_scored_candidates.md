@@ -1,10 +1,10 @@
 # Extract the candidates a final fit actually scored
 
 Returns the candidate parameter settings that
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)'s
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)'s
 tuning run actually evaluated — the full-data counterpart of the `.grid`
 column
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 records for each outer fold.
 
 ## Usage
@@ -18,7 +18,7 @@ extract_scored_candidates(x, ...)
 - x:
 
   A `nested_final_fit` object from
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md).
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md).
 
 - ...:
 
@@ -29,29 +29,29 @@ extract_scored_candidates(x, ...)
 A tibble with one row per candidate scored, carrying one column per
 tuned parameter plus tune's `.config` label for the candidate. It is the
 same shape as one element of
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)'s
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)'s
 `.grid` column, so the two can be compared directly.
 
 This is what was **scored**, not what was **asked for**. A `grid` given
 as a size is expanded by tune and may reach fewer candidates than the
 number requested; a candidate that failed everywhere scored nothing. See
 the `.grid` discussion in
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 for the full account of how the two records diverge, which holds here
 too — this record is derived the same way.
 
 One pointer there does **not** carry over. A candidate that failed on
 every inner resample is missing from this table, and on a
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 result its failure is recorded in that object's `.notes` column. A
 `nested_final_fit` has no such column. Look instead inside the tuning
 run itself — `tune::collect_notes(extract_tune_results(x))`.
 
 ## See also
 
-[`extract_tune_results()`](https://jmgirard.github.io/nestedtune/reference/extract_tune_results.md),
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md),
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 
 ## Examples
 

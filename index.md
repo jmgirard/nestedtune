@@ -3,7 +3,7 @@
 Nested cross-validation for the tidymodels ecosystem.
 
 Start with [Nested
-cross-validation](https://jmgirard.github.io/nestedtune/articles/nested-cv.html)
+cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.html)
 — what the estimate means, what to report instead of your model’s own
 score, and how to read disagreement between outer folds.
 
@@ -12,12 +12,12 @@ score, and how to read disagreement between outer folds.
 ``` r
 
 # install.packages("pak")
-pak::pak("jmgirard/nestedtune")
+pak::pak("tidymodels/nestedtune")
 ```
 
 ## Building a nested resampling design
 
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
 builds the same structure as
 [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
 — an outer resampling with an inner resampling attached to each outer
@@ -56,7 +56,7 @@ of that fold’s analysis set. Object size therefore grows by roughly one
 copy of the data per outer fold
 ([rsample#283](https://github.com/tidymodels/rsample/issues/283)).
 
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
 evaluates the inner specification against the same frame, keeps only the
 row indices it produces, and remaps them onto the original data.
 Measured on
@@ -64,7 +64,7 @@ Measured on
 (20000 × 17) with a five-fold inner resampling, as multiples of the
 source data size:
 
-| outer folds | [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html) | [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md) |
+| outer folds | [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html) | [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md) |
 |---:|---:|---:|
 | 2 | 2.2× | 1.2× |
 | 5 | 5.6× | 1.7× |
@@ -76,11 +76,11 @@ of the data are gone.
 
 ## Running the nested loop
 
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 tunes on each outer fold’s inner resamples, selects, fits on the outer
 analysis set, and scores on the outer assessment set — keeping what each
 fold chose.
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
 runs the same procedure once more with the whole dataset in hand, and
 gives back the model to deploy as its own object.
 
@@ -119,4 +119,4 @@ predict(extract_workflow(final), new_data = mtcars[1:3, ])
 
 Why the estimate belongs to the procedure rather than to the model, and
 what to write up, is the subject of [the
-guide](https://jmgirard.github.io/nestedtune/articles/nested-cv.html).
+guide](https://nestedtune.tidymodels.org/articles/nested-cv.html).

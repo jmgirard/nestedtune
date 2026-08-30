@@ -3,7 +3,7 @@
 Nested cross-validation for the tidymodels ecosystem.
 
 Start with [Nested
-cross-validation](https://jmgirard.github.io/nestedtune/articles/nested-cv.html)
+cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.html)
 — what the estimate means, what to report instead of your model’s own
 score, and how to read disagreement between outer folds.
 
@@ -12,12 +12,12 @@ score, and how to read disagreement between outer folds.
 ``` r
 
 # install.packages("pak")
-pak::pak("jmgirard/nestedtune")
+pak::pak("tidymodels/nestedtune")
 ```
 
 ## Building a nested resampling design
 
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
 builds the same structure as
 [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
 — an outer resampling with an inner resampling attached to each outer
@@ -56,7 +56,7 @@ of that fold’s analysis set. Object size therefore grows by roughly one
 copy of the data per outer fold
 ([rsample#283](https://github.com/tidymodels/rsample/issues/283)).
 
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
 evaluates the inner specification against the same frame, keeps only the
 row indices it produces, and remaps them onto the original data.
 Measured on
@@ -64,7 +64,7 @@ Measured on
 (20000 × 17) with a five-fold inner resampling, as multiples of the
 source data size:
 
-| outer folds | [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html) | [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md) |
+| outer folds | [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html) | [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md) |
 |---:|---:|---:|
 | 2 | 2.2× | 1.2× |
 | 5 | 5.6× | 1.7× |
@@ -76,11 +76,11 @@ of the data are gone.
 
 ## Running the nested loop
 
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 tunes on each outer fold’s inner resamples, selects, fits on the outer
 analysis set, and scores on the outer assessment set — keeping what each
 fold chose.
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
 runs the same procedure once more with the whole dataset in hand, and
 gives back the model to deploy as its own object.
 
@@ -119,7 +119,7 @@ predict(extract_workflow(final), new_data = mtcars[1:3, ])
 
 Why the estimate belongs to the procedure rather than to the model, and
 what to write up, is the subject of [the
-guide](https://jmgirard.github.io/nestedtune/articles/nested-cv.html).
+guide](https://nestedtune.tidymodels.org/articles/nested-cv.html).
 
 # Package index
 
@@ -128,7 +128,7 @@ guide](https://jmgirard.github.io/nestedtune/articles/nested-cv.html).
 Build a nested resampling design whose size does not grow by a copy of
 the data for every outer fold.
 
-- [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+- [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   : Build a nested resampling design without copying the data per outer
   fold
 
@@ -137,13 +137,13 @@ the data for every outer fold.
 Tune on each outer fold’s inner resamples, select, then fit and score on
 the outer split — and keep what each fold chose.
 
-- [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   : Run the nested cross-validation loop
-- [`collect_metrics(`*`<nested_results>`*`)`](https://jmgirard.github.io/nestedtune/reference/collect_metrics.nested_results.md)
+- [`collect_metrics(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/collect_metrics.nested_results.md)
   : Collect the metrics from a nested resampling run
-- [`print(`*`<nested_results>`*`)`](https://jmgirard.github.io/nestedtune/reference/print.nested_results.md)
+- [`print(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_results.md)
   : Print a nested cross-validation result
-- [`autoplot(`*`<nested_results>`*`)`](https://jmgirard.github.io/nestedtune/reference/autoplot.nested_results.md)
+- [`autoplot(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/autoplot.nested_results.md)
   : Plot a nested cross-validation result
 
 ## The final model
@@ -152,21 +152,21 @@ Run the same tuning procedure once more with the whole dataset in hand,
 and get back the model to deploy — as its own object, never a field on
 the results.
 
-- [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+- [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   : Fit the final model after nested cross-validation
-- [`print(`*`<nested_final_fit>`*`)`](https://jmgirard.github.io/nestedtune/reference/print.nested_final_fit.md)
+- [`print(`*`<nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_final_fit.md)
   : Print a final fit
-- [`extract_tune_results()`](https://jmgirard.github.io/nestedtune/reference/extract_tune_results.md)
+- [`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md)
   : Extract the tuning run a final fit was selected from
-- [`extract_scored_candidates()`](https://jmgirard.github.io/nestedtune/reference/extract_scored_candidates.md)
+- [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)
   : Extract the candidates a final fit actually scored
 
 ## Re-exports
 
-- [`reexports`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
-  [`collect_metrics`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
-  [`extract_workflow`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
-  [`autoplot`](https://jmgirard.github.io/nestedtune/reference/reexports.md)
+- [`reexports`](https://nestedtune.tidymodels.org/reference/reexports.md)
+  [`collect_metrics`](https://nestedtune.tidymodels.org/reference/reexports.md)
+  [`extract_workflow`](https://nestedtune.tidymodels.org/reference/reexports.md)
+  [`autoplot`](https://nestedtune.tidymodels.org/reference/reexports.md)
   : Objects exported from other packages
 
 # Articles
@@ -174,4 +174,4 @@ the results.
 ### Guides
 
 - [Nested
-  cross-validation](https://jmgirard.github.io/nestedtune/articles/nested-cv.md):
+  cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.md):

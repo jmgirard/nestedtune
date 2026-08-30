@@ -32,7 +32,7 @@ library(workflows)
 
 ## The design
 
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
 builds the two-level structure: an outer resampling, with an inner
 resampling attached to each outer fold.
 
@@ -115,7 +115,7 @@ arithmetic is where the cost lives.
 
 ## Running the loop
 
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 drives the outer loop. For each outer fold it calls
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
 on that fold’s inner resamples, selects the best candidate, finalizes
@@ -229,7 +229,7 @@ inference on the nested estimate.
 
 That has a consequence for the obvious next thing to do with two of
 these numbers. If you run
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 on two different workflows and one comes back lower, nothing in
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 output tells you whether the difference is real — there is no valid
@@ -524,7 +524,7 @@ One caveat about this package’s own scope, from the same paper. Vabalas
 et al. compared leaving *feature selection* outside the loop against
 leaving *parameter tuning* outside it, and the first was far more
 damaging — nesting the tuning alone did not rescue the estimate.
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 orchestrates tuning, so if your pipeline selects features, put that step
 in the `recipe` inside the `workflow` you hand it. Everything in the
 workflow is re-estimated inside every fold; anything you did to the data
@@ -577,9 +577,9 @@ identical(before, .Random.seed)
 #> [1] TRUE
 ```
 
-[`?nested_tune_grid`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`?nested_tune_grid`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 and
-[`?nested_final_fit`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+[`?nested_final_fit`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
 give the exact hand-replication recipe for each.
 
 ## Writing it up

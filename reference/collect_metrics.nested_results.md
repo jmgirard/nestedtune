@@ -14,7 +14,7 @@ collect_metrics(x, summarize = TRUE, ...)
 - x:
 
   A `nested_results` object from
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md).
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md).
 
 - summarize:
 

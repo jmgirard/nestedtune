@@ -9,11 +9,11 @@ producing the same splits as 'rsample'.
 
 Useful links:
 
-- <https://github.com/jmgirard/nestedtune>
+- <https://github.com/tidymodels/nestedtune>
 
-- <https://jmgirard.github.io/nestedtune/>
+- <https://nestedtune.tidymodels.org/>
 
-- Report bugs at <https://github.com/jmgirard/nestedtune/issues>
+- Report bugs at <https://github.com/tidymodels/nestedtune/issues>
 
 ## Author
 

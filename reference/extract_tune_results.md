@@ -3,7 +3,7 @@
 Returns the
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
 result that
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md)
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
 chose its parameters from — the record of what selection saw when the
 procedure was re-run on the complete dataset.
 
@@ -18,7 +18,7 @@ extract_tune_results(x, ...)
 - x:
 
   A `nested_final_fit` object from
-  [`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md).
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md).
 
 - ...:
 
@@ -42,7 +42,7 @@ that object is this model's performance.
 Report the nested estimate instead —
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 on the
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 result. That number is measured on data no part of the tune-and-fit
 procedure ever saw, which is what makes it an honest description of the
 procedure that produced your model.
@@ -52,9 +52,9 @@ because it describes the model.
 
 ## See also
 
-[`extract_scored_candidates()`](https://jmgirard.github.io/nestedtune/reference/extract_scored_candidates.md),
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md),
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 
 ## Examples
 

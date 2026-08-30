@@ -28,7 +28,7 @@ nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
 - resamples:
 
   A nested resampling design, from
-  [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   or
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html).
   Its `splits` column must hold `rsplit` objects and its
@@ -38,7 +38,7 @@ nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
   builds a design whatever its `inside` argument returned — so a
   specification that produces no `rset` gives a design that cannot be
   run, where
-  [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   refuses one at construction.
 
 - grid:
@@ -101,7 +101,7 @@ kept; `.grid` is a column, so it travels with the fold it describes.
 The estimate this returns describes the whole tune-and-fit *procedure*,
 not any single fitted model. It is not the performance of a model you
 can deploy, and no final model is returned here: build that with
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
 which runs the same procedure again with the whole dataset in hand. The
 estimate from this function is what you report for it.
 
@@ -212,7 +212,7 @@ shared copy the design holds in memory. Each fold's splits are therefore
 emptied before dispatch and refilled on the worker, so what crosses is
 the fold's row indices plus one copy of the data rather than one copy
 per split. On a design built by
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
 that is one copy per fold; a design from
 [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
 materializes an analysis frame per outer fold, so each fold also carries
@@ -329,8 +329,8 @@ above.
 
 ## See also
 
-[`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md),
-[`nested_final_fit()`](https://jmgirard.github.io/nestedtune/reference/nested_final_fit.md),
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md),
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
 
 ## Examples

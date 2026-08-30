@@ -26,7 +26,7 @@ autoplot(object, type = c("parameters", "performance"), ...)
 - object:
 
   A `nested_results` object from
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md).
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md).
 
 - type:
 
@@ -62,8 +62,8 @@ character-valued tuning parameters are ordinary. A fold that selected
 
 ## See also
 
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md),
-[`print.nested_results()`](https://jmgirard.github.io/nestedtune/reference/print.nested_results.md),
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
+[`print.nested_results()`](https://nestedtune.tidymodels.org/reference/print.nested_results.md),
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 
 ## Examples

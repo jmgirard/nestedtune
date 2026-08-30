@@ -22,18 +22,18 @@ nested_final_fit(object, resamples, grid = 10, metrics = NULL)
   with at least one parameter marked for tuning with
   [`tune::tune()`](https://hardhat.tidymodels.org/reference/tune.html).
   Ordinarily the same workflow passed to
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md).
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md).
 
 - resamples:
 
   A nested resampling design, from
-  [`nested_resamples()`](https://jmgirard.github.io/nestedtune/reference/nested_resamples.md)
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   or
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html).
   Only its inner specification and its data are *used* — the outer folds
   play no part in a final fit — but the whole design is still checked,
   so a design
-  [`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   refuses is refused here too: its `splits` column must hold `rsplit`
   objects and its `inner_resamples` column an `rset` per outer fold. The
   reverse does not follow: this function additionally needs the design's
@@ -80,7 +80,7 @@ the instability those selections reveal, and not to this model.
 Report the estimate from
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 on the
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md)
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 result as this model's performance. That number estimates the k-fold
 test error of the whole tune-and-fit procedure that produced this model,
 measured on data no part of the procedure ever touched. Expect it to run
@@ -170,7 +170,7 @@ evaluation in health care: Tutorial. *JMIR AI*, 2, e49023.
 
 ## See also
 
-[`nested_tune_grid()`](https://jmgirard.github.io/nestedtune/reference/nested_tune_grid.md),
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 [`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
 
 ## Examples
