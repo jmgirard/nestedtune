@@ -82,7 +82,7 @@ user-declared and nothing here proposes one.
 
 - [x] T1: Run the stated extraction procedure over `R/*.R` and list `NAMESPACE`'s
       exports and S3 methods; record the counts the note must reconcile against.
-- [ ] T2: Classify each definition into core / glue / resampling-layer /
+- [x] T2: Classify each definition into core / glue / resampling-layer /
       furniture / ambiguous.
 - [ ] T3: For each `glue` entry, find and cite the tune-internal fact that
       removes it — e.g. `checks.R:228-233` (tune raises exactly this, but per
@@ -115,6 +115,8 @@ user-declared and nothing here proposes one.
 - 2026-08-30: T1 — the extraction procedure emits 106 definitions across 12 files in `R/`, no duplicate names. `NAMESPACE` carries 8 `export()` lines and 10 `S3method()` lines; 5 exports and 9 S3 methods match a definition the procedure emits. The 3 unmatched exports are `autoplot`, `collect_metrics`, `extract_workflow` (re-exports, excluded per AC5). The 1 unmatched S3 method is `[.nested_results`, whose definition line begins with a backtick and so falls outside the procedure's pattern.
 - 2026-08-30: implementation gate — inventory laid out as one flat table with permanent row IDs (user delegated the choice); every `glue` entry cited to tune's own source rather than to repo comments where the source covers it (user delegated); upstream asks grouped by theme, user's selection. tune v2.1.0 (`4c74638`) and rsample v1.3.2 (`658545c`) cloned read-only outside the repo for the citations.
 - 2026-08-28: the push committing this plan was answered by GitHub's moved-repository redirect, so the organization transfer was already complete; D-026 records the correction and the Scope Out clause about the housekeeping row unblocking later was amended to match. Nothing about this milestone's own scope changed.
+
+- 2026-08-30: T2 — the 106 definitions classify as 32 `core`, 38 `furniture`, 19 `glue`, 12 `resampling-layer`, 5 `ambiguous`. The bucket map is held as a name→bucket list and merged against the extraction output by a script that fails unless the two name sets are equal, so no definition can be dropped or double-bucketed on the way into the note's table.
 
 ## Decisions
 
