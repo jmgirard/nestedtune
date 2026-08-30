@@ -1,11 +1,11 @@
 # M31: Both red CI jobs go green, so a merge is possible again
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m031-ci-back-to-green`
 
 ## Goal
 
@@ -119,6 +119,7 @@ leg → M11's dropped matrix-cut candidate row.
 - 2026-08-30: plan gate chose a gower-only source install on the macOS leg over switching that leg off RSPM binaries wholesale and over a Homebrew libomp install, because the maintainer's own `gower.so` links neither libomp nor anything but libR and libSystem (M30 lesson), so a source build is known to produce a loadable object, while a wider promise would be an exemption registry the internal-tier criteria standard refuses; falsified by a macOS source build of gower that still fails to dlopen, or by a second RSPM macOS binary breaking the same leg.
 - 2026-08-30: plan gate chose raising the devel job cap with a 20-minute bound moved onto the `check-r-package` step over raising the job cap alone and over dropping the devel leg, because both observed hangs were inside `test_check()` and a step-level bound keeps M12's guarantee exactly where it was earned while letting the dependency install run long; falsified by a hang observed outside the check step, or by evidence that a step-level `timeout-minutes` does not fail the job on expiry.
 - 2026-08-30: plan gate chose accepting the 7-day cache expiry over adding a scheduled warm-up workflow, because the cap fix alone makes a cold build complete and save, and a fifth workflow is a recurring cost and a new red surface for a case that costs one slow run after a quiet week; falsified by evidence that devel cold builds recur often enough to dominate the leg's wall-clock.
+- 2026-08-30: T1 edit landed — the macOS leg alone resolves `gower` through pak's `?source` parameter, so the RSPM arm64 binary is never fetched. Failure identity re-derived first-hand from job 99324307884 of run 33336519275: `dlopen` of `gower/libs/gower.so` reports `symbol not found in flat namespace '___kmpc_barrier'`, followed by `ERROR: package installation failed`, inside `check-r-package`. Question gate chose the per-package flag over whole-job source builds and over a separate pre-install step. Tick pends a pushed run.
 
 ## Decisions
 

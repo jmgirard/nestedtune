@@ -40,13 +40,27 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    # A run that hangs is a run nobody gets an answer from. The cap is set
-    # against the measured record, not above it: an ordinary windows leg has
+    # Two caps at two scopes, and they differ on purpose.
+    #
+    # 20 minutes, on the `check-r-package` step below: a run that hangs is a
+    # run nobody gets an answer from, and both observed hangs -- 52 and 40
+    # minutes on a tree that had passed an hour earlier -- were inside
+    # `test_check("nestedtune")`, which that step runs. The bound stays where
+    # the hangs happened. It is not free headroom: an ordinary windows leg has
     # reached 11m54s, and exactly one job in 394 has ever passed 20 minutes and
-    # still finished. So 20 is not free headroom -- it would have failed that
-    # one job -- and it is chosen anyway, because a hang costing 52 minutes is
-    # the failure worth pricing against a rerun that costs one job in 394.
-    timeout-minutes: 20
+    # still finished, so the cap would have failed that one -- priced against
+    # a 52-minute hang, and chosen anyway.
+    #
+    # 60 minutes, on the job: the devel leg gets no Linux binaries and builds
+    # every dependency from source. A 20-minute job cap killed it mid-`Building
+    # vdiffr`, 114 of the 129 packages started, ~19 minutes into
+    # `setup-r-dependencies` (job 99321348438 of run 33335421506, 2026-08-30) --
+    # and the kill landed before `R package cache save`, so the cache that
+    # would make the next run warm (9m28s, measured 2026-08-01) could never be
+    # written, and every run paid the cold build again. 60 is about twice the
+    # cold install plus the check, so one slow runner does not re-open that
+    # deadlock; the step cap above still ends a hung test suite in 20.
+    timeout-minutes: 60
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
@@ -74,12 +88,24 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
 
+      # The macOS leg alone builds `gower` on the runner. The RSPM arm64
+      # binary (`bin/macosx/sonoma-arm64/contrib/4.6/gower_1.0.2.tgz`) links
+      # the OpenMP symbol `___kmpc_barrier`, and the runner image ships no
+      # libomp, so `dlopen` of `gower/libs/gower.so` fails with `symbol not
+      # found in flat namespace` and takes down the install step of
+      # `R CMD build` -- observed in job 99324307884 of run 33336519275.
+      # `gower` is a transitive Suggests dependency, reached through
+      # `recipes`, so no package code can route around it. `?source` is pak's
+      # per-package parameter: it builds this one package and leaves every
+      # other package here, and all four other legs, on the binary path they
+      # already resolve through.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: ${{ matrix.config.os == 'macos-latest' && 'any::rcmdcheck, gower?source' || 'any::rcmdcheck' }}
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
+        timeout-minutes: 20
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
