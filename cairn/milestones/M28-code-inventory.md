@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -51,7 +51,7 @@ user-declared and nothing here proposes one.
       exactly once, with `file:line`, export status, approximate line count, and
       exactly one bucket drawn from core / glue / resampling-layer / furniture /
       ambiguous.
-- [ ] AC2: Every entry the note buckets `glue` names the fact about being inside
+- [x] AC2: Every entry the note buckets `glue` names the fact about being inside
       `tune` that would make the code unnecessary, cited to tune's own source
       (file and function name at a stated tune version), to a comment in this
       repo, or to a behaviour the note records having observed.
@@ -64,7 +64,7 @@ user-declared and nothing here proposes one.
       `S3method()` line in the file is accounted for, and every `export()` line
       naming a symbol the extraction procedure's output does not define is
       listed as a re-export and excluded from the function inventory.
-- [ ] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
+- [x] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
       `resampling-layer` entry in the note exactly once, each entry either
       placed under the upstream ask that would retire it or recorded as
       retired by no upstream ask together with what would retire it instead.
@@ -112,7 +112,7 @@ user-declared and nothing here proposes one.
 - [x] T11: Rework the draft to match — the asks that rested on "unexported", the
       overstated retirements (F6, F9, F11), and the ask D-024 clause (2) records
       as live but the draft omits (F13).
-- [ ] T12: Re-run the profile's `verify` slot and the ledger and draft
+- [x] T12: Re-run the profile's `verify` slot and the ledger and draft
       cross-check scripts.
 
 ## Work log
@@ -152,6 +152,8 @@ user-declared and nothing here proposes one.
 - 2026-08-30: T10 — the note reworked on T9's evidence. F001, F006 and F007 move from `glue` to `ambiguous`, each stating the residue tune's exported counterpart does not cover (F001's already-fitted refusal at `R/checks.R:20-29` and its caller-naming aborts, which tune's `check_workflow()` has no branch for; F006/F007's front-loading once per design against tune's per-fold raise, which M03's record-fold-failures rule makes unavailable as a check). Buckets are now 32 core, 38 furniture, 16 glue, 12 resampling-layer, 8 ambiguous — 106 total, re-verified by the merge script. The 16 that stay `glue` are re-cited on the corrected fact, stated once in a preamble to the section: nine tune symbols are exported but carry `#' @keywords internal` in the `empty_ellipses`, `internal-parallel` and `choose_metric` blocks, so the fact about being inside tune is the absent promise, not absent visibility. Also fixed from the return: F002's reason now cites its own comment at `R/checks.R:73-81` rather than `check_workflow()`'s at `:30-36` (F4); the `function(` count is 153, not 173 (F7); `labels.vfold_cv()` (rsample `R/labels.R:31-36`) already pastes `id` and `id2`, so F067's ask is the nested method alone and not a combining rule (F8); F070–F073's reconstruction is no longer described as closable only by tune, since exported `.check_grid()` would let this package expand the grid itself (F9); the `>= 2` threshold is tune `R/parallel.R:146-147`, not `:117` (F14); Disposition no longer calls the payload trio an `ambiguous` entry (F12); and the duplicated word in the Provenance block is gone (F15). F16 is rejected on its own terms: `[.nested_results` is `R/nested-results.R:69-105`, 37 lines, so the note's `~37` is exact and the reviewer's 36 was the off-by-one.
 
 - 2026-08-30: T11 — `benchmarks/upstream-asks.md` reworked to match. T-A1 becomes "promise the pre-fit checks, and export the one that is missing": `.has_preprocessor()` and `check_metrics_arg()` are exported under `@keywords internal`, so the ask there is a stability commitment, while `check_installs()`/`is_installed()` are genuinely unexported and keep the export ask; it now retires F002, F003, F011 (~31 lines) and states that F001, F006 and F007 are not claimed. T-A4 becomes "promise the parallel-backend decision" — all three tune functions are exported, so nothing needs writing but one line of documentation. T-A2 no longer calls the reconstruction closable only by tune: exported `.check_grid()` would let this package expand the grid itself, at the price of the same unpromised surface, so the ask is stated in preference order (F9). T-A5 is new and carries the one ask D-024 clause (2) records as live and D-025 preserved — keep `check_rset()`'s top-level `nested_cv` refusal (tune `R/checks.R:19-21`, called at `R/tune_grid.R:360` and `R/tune_bayes.R:322`) where it is (F13). R-A2's retirement is narrowed: three of `check_nested()`'s refusals survive the ask, including the `^id` check that exists for this package's own results object (F11). R-A5 drops the combining-rule half, `labels.vfold_cv()` already pasting `id` and `id2` (F8). The framing paragraph no longer claims the same public surface — R-A1 retires the exported `nested_resamples()`, and the kept-function count is 79 of 106, not 76 (F6). The `ambiguous` section moved out from under the rsample heading, since F001/F006/F007 are tune-side. A script checks all 28 `glue` and `resampling-layer` entries against the draft: each appears under exactly one section (T-A1 3, T-A2 4, T-A3 5, T-A4 3, no-ask 1, R-A1 3, R-A2 3, R-A3 1, R-A4 4, R-A5 1), and the framing sentence is at line 13, ahead of the first ask at line 51.
+
+- 2026-08-30: T12 — `cairn_validate.py` exits 0, all checks pass; 18 `references staleness` advisories, unchanged in count and none naming the new page. One new advisory: M28 now carries 12 tasks against the 10-task split tripwire, the four rework tasks the defect return convened. `devtools::test()` is FAIL 0, WARN 0, SKIP 0, PASS 1628. `git diff origin/main...HEAD -- R/ NAMESPACE man/` is empty, so `devtools::document()` is not required and no code path changed; the branch diff is five markdown files. AC2 and AC6 re-ticked.
 
 ## Decisions
 
