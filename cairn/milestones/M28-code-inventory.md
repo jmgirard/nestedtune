@@ -1077,3 +1077,22 @@ in 2m 34.8s; `devtools::test()` FAIL 0, WARN 0, SKIP 0, PASS 1628. No `R/`,
 transitive dependency, and that this branch changes five markdown files and no R
 code, so nothing in it can affect that job. Recorded as an accepted known-red
 merge, not a green one.
+
+**A second red job, found after the gate: `ubuntu-latest (devel)`.** It shows as
+`pending` for 20 minutes before resolving, so every CI check earlier in this
+review caught it unresolved and the macOS job was reported as the only failure.
+It is not a second instance of the macOS problem and not the M14/M16 test-stall
+phenomenon either. It is `cancelled` by the `timeout-minutes: 20` cap M12 added,
+inside `r-lib/actions/setup-r-dependencies@v2` — the job never reaches
+`check-r-package`, which is `skipped`. The cleanup log shows it killed mid-C++
+compile (`make`, `g++`, `cc1plus` terminated as orphans): on R-devel there are no
+Linux binaries, so every dependency builds from source and the install does not
+finish inside 20 minutes. Signature confirmed at 2026-08-30T21:05:08Z→21:25:13Z
+on this branch.
+
+Pre-existing on the same evidence the macOS finding rests on: the job is
+`cancelled` on all eight R-CMD-check runs on this branch **and on `origin/main` at
+`142aac3`** (18:19:20Z→18:39:23Z, the same 20m03s), and this branch changes five
+markdown files and no R code, so nothing in it can affect a dependency-install
+step. The gate authorization named the macOS job alone, so the merge stops here
+for a decision covering this one too.
