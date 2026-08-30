@@ -97,12 +97,15 @@ leg → M11's dropped matrix-cut candidate row.
       M12's hang bound stays on the step the two 52- and 40-minute hangs
       occurred in. Rewrite the cap comment above `timeout-minutes` to state
       both numbers and why they differ, since it currently justifies a single
-      20-minute job cap against the 394-job record.
+      20-minute job cap against the 394-job record. Discovered sub-task: two
+      other workflows cross-reference that single cap in comments
+      (`test-coverage.yaml`, `stress-daemon-tests.yaml`); both are corrected
+      here.
 - [ ] T3 Capture the devel cold-start evidence on the FIRST run after T2, which
       is the only one that will log `Cache not found for input keys` — once it
       completes, `R package cache save` writes the cache and later runs hit it.
       Record the completed wall-clock and the cache-save step's conclusion.
-- [ ] T4 Update `cairn/PROFILE.md`'s test-doctrine slot, whose fourth
+- [x] T4 Update `cairn/PROFILE.md`'s test-doctrine slot, whose fourth
       divergence still reads as one `timeout-minutes: 20` scoped to "both
       gating workflows" — false once T2 lands. State the job cap and the step
       cap separately, and anchor the description so the M16 drift lesson
@@ -121,6 +124,8 @@ leg → M11's dropped matrix-cut candidate row.
 - 2026-08-30: plan gate chose accepting the 7-day cache expiry over adding a scheduled warm-up workflow, because the cap fix alone makes a cold build complete and save, and a fifth workflow is a recurring cost and a new red surface for a case that costs one slow run after a quiet week; falsified by evidence that devel cold builds recur often enough to dominate the leg's wall-clock.
 - 2026-08-30: T1 edit landed — the macOS leg alone resolves `gower` through pak's `?source` parameter, so the RSPM arm64 binary is never fetched. Failure identity re-derived first-hand from job 99324307884 of run 33336519275: `dlopen` of `gower/libs/gower.so` reports `symbol not found in flat namespace '___kmpc_barrier'`, followed by `ERROR: package installation failed`, inside `check-r-package`. Question gate chose the per-package flag over whole-job source builds and over a separate pre-install step. Tick pends a pushed run.
 - 2026-08-30: T2 edit landed — job cap 20 → 60, and `timeout-minutes: 20` declared on the `check-r-package` step so the hang bound stays on the step both hangs occurred in; the cap comment now states both numbers and why they differ. Cold-devel evidence re-derived from job 99321348438 of run 33335421506: `Cache not found for input keys`, `Will install 129 packages`, killed mid-`Building vdiffr` with 114 builds started, 20m05s job wall-clock, before `R package cache save` ran. Question gate chose 60 minutes over 45 and 90. Tick pends a pushed run.
+- 2026-08-30: minor amendment — T2 gained a discovered sub-task. `test-coverage.yaml` said "Same cap as R-CMD-check, and for the same reason" and `stress-daemon-tests.yaml` said "far above R-CMD-check's 20"; both were true only of the single job cap T2 replaced, so both comments are rewritten to name the step cap.
+- 2026-08-30: T4 done — the test-doctrine slot's fourth divergence now states the job cap and the step cap separately, for both gating workflows, and directs the reader to re-read the call sites with `grep -n timeout-minutes .github/workflows/*.yaml` before trusting the numbers, which is what the M16 drift lesson asks of a bound copied into a record. The rewrite pushed `cairn/PROFILE.md` to 121 lines against the 120 cap, so the heaviest compressible slot (greenfield-openers) was compressed in one pass; the file is 116 lines, 7,559 bytes.
 
 ## Decisions
 

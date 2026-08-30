@@ -1,12 +1,10 @@
 # Toolchain profile: r-package
 
 <!-- A cairn *toolchain profile*: the language/toolchain-specific slots the
-     operational skills read. cairn-init instantiates this into the repo's
-     `cairn/PROFILE.md`. The oracle / Validation doctrine is UNIVERSAL and
-     deliberately NOT a slot here — it is the orthogonal domain axis
-     (D-024/D-025), stated once in skills/shared/validation-doctrine.md
-     (referenced from tracking-rules). All seven `## <slot>` sections
-     are defined; cairn_validate FAILs on a missing or empty slot. -->
+     operational skills read. The oracle / Validation doctrine is universal and
+     deliberately not a slot here; it lives in
+     skills/shared/validation-doctrine.md. All seven `## <slot>` sections are
+     defined; cairn_validate FAILs on a missing or empty slot. -->
 
 The R-package toolchain: devtools/roxygen/testthat/pkgdown, CRAN release.
 Selected by `cairn-init` when a `DESCRIPTION` file is present.
@@ -51,12 +49,15 @@ rules in tracking-rules:
   filter** on both triggers of both gating workflows skips `cairn/**`,
   `CLAUDE.md`, `.claude/**`, which cannot change what `R CMD check` sees — that
   is the test a fourth path must meet; it bites on `push` only, GitHub
-  evaluating it on a `pull_request` against the whole PR diff. **A
-  `timeout-minutes: 20`** on each gating job turns a hang into a failed job with
-  a timestamp — both have hung inside `test_check("nestedtune")` for 52 and 40
-  minutes on a tree that passed an hour earlier — and is not free headroom: an
-  ordinary windows leg has reached 11m54s and 1 of 394 jobs passed 20 minutes
-  and still finished, so the cap would have failed that one. **A
+  evaluating it on a `pull_request` against the whole PR diff. **Hang caps at
+  two scopes** turn a hang into a failed job with a timestamp: `R-CMD-check`
+  bounds its job at 60 minutes and its `check-r-package` step at 20, and
+  `test-coverage` its job at 20; before trusting those numbers, re-read them
+  with `grep -n timeout-minutes .github/workflows/*.yaml`. 20 is the guarantee,
+  on the step both hangs were in (`test_check("nestedtune")`, 52 and 40 minutes
+  on a tree that passed an hour earlier), and not free headroom: 1 of 394 jobs
+  passed 20 minutes and still finished. 60 is the devel leg's from-source build
+  of 129 dependencies, which a 20-minute job cap killed before cache-save. **A
   `workflow_dispatch`-only stress workflow** (`stress-daemon-tests.yaml`) hunts the
   hang on demand, invisible to `ci-usage.py` for carrying neither trigger.
 - Locating a hang, since the cap only ends one: `HangTraceReporter`
@@ -100,19 +101,15 @@ root. Carries the `.Rbuildignore` `^cairn$` entry (keeps the tracking dir out
 of the built package).
 
 ## greenfield-openers
-Language-specific opener `cairn-init` asks in a new/empty R package. The
-universal openers — distribution ambition (rendered here as **CRAN intent**) and
-numeric-work-needs-oracle-verification — are asked by cairn-init's universal
-layer, so they are not repeated here.
+Language-specific opener `cairn-init` asks in a new/empty R package; the
+universal openers (CRAN intent, numeric-work oracle verification) come from
+cairn-init's universal layer.
 
-- **Compiled code?** Will the package include compiled code
-  (Rcpp / RcppArmadillo / C / C++ / Fortran)?
-  - Options: **pure R** (reversible default) · Rcpp · RcppArmadillo.
-  - Consequence: compiled ⇒ a `src/` dir, `LinkingTo`, a C/C++ toolchain, and
-    `R CMD check` compiling on every check. Adding compiled code later is
-    additive, so the reversible default is pure R.
-  - Lands in: DESIGN Conventions (a "compiled code via <pkg>" line) and informs
-    the `verify` / `test-doctrine` check surface.
+- **Compiled code?** Rcpp / RcppArmadillo / C / C++ / Fortran, or pure R?
+  Compiled means a `src/` dir, `LinkingTo`, a C/C++ toolchain, and `R CMD
+  check` compiling on every check; adding it later is additive, so pure R is
+  the reversible default. Lands in DESIGN Conventions (a "compiled code via
+  <pkg>" line) and informs the `verify` / `test-doctrine` check surface.
 
 ## changelog
 The repo's changelog file, read by `/hotfix`, the release-walk, and the
