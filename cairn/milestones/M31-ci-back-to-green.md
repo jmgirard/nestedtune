@@ -132,6 +132,8 @@ leg → M11's dropped matrix-cut candidate row.
 - 2026-08-30: T3 done — devel job 99334129149 logged `Cache not found for input keys` at 22:49:37, ran 22:48:30 to 23:12:04, and its `Post Run r-lib/actions/setup-r-dependencies@v2` step reports success with `Cache saved with key: Ubuntu 24.04.4 LTS-R version 4.7.0 ...`. The deadlock is broken: the run that pays the cold build now survives to write the cache the next run reads.
 - 2026-08-30: T5 done — `devtools::test()` reports `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`; `devtools::check()` reports 0 errors, 0 warnings, 0 notes in 2m51.6s. Run 33340129444 reports `success` for all five jobs named by `matrix.config`. `git diff --name-only main...HEAD` lists six paths, all under `.github/` or `cairn/`. Status set to review.
 - 2026-08-30: review checkpoint — AC1-AC5 verified with fresh evidence and ticked; consistency gate green (cairn_validate exit 0, document() no diff, check_pkgdown() clean). AC6 pending on the local suite and check(); three-lens fan-out spawned, two lenses returned.
+- 2026-08-30: review fix-now work landed for eight of the twelve [O] findings — the 394-job statistic re-scoped in both the workflow comment and the profile slot, the two hangs attributed one per gating workflow, `pkgdown.yaml`'s third stale cross-reference to the retired single cap corrected, the unbounding of every non-check step named in both places, the provenance list read as `M12 rev. M31`, the 60-minute figure re-derived against the measured 23m34s cold run, and the grep instruction told which of its six hits are audited. `pkgdown.yaml` joins the diff; AC5's allow-list still holds.
+- 2026-08-30: catch-up on the T4 record ([O] finding F7) — the `cairn/PROFILE.md` edit also rewrote the file's header comment, dropping the `cairn-init` instantiation sentence and the D-024/D-025 pointers. That was collateral of the 120-line cap fix and no task authorized it; the compressed header states the same rule about the seven slots and the universal validation doctrine, so it stands as written and is recorded here rather than reverted.
 
 ## Decisions
 
@@ -185,4 +187,72 @@ no merge-forward was needed. Evidence below is fresh, gathered this session.
 Routing: declared surface tier is internal, but the diff touches GitHub Actions
 workflow YAML, which is executable surface — so the full three-lens fan-out ran
 rather than the single-reviewer path.
+
+**[S] blame-history — no findings.** It confirmed the job cap raised 20 → 60
+relocates M12/M16's bound rather than eroding it, that the `gower?source` fix
+implements the M30 lesson it cites, and that the two comment rewrites change no
+`timeout-minutes` value. Its one open item — whether `extra-packages: … ,
+gower?source` beside `needs: check` re-triggers the M17 lesson about shadowing a
+`Config/Needs/<slot>` field — resolves to no: `DESCRIPTION` declares only
+`Config/Needs/website`, so nothing is shadowed. Verified at review.
+
+**[S] prior-PR-comments — one finding**, the same one as [O] F5 below (the M16
+drift lesson answered with a prose grep instruction rather than an enforced
+cross-check). Its probe found one real non-bot comment in the repo, so it walked
+PRs #11, #12, #15, #16 and #30; the only inline comments there are on
+`pkgdown.yaml` and `R-CMD-check-hard.yaml`, neither in this diff.
+
+**[O] diff-bug — twelve findings**, no correctness problem in the executable
+parts (all four workflows parse, the ternary selects the source build for
+exactly the one `macos-latest` leg, `timeout-minutes` sits at a legal step
+position). Triage, in the reviewer's severity order:
+
+- F1 *The 394-job statistic priced a job-scope bound and now sits under a
+  step-scope cap* — **fixed now.** A job past 20 minutes need not have had a
+  check step past 20, so "the cap would have failed that one" no longer
+  followed. The comment and the profile slot now say the figure bounds how
+  often the step cap can bite rather than settling it.
+- F2 *"both hangs were inside the step that runs `test_check()`" is false for
+  one of the two* — **fixed now.** The 40-minute hang was `covr` in
+  `test-coverage.yaml`, a different workflow; both comments now name one hang
+  per gating workflow, which is also why the two caps sit at different scopes.
+- F3 *`pkgdown.yaml:58` carries a third stale cross-reference to the retired
+  single job cap* — **fixed now.** T2's sub-task said two workflows referenced
+  it; a third did. Confirmed by reading the file, and rewritten to name both
+  scopes.
+- F4 *Every non-check step lost its bound on all five legs, unremarked* — **fixed
+  now** as a documentation gap. The widening is the change the plan called for;
+  what was missing was saying so. Both the workflow comment and the profile slot
+  now name it.
+- F5 *The M16 drift lesson is answered with a prose grep instruction, not an
+  enforced check* — **follow-up.** T4 planned exactly that instruction, and an
+  automated cross-check (the shape `ci-usage.py` already runs for `paths-ignore`)
+  is new work. Absorbed into the existing "CI records" candidate row.
+- F6 *AC4's guarantee is declared, never tested: step-level `timeout-minutes` may
+  not be honored on a composite-action step* — **rejected, refuted against the
+  implementation.** actions/runner#599 (merged 2020-07-22) makes the outer
+  `uses:` step's `timeout-minutes` honored for a composite action; the open
+  issues the reviewer cited (#1979, #2415) are about `timeout-minutes` on steps
+  *inside* a composite definition, which this workflow does not use.
+- F7 *The T4 work-log line undercounts the `PROFILE.md` edit* — **fixed now** by
+  an appended work-log line naming the header-comment rewrite, history being
+  append-only.
+- F9 *The "four divergences (M11 ×2, M12, M14)" provenance was not updated* —
+  **fixed now:** reads `M12 rev. M31`.
+- F10 *"60 is about twice the cold install plus the check" is off* — **fixed
+  now.** The comment now cites the measured 23m34s cold run and says ~2.5×.
+- F12 *The grep the slot hands the reader returns six hits across four
+  workflows* — **fixed now:** the slot says which three are the audited ones.
+- F8 *The greenfield-opener's option set changed shape as collateral of the
+  line-count fix* — **rejected.** The question's content and its reversible
+  default survive the compression, and this file is the repo's own profile, not
+  the template `cairn-init` instantiates.
+- F11 *The comment's "below"/"above" deixis contradicts itself* — **rejected.**
+  Both references are correct in their own frame: the step is below in the file,
+  the step-cap paragraph is above in the comment.
+
+**Return floor:** no actioned finding demonstrates an acceptance criterion
+failing, and none is a load-bearing defect in what the CI configuration does —
+F1–F4, F7, F9, F10 and F12 are accuracy defects in comments and records, fixed
+on the branch. Status stays `review`.
 
