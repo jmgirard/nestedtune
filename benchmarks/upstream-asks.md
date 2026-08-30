@@ -15,10 +15,14 @@ nestedtune continues as a package. It is not being wound down, ported into
 are the ordinary requests one package in an organization makes of its siblings
 once it stops guessing and reads their source. Each one names code nestedtune
 carries today that a sibling could make unnecessary — either because the sibling
-already does the same work behind an unexported name, or because the sibling
-builds an object nestedtune has to work around. Granting all of them would leave
-nestedtune with 76 of its 106 top-level functions and the same public surface;
-granting none of them costs nothing but the duplication that is already there.
+already does the same work behind a name it will not promise, or because the
+sibling builds an object nestedtune has to work around. Granting all of them
+would leave nestedtune with 79 of its 106 top-level functions. It would change
+the public surface in exactly one place: R-A1 takes the memory-lean nested
+constructor into rsample, and `nested_resamples()` is an exported function of
+this package, so that ask — and only that ask — retires something users call by
+name. Granting none of them costs nothing but the duplication that is already
+there.
 
 The asks are grouped by theme rather than one per function, because a maintainer
 acts on a change, not on a list of our helper names. Every `glue` and
@@ -26,41 +30,75 @@ acts on a change, not on a list of our helper names. Every `glue` and
 and the one entry no upstream change retires is stated as such rather than
 padded into an ask that would not do it.
 
+**One correction worth stating up front, because it changes what several of
+these asks are.** An earlier draft asked tune to *export* helpers it turns out to
+export already. Nine of the tune symbols the inventory cites are in tune's
+`NAMESPACE` at v2.1.0 — `check_workflow` (:191), `.has_preprocessor` (:157),
+`.has_spec` (:161), `.check_grid` (:136), `check_metrics` (:186),
+`check_metrics_arg` (:187), `choose_framework` (:193), `get_mirai_workers`
+(:237), `mirai_installed` (:265) — and every one of them carries
+`#' @keywords internal`, documented under `empty_ellipses`, `internal-parallel`
+or `choose_metric`. So the code is callable today and the thing missing is not
+visibility but a promise. Where that is the whole story, the ask below asks for
+the promise. Where nestedtune's version also does something tune's does not, the
+inventory moved the entry out of `glue` into `ambiguous` and it is not claimed as
+a retirement here.
+
 ---
 
 # Asks to `tune`
 
-## T-A1 — Expose the pre-fit argument checks, or a stable equivalent
+## T-A1 — Promise the pre-fit argument checks, and export the one that is missing
 
-**Retires: F001 `check_workflow()`, F002 `has_preprocessor()`,
-F003 `check_model_spec()`, F006 `check_grid()`, F007 `check_grid_params()`,
-F011 `check_metrics()`** — 6 functions, ~160 lines.
+**Retires: F002 `has_preprocessor()`, F003 `check_model_spec()`,
+F011 `check_metrics()`** — 3 functions, ~31 lines.
 
 nestedtune validates `object`, `grid` and `metrics` before it starts a run,
 because it tunes once per outer fold: a malformed grid that tune would reject per
 fold surfaces here as every fold in the design failing alike, after the whole
-cost has been paid. tune already makes each of these checks — `check_workflow()`
-(`R/checks.R:314`), `check_installs()` over `is_installed()` (`R/checks.R:234`,
-`:229`), `.check_grid()` (`R/checks.R:67`), `check_extra_tune_parameters()`
-(`R/checks.R:361`), `check_metrics()` (`R/checks.R:397`) — all unexported.
+cost has been paid. A caller that loops over resamples needs these answers before
+the loop, not inside it.
 
-The ask: export them, or export one entry point that validates a
-`(workflow, grid, metrics)` triple up front and returns the expanded grid. A
-caller that loops over resamples needs these answers before the loop, not inside
-it.
+tune makes each of these checks, and the ask splits by whether we may call it.
 
-One of the six is a `workflows` question wearing a tune coat. F002 exists because
-`workflows` has an unexported `has_spec()` and `:::` is a check failure, so
-nestedtune asks the workflow's structure directly. tune's own
-`.has_preprocessor()` family (`R/grid_helpers.R:116-139`) is the same workaround
-one package further in; the durable fix is for `workflows` to export the
-predicates, and the tune-side ask stands either way.
+**Exported, but not promised.** `.has_preprocessor()` (`R/grid_helpers.R:116`,
+`NAMESPACE:157`) and `check_metrics_arg()` (`R/metric-selection.R:307`,
+`NAMESPACE:187`) both do exactly what nestedtune's F002 and F011 do. They are
+exported with `#' @keywords internal`, under doc blocks whose own text calls them
+developer-facing. A package on CRAN cannot put its argument checking on a surface
+its dependency has said it may change. The ask is not to export them — it is to
+say which of these developer-facing helpers a downstream package may depend on,
+and to deprecate rather than remove them. A short "these are stable for
+downstream use" note in `empty_ellipses` and `choose_metric` would do it.
+
+**Not exported at all.** `check_installs()` over `is_installed()`
+(`R/checks.R:234`, `:229`) is genuinely unreachable from outside, and F003 exists
+for no other reason. The ask there is the ordinary one: export it, or fold it
+into a promised pre-fit entry point.
+
+**The convenient shape, if tune wants one.** A single entry point that validates
+a `(workflow, grid, metrics)` triple up front and returns the expanded grid would
+cover all of the above and T-A2's need at once.
+
+F002 is also a `workflows` question wearing a tune coat: `workflows` has an
+unexported `has_spec()` and `:::` is a check failure, so both nestedtune and tune
+ask the workflow's structure directly. tune's `.has_preprocessor()` family
+(`R/grid_helpers.R:116-139`) is the same workaround one package further in; the
+durable fix is for `workflows` to export the predicates, and the tune-side ask
+stands either way.
+
+Three checks nestedtune makes are **not** claimed here. `check_workflow()`
+(F001), `check_grid()` (F006) and `check_grid_params()` (F007) each overlap a
+tune counterpart but also do something it does not — refusing an already-fitted
+workflow, naming the user's call, and front-loading once per design what tune
+raises per fold. The inventory buckets them `ambiguous` for that reason, and no
+promise from tune retires them whole.
 
 ## T-A2 — Record the expanded grid on a `tune_results`
 
 **Retires: F070 `scored_candidates()`, F071 `scored_candidates_impl()`,
 F072 `scored_metric_frames()`, F073 `empty_candidates()`** — 4 functions,
-~68 lines, and one documented limitation nestedtune cannot fix from outside.
+~68 lines, and one documented limitation of deriving the grid from what scored.
 
 A returned `tune_results` carries `parameters`, `metrics`, `outcomes` and
 `rset_info`, and none of them is the grid the run expanded. tune has it: the
@@ -75,13 +113,23 @@ fold selected is entitled to know that. Lacking the record, nestedtune
 reconstructs it by pooling the per-resample metric frames and de-duplicating on
 `.config`.
 
-The reconstruction has a hole that only tune can close: **a candidate that failed
-on every inner resample leaves no metric row anywhere and cannot be recovered.**
-It is absent from the reconstructed record and present only in the notes. That is
-not a bug we can fix; it is the consequence of deriving the grid from what scored.
+The reconstruction has a hole: **a candidate that failed on every inner resample
+leaves no metric row anywhere and cannot be recovered.** It is absent from the
+reconstructed record and present only in the notes. That is the consequence of
+deriving the grid from what scored, and it does not go away by trying harder from
+outside.
 
-The ask: attach the expanded grid to the returned object — an attribute or a
-list element, whatever fits tune's own conventions. It is data tune already holds.
+It does go away without tune, one other way, and this ask is honest about it:
+`.check_grid()` is exported (`NAMESPACE:136`), so nestedtune could expand each
+fold's grid itself and hand the frame to `tune_grid()`, retiring F070–F073 and
+the hole with them. What that costs is resting the outer loop on a
+`@keywords internal` export — the same unpromised surface T-A1 is about. So the
+choice is between tune recording the grid and tune promising `.check_grid()`;
+either closes this, and doing neither leaves the reconstruction where it is.
+
+The ask, in preference order: attach the expanded grid to the returned object —
+an attribute or a list element, whatever fits tune's own conventions, since it is
+data tune already holds — or failing that, promise `.check_grid()`.
 
 ## T-A3 — Export the note and metric tibble constructors
 
@@ -101,7 +149,7 @@ zero-row shape of a notes tibble and of a metrics tibble. Any package that
 composes tune results into a larger object needs to produce empty ones that
 downstream `rbind`-shaped code will accept, and today it guesses at the columns.
 
-## T-A4 — Export the parallel-backend decision
+## T-A4 — Promise the parallel-backend decision
 
 **Retires: F083 `is_mirai_installed()`, F084 `mirai_workers()`,
 F085 `use_parallel()`** — 3 functions, ~18 lines.
@@ -111,17 +159,44 @@ nestedtune parallelizes over outer folds and runs inner tuning with
 cores. For that to be coherent, "parallel" has to mean the same thing in both
 packages, so nestedtune mirrors tune's detection: mirai installed, at least two
 connected daemons. tune decides this in `mirai_installed()` (`R/parallel.R:51`),
-`get_mirai_workers()` (`:87`) and `choose_framework()` (`:117`).
+`get_mirai_workers()` (`:87`) and `choose_framework()` (`:117`, applying the
+two-worker threshold at `:146-147`).
 
-Mirroring is the fragile part. If tune changes its threshold, adds a backend, or
-changes how it reads `mirai::status()`, nestedtune goes on using the old rule and
-the two silently disagree about whether a run is parallel — and `choose_framework()`
-already knows about a `future` backend nestedtune's three functions do not model
-at all.
+**All three are already exported** — `NAMESPACE:265`, `:237`, `:193`. So this is
+not an export request; nestedtune could read tune's answer today. All three sit
+in the `internal-parallel` doc block under `#' @keywords internal`, which is tune
+reserving the right to change them, and a package whose parallel behaviour must
+agree with tune's cannot build on a surface held open like that.
 
-The ask: export the decision — a function returning which framework tune would
-use for a given `(object, control)`. Callers should read tune's answer, not
-re-derive it.
+Mirroring is the fragile half either way. If tune changes its threshold, adds a
+backend, or changes how it reads `mirai::status()`, nestedtune goes on using the
+old rule and the two silently disagree about whether a run is parallel — and
+`choose_framework()` already knows about a `future` backend nestedtune's three
+functions do not model at all.
+
+The ask: promise `choose_framework()` — say that a downstream package may call it
+to learn which framework tune would use for a given `(object, control)`, and that
+its removal would go through a deprecation cycle. Nothing needs to be written;
+one line of documentation retires three of our functions.
+
+## T-A5 — Keep the `nested_cv` refusal top-level (a request to change nothing)
+
+**Retires nothing.** This is the one ask on the list that asks tune to hold still
+rather than to move, and `cairn/DECISIONS.md` records it as live: D-024
+clause (2), explicitly preserved by D-025 when the rest of D-024 was superseded.
+
+`check_rset()` (`R/checks.R:4`, `NAMESPACE:189`) refuses a `nested_cv` at the top
+level — `R/checks.R:19-21` — and `tune_grid()` calls it once on `resamples`
+(`R/tune_grid.R:360`), as does `tune_bayes()` (`R/tune_bayes.R:322`). Each element
+of an `inner_resamples` column is an ordinary `rset` and passes that check, which
+is precisely what makes nestedtune's outer loop possible: it hands tune one inner
+`rset` per outer fold and tune tunes it without knowing it sits inside a nested
+design.
+
+The ask: keep the refusal where it is. If nested support ever lands in tune, let
+it be additive rather than a change to what `check_rset()` accepts of an ordinary
+`rset`. This costs tune no new API and no commitment beyond not regressing, and
+it is the only thing D-024 ever asked for.
 
 ## Not retired by any ask to tune
 
@@ -175,8 +250,16 @@ a side note:
 
 ## R-A2 — Validate the design `nested_cv()` builds, and refuse an outer bootstrap
 
-**Retires: F004 `check_nested()`, F005 `check_column_class()`,
-F008 `check_inside_spec()`** — 3 functions, ~104 lines.
+**Retires: F005 `check_column_class()`, F008 `check_inside_spec()`, and the
+larger part of F004 `check_nested()`** — 3 functions, ~104 lines, of which
+roughly 30 stay behind. Granting this ask removes F004's element-class checks
+(`R/checks.R:160-175`) and its bootstrap refusal (`:141-152`). Three of its
+refusals survive it: a `resamples` that is not a data frame or lacks the two
+columns (`:109-120`), a design with no outer folds (`:121-123`), and a design
+with no `^id` column (`:127-136`) — that last one exists because this package's
+own results object labels its rows from those columns, which is nestedtune's
+concern and not rsample's. A caller has to check the argument it was handed
+whatever rsample's constructor promises about the objects it built itself.
 
 `nested_cv()` builds a design whatever `inside` returned: `R/nested_cv.R:88`
 assigns `map(outside$splits, inside_resample, ...)` with no check on the result.
@@ -257,11 +340,12 @@ collection of splits really does share one frame: a `manual_rset()` of splits ov
 different frames does not, and restoring one frame onto all of them would train on
 the wrong rows silently.
 
-## R-A5 — `labels()` for a nested design, and for a repeated one
+## R-A5 — `labels()` for a nested design
 
 **Retires: F067 `fold_ids()`** — 1 function, ~7 lines.
 
-`labels.rset()` (`R/labels.R:14-17`) opens by refusing this case outright:
+Two methods refuse this case outright, with the same three lines —
+`labels.rset()` (`R/labels.R:14-17`) and `labels.vfold_cv()` (`:28-30`):
 
 ```r
 if (inherits(object, "nested_cv")) {
@@ -270,17 +354,26 @@ if (inherits(object, "nested_cv")) {
 ```
 
 so nestedtune labels its outer folds by grepping the `^id` columns and pasting
-them. The paste is not incidental: a repeated design carries `id` and `id2`, and
-`labels.rset()`'s non-nested branch returns `object$id` alone, which would
-silently collapse the repeats.
+them.
 
-The ask: a `labels()` method for a nested design, and a stated rule for combining
-more than one id column.
+rsample already has the combining rule, which an earlier draft of this list
+missed: `labels.vfold_cv()` pastes `id` and `id2` with a `.` when
+`attr(object, "repeats") > 1` (`R/labels.R:31-36`), and a repeated design
+dispatches there. So the ask is narrower than it looked.
+
+The ask: let `labels()` answer for a nested design instead of aborting, reusing
+the repeat-handling `labels.vfold_cv()` already performs. Only the outer level
+needs labelling; the inner `rset`s are ordinary and already answer for
+themselves.
+
+---
 
 ## Also raised, from the inventory's `ambiguous` entries
 
-Not a retirement ask — these are entries the inventory could not place, where an
-upstream change would settle them.
+Not retirement asks. These are entries the inventory could not place in a single
+bucket, listed here because an upstream change above would settle part of what
+each one is. They belong to both packages, which is why they sit outside the two
+sections rather than inside either.
 
 - **F059 `outer_scheme_label()`** (`R/nested-results.R:48`, ~9 lines).
   `pretty.nested_cv()` (rsample `R/printing.R:112`) describes both resampling
@@ -288,8 +381,14 @@ upstream change would settle them.
   so nestedtune strips the nested classes and calls `pretty()` on what is left.
   A single-level scheme label for a nested design would delete this function and
   the class-stripping with it.
-
----
+- **F001 `check_workflow()`, F006 `check_grid()`, F007 `check_grid_params()`**
+  (`R/checks.R:7`, `:204`, `:234`; ~129 lines together). T-A1's promise would let
+  the duplicated half of each go: the workflow-shape questions tune's own
+  `check_workflow()` asks, and the grid validation `.check_grid()` performs. What
+  stays is what tune's versions do not do — refuse an already-fitted workflow,
+  name the user's call in the abort, and answer once per design rather than once
+  per fold. That is why the inventory buckets these `ambiguous` and why they are
+  not counted as retired anywhere above.
 
 ## What this list does not ask for
 
@@ -297,7 +396,10 @@ upstream change would settle them.
   reproducibility contract, its failure containment, its final-fit path, or its
   daemon pre-flight into either package. Those are the 32 `core` entries in the
   inventory, and they stay here.
-- No ask proposes moving nestedtune's public surface — its print, plot, collect
-  and extract methods. Those are the 38 `furniture` entries, and they stay here
-  too.
+- No ask proposes moving nestedtune's print, plot, collect or extract methods.
+  Those are the 38 `furniture` entries, and they stay here too. R-A1 is the one
+  ask that touches an exported name at all: it would take the memory-lean
+  constructor `nested_resamples()` into rsample.
+- No ask claims one of the 8 `ambiguous` entries as a retirement. Four of them
+  appear above only to say which half an upstream change would reach.
 - Nothing here is a request that either package take on maintenance of nestedtune.
