@@ -218,3 +218,103 @@ that check is not applicable; `benchmarks/` already carries an `.Rbuildignore`
 entry (`^benchmarks$`); the milestone has no user-visible change, so `NEWS.md`
 is owed no entry. No file under `R/`, `man/`, or `NAMESPACE` differs from
 `origin/main`.
+
+---
+
+**Re-review after the AC6 amendment — evidence gathered 2026-08-30 on branch
+`m028-code-inventory` at `8bc7e6c`, against `origin/main` (0 behind, 6 ahead;
+`main` has no unpushed commits).** PR
+https://github.com/tidymodels/nestedtune/pull/38 (draft). The amendment commit
+touched only `cairn/ROADMAP.md` and this file — `git diff 89d8418..HEAD -- R/
+NAMESPACE man/` is empty and neither deliverable changed — so every criterion
+below was re-executed against the same artifacts rather than assumed from the
+first pass.
+
+**AC1 — verified.** `cairn/references/code-inventory.md` is committed, authored
+from `templates/synthesis-note.md` (Provenance, Scope, Evidence snapshot, "What
+the inventory is", ledger, Disposition, Open questions all present). The
+Provenance `Extraction:` line reads "read directly from `R/*.R` at `89d8418` …
+— observed 2026-08-30" — a verification verb and a date; `cairn_validate`'s
+`references staleness` advisory does not name the page. The note states the
+extraction procedure verbatim as AC1 spells it. Re-running that procedure now
+emits 106 definitions across 12 files; a script parsed the ledger and found 106
+rows, no duplicate names, ledger name set equal to the extracted name set, every
+`file:line` identical to the extraction output, and every bucket one of the five
+(32 core, 38 furniture, 19 glue, 12 resampling-layer, 5 ambiguous).
+
+**AC2 — verified.** All 19 `glue` row IDs appear in the `glue` section. Every
+upstream citation was re-resolved against a fresh shallow clone of
+`tidymodels/tune` at tag `v2.1.0`, whose HEAD is `4c74638` — the commit the note
+states. All 17 tune sites resolve to the named function or expression
+(`check_workflow` R/checks.R:314, `.has_preprocessor` R/grid_helpers.R:116,
+`check_installs` :234, `is_installed` :229, `.check_grid` :67, the abort at :132,
+the integer coercion :139, `dials::grid_space_filling()` :145, the
+`.check_grid()` binding R/tune_grid.R:375, `check_extra_tune_parameters` :361,
+`check_metrics` :397, `check_metrics_arg` R/metric-selection.R:307, `new_note`
+R/logging.R:320, `append_log_notes` :282, `has_log_notes` :274,
+`remove_log_notes` :414, `mirai_installed` R/parallel.R:51, `get_mirai_workers`
+:87, `choose_framework` :117), as does `tibble (>= 3.1.0)` at DESCRIPTION:37.
+The four citations to this repo's own comments — which AC2 also allows — resolve
+too (`R/checks.R:33`, `:228`, `R/nested-tune-grid.R:418`,
+`R/nested-results.R:116`).
+
+**AC3 — verified.** All 12 `resampling-layer` row IDs appear in that section.
+Re-resolved against a fresh clone of `tidymodels/rsample` at tag `v1.3.2`, HEAD
+`658545c` — the stated commit. Every cited site resolves: `nested_cv`
+R/nested_cv.R:50, the two `warn(boot_msg)` lines :71 and :77, the unchecked
+`map(outside$splits, inside_resample, …)` :88, `attr(out, "inside") <-
+cl$inside` :93, `inside_resample()` :98-101, `analysis` R/rsplit.R:113,
+`assessment` :133, `complement` R/complement.R:22, `labels.rset` R/labels.R:14-17
+with its `nested_cv` abort, and `pretty.nested_cv` R/printing.R:112. The two
+citations to this repo's own comments (`R/nested-resamples.R:216`,
+`R/parallel.R:78`) resolve as well.
+
+**AC4 — verified.** All 5 `ambiguous` row IDs (F051, F052, F053, F059, F106)
+appear in the `ambiguous` section, each stating what pulls it toward two buckets
+rather than being forced into one; `[.nested_results` gets the same treatment in
+the addendum.
+
+**AC5 — verified.** `NAMESPACE` at this commit carries 8 `export()` and 10
+`S3method()` lines; the note accounts for all 18. The 5 exports it maps to ledger
+entries check out by ID and name (F025 `nested_resamples`, F068
+`nested_tune_grid`, F021 `nested_final_fit`, F012 `extract_tune_results`, F015
+`extract_scored_candidates`), each carrying export status `exported`. The 3 the
+extraction output does not define (`autoplot`, `collect_metrics`,
+`extract_workflow`) are listed as re-exports and excluded, and `R/reexports.R`
+confirms each as a bare `pkg::generic` statement. The 9 mapped S3 methods check
+out by ID and name; the tenth, `S3method("[",nested_results)`, is reconciled
+against the addendum, whose definition line at `R/nested-results.R:69` does begin
+with a backtick and so falls outside the stated pattern. The exclusion is written
+as a subtraction rule over the procedure's output, not a name registry.
+
+**AC6 (as amended) — verified.** The draft exists at
+`benchmarks/upstream-asks.md`, unposted (its own line 3 says so, and nothing has
+been opened upstream). Its framing sentence "nestedtune continues as a package"
+is at line 13, ahead of the first ask heading (`# Asks to tune`, line 31). A
+script cross-checked all 31 `glue` and `resampling-layer` row IDs against the
+draft's level-2 sections: every one appears, and each under exactly one section —
+T-A1 6, T-A2 4, T-A3 5, T-A4 3, R-A1 3, R-A2 3, R-A3 1, R-A4 4, R-A5 1, and F061
+under "Not retired by any ask to tune", which names what retires it instead
+(nestedtune adding `tibble` to its own `Imports`, a local dependency decision
+needing its own gate) and records that T-A2 and T-A3 would remove most of its
+call sites with three remaining. F002's second mention sits inside T-A1's own
+body, so no entry is placed under two asks.
+
+**Consistency gate — clean.** `cairn_validate.py` exits 0; all 16 PASS checks
+pass, including `scaffold present`, `coverage complete`, `binding criteria`, and
+`references index<->disk`. 18 `references staleness` advisories, unchanged in
+count and none naming the new page; `release window` OK. No `DESIGN.md`
+principle changed, so `cairn_impact.py` is skipped. Toolchain slot
+(`r-package`): `devtools::document()` leaves no diff under `man/`, `NAMESPACE`,
+or `R/`; `devtools::check()` is 0 errors, 0 warnings, 0 notes in 2m 15.8s;
+`devtools::test()` is FAIL 0, WARN 0, SKIP 0, PASS 1628; `pkgdown::check_pkgdown()`
+finds no problems; no `README.Rmd` exists, so that check is not applicable; both
+new paths are already `.Rbuildignore`d (`^cairn$`, `^benchmarks$`); the milestone
+has no user-visible change, so `NEWS.md` is owed no entry.
+
+**Review routing.** Declared surface tier is internal and
+`git diff origin/main...HEAD --name-only` is markdown-only (`benchmarks/upstream-asks.md`,
+`cairn/ROADMAP.md`, this file, `cairn/references/INDEX.md`,
+`cairn/references/code-inventory.md`) with no script, hook, or other executable
+surface — so single-reviewer mode: one fresh-context [O] diff-bug lens, the other
+two skipped.
