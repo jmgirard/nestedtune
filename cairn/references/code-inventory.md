@@ -2,7 +2,7 @@
 
 **Provenance.** Ingested 2026-08-30 by M28 from this repository's own `R/`
 directory at commit `89d8418`, classified against two upstream source trees
-read read-only outside this repo: `tidymodels/tune` at tag `v2.1.0` (commit
+read-only outside this repo: `tidymodels/tune` at tag `v2.1.0` (commit
 `4c74638`) and `tidymodels/rsample` at tag `v1.3.2` (commit `658545c`), the
 versions installed in the development library on the day of the read.
 Pagination: —.
@@ -20,7 +20,7 @@ reference, not an authority: status lives in `ROADMAP.md`, decisions in
 **Evidence snapshot.**
 
 - Every top-level function definition in `R/*.R`, emitted by the extraction
-  procedure stated below — commit `89d8418`, 106 definitions across 12 files —
+  procedure stated below — commit `89d8418`, 106 definitions across 10 of the 12 files in `R/` —
   observed 2026-08-30.
 - `NAMESPACE` at the same commit — 8 `export()` lines, 10 `S3method()` lines —
   observed 2026-08-30.
@@ -30,6 +30,9 @@ reference, not an authority: status lives in `ROADMAP.md`, decisions in
   clone outside this repository — observed 2026-08-30.
 - Installed versions in the development library: tune 2.1.0, rsample 1.3.2,
   reported by `packageVersion()` — observed 2026-08-30.
+- The complete `export()` surface of both upstream trees — tune 152 names,
+  rsample 62 — read against every entry this page does not bucket `core` or
+  `furniture`, by the sweep procedure stated below — observed 2026-08-30.
 
 ## What the inventory is
 
@@ -72,6 +75,51 @@ dropped, duplicated, or left unbucketed on the way into the table.
   collect and extract methods, and the helpers that serve only them.
 - **`ambiguous`** — an entry that resists a single bucket, with the reason
   stated rather than a bucket forced onto it.
+
+### The upstream-counterpart sweep
+
+The `glue`, `resampling-layer` and `ambiguous` entries each rest on a claim about
+what upstream does and does not offer. Two earlier passes of this page checked
+those claims one entry at a time, against the symbols the entry happened to cite,
+and both times a reviewer found a counterpart nobody had thought to look for. A
+per-entry check cannot fail safely: it is bounded by what the author recalled,
+not by what upstream exports.
+
+So the claims rest instead on a sweep over the whole surface, stated here so a
+later pass re-runs it rather than hunting fresh:
+
+```
+grep -oE '^export\(([^)]+)\)' NAMESPACE   # in each upstream tree
+```
+
+That emits 152 names for tune at `4c74638` and 62 for rsample at `658545c`. Both
+lists were then **read** — not matched by name — against the 36 entries this page
+buckets `glue` (16), `resampling-layer` (12) or `ambiguous` (8), asking of each
+upstream name whether it does the work the entry does. A name match is not the
+test and would have missed two of the three hits below: `new_bare_tibble` against
+`new_tbl`, and `load_pkgs` against `check_model_spec`.
+
+Run 2026-08-30, the sweep found three counterparts this page had missed, all
+three exported and all three in the `empty_ellipses` doc block:
+
+- `.config_key_from_metrics` (tune `R/collect.R:618`) — the candidate
+  reconstruction F070–F073 perform.
+- `load_pkgs` (tune `R/load_ns.R:11`) over `.load_namespace` (`:41`) — the
+  engine-package refusal F003 performs.
+- `new_bare_tibble` (tune `R/utils.R:82`) — the tibble construction F061
+  performs.
+
+It found none on the rsample side. The two constructors that came closest —
+`make_splits()` (`R/misc.R:18`) and `new_rset()` (`R/rset.R:14`) — are declined
+for a stated reason in this repo's own comment at `R/nested-resamples.R:160-164`:
+rebuilding the splits from scratch drops the split subclass and the per-split
+`id` tibble that `labels()` reads. `populate()` (`R/complement.R:126`) fills a
+split's `out_id`, but in that split's own index space, not the outer-fold space
+F026 remaps into.
+
+The three hits are folded into the entries below. What the sweep does not settle
+is behavioural equivalence beyond the reading: it establishes that a counterpart
+exists and what it does, not that swapping it in would leave every test green.
 
 ## Ledger — all 106 definitions
 
@@ -195,7 +243,7 @@ The backtick is the first character of the line, so the extraction pattern —
 which requires a letter, a dot, or an underscore there — does not match it. It is
 listed here rather than in the table above so that the table remains exactly what
 the stated procedure emits. Its reason for being `ambiguous` is given with the
-other four below, and `NAMESPACE`'s `S3method("[",nested_results)` line is
+other eight below, and `NAMESPACE`'s `S3method("[",nested_results)` line is
 reconciled against it in the reconciliation section.
 
 ## `glue` — the tune-internal fact that removes each entry
@@ -204,24 +252,39 @@ Sixteen entries. Each names a fact about being inside `tune` that would make the
 code unnecessary, cited to tune's own source at v2.1.0 (`4c74638`) unless stated
 otherwise.
 
-**What "inside tune" means when tune already exports the counterpart.** Several
-of the helpers cited below are *exported* at v2.1.0, so the code is callable
-today as `tune::<name>()`: `check_workflow` (`NAMESPACE:191`),
-`.has_preprocessor` (`:157`), `.has_spec` (`:161`), `.check_grid` (`:136`),
-`check_metrics` (`:186`), `check_metrics_arg` (`:187`), `choose_framework`
-(`:193`), `get_mirai_workers` (`:237`), `mirai_installed` (`:265`) — verified
-against the pinned clone, observed 2026-08-30. Every one of those nine carries
-`#' @keywords internal` and is documented in one of three developer-facing
-blocks: `empty_ellipses` (`R/checks.R:311` and `:65`, `R/grid_helpers.R:114`),
-`internal-parallel` (`R/parallel.R:49`, `:85`, `:114`), and `choose_metric`
-(`R/metric-selection.R:35`, whose own text reads "These are developer-facing
-functions used to compute and validate choices for performance metrics"). That
-is the fact about being inside tune, and it is not that tune hides these: inside
-tune they are ordinary internal calls, while outside tune they are a surface tune
-has explicitly declined to promise. The ask these entries generate is therefore
-that tune *promise* the surface, not that it export it. Where a nestedtune
-function does work tune's counterpart does not do at all, the entry is not `glue`
-and has moved to `ambiguous` — F001, F006 and F007, below.
+**What "inside tune" means when tune already exports the counterpart.** Most of
+the helpers cited below are *exported* at v2.1.0, so the code is callable today
+as `tune::<name>()`. The upstream-counterpart sweep above found twelve such
+symbols: `check_workflow` (`NAMESPACE:191`), `.has_preprocessor` (`:157`),
+`.has_spec` (`:161`), `.check_grid` (`:136`), `check_metrics` (`:186`),
+`check_metrics_arg` (`:187`), `choose_framework` (`:193`), `get_mirai_workers`
+(`:237`), `mirai_installed` (`:265`), and the three the sweep added —
+`.config_key_from_metrics` (`:138`), `load_pkgs` (`:247`), `new_bare_tibble`
+(`:267`) — each verified against the pinned clone, observed 2026-08-30. Every one
+of the twelve carries `#' @keywords internal`, in its own roxygen block or in the
+block its `@rdname` joins, and each is documented in one of three developer-facing
+topics:
+
+- `empty_ellipses` — `.check_grid` (`R/checks.R:65`), `check_workflow`
+  (`:311`), `check_metrics` (`:391`), `.has_preprocessor`
+  (`R/grid_helpers.R:114`), `.has_spec` (`:152`), `.config_key_from_metrics`
+  (`R/collect.R:615`), `new_bare_tibble` (`R/utils.R:80`).
+- `internal-parallel` — `mirai_installed` (`R/parallel.R:49`),
+  `get_mirai_workers` (`:85`), `choose_framework` (`:114`).
+- `choose_metric` — `check_metrics_arg` (`R/metric-selection.R:305`, joining the
+  block whose `@keywords internal` sits at `:35` and whose own text reads "These
+  are developer-facing functions used to compute and validate choices for
+  performance metrics").
+
+`load_pkgs` carries `@keywords internal` on its own block (`R/load_ns.R:9`)
+without joining any of the three.
+
+That is the fact about being inside tune, and it is not that tune hides these:
+inside tune they are ordinary internal calls, while outside tune they are a
+surface tune has explicitly declined to promise. The ask these entries generate
+is therefore that tune *promise* the surface, not that it export it. Where a
+nestedtune function does work tune's counterpart does not do at all, the entry is
+not `glue` and has moved to `ambiguous` — F001, F006 and F007, below.
 
 **Argument checks tune already performs (F002, F003, F011).**
 Each fires before any fitting and duplicates, in content, a check tune makes on
@@ -239,17 +302,29 @@ the same object.
   internal call rather than a `@keywords internal` export a downstream package
   would have to bet on.
 - **F003 `check_model_spec()`** — asks whether the engine's packages are
-  installed. tune does the same in `check_installs()` at `R/checks.R:234` over
-  `is_installed()` at `:229`. Neither name appears in tune's `NAMESPACE`: this
-  entry is unexported in the plain sense, and only being inside tune reaches it.
+  installed and refuses, naming the missing ones. tune does this twice. Its
+  `check_installs()` (`R/checks.R:234`, over `is_installed()` at `:229`) is
+  unexported; but `load_pkgs()` (`R/load_ns.R:11`, `NAMESPACE:247`) is exported,
+  and its `model_spec` method takes `required_pkgs(x)` — the same question this
+  entry asks `parsnip::required_pkgs()` — through `.load_namespace()`
+  (`R/load_ns.R:41`, also exported), which aborts with "The package{?s}
+  {.pkg {bad}} could not be loaded." So the reachable counterpart exists and the
+  fact here is the same one the preamble states: `load_pkgs` carries
+  `#' @keywords internal` (`R/load_ns.R:9`). Two differences that do not change
+  the bucket: it loads the namespaces rather than only checking them, and it adds
+  tune's own infra packages to the list. Both are acceptable at a pre-fit check —
+  tune loads them a moment later anyway — so this is a like-for-like duplicate of
+  an unpromised export, not work tune's version fails to do.
 - **F011 `check_metrics()`** — asks whether `metrics` is a `metric_set` or
   `NULL`. tune's `check_metrics()` (`R/checks.R:397`) is soft-deprecated at this
   very version — its first line is
   `lifecycle::deprecate_warn("2.1.0", "check_metrics()", "check_metrics_arg()")`
   (`R/checks.R:398`) — so the live counterpart is `check_metrics_arg()`
   (`R/metric-selection.R:307`), which performs the same validation and supplies a
-  mode-appropriate default. Both are exported under `@keywords internal` in the
-  `choose_metric` block, so the fact is the promise, not the visibility.
+  mode-appropriate default. Both are exported under `@keywords internal` —
+  `check_metrics` in the `empty_ellipses` block (`R/checks.R:391`),
+  `check_metrics_arg` in the `choose_metric` one (`R/metric-selection.R:305`) —
+  so the fact is the promise, not the visibility.
 
 **The candidate record tune discards (F070, F071, F072, F073).**
 `scored_candidates()` and its three helpers reconstruct the set of candidates a
@@ -257,21 +332,30 @@ tuning run evaluated by pooling the per-resample metric frames and de-duplicatin
 on `.config`. They exist because a returned `tune_results` carries no record of
 its own expansion — the fact stated in this repo's comment at
 `R/nested-tune-grid.R:418-427` and measured at M21's plan gate against tune 2.1.0.
-Inside tune the expansion is a local variable, not something to be recovered: the
+Inside tune the expansion is a local variable and never has to be recovered: the
 grid is expanded by `.check_grid()` (`R/checks.R:67`, calling
 `dials::grid_space_filling()` at `:145`) and bound at `R/tune_grid.R:375`, in hand
-for the whole run. The reconstruction, its total-by-construction `tryCatch`
-wrapper, its shape-tolerant frame filter, and its zero-row fallback all go with
-it.
+for the whole run.
 
-  One thing the reconstruction is *not*: unavoidable from outside. `.check_grid()`
-  is exported (`NAMESPACE:136`), so this package could expand each fold's grid
-  itself and hand the frame to `tune_grid()`, retiring F070–F073 with no upstream
-  change at all — at the price of resting the outer loop on a `@keywords internal`
-  export, which is the same unpromised surface the preamble above describes. What
-  survives either route is the limit this repo's comment records: a candidate that
-  fails on every inner resample leaves no metric row anywhere and cannot be
-  recovered from what scored.
+  What the upstream sweep found is that tune also ships the recovery, exported.
+  `.config_key_from_metrics()` (`R/collect.R:618`, `NAMESPACE:138`) takes a
+  `tune_results`, keeps the tibble `.metrics`, unchops them, selects the tuning
+  parameter names plus `.config`, and returns the unique rows — which is what
+  `scored_candidates_impl()` does. It carries `#' @keywords internal` under
+  `@rdname empty_ellipses` (`R/collect.R:615`), so these four are the preamble's
+  case exactly: a like-for-like duplicate of a surface tune declines to promise,
+  not of one it withholds. Two further routes rest on the same block —
+  `.check_grid()` is exported (`NAMESPACE:136`), so this package could expand each
+  fold's grid itself and hand the frame to `tune_grid()`; and
+  `estimate_tune_results()` (`R/collect.R:645`) sits there too. That all three are
+  unpromised is why the ask is a promise rather than an export.
+
+  What nestedtune's version adds beyond the exported one is small, and none of it
+  is a separate home: ordering by the key so the record does not depend on which
+  inner resample scored a candidate first, a fallback for a shape carrying no
+  `.config` column, and a zero-row return. What survives every route is the limit
+  this repo's comment records: a candidate that fails on every inner resample
+  leaves no metric row anywhere and cannot be recovered from what scored.
 
 **Note and metric tibble assembly (F075, F076, F077, F078, F079).**
 `own_note()`, `tune_notes()`, `bind_notes()`, `empty_notes()` and
@@ -286,8 +370,16 @@ notes are appended through that machinery rather than rebuilt from
 `new_tbl()` sets three classes and compact row names by hand. Its own comment
 (`R/nested-results.R:116-118`) says why: it saves a dependency on tibble for the
 sake of a constructor. tune declares `tibble (>= 3.1.0)` in its `Imports`
-(`DESCRIPTION:37`), so inside tune the dependency is already paid and
-`tibble::tibble()` is available.
+(`DESCRIPTION:37`), so inside tune the dependency is already paid.
+
+  It does not have to be paid here either, and the upstream sweep found why: tune
+  exports `new_bare_tibble()` (`R/utils.R:82`, `NAMESPACE:267`), which is
+  `vctrs::new_data_frame()` followed by `tibble::new_tibble()` — what `new_tbl()`
+  builds, reachable by a caller that carries no `tibble` dependency of its own. It
+  carries `#' @keywords internal` under `@rdname empty_ellipses`
+  (`R/utils.R:80`), the same block as the checks above, so F061 is retired by the
+  same promise they are — and not, as an earlier draft of this page had it, only
+  by this package adding `tibble` to its own `Imports`.
 
 **Parallel-backend detection (F083, F084, F085).**
 `is_mirai_installed()`, `mirai_workers()` and `use_parallel()` decide whether a
@@ -369,7 +461,7 @@ of them.
 **Labelling a nested design's folds (F067).**
 `fold_ids()` greps the `^id` columns and pastes them, because a repeated design
 carries `id` and `id2`. rsample has the generic and refuses this exact case
-twice: `labels.rset()` (`R/labels.R:14-17`) and `labels.vfold_cv()` (`:28-30`)
+twice: `labels.rset()` (`R/labels.R:15-17`) and `labels.vfold_cv()` (`:28-30`)
 both open with `if (inherits(object, "nested_cv"))
 cli_abort("{.arg labels} not implemented for nested resampling")`. The rule for
 combining id columns is not the gap — `labels.vfold_cv()` already pastes `id` and

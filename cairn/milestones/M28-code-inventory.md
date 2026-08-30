@@ -114,6 +114,18 @@ user-declared and nothing here proposes one.
       as live but the draft omits (F13).
 - [x] T12: Re-run the profile's `verify` slot and the ledger and draft
       cross-check scripts.
+- [x] T13: Sweep tune's and rsample's whole export surface against every
+      `glue`, `resampling-layer` and `ambiguous` entry — the instrument neither
+      prior pass had — and record the sweep as a dated evidence section in the
+      note, so a later pass re-runs a stated procedure instead of re-hunting.
+- [x] T14: Rework the note on the sweep's evidence and the return's findings —
+      the three newly found exported counterparts (G1/S1/S2) re-cited on the
+      corrected fact, and G5, G6, G7, G9, G10.
+- [ ] T15: Rework the draft to match — F061's placement (G1), T-A2's and T-A1's
+      re-framing (S1, S2), the overstated retirements (G3, G4), the kept-function
+      count (G2), and the D-025 misstatement (G8).
+- [ ] T16: Re-run the profile's `verify` slot and the ledger and draft
+      cross-check scripts.
 
 ## Work log
 
@@ -157,6 +169,10 @@ user-declared and nothing here proposes one.
 
 - 2026-08-30: defect return: AC6 fails. The fresh-context [O] reviewer found that F061 `new_tbl()` is recorded in the draft as retired by no upstream ask, when tune exports `new_bare_tibble()` (`NAMESPACE:267`, `R/utils.R:82-85`, `#' @keywords internal` under `@rdname empty_ellipses` at `:79-81`, re-verified here against `4c74638`) — a direct counterpart sitting in the very doc block T-A1 already asks tune to promise, so T-A1's promise would retire it and the draft's "what would retire it instead" (this package adding `tibble` to Imports) is not the answer. F061 is one of the 28 ledger rows AC6 quantifies over, so AC6 fails inside its own domain. G3 (T-A4 does not retire F083: `is_mirai_installed()` has a second call site at `R/parallel.R:47` inside `pool_is_cancellable()`) and G4 (T-A3 asks only to *document* the metrics zero-row shape, which retires nothing, so F079 stands) are weaker instances of the same overstated-retirement problem. AC1-AC5 verified with fresh evidence and the consistency gate is clean; eight lesser defects (G2, G5-G10) ride the same rework and three (G11-G13) are rejected. Second defect return on this milestone; the two prior returns were AC6 amendments and stay off this count. Thrash trigger (b) fires — AC6 has failed twice by defect, both times on a tune export fact taken from recall rather than from a sweep of tune's `NAMESPACE`.
 - 2026-08-30: CI on PR #38 has one red job unrelated to this diff: `macos-latest (release)` fails in `R CMD build`'s install step on a broken RSPM macOS arm64 `gower` binary (`symbol not found in flat namespace '___kmpc_barrier'`), deterministic across a re-run and failing identically on `origin/main`. Not an M28 defect, but a merge blocker needing its own disposition before any milestone merges.
+
+- 2026-08-30: T13-T16 added (minor amendment) after the user chose to spend the sweep rather than a third round of hand-checked citations. No acceptance criterion changes; AC6 as written is meetable and the sweep is how the rework meets it.
+
+- 2026-08-30: T13-T14 — the sweep run and the note reworked on it. `grep -oE '^export\\(([^)]+)\\)' NAMESPACE` emits 152 names for tune at `4c74638` and 62 for rsample at `658545c`; both lists were read (not name-matched) against the 36 `glue`/`resampling-layer`/`ambiguous` entries. Three counterparts the page had missed, all exported and all in the `empty_ellipses` block: `.config_key_from_metrics` (`R/collect.R:618`, `NAMESPACE:138`) does F070-F073's reconstruction; `load_pkgs` (`R/load_ns.R:11`, `NAMESPACE:247`) over `.load_namespace` (`:41`) does F003's engine-package refusal; `new_bare_tibble` (`R/utils.R:82`, `NAMESPACE:267`) does F061's construction. A name match would have missed two of the three. The rsample side came back clean — `make_splits()` and `new_rset()` are declined for a stated reason at `R/nested-resamples.R:160-164` and `populate()` works in the wrong index space — so R-A1 to R-A5 stand. Per the gate, all three stay `glue` re-cited on the exported-but-unpromised fact; buckets unchanged at 32/38/16/12/8, re-verified by the merge script. The sweep is recorded as its own dated section so a later pass re-runs it. Also fixed: F011's doc block (G5), the file count (G6), the Provenance duplication that `48dcdda` only re-wrapped (G7), the short `empty_ellipses` location list (G9), the `labels.rset` off-by-one (G10), and the addendum's stale "other four".
 
 ## Decisions
 
