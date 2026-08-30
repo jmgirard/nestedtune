@@ -1,8 +1,8 @@
 # What we keep, what is only glue, and what belongs to rsample (M28)
 
 **Provenance.** Ingested 2026-08-30 by M28 from this repository's own `R/`
-directory at commit `89d8418`, classified against two upstream source trees read
-read-only outside this repo: `tidymodels/tune` at tag `v2.1.0` (commit
+directory at commit `89d8418`, classified against two upstream source trees
+read read-only outside this repo: `tidymodels/tune` at tag `v2.1.0` (commit
 `4c74638`) and `tidymodels/rsample` at tag `v1.3.2` (commit `658545c`), the
 versions installed in the development library on the day of the read.
 Pagination: —.
@@ -44,7 +44,7 @@ grep -nE '^[A-Za-z._][A-Za-z0-9._]* <- function' R/*.R
 
 It emits 106 lines. The pattern anchors at column one, so it finds top-level
 definitions and not the anonymous and nested functions that make `R/*.R` carry
-173 occurrences of `function(` in total. It also requires the name to start with
+153 occurrences of `function(` in total. It also requires the name to start with
 a letter, a dot, or an underscore, which is what excludes the one backtick-quoted
 definition in the package; that definition is carried as an addendum below rather
 than silently lost.
@@ -77,13 +77,13 @@ dropped, duplicated, or left unbucketed on the way into the table.
 
 | # | Definition | Location | Export status | Lines | Bucket |
 |---|---|---|---|---|---|
-| F001 | `check_workflow()` | `R/checks.R:7` | internal | ~65 | glue |
+| F001 | `check_workflow()` | `R/checks.R:7` | internal | ~65 | ambiguous |
 | F002 | `has_preprocessor()` | `R/checks.R:82` | internal | ~3 | glue |
 | F003 | `check_model_spec()` | `R/checks.R:91` | internal | ~16 | glue |
 | F004 | `check_nested()` | `R/checks.R:108` | internal | ~70 | resampling-layer |
 | F005 | `check_column_class()` | `R/checks.R:185` | internal | ~18 | resampling-layer |
-| F006 | `check_grid()` | `R/checks.R:204` | internal | ~23 | glue |
-| F007 | `check_grid_params()` | `R/checks.R:234` | internal | ~41 | glue |
+| F006 | `check_grid()` | `R/checks.R:204` | internal | ~23 | ambiguous |
+| F007 | `check_grid_params()` | `R/checks.R:234` | internal | ~41 | ambiguous |
 | F008 | `check_inside_spec()` | `R/checks.R:285` | internal | ~16 | resampling-layer |
 | F009 | `eval_inside_spec()` | `R/checks.R:312` | internal | ~39 | resampling-layer |
 | F010 | `check_plot_type()` | `R/checks.R:357` | internal | ~21 | furniture |
@@ -184,8 +184,8 @@ dropped, duplicated, or left unbucketed on the way into the table.
 | F105 | `worker_failure_message()` | `R/parallel.R:791` | internal | ~23 | core |
 | F106 | `fold_task()` | `R/parallel.R:823` | internal | ~11 | ambiguous |
 
-Counts: 32 `core`, 38 `furniture`, 19 `glue`, 12 `resampling-layer`,
-5 `ambiguous`.
+Counts: 32 `core`, 38 `furniture`, 16 `glue`, 12 `resampling-layer`,
+8 `ambiguous`.
 
 ### Addendum: the one definition the procedure does not emit
 
@@ -200,37 +200,56 @@ reconciled against it in the reconciliation section.
 
 ## `glue` — the tune-internal fact that removes each entry
 
-Nineteen entries. Each names a fact about being inside `tune` that would make the
+Sixteen entries. Each names a fact about being inside `tune` that would make the
 code unnecessary, cited to tune's own source at v2.1.0 (`4c74638`) unless stated
 otherwise.
 
-**Argument checks tune already performs (F001, F002, F003, F006, F007, F011).**
-Every one of these fires before any fitting and duplicates a check tune makes on
+**What "inside tune" means when tune already exports the counterpart.** Several
+of the helpers cited below are *exported* at v2.1.0, so the code is callable
+today as `tune::<name>()`: `check_workflow` (`NAMESPACE:191`),
+`.has_preprocessor` (`:157`), `.has_spec` (`:161`), `.check_grid` (`:136`),
+`check_metrics` (`:186`), `check_metrics_arg` (`:187`), `choose_framework`
+(`:193`), `get_mirai_workers` (`:237`), `mirai_installed` (`:265`) — verified
+against the pinned clone, observed 2026-08-30. Every one of those nine carries
+`#' @keywords internal` and is documented in one of three developer-facing
+blocks: `empty_ellipses` (`R/checks.R:311` and `:65`, `R/grid_helpers.R:114`),
+`internal-parallel` (`R/parallel.R:49`, `:85`, `:114`), and `choose_metric`
+(`R/metric-selection.R:35`, whose own text reads "These are developer-facing
+functions used to compute and validate choices for performance metrics"). That
+is the fact about being inside tune, and it is not that tune hides these: inside
+tune they are ordinary internal calls, while outside tune they are a surface tune
+has explicitly declined to promise. The ask these entries generate is therefore
+that tune *promise* the surface, not that it export it. Where a nestedtune
+function does work tune's counterpart does not do at all, the entry is not `glue`
+and has moved to `ambiguous` — F001, F006 and F007, below.
+
+**Argument checks tune already performs (F002, F003, F011).**
+Each fires before any fitting and duplicates, in content, a check tune makes on
 the same object.
 
-- **F001 `check_workflow()`** — tune defines `check_workflow()` at
-  `R/checks.R:314`, taking the same workflow and raising for the same shapes.
-  Inside tune the argument reaches that function directly.
 - **F002 `has_preprocessor()`** — asks whether a workflow carries a formula,
-  recipe, or variables. tune defines `.has_preprocessor()` at
-  `R/grid_helpers.R:116` and companions `.has_preprocessor_recipe()`,
-  `.has_preprocessor_formula()`, `.has_preprocessor_variables()` at `:125`,
-  `:132`, `:139`. This repo's own comment at `R/checks.R:33-34` records why it is
-  hand-rolled here: `workflows` has an unexported equivalent and `:::` is a check
-  failure. Inside tune the unexported helper is in hand.
+  recipe, or variables. tune's `.has_preprocessor()` (`R/grid_helpers.R:116`,
+  exported at `NAMESPACE:157`) asks exactly that, over the companions
+  `.has_preprocessor_recipe()`, `.has_preprocessor_formula()` and
+  `.has_preprocessor_variables()` at `:125`, `:132`, `:139`. This repo's own
+  comment at `R/checks.R:73-81` records why the question is asked by name rather
+  than as `length(object$pre$actions) > 0L`: `workflows::add_case_weights()` also
+  files an action under `pre`, so the counting form is a different question and
+  passes a workflow that cannot be fitted. Inside tune the predicate is a plain
+  internal call rather than a `@keywords internal` export a downstream package
+  would have to bet on.
 - **F003 `check_model_spec()`** — asks whether the engine's packages are
-  installed. tune defines `check_installs()` at `R/checks.R:234` over
-  `is_installed()` at `:229`, doing the same for the same reason.
-- **F006 `check_grid()`** and **F007 `check_grid_params()`** — validate `grid`
-  as a frame or a size, and the frame's columns against the parameters marked for
-  tuning. tune does both in `.check_grid()` at `R/checks.R:67`, and the
-  column-versus-parameter half again in `check_extra_tune_parameters()` at
-  `R/checks.R:361`. The comment at this repo's `R/checks.R:228-233` states the
-  same thing from the outside: tune raises exactly this, but per fold, and M03
-  records fold failures rather than re-raising them.
+  installed. tune does the same in `check_installs()` at `R/checks.R:234` over
+  `is_installed()` at `:229`. Neither name appears in tune's `NAMESPACE`: this
+  entry is unexported in the plain sense, and only being inside tune reaches it.
 - **F011 `check_metrics()`** — asks whether `metrics` is a `metric_set` or
-  `NULL`. tune defines `check_metrics()` at `R/checks.R:397` and
-  `check_metrics_arg()` at `R/metric-selection.R:307`.
+  `NULL`. tune's `check_metrics()` (`R/checks.R:397`) is soft-deprecated at this
+  very version — its first line is
+  `lifecycle::deprecate_warn("2.1.0", "check_metrics()", "check_metrics_arg()")`
+  (`R/checks.R:398`) — so the live counterpart is `check_metrics_arg()`
+  (`R/metric-selection.R:307`), which performs the same validation and supplies a
+  mode-appropriate default. Both are exported under `@keywords internal` in the
+  `choose_metric` block, so the fact is the promise, not the visibility.
 
 **The candidate record tune discards (F070, F071, F072, F073).**
 `scored_candidates()` and its three helpers reconstruct the set of candidates a
@@ -243,8 +262,16 @@ grid is expanded by `.check_grid()` (`R/checks.R:67`, calling
 `dials::grid_space_filling()` at `:145`) and bound at `R/tune_grid.R:375`, in hand
 for the whole run. The reconstruction, its total-by-construction `tryCatch`
 wrapper, its shape-tolerant frame filter, and its zero-row fallback all go with
-it — including the one limit the comment records, that a candidate failing on
-every inner resample leaves no metric row and cannot be recovered at all.
+it.
+
+  One thing the reconstruction is *not*: unavoidable from outside. `.check_grid()`
+  is exported (`NAMESPACE:136`), so this package could expand each fold's grid
+  itself and hand the frame to `tune_grid()`, retiring F070–F073 with no upstream
+  change at all — at the price of resting the outer loop on a `@keywords internal`
+  export, which is the same unpromised surface the preamble above describes. What
+  survives either route is the limit this repo's comment records: a candidate that
+  fails on every inner resample leaves no metric row anywhere and cannot be
+  recovered from what scored.
 
 **Note and metric tibble assembly (F075, F076, F077, F078, F079).**
 `own_note()`, `tune_notes()`, `bind_notes()`, `empty_notes()` and
@@ -267,11 +294,19 @@ sake of a constructor. tune declares `tibble (>= 3.1.0)` in its `Imports`
 mirai pool is usable. tune makes the same decision in `R/parallel.R`:
 `mirai_installed()` at `:51`, `get_mirai_workers()` at `:87` (reading the same
 `mirai::status()$connections`), and the two-worker threshold inside
-`choose_framework()` at `:117`. This repo's comment at `R/parallel.R:4-7` states
-the coupling directly — detection mirrors tune's own so that "parallel" means the
-same thing in both packages. Inside tune it would not be mirrored; it would be
-the same code, and the `future` branch `choose_framework()` also carries would
-come with it.
+`choose_framework()`, which opens at `:117` and applies the threshold at
+`:146-147` (`neither <- future_workers < 2 & mirai_workers < 2`). This repo's
+comment at `R/parallel.R:4-7` states the coupling directly — detection mirrors
+tune's own so that "parallel" means the same thing in both packages. Inside tune
+it would not be mirrored; it would be the same code, and the `future` branch
+`choose_framework()` also carries would come with it.
+
+  All three tune functions are exported (`NAMESPACE:265`, `:237`, `:193`), so the
+  mirroring is a choice, not a necessity — this package could read tune's answer
+  today. It is `glue` because of what those exports are: `@keywords internal`
+  members of the `internal-parallel` block, which is tune saying it may change
+  them. Mirroring an unpromised rule and calling an unpromised rule fail the same
+  way, and only tune promising the rule ends that.
 
 ## `resampling-layer` — what rsample's surface would have to accept
 
@@ -333,12 +368,15 @@ of them.
 
 **Labelling a nested design's folds (F067).**
 `fold_ids()` greps the `^id` columns and pastes them, because a repeated design
-carries `id` and `id2`. rsample has the generic and refuses this exact case:
-`labels.rset()` (`R/labels.R:14-17`) opens with `if (inherits(object, "nested_cv"))
-cli_abort("{.arg labels} not implemented for nested resampling")`, and its
-non-nested branch returns `object$id` alone, which would silently drop `id2` on a
-repeated design. rsample would have to accept a `labels()` method for a nested
-design, and a rule for combining more than one id column.
+carries `id` and `id2`. rsample has the generic and refuses this exact case
+twice: `labels.rset()` (`R/labels.R:14-17`) and `labels.vfold_cv()` (`:28-30`)
+both open with `if (inherits(object, "nested_cv"))
+cli_abort("{.arg labels} not implemented for nested resampling")`. The rule for
+combining id columns is not the gap — `labels.vfold_cv()` already pastes `id` and
+`id2` when `attr(object, "repeats") > 1` (`R/labels.R:31-36`), and a repeated
+design dispatches there. What rsample would have to accept is a `labels()` method
+that answers for a nested design at all, reusing the combining rule it already
+has rather than refusing at the door.
 
 **The payload trio (F090, F091, F092).**
 `is_fold_payload()`, `lean_payload()` and `rehydrate_payload()` take the data out
@@ -361,8 +399,35 @@ would tune on the wrong rows.
 
 ## `ambiguous` — why each resists a single bucket
 
-Five entries in the ledger, plus the addendum.
+Eight entries in the ledger, plus the addendum.
 
+- **F001 `check_workflow()`** (`R/checks.R:7`, ~65 lines). tune exports a
+  `check_workflow()` of its own (`R/checks.R:314`, `NAMESPACE:191`), and three of
+  this one's four refusals have a counterpart there: not a `workflow`, no
+  preprocessor, no model specification. By that overlap it is `glue`. The fourth
+  has no counterpart at all — this one refuses a workflow that is already fitted
+  (`workflows::is_trained_workflow(object)`, `R/checks.R:20-29`), because nested
+  cross-validation fits the workflow itself once per outer fold, and tune's
+  version has no such branch. Every abort here also carries `call` so it names the
+  user's call rather than an internal one, which the comment at `R/checks.R:30-36`
+  gives as the reason the model-spec question is asked before
+  `extract_spec_parsnip()`. That residue is `core`: it is GP3's refuse-a-provably-
+  invalid-design rule, stated at the head of the file. Bucketing it `glue` would
+  also carry a "~65 lines retired" figure that no upstream change reaches.
+- **F006 `check_grid()`, F007 `check_grid_params()`** (`R/checks.R:204`, `:234`,
+  ~23 and ~41 lines). tune's `.check_grid()` (`R/checks.R:67`, `NAMESPACE:136`)
+  validates the same triple and returns the expanded grid, and
+  `check_extra_tune_parameters()` (`R/checks.R:361`, unexported) repeats the
+  column-versus-parameter half; by content these two are duplication, which is
+  `glue`. What is not duplication is *when*. tune raises per fold, and this
+  package tunes once per outer fold, so a malformed grid tune would reject
+  surfaces here as every fold in the design failing alike after the whole cost has
+  been paid — the comment at `R/checks.R:228-233` states exactly that, and M03's
+  rule of recording fold failures rather than re-raising them is why the per-fold
+  raise is not available as a check. Deciding what a loop refuses before it starts
+  is this package's own question about its own loop, which is `core`; the content
+  of the refusal is tune's. Neither half is wrong, and the pair moved here rather
+  than staying `glue` once the counterpart turned out to be exported.
 - **F051 `same_candidates()`, F052 `candidate_key()`, F053 `rendered_rows()`**
   (`R/nested-results-print.R:179`, `:184`, `:215`). These three compare the
   candidate sets different outer folds searched, and the print method warns when
@@ -446,15 +511,18 @@ bucket and a reason, rather than excluded.
 
 ## Disposition
 
-- The 19 `glue` entries and the 12 `resampling-layer` entries are drafted into
+- The 16 `glue` entries and the 12 `resampling-layer` entries are drafted into
   upstream asks in `benchmarks/upstream-asks.md`, unposted. That draft is where
   each ask states what it would retire.
 - The 32 `core` and 38 `furniture` entries land nowhere else: they are what this
   package carries, and naming them is the whole of this page's obligation to
   them.
-- The 5 `ambiguous` entries plus the addendum land in the asks draft only where
-  an upstream change would settle them (F059 and the resampling-layer half of the
-  payload discussion); the rest are recorded here as unsettled and nowhere else.
+- The 8 `ambiguous` entries plus the addendum land in the asks draft only where
+  an upstream change would settle part of them: F059, which an rsample
+  single-level scheme label would delete outright, and F001, F006 and F007, whose
+  duplicated half a promised tune surface would remove while the residue stays
+  here. F051–F053, F106 and the addendum appear in the draft nowhere and are
+  recorded as unsettled here alone.
 - No refactor follows from this page. Acting on any entry is its own milestone,
   planned from here — this page describes, it does not schedule.
 - This page produced no rule, so no test file locks one.
@@ -469,5 +537,10 @@ bucket and a reason, rather than excluded.
   `choose_framework()`, or rsample's `nested_cv()`, `labels.rset()` and
   `inside_resample()`, still take these shapes at a later version is unchecked
   beyond v2.1.0 and v1.3.2 — observed 2026-08-30.
+- Whether tune would attach any stability promise to the `empty_ellipses`,
+  `internal-parallel` and `choose_metric` helpers, or whether `@keywords internal`
+  is a deliberate refusal to be depended on, has not been asked. Which answer
+  comes back decides whether the entries resting on that fact are retired by an
+  upstream change or by this package accepting the risk — observed 2026-08-30.
 - Whether `postprocessing`/tailor-era changes in tune touch the note and metric
   assembly cited for F075–F079 has not been examined — observed 2026-08-30.
