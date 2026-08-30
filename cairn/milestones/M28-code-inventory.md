@@ -73,12 +73,12 @@ user-declared and nothing here proposes one.
 
 ## Coverage
 
-- AC1 → T1, T2, T6
-- AC2 → T3, T6
-- AC3 → T4, T6
-- AC4 → T5, T6
+- AC1 → T1, T2, T6, T10
+- AC2 → T3, T6, T9, T10
+- AC3 → T4, T6, T10
+- AC4 → T5, T6, T10
 - AC5 → T1, T6
-- AC6 → T7
+- AC6 → T7, T11
 
 ## Tasks
 
@@ -102,6 +102,18 @@ user-declared and nothing here proposes one.
       own current state; add its `INDEX.md` bullet.
 - [x] T7: Draft the upstream-asks list under `benchmarks/`, unposted.
 - [x] T8: Run the profile's `verify` slot.
+- [x] T9: Re-read every tune symbol the note cites against the pinned clone and
+      record its export status and the doc block it is documented under, so each
+      `glue` citation rests on a checked fact rather than an assumed one.
+- [ ] T10: Rework the note on that evidence — re-bucket the entries whose tune
+      equivalent is exported, re-cite the ones that stay `glue`, and correct the
+      stale and mis-aimed claims the return listed (F4, F7, F8, F10, F12, F14,
+      F15).
+- [ ] T11: Rework the draft to match — the asks that rested on "unexported", the
+      overstated retirements (F6, F9, F11), and the ask D-024 clause (2) records
+      as live but the draft omits (F13).
+- [ ] T12: Re-run the profile's `verify` slot and the ledger and draft
+      cross-check scripts.
 
 ## Work log
 
@@ -133,6 +145,9 @@ user-declared and nothing here proposes one.
 - 2026-08-30: criteria audit of the amended AC6 ([O], fresh context, reduced mode — internal tier, no tripwire tags) returned no findings: the quantified domain is the note's 19 `glue` and 12 `resampling-layer` ledger rows, which AC1's extraction procedure enumerates; the no-ask clause is a general rule, not a registry naming F061; and both clauses state properties of the draft rather than of a checker.
 
 - 2026-08-30: defect return: AC2 and AC6 fail. The fresh-context [O] reviewer found that nine of the tune symbols the note cites as the fact removing a `glue` entry are **exported** at tune v2.1.0 — `check_workflow` (NAMESPACE:191), `.has_preprocessor` (:157), `.has_spec` (:161), `.check_grid` (:136), `check_metrics` (:186), `check_metrics_arg` (:187), `mirai_installed` (:265), `get_mirai_workers` (:237), `choose_framework` (:193) — re-verified here against the pinned clone at `4c74638`. So for F001, F002, F006, F007, F011, F083, F084 and F085 the note names no fact *about being inside tune*: the code is callable today as `tune::<name>()` and those entries are not `glue` in the note's own sense. AC2 fails inside its own domain. AC6 fails with it: F083-F085 sit under T-A4 and F002 under T-A1, asks that would not retire them, and they are not recorded as retired by no upstream ask. `check_installs`, `check_extra_tune_parameters`, `is_installed` and the four logging helpers are genuinely unexported and unaffected. First defect return on this milestone; the two prior returns were AC6 amendments and stay off this count.
+
+- 2026-08-30: T9 — re-read every tune symbol the note cites against a fresh pinned clone of `tidymodels/tune` at `v2.1.0` (`4c74638`). Nine are exported, confirming the return: `check_workflow` NAMESPACE:191, `.has_preprocessor` :157, `.has_spec` :161, `.check_grid` :136, `check_metrics` :186, `check_metrics_arg` :187, `choose_framework` :193, `get_mirai_workers` :237, `mirai_installed` :265. Seven are genuinely absent from `NAMESPACE` and unaffected: `check_installs`, `is_installed`, `check_extra_tune_parameters`, `new_note`, `append_log_notes`, `remove_log_notes`, `has_log_notes`. The fact the return did not have: all nine exported ones carry `#' @keywords internal` in three developer-facing doc blocks — `empty_ellipses` (`R/checks.R:311`, `:65`; `R/grid_helpers.R:114`), `internal-parallel` (`R/parallel.R:49`, `:85`, `:114`), and `choose_metric` (`R/metric-selection.R:34`, whose text reads "These are developer-facing functions"). `check_metrics()` also opens with `lifecycle::deprecate_warn("2.1.0", …, "check_metrics_arg()")`. So the citable fact is not that tune hides these but that tune exports them with no stability promise.
+- 2026-08-30: implementation gate on the return — re-cite rather than re-bucket wholesale, the user's selection. The five entries whose nestedtune version is a like-for-like duplicate of an exported-unpromised tune helper stay `glue` on the corrected fact (F002, F011, F083, F084, F085); the three whose content tune's version does not cover move to `ambiguous` with the residue named (F001, F006, F007). Rejected at the gate: treating any export as disqualifying, which empties T-A4 and puts an eighth of the ledger in the bucket for entries that resist a single home; and a sixth bucket for unpromised-export duplicates, which would widen the criteria set on a returned milestone and so is non-recommended by D-118. Buckets become 32 core, 38 furniture, 16 glue, 12 resampling-layer, 8 ambiguous.
 
 ## Decisions
 
