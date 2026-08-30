@@ -18,10 +18,15 @@ carries today that a sibling could make unnecessary — either because the sibli
 already does the same work behind a name it will not promise, or because the
 sibling builds an object nestedtune has to work around. The asks reach 28
 functions: all 16 the inventory buckets `glue` and all 12 it buckets
-`resampling-layer`. Twenty-seven of those go entirely; `check_nested()`
-survives R-A2 in part, three of its refusals being nestedtune's own concern
-(see there, where it is listed by number). So granting every ask leaves nestedtune with **79 of its 106
-top-level functions**, one of them a thinner `check_nested()`. It would change
+`resampling-layer`. How many go entirely depends on how far tune takes T-A3, so
+the honest figure is a range, and the arithmetic is worth spelling out.
+`check_nested()` survives R-A2 in part, three of its refusals being nestedtune's
+own concern (see there, where it is listed by number), leaving 27 that could go
+whole. Three of those 27 go only if tune takes the parts of T-A3 it may well
+decline; T-A3 names them and says so itself. So 24 go on any reading, and
+granting every ask leaves
+nestedtune with **82 of its 106 top-level functions**, one of them a thinner
+`check_nested()` — or **79** if tune takes T-A3 whole. It would change
 the public surface in exactly one place: R-A1 takes the memory-lean nested
 constructor into rsample, and `nested_resamples()` is an exported function of
 this package, so that ask — and only that ask — retires something users call by
@@ -36,13 +41,15 @@ acts on a change, not on a list of our helper names. Every `glue` and
 asks are.** An earlier draft asked tune to *export* helpers it turns out to
 export already. The inventory now rests on a sweep of tune's whole 152-name
 `export()` surface at v2.1.0 rather than on the symbols it happened to cite, and
-that sweep finds **twelve** relevant symbols already exported: `check_workflow`
+**thirteen** relevant symbols turn out to be exported already: `check_workflow`
 (:191), `.has_preprocessor` (:157), `.has_spec` (:161), `.check_grid` (:136),
 `check_metrics` (:186), `check_metrics_arg` (:187), `choose_framework` (:193),
 `get_mirai_workers` (:237), `mirai_installed` (:265),
-`.config_key_from_metrics` (:138), `load_pkgs` (:247), and `new_bare_tibble`
-(:267). Every one carries `#' @keywords internal`, documented under
-`empty_ellipses`, `internal-parallel`, `choose_metric`, or its own block.
+`.config_key_from_metrics` (:138), `.get_config_key` (:144), `load_pkgs` (:247),
+and `new_bare_tibble` (:267). Nine were found by re-reading the symbols the
+inventory already cited; the sweep confirmed those and found four more. Every one
+carries `#' @keywords internal`, documented under `empty_ellipses`,
+`internal-parallel`, `choose_metric`, or its own block.
 
 So the code is callable today and the thing missing is not visibility but a
 promise. **Almost nothing here is an export request.** Where the promise is the
@@ -75,7 +82,9 @@ developer-facing. A package on CRAN cannot put its argument checking on a surfac
 its dependency has said it may change. The ask is not to export them — it is to
 say which of these developer-facing helpers a downstream package may depend on,
 and to deprecate rather than remove them. A short "these are stable for
-downstream use" note in `empty_ellipses` and `choose_metric` would do it.
+downstream use" note would do it — in `empty_ellipses` and `choose_metric`, and
+on `load_pkgs`'s own block, which is not in either and carries the third of the
+four retirements below.
 
 **The engine-package check is reachable too, by another name.**
 `check_installs()` over `is_installed()` (`R/checks.R:234`, `:229`) is indeed
@@ -86,7 +95,9 @@ could not be loaded. That is F003's whole job. It loads rather than only
 checking, and it adds tune's infra packages — neither of which matters at a
 pre-fit check, since tune loads them a moment later anyway. So there is nothing
 to export here either: `load_pkgs` carries `#' @keywords internal`
-(`R/load_ns.R:9`), and the ask is the same promise as above.
+(`R/load_ns.R:9`), and the ask is the same promise as above — but on its own
+block, since `load_pkgs` joins neither `empty_ellipses` nor `choose_metric`. A
+promise scoped to those two topics would leave this one retirement uncovered.
 
 **The same promise retires a constructor, not just checks.** F061 `new_tbl()`
 builds a bare tibble by hand — three classes and compact row names — to avoid
@@ -102,12 +113,15 @@ promise that reaches it is this one.
 a `(workflow, grid, metrics)` triple up front and returns the expanded grid would
 cover all of the above and T-A2's need at once.
 
-F002 is also a `workflows` question wearing a tune coat: `workflows` has an
-unexported `has_spec()` and `:::` is a check failure, so both nestedtune and tune
-ask the workflow's structure directly. tune's `.has_preprocessor()` family
-(`R/grid_helpers.R:116-139`) is the same workaround one package further in; the
-durable fix is for `workflows` to export the predicates, and the tune-side ask
-stands either way.
+F002 is also a `workflows` question wearing a tune coat. `workflows` (1.3.0) has
+the predicates already — `has_preprocessor_formula()`,
+`has_preprocessor_recipe()` and `has_preprocessor_variables()`, which are F002's
+three questions exactly, alongside `has_spec()` for the model-spec question F001
+asks — and every one of them is unexported, where `:::` is a check failure. So
+both nestedtune and tune ask the workflow's structure directly instead. tune's
+`.has_preprocessor()` family (`R/grid_helpers.R:116-139`) is the same workaround
+one package further in; the durable fix is for `workflows` to export its own
+predicates, and the tune-side ask stands either way.
 
 Three checks nestedtune makes are **not** claimed here. `check_workflow()`
 (F001), `check_grid()` (F006) and `check_grid_params()` (F007) each overlap a
@@ -164,10 +178,10 @@ four and keeps the hole.
 
 ## T-A3 — Export the note and metric tibble constructors
 
-**Retires: F075 `own_note()`, F077 `bind_notes()`, F078 `empty_notes()`
-outright, and F079 `empty_metrics()` and F076 `tune_notes()` conditionally** —
-5 functions, ~45 lines, of which ~21 (F076 and F079) depend on how far tune wants
-to go. See the three parts below.
+**Retires: F075 `own_note()` and F078 `empty_notes()` outright, and F077
+`bind_notes()`, F079 `empty_metrics()` and F076 `tune_notes()` conditionally** —
+5 functions, ~45 lines, of which ~29 (F076, F077 and F079) depend on how far tune
+wants to go. See the three parts below.
 
 nestedtune records a per-fold note frame in tune's own shape: `location`, `type`,
 `note`, `trace`. It builds that frame by hand, reads tune's notes back out
@@ -181,9 +195,17 @@ The ask has three parts, and only the first is an export request — the sweep
 found no exported counterpart for any of this, unlike T-A1 and T-A2.
 
 1. **Export `new_note()` and `append_log_notes()`** (`R/logging.R:320`, `:282`).
-   Neither is in tune's `NAMESPACE`. These retire F075 `own_note()` and F078
-   `empty_notes()` outright — `new_note()`'s own defaults are what
-   `empty_notes()` hand-builds.
+   Neither is in tune's `NAMESPACE`. These retire three outright. `new_note()`
+   is what F075 `own_note()` reimplements, and its own defaults are what F078
+   `empty_notes()` hand-builds — those two go outright. F077 `bind_notes()`
+   (`R/nested-tune-grid.R:567`) is the third and the argument for it is weaker,
+   so state it plainly: it concatenates two note frames column by column into a
+   `new_tbl()`, and it exists because this package builds two frames and joins
+   them. `append_log_notes()` accumulates notes onto a single frame as results
+   arrive, which is the shape in which no join is needed — so exporting it
+   retires F077 only if nestedtune also adopts that shape. Half of F077 goes
+   with T-A1 regardless, `new_tbl()` being the tibble constructor
+   `new_bare_tibble()` replaces.
 2. **Document the zero-row shape of a notes tibble and of a metrics tibble.**
    Any package composing tune results into a larger object must produce empty
    ones that downstream `rbind`-shaped code accepts, and today it guesses at the
@@ -343,6 +365,15 @@ keeps refusing at its own door and this ask reduces to the easy half.
 makes a final fit possible at all: the procedure the nested estimate describes
 can be run again on the whole dataset. But rsample exposes nothing that runs it,
 so every consumer writes the re-evaluation itself.
+
+The closest thing rsample already ships is one step away and worth saying so, in
+case it is the natural place to hang this: `reshuffle_rset()`
+(`R/reshuffle_rset.R:16`, exported and documented) over `.get_split_args()`
+(`R/misc.R:142`) recovers an rset's own creating arguments and re-runs them
+against that rset's own frame (`:45-48`). For a nested design those are the
+*outer* call's arguments and the outer frame, so it does not answer this ask —
+but it is the same idea one level up, and an inner-specification counterpart
+would sit beside it rather than nowhere.
 
 The ask: an accessor, or a helper that re-evaluates the stored call against a
 given frame. With it comes the scoping contract, which the helper should state

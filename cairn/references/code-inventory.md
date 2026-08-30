@@ -99,27 +99,51 @@ upstream name whether it does the work the entry does. A name match is not the
 test and would have missed two of the three hits below: `new_bare_tibble` against
 `new_tbl`, and `load_pkgs` against `check_model_spec`.
 
-Run 2026-08-30, the sweep found three counterparts this page had missed, all
-three exported and all three in the `empty_ellipses` doc block:
+Run 2026-08-30, the sweep found four counterparts this page had missed, all four
+exported:
 
 - `.config_key_from_metrics` (tune `R/collect.R:618`) — the candidate
   reconstruction F070–F073 perform.
-- `load_pkgs` (tune `R/load_ns.R:11`) over `.load_namespace` (`:41`) — the
-  engine-package refusal F003 performs.
+- `.get_config_key` (tune `R/loop_over_all_stages-helpers.R:412`) — the
+  grid-against-tuned-parameters check F007 performs.
 - `new_bare_tibble` (tune `R/utils.R:82`) — the tibble construction F061
   performs.
+- `load_pkgs` (tune `R/load_ns.R:11`) over `.load_namespace` (`:41`) — the
+  engine-package refusal F003 performs.
 
-It found none on the rsample side. The two constructors that came closest —
-`make_splits()` (`R/misc.R:18`) and `new_rset()` (`R/rset.R:14`) — are declined
-for a stated reason in this repo's own comment at `R/nested-resamples.R:160-164`:
-rebuilding the splits from scratch drops the split subclass and the per-split
-`id` tibble that `labels()` reads. `populate()` (`R/complement.R:126`) fills a
-split's `out_id`, but in that split's own index space, not the outer-fold space
-F026 remaps into.
+The first three are documented in the `empty_ellipses` block; `load_pkgs` carries
+`@keywords internal` on a block of its own (`R/load_ns.R:9`), which matters to
+what a promise covering `empty_ellipses` would and would not reach.
 
-The three hits are folded into the entries below. What the sweep does not settle
+On the rsample side it found nothing that does what an entry here does, and two
+mechanisms close enough to be worth naming. `reshuffle_rset()`
+(`R/reshuffle_rset.R:16`, exported and fully documented) over `.get_split_args()`
+(`R/misc.R:142`) recovers an rset's creating arguments and re-runs them —
+`do.call(rset_type, c(list(data = rset$splits[[1]]$data), split_arguments))` at
+`:45-48` — but against that rset's *own* frame, where F009 re-runs a nested
+design's stored `inside` call against a different, whole dataset; the recovered
+arguments are the outer call's, and nothing recovers the inner one. `get_rsplit()`
+(`R/misc.R:209`, exported) returns a split from an rset by index, which is the
+half of F028 that reaches the split; it returns no frame, which is the half F028
+exists for. The two constructors that came closest — `make_splits()`
+(`R/misc.R:18`) and `new_rset()` (`R/rset.R:14`) — are declined for a stated
+reason in this repo's own comment at `R/nested-resamples.R:160-164`: rebuilding
+the splits from scratch drops the split subclass and the per-split `id` tibble
+that `labels()` reads. `populate()` (`R/complement.R:126`) fills a split's
+`out_id`, but in that split's own index space, not the outer-fold space F026
+remaps into.
+
+The four hits are folded into the entries below. What the sweep does not settle
 is behavioural equivalence beyond the reading: it establishes that a counterpart
 exists and what it does, not that swapping it in would leave every test green.
+
+Two things this record is careful not to claim. The sweep is not the source of
+every exported symbol this page cites: nine of them were found by the per-symbol
+re-read that preceded it, and the sweep confirmed those nine and added four. And
+the sweep is a reading by one pass over 214 names, so its completeness is a claim
+about that reading, not a proof — the sweep is re-runnable precisely so a later
+pass can test it rather than inherit it. It was itself run once and found four
+things a per-entry check had missed.
 
 ## Ledger — all 106 definitions
 
@@ -254,21 +278,23 @@ otherwise.
 
 **What "inside tune" means when tune already exports the counterpart.** Most of
 the helpers cited below are *exported* at v2.1.0, so the code is callable today
-as `tune::<name>()`. The upstream-counterpart sweep above found twelve such
-symbols: `check_workflow` (`NAMESPACE:191`), `.has_preprocessor` (`:157`),
-`.has_spec` (`:161`), `.check_grid` (`:136`), `check_metrics` (`:186`),
-`check_metrics_arg` (`:187`), `choose_framework` (`:193`), `get_mirai_workers`
-(`:237`), `mirai_installed` (`:265`), and the three the sweep added —
-`.config_key_from_metrics` (`:138`), `load_pkgs` (`:247`), `new_bare_tibble`
-(`:267`) — each verified against the pinned clone, observed 2026-08-30. Every one
-of the twelve carries `#' @keywords internal`, in its own roxygen block or in the
-block its `@rdname` joins, and each is documented in one of three developer-facing
-topics:
+as `tune::<name>()`. Thirteen such symbols are cited on this page:
+`check_workflow` (`NAMESPACE:191`), `.has_preprocessor` (`:157`), `.has_spec`
+(`:161`), `.check_grid` (`:136`), `check_metrics` (`:186`), `check_metrics_arg`
+(`:187`), `choose_framework` (`:193`), `get_mirai_workers` (`:237`),
+`mirai_installed` (`:265`) — the nine the per-symbol re-read found and the sweep
+confirmed — and `.config_key_from_metrics` (`:138`), `.get_config_key` (`:144`),
+`new_bare_tibble` (`:267`), `load_pkgs` (`:247`), the four the sweep added. Each
+verified against the pinned clone, observed 2026-08-30. Every one of the thirteen
+carries `#' @keywords internal`, in its own roxygen block or in the block its
+`@rdname` joins, and each is documented in one of three developer-facing topics
+or on a block of its own:
 
 - `empty_ellipses` — `.check_grid` (`R/checks.R:65`), `check_workflow`
   (`:311`), `check_metrics` (`:391`), `.has_preprocessor`
   (`R/grid_helpers.R:114`), `.has_spec` (`:152`), `.config_key_from_metrics`
-  (`R/collect.R:615`), `new_bare_tibble` (`R/utils.R:80`).
+  (`R/collect.R:615`), `.get_config_key`
+  (`R/loop_over_all_stages-helpers.R:410`), `new_bare_tibble` (`R/utils.R:80`).
 - `internal-parallel` — `mirai_installed` (`R/parallel.R:49`),
   `get_mirai_workers` (`:85`), `choose_framework` (`:114`).
 - `choose_metric` — `check_metrics_arg` (`R/metric-selection.R:305`, joining the
@@ -442,7 +468,13 @@ only inside a driver, one fold at a time.
 **Re-running the stored specification (F009).**
 `eval_inside_spec()` re-evaluates a design's stored `inside` call against a whole
 dataset. rsample stores that call — `attr(out, "inside") <- cl$inside` at
-`R/nested_cv.R:93` — but exposes nothing that runs it again, so every consumer
+`R/nested_cv.R:93` — but exposes nothing that runs *that* call again. What it
+does expose is one step away and worth naming: `reshuffle_rset()`
+(`R/reshuffle_rset.R:16`) over `.get_split_args()` (`R/misc.R:142`) recovers an
+rset's own creating arguments and re-runs them against `rset$splits[[1]]$data`
+(`:45-48`). Applied to a nested design that recovers the *outer* call against the
+outer frame, which is not what F009 does; nothing recovers the stored inner
+specification or runs it against a frame of the caller's choosing. So every consumer
 that wants the procedure re-run writes this itself. rsample would have to accept
 an accessor or a re-evaluation helper on `nested_cv`, together with the scoping
 contract it implies: the stored call travels without its environment, so it
@@ -452,7 +484,11 @@ resolves wherever the caller stands now.
 `split_data()` reads `x$splits[[1]]$data` because there is no accessor for it.
 rsample exports `analysis()` (`R/rsplit.R:113`), `assessment()`
 (`R/rsplit.R:133`) and `complement()` (`R/complement.R:22`) — all of which return
-*subsets* — and nothing that returns the frame the indices refer to. rsample
+*subsets* — and nothing that returns the frame the indices refer to.
+`get_rsplit()` (`R/misc.R:209`, exported) covers the first half of what
+`split_data()` does by hand — reaching a split from the rset by index — and stops
+where the gap is: it returns an `rsplit`, and there is still no accessor from
+there to the frame. rsample
 would have to accept a data accessor on an `rset` or `rsplit`, and with it the
 invariant this package depends on and states at `R/nested-resamples.R:216-217`:
 every split in an rset shares one data frame, so the first split answers for all
@@ -508,10 +544,16 @@ Eight entries in the ledger, plus the addendum.
   also carry a "~65 lines retired" figure that no upstream change reaches.
 - **F006 `check_grid()`, F007 `check_grid_params()`** (`R/checks.R:204`, `:234`,
   ~23 and ~41 lines). tune's `.check_grid()` (`R/checks.R:67`, `NAMESPACE:136`)
-  validates the same triple and returns the expanded grid, and
-  `check_extra_tune_parameters()` (`R/checks.R:361`, unexported) repeats the
-  column-versus-parameter half; by content these two are duplication, which is
-  `glue`. What is not duplication is *when*. tune raises per fold, and this
+  validates the same triple and returns the expanded grid, and `.get_config_key()`
+  (`R/loop_over_all_stages-helpers.R:412`, `NAMESPACE:144`) makes F007's check
+  exactly: its two aborts are the same two `setdiff()` calls, `setdiff(info$id,
+  names(grid))` at `:416` against `R/checks.R:261` and `setdiff(names(grid),
+  info$id)` at `:425` against `R/checks.R:248`. (`check_extra_tune_parameters()`
+  at `R/checks.R:361` is *not* the counterpart, though an earlier draft of this
+  page said so: it takes only a workflow and compares `generics::tune_args()`
+  against `extract_parameter_set_dials()`, never receiving a grid at all.) By
+  content these two are duplication, which is `glue`. What is not duplication is
+  *when*. tune raises per fold, and this
   package tunes once per outer fold, so a malformed grid tune would reject
   surfaces here as every fold in the design failing alike after the whole cost has
   been paid — the comment at `R/checks.R:228-233` states exactly that, and M03's

@@ -998,3 +998,82 @@ same job fails identically on `origin/main` at `142aac3` (the M30 merge run), so
 it predates this branch, and this branch changes five markdown files and no R
 code. It is a merge blocker under the never-merge-red rule and needs its own
 disposition.
+
+**Triage at the gate — all nine actioned fix-now, none returning the milestone.**
+The maintainer chose to fix all nine on the branch rather than return M28 or ship
+the documents with the defects logged. No finding met the return floor: none
+demonstrates an acceptance criterion failing inside its own domain, and the
+maintainer did not judge any of them a load-bearing defect in what the two
+documents do for their readers. The defect-return count stays at two and the
+thrash rule's third-return threshold is not reached. What each fix did:
+
+- **H1** — `.get_config_key()` (tune `R/loop_over_all_stages-helpers.R:412`,
+  `NAMESPACE:144`, `@rdname empty_ellipses` at `:410-411`) is now named as F007's
+  counterpart, with its two aborts matched to F007's two `setdiff()` calls
+  (`:416` against `R/checks.R:261`, `:425` against `:248`, all four re-read here).
+  The false claim about `check_extra_tune_parameters()` is replaced by a
+  parenthetical saying what that function actually does and that an earlier draft
+  got it wrong. F007 stays `ambiguous`: the correction strengthens the
+  by-content-it-is-duplication half and leaves the timing residue that put it
+  there untouched.
+- **H2** — the sweep record now names `reshuffle_rset()` (`R/reshuffle_rset.R:16`)
+  over `.get_split_args()` (`R/misc.R:142`) and says why it does not reach F009:
+  it re-runs an rset's own creating arguments against that rset's own frame, where
+  F009 re-runs a nested design's stored inner call against a different frame. The
+  same is added to F009's entry and to R-A3, which now names it as the place an
+  inner-specification counterpart would sit.
+- **H3** — the sweep section no longer says all its hits are in `empty_ellipses`;
+  it states which are, and that `load_pkgs` is on its own block, which is what the
+  glue preamble already said.
+- **H4** — the draft's headline arithmetic is replaced by the range with its
+  working shown: 28 reached, `check_nested()` surviving in part leaves 27 that
+  could go whole, three of those conditional on parts of T-A3 tune may decline, so
+  24 on any reading — 82 of 106, or 79 if tune takes T-A3 whole. The three
+  conditional entries are no longer named by ID in the preamble, so no entry
+  appears in two sections.
+- **H5** — F077's retirement moves from outright to conditional, in the ask's
+  header and its body. Checked against the implementation rather than asserted:
+  `bind_notes()` (`R/nested-tune-grid.R:567`) concatenates two note frames
+  column-wise into a `new_tbl()`, while tune's `append_log_notes()`
+  (`R/logging.R:282`) accumulates onto a single frame as results arrive — a
+  different shape, so it retires F077 only if this package adopts that shape. The
+  conditional line total is now ~29 across F076, F077 and F079.
+- **H6** — the `workflows` paragraph names the right predicates. Checked against
+  installed workflows 1.3.0: `has_preprocessor_formula()`,
+  `has_preprocessor_recipe()` and `has_preprocessor_variables()` are F002's three
+  questions and are unexported; `has_spec()` is F001's question, not F002's. The
+  remedy — that workflows export its own predicates — is unchanged and stands.
+- **H7** — T-A1's remedy is widened: the promise is asked for on
+  `empty_ellipses`, `choose_metric`, **and** `load_pkgs`'s own block, with the
+  note that a promise scoped to the first two would leave F003 uncovered.
+- **H8** — both documents now say nine exported symbols came from the per-symbol
+  re-read and the sweep confirmed them and added four; the sweep's completeness is
+  stated as a claim about one reading of 214 names, re-runnable so a later pass
+  can test it rather than inherit it.
+- **H9** — F028's entry names `get_rsplit()` (`R/misc.R:209`) as covering the
+  reach-the-split half of `split_data()` and stopping where the gap is, since it
+  returns an `rsplit` and not a frame.
+
+**Post-fix re-verification.** The ledger is unchanged and re-checked: 106 rows,
+name set equal to the extraction output, every `file:line` exact, 106/106 line
+counts exact, buckets still 32 core / 38 furniture / 16 glue / 12
+resampling-layer / 8 ambiguous. AC6 re-cross-checked: all 28 `glue` and
+`resampling-layer` IDs appear under exactly one draft section, none in the
+preamble (T-A1 4, T-A2 4, T-A3 5, T-A4 3, R-A1 3, R-A2 3, R-A3 1, R-A4 4, R-A5 1,
+28 total), and all nine `Retires:` figures recomputed from the ledger are correct
+for both count and line total. Framing sentence at line 13, first ask at line 64.
+Every citation added by the fixes resolves in the pinned clones:
+`.get_config_key` `R/loop_over_all_stages-helpers.R:410-412` and `:416`/`:425`,
+`reshuffle_rset` `R/reshuffle_rset.R:16` and `:45-48`, `.get_split_args`
+`R/misc.R:142`, `get_rsplit` `R/misc.R:209`. Gate re-run over the corrected files:
+`cairn_validate.py` exits 0, all 16 checks pass, same two advisories;
+`devtools::document()` no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes
+in 2m 34.8s; `devtools::test()` FAIL 0, WARN 0, SKIP 0, PASS 1628. No `R/`,
+`NAMESPACE` or `man/` file differs from `origin/main`.
+
+**macOS CI failure accepted at the gate.** The maintainer authorized the merge with
+`macos-latest (release)` red, on the recorded finding that it fails identically on
+`origin/main` at `142aac3` on a broken RSPM macOS arm64 binary of `gower`, a
+transitive dependency, and that this branch changes five markdown files and no R
+code, so nothing in it can affect that job. Recorded as an accepted known-red
+merge, not a green one.
