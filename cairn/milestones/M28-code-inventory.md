@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** review
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -1096,3 +1096,5 @@ Pre-existing on the same evidence the macOS finding rests on: the job is
 markdown files and no R code, so nothing in it can affect a dependency-install
 step. The gate authorization named the macOS job alone, so the merge stops here
 for a decision covering this one too.
+
+- 2026-08-30: status review → blocked at the merge gate. Every acceptance criterion is verified with fresh evidence, the consistency gate is clean, and all nine reviewer findings were fixed on the branch and re-verified — nothing about M28's own work is outstanding. The blocker is external: two CI jobs, `macos-latest (release)` and `ubuntu-latest (devel)`, are red on every run of this branch and of `origin/main` at `142aac3`, for reasons no package code reaches, and the user chose to fix both before merging rather than accept them. Captured as a ROADMAP candidate row; PR #38 stays open and no approval marker was written.
