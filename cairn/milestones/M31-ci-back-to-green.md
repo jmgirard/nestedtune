@@ -46,26 +46,26 @@ leg → M11's dropped matrix-cut candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1 One `R-CMD-check.yaml` workflow run on this milestone's branch
+- [x] AC1 One `R-CMD-check.yaml` workflow run on this milestone's branch
       reports `conclusion: success` for every job named by `matrix.config` in
       `.github/workflows/R-CMD-check.yaml` — verified against that file's
       matrix list beside the full `gh run view <id> --json jobs --jq '.jobs[] |
       [.name, .conclusion]'` output for that run.
-- [ ] AC2 In that run's `macos-latest (release)` job, `nestedtune` installs:
+- [x] AC2 In that run's `macos-latest (release)` job, `nestedtune` installs:
       `gh run view <id> --job <macos-job-id> --log` contains no line matching
       `symbol not found in flat namespace` and no line matching
       `ERROR: package installation failed`.
-- [ ] AC3 In a `ubuntu-latest (devel)` job whose `setup-r-dependencies` step
+- [x] AC3 In a `ubuntu-latest (devel)` job whose `setup-r-dependencies` step
       logged `Cache not found for input keys`, the `check-r-package` step
       reports conclusion `success` — verified from that cache-miss line and the
       full step list returned by `gh api
       repos/tidymodels/nestedtune/actions/jobs/<job-id> --jq '.steps[] |
       [.number, .name, .conclusion]'`.
-- [ ] AC4 A test-suite hang still fails its job within 20 minutes of the check
+- [x] AC4 A test-suite hang still fails its job within 20 minutes of the check
       starting: in `.github/workflows/R-CMD-check.yaml`, the step running
       `r-lib/actions/check-r-package@v2` declares `timeout-minutes` of at most
       20.
-- [ ] AC5 The fix is confined to CI configuration and tracking: every path
+- [x] AC5 The fix is confined to CI configuration and tracking: every path
       listed by `git diff --name-only main...HEAD` is under `.github/` or
       `cairn/`.
 - [ ] AC6 `Rscript -e 'devtools::test()'` is clean (the `cairn/PROFILE.md`
@@ -131,7 +131,58 @@ leg → M11's dropped matrix-cut candidate row.
 - 2026-08-30: T2 done — same run's devel job 99334129149 passed in 23m34s, 3m34s past the cap it used to die at. The other four legs ran 7m51s to 9m19s, under both caps.
 - 2026-08-30: T3 done — devel job 99334129149 logged `Cache not found for input keys` at 22:49:37, ran 22:48:30 to 23:12:04, and its `Post Run r-lib/actions/setup-r-dependencies@v2` step reports success with `Cache saved with key: Ubuntu 24.04.4 LTS-R version 4.7.0 ...`. The deadlock is broken: the run that pays the cold build now survives to write the cache the next run reads.
 - 2026-08-30: T5 done — `devtools::test()` reports `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`; `devtools::check()` reports 0 errors, 0 warnings, 0 notes in 2m51.6s. Run 33340129444 reports `success` for all five jobs named by `matrix.config`. `git diff --name-only main...HEAD` lists six paths, all under `.github/` or `cairn/`. Status set to review.
+- 2026-08-30: review checkpoint — AC1-AC5 verified with fresh evidence and ticked; consistency gate green (cairn_validate exit 0, document() no diff, check_pkgdown() clean). AC6 pending on the local suite and check(); three-lens fan-out spawned, two lenses returned.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-30 against PR #39 (draft), branch `m031-ci-back-to-green`.
+`main` had not moved since the branch was cut (`origin/main` at `354f397`), so
+no merge-forward was needed. Evidence below is fresh, gathered this session.
+
+### Acceptance-criteria evidence
+
+- AC1 — `.github/workflows/R-CMD-check.yaml` `matrix.config` names five legs
+  (macos-latest release, windows-latest release, ubuntu-latest devel,
+  ubuntu-latest release, ubuntu-latest oldrel-1). Run 33340129444 on this
+  branch: `gh run view 33340129444 --json jobs` returns exactly those five job
+  names, each `success`. Verified.
+- AC2 — macOS job 99334128983 log (17,025 lines) greps to zero matches for
+  `symbol not found in flat namespace` and zero for
+  `ERROR: package installation failed`. The same log shows the source route
+  taken: `Got gower 1.0.2 (source)`, `Building gower 1.0.2`,
+  `Installed gower 1.0.2`. Verified.
+- AC3 — devel job 99334129149 logged `Cache not found for input keys` and
+  `Will install 129 packages`; `gh api .../actions/jobs/99334129149` reports
+  step 6, `Run r-lib/actions/check-r-package@v2`, conclusion `success`, and the
+  post step logged `Cache saved with key: ... R version 4.7.0 ...`. The
+  cold-build deadlock is broken. Verified.
+- AC4 — `.github/workflows/R-CMD-check.yaml:107-108`: the step
+  `uses: r-lib/actions/check-r-package@v2` declares `timeout-minutes: 20`.
+  Verified.
+- AC5 — `git diff --name-only main...HEAD` lists six paths: three under
+  `.github/workflows/`, three under `cairn/`. Nothing outside those two trees.
+  Verified.
+- AC6 — pending.
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0: all 16 checks PASS, 5 advisories OK, one WARN
+  (`references staleness`, 18 pages) unchanged from the last hygiene stamp and
+  untouched by this milestone. `release window` OK.
+- `cairn_impact.py` skipped: `cairn/DESIGN.md` is not in the diff, so no
+  principle changed.
+- Toolchain slot (`cairn/PROFILE.md` consistency-gate): `devtools::document()`
+  exits 0 with an empty `git status` (no diff); `pkgdown::check_pkgdown()`
+  reports no problems; no `README.Rmd` exists, so the knit check is
+  inapplicable; `NEWS.md` needs no entry (CI configuration and tracking only,
+  nothing a package user can observe); no new top-level files, so no
+  `.Rbuildignore` entry is due.
+
+### Independent review
+
+Routing: declared surface tier is internal, but the diff touches GitHub Actions
+workflow YAML, which is executable surface — so the full three-lens fan-out ran
+rather than the single-reviewer path.
+
