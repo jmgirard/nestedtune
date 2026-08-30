@@ -127,7 +127,7 @@ all of that intact, and splits built that way come out row-identical to the
 current ones.
 
 All of this fell out of building a memory-lean nested resampling constructor on
-top of rsample ([nestedtune](https://github.com/jmgirard/nestedtune)). The
+top of rsample ([nestedtune](https://github.com/tidymodels/nestedtune)). The
 11.373× above is a committed test oracle there, and the field-rewriting approach
 is what it ships, so everything here is reproducible from a script in that repo
 if you'd like to re-run it.

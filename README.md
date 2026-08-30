@@ -124,6 +124,8 @@ predict(extract_workflow(final), new_data = mtcars[1:3, ])
 #> 3  23.8
 ```
 
-Why the estimate belongs to the procedure rather than to the model, and
-what to write up, is the subject of [the
-guide](https://jmgirard.github.io/nestedtune/articles/nested-cv.html).
+Why the estimate belongs to the procedure rather than to the model, and what to
+write up, is the subject of [the guide][guide].
+
+[guide]: https://nestedtune.tidymodels.org/articles/nested-cv.html
+[issue]: https://github.com/tidymodels/rsample/issues/283
