@@ -68,7 +68,7 @@ leg → M11's dropped matrix-cut candidate row.
 - [x] AC5 The fix is confined to CI configuration and tracking: every path
       listed by `git diff --name-only main...HEAD` is under `.github/` or
       `cairn/`.
-- [ ] AC6 `Rscript -e 'devtools::test()'` is clean (the `cairn/PROFILE.md`
+- [x] AC6 `Rscript -e 'devtools::test()'` is clean (the `cairn/PROFILE.md`
       verify slot) and `Rscript -e 'devtools::check()'` reports 0 errors and 0
       warnings.
 
@@ -134,6 +134,7 @@ leg → M11's dropped matrix-cut candidate row.
 - 2026-08-30: review checkpoint — AC1-AC5 verified with fresh evidence and ticked; consistency gate green (cairn_validate exit 0, document() no diff, check_pkgdown() clean). AC6 pending on the local suite and check(); three-lens fan-out spawned, two lenses returned.
 - 2026-08-30: review fix-now work landed for eight of the twelve [O] findings — the 394-job statistic re-scoped in both the workflow comment and the profile slot, the two hangs attributed one per gating workflow, `pkgdown.yaml`'s third stale cross-reference to the retired single cap corrected, the unbounding of every non-check step named in both places, the provenance list read as `M12 rev. M31`, the 60-minute figure re-derived against the measured 23m34s cold run, and the grep instruction told which of its six hits are audited. `pkgdown.yaml` joins the diff; AC5's allow-list still holds.
 - 2026-08-30: catch-up on the T4 record ([O] finding F7) — the `cairn/PROFILE.md` edit also rewrote the file's header comment, dropping the `cairn-init` instantiation sentence and the D-024/D-025 pointers. That was collateral of the 120-line cap fix and no task authorized it; the compressed header states the same rule about the seven slots and the universal validation doctrine, so it stands as written and is recorded here rather than reverted.
+- 2026-08-30: AC6 verified after the fixes — `devtools::test()` 1628 passes, 0 failures; `devtools::check()` Status: OK, 0/0/0. All six criteria now ticked against recorded evidence.
 
 ## Decisions
 
@@ -166,7 +167,10 @@ no merge-forward was needed. Evidence below is fresh, gathered this session.
 - AC5 — `git diff --name-only main...HEAD` lists six paths: three under
   `.github/workflows/`, three under `cairn/`. Nothing outside those two trees.
   Verified.
-- AC6 — pending.
+- AC6 — `devtools::test()`: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1628 ]`.
+  `devtools::check()`: `Status: OK` after 56 checks, 12m26.1s — 0 errors,
+  0 warnings, 0 notes. Both run on the branch after the review fixes landed.
+  Verified.
 
 ### Consistency gate
 
