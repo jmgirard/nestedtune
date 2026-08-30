@@ -873,3 +873,128 @@ milestone has no user-visible change, so `NEWS.md` is owed no entry.
 `cairn/references/INDEX.md`, `cairn/references/code-inventory.md`) with no script,
 hook or other executable surface — so single-reviewer mode: one fresh-context [O]
 diff-bug lens, the other two skipped.
+
+### Independent review — single [O] diff-bug lens, 9 findings
+
+Every reported finding and its disposition, ranked as the reviewer ranked them.
+Each was re-verified here against the implementation and the pinned clones, not
+against the reviewer's account of it. The reviewer's own mechanical pass agreed
+with the gate's on every count: 106/106 ledger rows correct for name, `file:line`,
+line count, export status and bucket; counts 32/38/16/12/8; the `NAMESPACE`
+reconciliation exact; all 28 draft placements correct; all nine `Retires:` sums
+right; ~45 upstream citations resolving, including the 152/62 export counts and
+the D-025 quotations.
+
+**H1. `cairn/references/code-inventory.md:509-513` — the sweep missed a fourth
+exported tune counterpart, and mis-describes the symbol cited in its place.**
+The note says `check_extra_tune_parameters()` (tune `R/checks.R:361`, unexported)
+"repeats the column-versus-parameter half" of F007. Re-read here: it takes only a
+workflow and compares `generics::tune_args(mod)` against
+`extract_parameter_set_dials(mod)` — it never receives a grid, so it cannot make
+F007's check. The actual counterpart is `.get_config_key()`
+(`R/loop_over_all_stages-helpers.R:412`), **exported at `NAMESPACE:144`** with
+`#' @keywords internal` / `@rdname empty_ellipses` at `:410-411`, whose two aborts
+are F007's two setdiffs line for line: `setdiff(info$id, names(grid))` at `:416`
+against `R/checks.R:261`, and `setdiff(names(grid), info$id)` at `:425` against
+`R/checks.R:248`. Both facts confirmed at the gate. No criterion fails — F007 is
+`ambiguous`, AC2 does not quantify over it, and AC4 asks only for a stated reason,
+which F007's timing reason supplies independently of which tune symbol duplicates
+its content. But it is a fourth counterpart the sweep missed, in the section added
+to close exactly that gap.
+
+**H2. `cairn/references/code-inventory.md:112`, `:444-446`,
+`benchmarks/upstream-asks.md:344-345` — the sweep's "found none on the rsample
+side" is over-broad.** rsample exports `reshuffle_rset()`
+(`R/reshuffle_rset.R:16`, fully documented, not `@keywords internal`) and
+`.get_split_args()` (`R/misc.R:142`), which together recover an rset's creating
+arguments and re-run them: `do.call(rset_type, c(list(data =
+rset$splits[[1]]$data), split_arguments))` at `:45-48`. Confirmed at the gate.
+AC3 does not fail, and the note's own narrower claim is true as written:
+`reshuffle_rset()` re-runs an rset's *creating call* against its *own* frame,
+where F009 re-runs a nested design's stored `inside` call against a *different,
+whole* dataset — rsample still exposes nothing that does that. What is wrong is
+the sweep's completeness claim, which should name this mechanism and say why it
+does not reach F009.
+
+**H3. `cairn/references/code-inventory.md:102-103` — self-contradiction about the
+`load_pkgs` doc block.** The sweep section says its three hits are "all three
+exported and all three in the `empty_ellipses` doc block"; the glue preamble at
+`:279-280` says `load_pkgs` "carries `@keywords internal` on its own block
+(`R/load_ns.R:9`) without joining any of the three", and its `empty_ellipses`
+roster at `:268-271` correctly omits it. The preamble is right — confirmed in the
+clone, `R/load_ns.R:9` carries a bare `@keywords internal` with no `@rdname`. The
+sweep sentence is the wrong one.
+
+**H4. `benchmarks/upstream-asks.md:21-23` — the headline arithmetic overstates
+T-A3.** The framing says "Twenty-seven of those go entirely … 79 of its 106".
+T-A3's own body says the opposite of two of them: "Documenting the shape does not
+delete F079 `empty_metrics()`" (`:190-191`) and "If tune has no appetite … F076
+stays here, and this ask retires four of the five" (`:199-201`), and its Retires
+header calls both conditional (`:167-169`). Under the asks as written at most 25
+go entirely, i.e. 81. AC6 still holds — each entry is placed under an ask that
+would retire it, T-A3 stating its own conditions honestly — but this is the same
+overstated-retirement shape as the last return's G2/G4, moved up into the preamble.
+
+**H5. `benchmarks/upstream-asks.md:167` — F077's retirement is asserted, never
+argued.** F077 `bind_notes()` is listed among those T-A3 retires "outright", and
+appears nowhere else in the draft (one grep hit in the file). Part 1 attributes
+only F075 and F078 to the `new_note()`/`append_log_notes()` export; part 2 is
+F079, part 3 is F076. Confirmed at the gate.
+
+**H6. `benchmarks/upstream-asks.md:105-110` — the wrong `workflows` predicate is
+named for F002.** The paragraph opens "F002 is also a `workflows` question wearing
+a tune coat: `workflows` has an unexported `has_spec()`". `has_spec()` is the
+*model-spec* question — F001's branch — not F002's preprocessor question.
+Half-refuted here: the reviewer added that `has_preprocessor` "does not exist in
+workflows at all", which is true of that name but misses the trio that does exist
+unexported and is exactly F002's question — `has_preprocessor_formula`,
+`has_preprocessor_recipe`, `has_preprocessor_variables` (checked against installed
+workflows 1.3.0). So the remedy sentence — that workflows export the predicates —
+is sound; the predicate it names is not.
+
+**H7. `benchmarks/upstream-asks.md:77-78, 88-89` — T-A1's stated remedy does not
+reach `load_pkgs`.** The remedy is "a short … note in `empty_ellipses` and
+`choose_metric`". F003 is one of T-A1's four claimed retirements and rests only on
+`load_pkgs`, which is in neither block (its own block, `R/load_ns.R:1-10`); the
+draft gestures at "the same promise as above" without widening the remedy to cover
+it. Confirmed at the gate.
+
+**H8 (minor). `cairn/references/code-inventory.md:257-258`,
+`benchmarks/upstream-asks.md:37-39` — the sweep is credited with finding all
+twelve exported symbols.** It found three (`:102-110`); the other nine came from
+T9's per-symbol re-read after the first defect return, which the sweep then
+confirmed. Imprecision about provenance, not a false fact about tune.
+
+**H9 (minor). rsample's `get_rsplit()` goes unmentioned for F028.** rsample
+exports `get_rsplit()` (`R/misc.R:209`, documented, not internal), an accessor
+onto the split that `split_data()` reaches by hand as `x$splits[[1]]`. The note's
+claim at `:451-455` — that nothing returns the *frame* — remains true, so this is
+a half-counterpart the sweep does not name rather than a counterpart it missed.
+
+**Return floor.** No finding demonstrates an acceptance criterion failing inside
+its own domain, and each was checked against the criterion's text rather than its
+gist: H1 and H2 fall outside AC2's and AC3's quantified domains and leave AC4's
+stated-reason requirement intact; H3–H9 are statements no criterion quantifies
+over. AC6's placement and arithmetic requirements survive H4. The remaining
+question at the gate is the maintainer's half of the floor — whether H1, taken
+with H3, H4 and H5, is a load-bearing defect in what the deliverables do for their
+readers.
+
+**Thrash rule.** This is the third review pass and the second defect return stands
+on the record; a third defect return would fire trigger (a), whose recommended
+disposition is descope-or-park rather than another retry. Trigger (b) is already
+recorded as fired on AC6. H1 is a third instance of the class both prior returns
+turned on — a claim about an upstream export surface that the instrument in hand
+did not reach — though this time the instrument is a stated, re-runnable sweep
+rather than author recall, and the miss is in an `ambiguous` entry no criterion
+quantifies over.
+
+**CI — one red job, pre-existing and not this diff's.** On PR #38,
+`macos-latest (release)` fails in ~1m30s during `R CMD build`'s install step:
+`unable to load shared object '…/gower/libs/gower.so': symbol not found in flat
+namespace '___kmpc_barrier'` — the RSPM macOS arm64 binary of a transitive
+dependency, built against an OpenMP runtime the runner image does not carry. The
+same job fails identically on `origin/main` at `142aac3` (the M30 merge run), so
+it predates this branch, and this branch changes five markdown files and no R
+code. It is a merge blocker under the never-merge-red rule and needs its own
+disposition.
