@@ -84,19 +84,19 @@ user-declared and nothing here proposes one.
       exports and S3 methods; record the counts the note must reconcile against.
 - [x] T2: Classify each definition into core / glue / resampling-layer /
       furniture / ambiguous.
-- [ ] T3: For each `glue` entry, find and cite the tune-internal fact that
+- [x] T3: For each `glue` entry, find and cite the tune-internal fact that
       removes it — e.g. `checks.R:228-233` (tune raises exactly this, but per
       fold), `nested-tune-grid.R:421-424` (a `tune_results` carries no expanded
       grid), `nested-results.R:117-118` (`new_tbl()` exists only to avoid
       tibble).
-- [ ] T4: For each `resampling-layer` entry, name what rsample would have to
+- [x] T4: For each `resampling-layer` entry, name what rsample would have to
       accept — the memory-lean constructor and the payload trio
       (`R/parallel.R:118-179`) are the expected members.
-- [ ] T5: Record the `ambiguous` cases with reasons — at minimum
+- [x] T5: Record the `ambiguous` cases with reasons — at minimum
       `[.nested_results` (`R/nested-results.R:69`, furniture by shape, IP4
       invariant by content) and `outer_scheme_label()`
       (`R/nested-results.R:48`, assembly-time work for a print method).
-- [ ] T6: Author the synthesis note; date every claim it makes about this repo's
+- [x] T6: Author the synthesis note; date every claim it makes about this repo's
       own current state; add its `INDEX.md` bullet.
 - [ ] T7: Draft the upstream-asks list under `benchmarks/`, unposted.
 - [ ] T8: Run the profile's `verify` slot.
@@ -117,6 +117,11 @@ user-declared and nothing here proposes one.
 - 2026-08-28: the push committing this plan was answered by GitHub's moved-repository redirect, so the organization transfer was already complete; D-026 records the correction and the Scope Out clause about the housekeeping row unblocking later was amended to match. Nothing about this milestone's own scope changed.
 
 - 2026-08-30: T2 — the 106 definitions classify as 32 `core`, 38 `furniture`, 19 `glue`, 12 `resampling-layer`, 5 `ambiguous`. The bucket map is held as a name→bucket list and merged against the extraction output by a script that fails unless the two name sets are equal, so no definition can be dropped or double-bucketed on the way into the note's table.
+
+- 2026-08-30: T3-T6 - `cairn/references/code-inventory.md` committed, authored from `templates/synthesis-note.md`. All 19 `glue` entries cite tune's own source at v2.1.0 (`4c74638`): `check_workflow()` R/checks.R:314, `.has_preprocessor()` R/grid_helpers.R:116, `check_installs()` R/checks.R:234, `.check_grid()` R/checks.R:67 with the expansion at :145 and the result bound at R/tune_grid.R:375, `check_extra_tune_parameters()` R/checks.R:361, `check_metrics()` R/checks.R:397, `new_note()`/`append_log_notes()` R/logging.R:320/:282, `tibble (>= 3.1.0)` in DESCRIPTION:37, and `mirai_installed()`/`get_mirai_workers()`/`choose_framework()` R/parallel.R:51/:87/:117.
+- 2026-08-30: T4 - all 12 `resampling-layer` entries cite rsample v1.3.2 (`658545c`): `nested_cv()` R/nested_cv.R:50 and `inside_resample()` :98-101 (the per-fold `as.data.frame(src)` copy), the two `warn(boot_msg)` sites :71/:77 that warn where this package refuses, the unchecked `map()` at :88, the stored `inside` call at :93 with nothing exposed to re-run it, `analysis()`/`assessment()`/`complement()` as the only split accessors with no frame accessor, and `labels.rset()` R/labels.R:14-17, which aborts outright for a `nested_cv`.
+- 2026-08-30: T5 - 5 `ambiguous` entries recorded with reasons: F051-F053 (the candidate-set comparison, furniture by position and glue by cause), F059 `outer_scheme_label()`, F106 `fold_task()`, plus the addendum `[.nested_results`. The extraction procedure does not emit `[.nested_results` - its definition line starts with a backtick - so it is carried as an addendum with a bucket and a reason rather than added to the table, keeping the table exactly what the stated procedure emits.
+- 2026-08-30: `cairn_validate` clean; the 18 `references staleness` advisories are pre-existing and unchanged in count, so the new page's extraction status parses as a dated verification.
 
 ## Decisions
 

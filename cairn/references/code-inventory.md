@@ -1,0 +1,473 @@
+# What we keep, what is only glue, and what belongs to rsample (M28)
+
+**Provenance.** Ingested 2026-08-30 by M28 from this repository's own `R/`
+directory at commit `89d8418`, classified against two upstream source trees read
+read-only outside this repo: `tidymodels/tune` at tag `v2.1.0` (commit
+`4c74638`) and `tidymodels/rsample` at tag `v1.3.2` (commit `658545c`), the
+versions installed in the development library on the day of the read.
+Pagination: —.
+Extraction: read directly from `R/*.R` at `89d8418` and from the two upstream trees named above — observed 2026-08-30.
+
+**Scope.** This is an inventory of this package's own R code, sorted by where
+each definition would live in a world without package boundaries. It is not a
+summary of any external source, and it builds no argument that this package
+should or should not continue: `cairn/DECISIONS.md` settled that separately and
+this page takes it as given. It also proposes nothing upstream — the asks
+drafted from it live in `benchmarks/upstream-asks.md`, unposted. It is a
+reference, not an authority: status lives in `ROADMAP.md`, decisions in
+`DECISIONS.md`, architecture in `DESIGN.md`.
+
+**Evidence snapshot.**
+
+- Every top-level function definition in `R/*.R`, emitted by the extraction
+  procedure stated below — commit `89d8418`, 106 definitions across 12 files —
+  observed 2026-08-30.
+- `NAMESPACE` at the same commit — 8 `export()` lines, 10 `S3method()` lines —
+  observed 2026-08-30.
+- `tidymodels/tune` source tree at tag `v2.1.0`, commit `4c74638`, shallow clone
+  outside this repository — observed 2026-08-30.
+- `tidymodels/rsample` source tree at tag `v1.3.2`, commit `658545c`, shallow
+  clone outside this repository — observed 2026-08-30.
+- Installed versions in the development library: tune 2.1.0, rsample 1.3.2,
+  reported by `packageVersion()` — observed 2026-08-30.
+
+## What the inventory is
+
+### The extraction procedure
+
+Every entry in the ledger below comes from one command, run from the repository
+root:
+
+```
+grep -nE '^[A-Za-z._][A-Za-z0-9._]* <- function' R/*.R
+```
+
+It emits 106 lines. The pattern anchors at column one, so it finds top-level
+definitions and not the anonymous and nested functions that make `R/*.R` carry
+173 occurrences of `function(` in total. It also requires the name to start with
+a letter, a dot, or an underscore, which is what excludes the one backtick-quoted
+definition in the package; that definition is carried as an addendum below rather
+than silently lost.
+
+Each entry carries its `file:line`, its export status read from `NAMESPACE`
+(`exported`, `S3 method (registered)`, or `internal`), an approximate line count
+taken from the definition line to the closing brace at column one, and exactly
+one bucket. Bucket assignment is a judgment, so it is held as a separate
+name-to-bucket list and merged against the extraction output by a script that
+refuses to run unless the two name sets are equal — a definition cannot be
+dropped, duplicated, or left unbucketed on the way into the table.
+
+### The five buckets
+
+- **`core`** — logic this package carries regardless of where it lives. The
+  outer loop, the per-fold reproducibility contract, failure containment, the
+  final-fit path, the daemon pre-flight.
+- **`glue`** — code that exists only because this package sits outside `tune`.
+  Each such entry names, below, the fact about being inside tune that would make
+  it unnecessary.
+- **`resampling-layer`** — code whose natural home is the resampling layer,
+  whether or not it is ever proposed there. Each names what `rsample`'s own
+  surface would have to accept.
+- **`furniture`** — the user-facing surface this package owns: its print, plot,
+  collect and extract methods, and the helpers that serve only them.
+- **`ambiguous`** — an entry that resists a single bucket, with the reason
+  stated rather than a bucket forced onto it.
+
+## Ledger — all 106 definitions
+
+| # | Definition | Location | Export status | Lines | Bucket |
+|---|---|---|---|---|---|
+| F001 | `check_workflow()` | `R/checks.R:7` | internal | ~65 | glue |
+| F002 | `has_preprocessor()` | `R/checks.R:82` | internal | ~3 | glue |
+| F003 | `check_model_spec()` | `R/checks.R:91` | internal | ~16 | glue |
+| F004 | `check_nested()` | `R/checks.R:108` | internal | ~70 | resampling-layer |
+| F005 | `check_column_class()` | `R/checks.R:185` | internal | ~18 | resampling-layer |
+| F006 | `check_grid()` | `R/checks.R:204` | internal | ~23 | glue |
+| F007 | `check_grid_params()` | `R/checks.R:234` | internal | ~41 | glue |
+| F008 | `check_inside_spec()` | `R/checks.R:285` | internal | ~16 | resampling-layer |
+| F009 | `eval_inside_spec()` | `R/checks.R:312` | internal | ~39 | resampling-layer |
+| F010 | `check_plot_type()` | `R/checks.R:357` | internal | ~21 | furniture |
+| F011 | `check_metrics()` | `R/checks.R:379` | internal | ~12 | glue |
+| F012 | `extract_tune_results()` | `R/nested-final-fit-extract.R:75` | exported | ~3 | furniture |
+| F013 | `extract_tune_results.default()` | `R/nested-final-fit-extract.R:80` | S3 method (registered) | ~7 | furniture |
+| F014 | `extract_tune_results.nested_final_fit()` | `R/nested-final-fit-extract.R:89` | S3 method (registered) | ~3 | furniture |
+| F015 | `extract_scored_candidates()` | `R/nested-final-fit-extract.R:145` | exported | ~3 | furniture |
+| F016 | `extract_scored_candidates.default()` | `R/nested-final-fit-extract.R:150` | S3 method (registered) | ~6 | furniture |
+| F017 | `extract_scored_candidates.nested_final_fit()` | `R/nested-final-fit-extract.R:158` | S3 method (registered) | ~6 | furniture |
+| F018 | `abort_no_extract_method()` | `R/nested-final-fit-extract.R:170` | internal | ~11 | furniture |
+| F019 | `print.nested_final_fit()` | `R/nested-final-fit-print.R:30` | S3 method (registered) | ~21 | furniture |
+| F020 | `selected_label()` | `R/nested-final-fit-print.R:56` | internal | ~9 | furniture |
+| F021 | `nested_final_fit()` | `R/nested-final-fit.R:174` | exported | ~26 | core |
+| F022 | `final_fit_worker()` | `R/nested-final-fit.R:213` | internal | ~28 | core |
+| F023 | `new_nested_final_fit()` | `R/nested-final-fit.R:251` | internal | ~12 | core |
+| F024 | `extract_workflow.nested_final_fit()` | `R/nested-final-fit.R:266` | S3 method (registered) | ~3 | furniture |
+| F025 | `nested_resamples()` | `R/nested-resamples.R:60` | exported | ~71 | resampling-layer |
+| F026 | `inner_resamples_from_split()` | `R/nested-resamples.R:138` | internal | ~49 | resampling-layer |
+| F027 | `eval_spec()` | `R/nested-resamples.R:197` | internal | ~18 | resampling-layer |
+| F028 | `split_data()` | `R/nested-resamples.R:218` | internal | ~3 | resampling-layer |
+| F029 | `autoplot.nested_results()` | `R/nested-results-plot.R:81` | S3 method (registered) | ~12 | furniture |
+| F030 | `plot_selection()` | `R/nested-results-plot.R:94` | internal | ~31 | furniture |
+| F031 | `value_scale()` | `R/nested-results-plot.R:141` | internal | ~15 | furniture |
+| F032 | `panel_breaks()` | `R/nested-results-plot.R:157` | internal | ~13 | furniture |
+| F033 | `panel_owner()` | `R/nested-results-plot.R:187` | internal | ~20 | furniture |
+| F034 | `whole_number_breaks()` | `R/nested-results-plot.R:208` | internal | ~5 | furniture |
+| F035 | `plot_performance()` | `R/nested-results-plot.R:214` | internal | ~65 | furniture |
+| F036 | `design_line()` | `R/nested-results-plot.R:286` | internal | ~7 | furniture |
+| F037 | `qualify_panels()` | `R/nested-results-plot.R:297` | internal | ~8 | furniture |
+| F038 | `from_folds()` | `R/nested-results-plot.R:309` | internal | ~3 | furniture |
+| F039 | `chose_value()` | `R/nested-results-plot.R:313` | internal | ~3 | furniture |
+| F040 | `metric_panel()` | `R/nested-results-plot.R:320` | internal | ~7 | furniture |
+| F041 | `ambiguous_metrics()` | `R/nested-results-plot.R:328` | internal | ~4 | furniture |
+| F042 | `selection_frame()` | `R/nested-results-plot.R:340` | internal | ~36 | furniture |
+| F043 | `selection_raw()` | `R/nested-results-plot.R:386` | internal | ~12 | furniture |
+| F044 | `selection_axis()` | `R/nested-results-plot.R:407` | internal | ~22 | furniture |
+| F045 | `print.nested_results()` | `R/nested-results-print.R:59` | S3 method (registered) | ~18 | furniture |
+| F046 | `print_design()` | `R/nested-results-print.R:78` | internal | ~10 | furniture |
+| F047 | `print_failures()` | `R/nested-results-print.R:89` | internal | ~14 | furniture |
+| F048 | `fold_failure_stage()` | `R/nested-results-print.R:107` | internal | ~6 | furniture |
+| F049 | `print_selection()` | `R/nested-results-print.R:114` | internal | ~25 | furniture |
+| F050 | `print_candidate_sets()` | `R/nested-results-print.R:151` | internal | ~22 | furniture |
+| F051 | `same_candidates()` | `R/nested-results-print.R:179` | internal | ~4 | ambiguous |
+| F052 | `candidate_key()` | `R/nested-results-print.R:184` | internal | ~29 | ambiguous |
+| F053 | `rendered_rows()` | `R/nested-results-print.R:215` | internal | ~14 | ambiguous |
+| F054 | `selection_params()` | `R/nested-results-print.R:233` | internal | ~4 | furniture |
+| F055 | `selection_values()` | `R/nested-results-print.R:246` | internal | ~18 | furniture |
+| F056 | `print_one_parameter()` | `R/nested-results-print.R:275` | internal | ~32 | furniture |
+| F057 | `print_estimate()` | `R/nested-results-print.R:308` | internal | ~32 | furniture |
+| F058 | `new_nested_results()` | `R/nested-results.R:8` | internal | ~32 | core |
+| F059 | `outer_scheme_label()` | `R/nested-results.R:48` | internal | ~9 | ambiguous |
+| F060 | `has_results_columns()` | `R/nested-results.R:111` | internal | ~4 | core |
+| F061 | `new_tbl()` | `R/nested-results.R:119` | internal | ~7 | glue |
+| F062 | `collect_metrics.nested_results()` | `R/nested-results.R:209` | S3 method (registered) | ~10 | furniture |
+| F063 | `summarize_folds()` | `R/nested-results.R:228` | internal | ~35 | core |
+| F064 | `check_any_completed()` | `R/nested-results.R:269` | internal | ~17 | core |
+| F065 | `warn_partial_summary()` | `R/nested-results.R:290` | internal | ~17 | core |
+| F066 | `per_fold_metrics()` | `R/nested-results.R:310` | internal | ~11 | core |
+| F067 | `fold_ids()` | `R/nested-results.R:324` | internal | ~7 | resampling-layer |
+| F068 | `nested_tune_grid()` | `R/nested-tune-grid.R:300` | exported | ~42 | core |
+| F069 | `nested_fold_fit()` | `R/nested-tune-grid.R:350` | internal | ~67 | core |
+| F070 | `scored_candidates()` | `R/nested-tune-grid.R:432` | internal | ~20 | glue |
+| F071 | `scored_candidates_impl()` | `R/nested-tune-grid.R:453` | internal | ~33 | glue |
+| F072 | `scored_metric_frames()` | `R/nested-tune-grid.R:491` | internal | ~7 | glue |
+| F073 | `empty_candidates()` | `R/nested-tune-grid.R:503` | internal | ~8 | glue |
+| F074 | `failed_fold()` | `R/nested-tune-grid.R:521` | internal | ~19 | core |
+| F075 | `own_note()` | `R/nested-tune-grid.R:541` | internal | ~8 | glue |
+| F076 | `tune_notes()` | `R/nested-tune-grid.R:553` | internal | ~13 | glue |
+| F077 | `bind_notes()` | `R/nested-tune-grid.R:567` | internal | ~8 | glue |
+| F078 | `empty_notes()` | `R/nested-tune-grid.R:576` | internal | ~8 | glue |
+| F079 | `empty_metrics()` | `R/nested-tune-grid.R:587` | internal | ~8 | glue |
+| F080 | `warn_failed_folds()` | `R/nested-tune-grid.R:598` | internal | ~17 | core |
+| F081 | `set_fold_seed()` | `R/nested-tune-grid.R:620` | internal | ~8 | core |
+| F082 | `restore_rng()` | `R/nested-tune-grid.R:634` | internal | ~8 | core |
+| F083 | `is_mirai_installed()` | `R/parallel.R:11` | internal | ~3 | glue |
+| F084 | `mirai_workers()` | `R/parallel.R:15` | internal | ~12 | glue |
+| F085 | `use_parallel()` | `R/parallel.R:28` | internal | ~3 | glue |
+| F086 | `pool_is_cancellable()` | `R/parallel.R:46` | internal | ~6 | core |
+| F087 | `record_dispatch()` | `R/parallel.R:62` | internal | ~4 | core |
+| F088 | `last_dispatch()` | `R/parallel.R:67` | internal | ~3 | core |
+| F089 | `reset_dispatch_record()` | `R/parallel.R:71` | internal | ~4 | core |
+| F090 | `is_fold_payload()` | `R/parallel.R:118` | internal | ~21 | resampling-layer |
+| F091 | `lean_payload()` | `R/parallel.R:140` | internal | ~18 | resampling-layer |
+| F092 | `rehydrate_payload()` | `R/parallel.R:159` | internal | ~21 | resampling-layer |
+| F093 | `dispatch_folds()` | `R/parallel.R:190` | internal | ~106 | core |
+| F094 | `preflight_timeout()` | `R/parallel.R:320` | internal | ~21 | core |
+| F095 | `daemon_symbol_manifest()` | `R/parallel.R:391` | internal | ~6 | core |
+| F096 | `daemon_probe_expr()` | `R/parallel.R:420` | internal | ~11 | core |
+| F097 | `daemons_load_status()` | `R/parallel.R:432` | internal | ~27 | core |
+| F098 | `daemon_report()` | `R/parallel.R:478` | internal | ~12 | core |
+| F099 | `preflight_outcome()` | `R/parallel.R:497` | internal | ~39 | core |
+| F100 | `check_daemons_can_load()` | `R/parallel.R:543` | internal | ~137 | core |
+| F101 | `warn_if_not_cancellable()` | `R/parallel.R:697` | internal | ~19 | core |
+| F102 | `classify_fold_result()` | `R/parallel.R:726` | internal | ~33 | core |
+| F103 | `is_cancelled_value()` | `R/parallel.R:772` | internal | ~11 | core |
+| F104 | `is_fold_record()` | `R/parallel.R:784` | internal | ~6 | core |
+| F105 | `worker_failure_message()` | `R/parallel.R:791` | internal | ~23 | core |
+| F106 | `fold_task()` | `R/parallel.R:823` | internal | ~11 | ambiguous |
+
+Counts: 32 `core`, 38 `furniture`, 19 `glue`, 12 `resampling-layer`,
+5 `ambiguous`.
+
+### Addendum: the one definition the procedure does not emit
+
+`[.nested_results` (`R/nested-results.R:69`, S3 method (registered), ~37 lines,
+bucket **ambiguous**) is defined as `` `[.nested_results` <- function(x, i, j, ...) ``.
+The backtick is the first character of the line, so the extraction pattern —
+which requires a letter, a dot, or an underscore there — does not match it. It is
+listed here rather than in the table above so that the table remains exactly what
+the stated procedure emits. Its reason for being `ambiguous` is given with the
+other four below, and `NAMESPACE`'s `S3method("[",nested_results)` line is
+reconciled against it in the reconciliation section.
+
+## `glue` — the tune-internal fact that removes each entry
+
+Nineteen entries. Each names a fact about being inside `tune` that would make the
+code unnecessary, cited to tune's own source at v2.1.0 (`4c74638`) unless stated
+otherwise.
+
+**Argument checks tune already performs (F001, F002, F003, F006, F007, F011).**
+Every one of these fires before any fitting and duplicates a check tune makes on
+the same object.
+
+- **F001 `check_workflow()`** — tune defines `check_workflow()` at
+  `R/checks.R:314`, taking the same workflow and raising for the same shapes.
+  Inside tune the argument reaches that function directly.
+- **F002 `has_preprocessor()`** — asks whether a workflow carries a formula,
+  recipe, or variables. tune defines `.has_preprocessor()` at
+  `R/grid_helpers.R:116` and companions `.has_preprocessor_recipe()`,
+  `.has_preprocessor_formula()`, `.has_preprocessor_variables()` at `:125`,
+  `:132`, `:139`. This repo's own comment at `R/checks.R:33-34` records why it is
+  hand-rolled here: `workflows` has an unexported equivalent and `:::` is a check
+  failure. Inside tune the unexported helper is in hand.
+- **F003 `check_model_spec()`** — asks whether the engine's packages are
+  installed. tune defines `check_installs()` at `R/checks.R:234` over
+  `is_installed()` at `:229`, doing the same for the same reason.
+- **F006 `check_grid()`** and **F007 `check_grid_params()`** — validate `grid`
+  as a frame or a size, and the frame's columns against the parameters marked for
+  tuning. tune does both in `.check_grid()` at `R/checks.R:67`, and the
+  column-versus-parameter half again in `check_extra_tune_parameters()` at
+  `R/checks.R:361`. The comment at this repo's `R/checks.R:228-233` states the
+  same thing from the outside: tune raises exactly this, but per fold, and M03
+  records fold failures rather than re-raising them.
+- **F011 `check_metrics()`** — asks whether `metrics` is a `metric_set` or
+  `NULL`. tune defines `check_metrics()` at `R/checks.R:397` and
+  `check_metrics_arg()` at `R/metric-selection.R:307`.
+
+**The candidate record tune discards (F070, F071, F072, F073).**
+`scored_candidates()` and its three helpers reconstruct the set of candidates a
+tuning run evaluated by pooling the per-resample metric frames and de-duplicating
+on `.config`. They exist because a returned `tune_results` carries no record of
+its own expansion — the fact stated in this repo's comment at
+`R/nested-tune-grid.R:418-427` and measured at M21's plan gate against tune 2.1.0.
+Inside tune the expansion is a local variable, not something to be recovered: the
+grid is expanded by `.check_grid()` (`R/checks.R:67`, calling
+`dials::grid_space_filling()` at `:145`) and bound at `R/tune_grid.R:375`, in hand
+for the whole run. The reconstruction, its total-by-construction `tryCatch`
+wrapper, its shape-tolerant frame filter, and its zero-row fallback all go with
+it — including the one limit the comment records, that a candidate failing on
+every inner resample leaves no metric row and cannot be recovered at all.
+
+**Note and metric tibble assembly (F075, F076, F077, F078, F079).**
+`own_note()`, `tune_notes()`, `bind_notes()`, `empty_notes()` and
+`empty_metrics()` build, relabel, concatenate and zero-fill the note and metric
+tibbles this package files per fold. tune builds the same structures internally:
+`new_note()` at `R/logging.R:320`, `append_log_notes()` at `R/logging.R:282`,
+`remove_log_notes()` at `:414`, `has_log_notes()` at `:274`. Inside tune a fold's
+notes are appended through that machinery rather than rebuilt from
+`tune::collect_notes()` output and re-tagged with a stage string.
+
+**Building a tibble without depending on tibble (F061).**
+`new_tbl()` sets three classes and compact row names by hand. Its own comment
+(`R/nested-results.R:116-118`) says why: it saves a dependency on tibble for the
+sake of a constructor. tune declares `tibble (>= 3.1.0)` in its `Imports`
+(`DESCRIPTION:37`), so inside tune the dependency is already paid and
+`tibble::tibble()` is available.
+
+**Parallel-backend detection (F083, F084, F085).**
+`is_mirai_installed()`, `mirai_workers()` and `use_parallel()` decide whether a
+mirai pool is usable. tune makes the same decision in `R/parallel.R`:
+`mirai_installed()` at `:51`, `get_mirai_workers()` at `:87` (reading the same
+`mirai::status()$connections`), and the two-worker threshold inside
+`choose_framework()` at `:117`. This repo's comment at `R/parallel.R:4-7` states
+the coupling directly — detection mirrors tune's own so that "parallel" means the
+same thing in both packages. Inside tune it would not be mirrored; it would be
+the same code, and the `future` branch `choose_framework()` also carries would
+come with it.
+
+## `resampling-layer` — what rsample's surface would have to accept
+
+Twelve entries. Each names what `rsample`'s own surface would have to accept for
+the code to live there, cited to rsample's source at v1.3.2 (`658545c`) unless
+stated otherwise.
+
+**The memory-lean constructor (F025, F026, F027).**
+`nested_resamples()`, `inner_resamples_from_split()` and `eval_spec()` build the
+same nested design `rsample::nested_cv()` builds, but keep index vectors into the
+caller's frame instead of a materialized analysis set per outer fold. rsample
+would have to accept that its inner splits may index a frame other than the one
+the inner specification was evaluated against. Today they cannot: `nested_cv()`
+(`R/nested_cv.R:50`) delegates to `inside_resample()` (`R/nested_cv.R:98-101`),
+which evaluates the inner call with `data = as.data.frame(src)` — one
+materialized copy of that fold's analysis set, which the resulting splits then
+index. Concretely, rsample would have to accept an index-remapping step after the
+inner specification runs (rewriting `in_id`, `out_id`, and `data` on each inner
+split), an explicit `out_id` where it currently leaves `NA` because the complement
+is derivable from a frame that *is* the analysis set, and a recomputed
+`fingerprint` for the remapped splits.
+
+**Validating a design rsample builds without validating (F004, F005, F008).**
+`check_nested()`, `check_column_class()` and `check_inside_spec()` refuse a
+design whose `splits` column does not hold `rsplit` objects, whose
+`inner_resamples` column does not hold an `rset` per outer fold, or which carries
+no stored `inside` call to re-run. rsample would have to accept refusing designs
+its own constructor currently produces. `nested_cv()` builds the design whatever
+`inside` returned — `R/nested_cv.R:88` assigns `map(outside$splits,
+inside_resample, ...)` with no check on the result — so a specification returning
+something that is not an `rset` yields a design that cannot be run and complains
+only inside a driver, one fold at a time.
+
+  A second thing rsample would have to accept sits in the same functions:
+  `check_nested()` **refuses** an outer bootstrap where `nested_cv()` only
+  **warns** (`R/nested_cv.R:71` and `:77`, both reaching `warn(boot_msg)`). The
+  same observation can otherwise land in both the inner analysis and the inner
+  assessment set. Moving this code to rsample means rsample changing a warning
+  into an error, which is a breaking change to a released surface.
+
+**Re-running the stored specification (F009).**
+`eval_inside_spec()` re-evaluates a design's stored `inside` call against a whole
+dataset. rsample stores that call — `attr(out, "inside") <- cl$inside` at
+`R/nested_cv.R:93` — but exposes nothing that runs it again, so every consumer
+that wants the procedure re-run writes this itself. rsample would have to accept
+an accessor or a re-evaluation helper on `nested_cv`, together with the scoping
+contract it implies: the stored call travels without its environment, so it
+resolves wherever the caller stands now.
+
+**Reaching the frame an rset indexes (F028).**
+`split_data()` reads `x$splits[[1]]$data` because there is no accessor for it.
+rsample exports `analysis()` (`R/rsplit.R:113`), `assessment()`
+(`R/rsplit.R:133`) and `complement()` (`R/complement.R:22`) — all of which return
+*subsets* — and nothing that returns the frame the indices refer to. rsample
+would have to accept a data accessor on an `rset` or `rsplit`, and with it the
+invariant this package depends on and states at `R/nested-resamples.R:216-217`:
+every split in an rset shares one data frame, so the first split answers for all
+of them.
+
+**Labelling a nested design's folds (F067).**
+`fold_ids()` greps the `^id` columns and pastes them, because a repeated design
+carries `id` and `id2`. rsample has the generic and refuses this exact case:
+`labels.rset()` (`R/labels.R:14-17`) opens with `if (inherits(object, "nested_cv"))
+cli_abort("{.arg labels} not implemented for nested resampling")`, and its
+non-nested branch returns `object$id` alone, which would silently drop `id2` on a
+repeated design. rsample would have to accept a `labels()` method for a nested
+design, and a rule for combining more than one id column.
+
+**The payload trio (F090, F091, F092).**
+`is_fold_payload()`, `lean_payload()` and `rehydrate_payload()` take the data out
+of one fold's payload before it goes on the wire and put it back on the worker.
+They exist because of a property of rsample's objects rather than of this
+package: every `rsplit` carries the whole frame it indexes, and in memory those
+are one shared copy, but R's serializer does not preserve sharing for ordinary
+objects — so each split writes its own copy onto the wire. This repo records the
+measurement at `R/parallel.R:78-84`: six copies for `v = 5, inner_v = 5`,
+5,141,166 B against 840,540 B of data, and `lobstr::obj_size()` reports 946.94 kB
+for that same payload and so cannot see the defect at all. rsample would have to
+accept three things: that the shared-frame property is a documented invariant of
+an `rset` rather than an implementation detail, that a split's `data` field may
+be blanked and restored (with the exact blanking discipline — `x["data"] <-
+list(NULL)` and not `x$data <- NULL`, which deletes the element and changes the
+object's shape), and a predicate answering whether a given collection of splits
+actually shares one frame, since a `manual_rset()` of splits over different
+frames does not. Absent that last guarantee, restoring one frame onto all of them
+would tune on the wrong rows.
+
+## `ambiguous` — why each resists a single bucket
+
+Five entries in the ledger, plus the addendum.
+
+- **F051 `same_candidates()`, F052 `candidate_key()`, F053 `rendered_rows()`**
+  (`R/nested-results-print.R:179`, `:184`, `:215`). These three compare the
+  candidate sets different outer folds searched, and the print method warns when
+  the folds did not search the same grid. By position they are `furniture`:
+  nothing but `print.nested_results()` calls them, and what they produce is a
+  line of output. By cause they are `glue`: they compare records this package had
+  to *reconstruct* (F070–F073) because a `tune_results` keeps no expanded grid,
+  and the situation they report — folds searching different menus under
+  `grid = 10` with a continuous parameter — arises from each fold expanding its
+  own grid under its own seed. Inside tune, with the expansion in hand, neither
+  the reconstruction nor the warning would take this shape, and it is not clear
+  the comparison would survive at all. Neither bucket is wrong, and forcing one
+  would hide half the reason the code exists.
+- **F059 `outer_scheme_label()`** (`R/nested-results.R:48`). It strips the nested
+  classes from the design and calls `pretty()` on what is left, so the outer
+  resampling scheme can describe itself in a header. It is `furniture` by
+  purpose — it exists for a print method and its result is a string. But the work
+  it does is assembly-time and resampling-layer in nature: it is a workaround for
+  `pretty.nested_cv()` (rsample `R/printing.R:112`) describing both levels at
+  once, where the results object needs the outer level alone. The label is
+  computed once at construction (`R/nested-results.R:33`) and stored as an
+  attribute, so it is not print-path code either. rsample offering a
+  single-level scheme label would delete it; so would dropping the header line.
+- **F106 `fold_task()`** (`R/parallel.R:823`). The one-fold worker. Its body is
+  `core`: it unpacks the payload and calls `nested_fold_fit()`, which is the loop.
+  Its first line is not: `ns <- asNamespace("nestedtune")`, a name-based namespace
+  lookup that exists because a closure carrying this package's namespace loses it
+  when a daemon cannot reconstruct it, silently falling back to the global
+  environment (recorded at `R/parallel.R:817-822`). That indirection, the
+  environment-stripping at the dispatch site, and the symbol pre-flight that makes
+  its failure loud are all consequences of a third package shipping code to
+  daemons that must load it from an installed library. Inside tune the lookup
+  resolves to tune's own namespace and the problem does not disappear — daemons
+  still load tune from a library — but the shape it takes is tune's dispatch
+  problem, not a wrapper this package writes around tune's loop.
+- **`[.nested_results`** (`R/nested-results.R:69`, the addendum). By shape it is
+  `furniture`: an S3 method on a subsetting operator, the ordinary way a class
+  keeps its identity under `[`. By content it is the invariant that a results
+  object never claims a run it cannot describe — it sheds the class when a subset
+  drops any defining column, recomputes `folds_attempted` and `folds_completed`
+  from the rows in hand, and drops the outer scheme label outright because "10-fold
+  cross-validation" is false of three retained rows. That is the same
+  record-what-ran discipline the constructor applies, expressed in a method
+  signature. Its own comment (`R/nested-results.R:80-95`) also records that which
+  of its lines is load-bearing depends on whether `[.tbl_df` or `[.data.frame` is
+  reached, so part of it is `glue` for not depending on tibble (F061) as well.
+
+## Reconciliation against `NAMESPACE`
+
+`NAMESPACE` at `89d8418` carries 8 `export()` lines and 10 `S3method()` lines.
+Every one is accounted for.
+
+**`export()` — 5 name a definition the extraction procedure emits:**
+`nested_resamples` (F025), `nested_tune_grid` (F068), `nested_final_fit` (F021),
+`extract_tune_results` (F012), `extract_scored_candidates` (F015).
+
+**`export()` — 3 name a symbol the procedure's output does not define, and are
+therefore re-exports, excluded from the function inventory:** `autoplot`,
+`collect_metrics`, `extract_workflow`. The rule that generates this list is
+mechanical rather than a registry: an `export()` line whose symbol appears
+nowhere in the extraction procedure's 106 names defines no function here, and
+`R/reexports.R` confirms each of the three as a bare `pkg::generic` re-export
+statement (`tune::collect_metrics`, `tune::extract_workflow`,
+`ggplot2::autoplot`). A fourth re-export added later is caught by the same
+subtraction with no edit to this page's rule.
+
+**`S3method()` — 9 name a definition the procedure emits:**
+`autoplot.nested_results` (F029), `collect_metrics.nested_results` (F062),
+`extract_scored_candidates.default` (F016),
+`extract_scored_candidates.nested_final_fit` (F017),
+`extract_tune_results.default` (F013),
+`extract_tune_results.nested_final_fit` (F014),
+`extract_workflow.nested_final_fit` (F024), `print.nested_final_fit` (F019),
+`print.nested_results` (F045).
+
+**`S3method()` — 1 names a definition the procedure does not emit:**
+`S3method("[",nested_results)`, whose definition is the backtick-quoted
+`` `[.nested_results` `` at `R/nested-results.R:69`. It is not a re-export — the
+method is defined in this package — so it is carried in the addendum above with a
+bucket and a reason, rather than excluded.
+
+## Disposition
+
+- The 19 `glue` entries and the 12 `resampling-layer` entries are drafted into
+  upstream asks in `benchmarks/upstream-asks.md`, unposted. That draft is where
+  each ask states what it would retire.
+- The 32 `core` and 38 `furniture` entries land nowhere else: they are what this
+  package carries, and naming them is the whole of this page's obligation to
+  them.
+- The 5 `ambiguous` entries plus the addendum land in the asks draft only where
+  an upstream change would settle them (F059 and the resampling-layer half of the
+  payload discussion); the rest are recorded here as unsettled and nowhere else.
+- No refactor follows from this page. Acting on any entry is its own milestone,
+  planned from here — this page describes, it does not schedule.
+- This page produced no rule, so no test file locks one.
+
+## Open questions
+
+- Whether the `glue` entries would survive contact with tune's maintainers as
+  written is untested — nothing has been proposed and no upstream opinion has
+  been sought — observed 2026-08-30.
+- The upstream facts here are read from source trees at two fixed tags. Whether
+  tune's `.check_grid()`, `check_workflow()`, `new_note()` and
+  `choose_framework()`, or rsample's `nested_cv()`, `labels.rset()` and
+  `inside_resample()`, still take these shapes at a later version is unchecked
+  beyond v2.1.0 and v1.3.2 — observed 2026-08-30.
+- Whether `postprocessing`/tailor-era changes in tune touch the note and metric
+  assembly cited for F075–F079 has not been examined — observed 2026-08-30.
