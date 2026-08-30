@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -98,8 +98,8 @@ user-declared and nothing here proposes one.
       (`R/nested-results.R:48`, assembly-time work for a print method).
 - [x] T6: Author the synthesis note; date every claim it makes about this repo's
       own current state; add its `INDEX.md` bullet.
-- [ ] T7: Draft the upstream-asks list under `benchmarks/`, unposted.
-- [ ] T8: Run the profile's `verify` slot.
+- [x] T7: Draft the upstream-asks list under `benchmarks/`, unposted.
+- [x] T8: Run the profile's `verify` slot.
 
 ## Work log
 
@@ -122,6 +122,10 @@ user-declared and nothing here proposes one.
 - 2026-08-30: T4 - all 12 `resampling-layer` entries cite rsample v1.3.2 (`658545c`): `nested_cv()` R/nested_cv.R:50 and `inside_resample()` :98-101 (the per-fold `as.data.frame(src)` copy), the two `warn(boot_msg)` sites :71/:77 that warn where this package refuses, the unchecked `map()` at :88, the stored `inside` call at :93 with nothing exposed to re-run it, `analysis()`/`assessment()`/`complement()` as the only split accessors with no frame accessor, and `labels.rset()` R/labels.R:14-17, which aborts outright for a `nested_cv`.
 - 2026-08-30: T5 - 5 `ambiguous` entries recorded with reasons: F051-F053 (the candidate-set comparison, furniture by position and glue by cause), F059 `outer_scheme_label()`, F106 `fold_task()`, plus the addendum `[.nested_results`. The extraction procedure does not emit `[.nested_results` - its definition line starts with a backtick - so it is carried as an addendum with a bucket and a reason rather than added to the table, keeping the table exactly what the stated procedure emits.
 - 2026-08-30: `cairn_validate` clean; the 18 `references staleness` advisories are pre-existing and unchanged in count, so the new page's extraction status parses as a dated verification.
+
+- 2026-08-30: T7 - `benchmarks/upstream-asks.md` drafted, unposted, grouped by theme: four asks to tune (T-A1 pre-fit checks, T-A2 record the expanded grid, T-A3 note and metric constructors, T-A4 the parallel-backend decision) and five to rsample (R-A1 index-remapping nested design, R-A2 validate what `nested_cv()` builds, R-A3 re-run the stored inner spec, R-A4 the frame an rset indexes, R-A5 `labels()` for a nested design). A script checks each of the 31 `glue` and `resampling-layer` entries against the draft text: all 31 appear, each under exactly one ask.
+- 2026-08-30: F061 `new_tbl()` is the one `glue` entry no upstream ask retires - it goes when this package adds `tibble` to Imports, a local dependency decision needing its own gate. The draft states that under its own heading rather than padding it into an ask that would not do it, so every `glue` entry is still accounted for. T-A2 and T-A3 would remove most of its call sites; three would remain.
+- 2026-08-30: T8 - `devtools::test()` clean: FAIL 0, WARN 0, SKIP 0, PASS 1628. No `R/` file changed on this branch, so `devtools::document()` was not required.
 
 ## Decisions
 
