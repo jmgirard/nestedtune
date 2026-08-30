@@ -1,5 +1,12 @@
 # nestedtune 0.0.0.9000
 
+* The package has moved to the tidymodels organization. It now lives at
+  <https://github.com/tidymodels/nestedtune>, its documentation site is served
+  at <https://nestedtune.tidymodels.org/>, and `DESCRIPTION`, the README badges
+  and the installation instructions name those addresses. The old repository
+  address redirects to the new one; the old documentation address does not, so
+  a bookmark of the site needs updating.
+
 * The documentation now names the quantity a nested run estimates, instead of
   describing it. `collect_metrics()` estimates the k-fold test error of the
   whole tune-and-fit procedure on the analysis sets the outer folds drew —
@@ -139,9 +146,9 @@
 
 * The reference pages and `vignette("nested-cv")` are now built into a
   documentation website, rebuilt whenever a change lands on the default branch
-  that the package itself can see. `DESCRIPTION` and the README have pointed at
-  <https://jmgirard.github.io/nestedtune/> since the guide was added; the site
-  goes live there once GitHub Pages is switched on for the repository.
+  that the package itself can see. `DESCRIPTION` and the README have pointed
+  at a documentation site since the guide was added; it goes live once GitHub
+  Pages is switched on for the repository.
 
 * Interrupting a parallel run now asks the folds it had already sent to the
   workers to stop. Before, the interrupt gave you your prompt back but left

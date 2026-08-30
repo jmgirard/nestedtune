@@ -20,5 +20,7 @@ export(nested_resamples)
 export(nested_tune_grid)
 importFrom(ggplot2,autoplot)
 importFrom(rlang,.data)
-importFrom(tune,collect_metrics)
-importFrom(tune,extract_workflow)
+importFrom(tune,
+  collect_metrics,
+  extract_workflow
+)
