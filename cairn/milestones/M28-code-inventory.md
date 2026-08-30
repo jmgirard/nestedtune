@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -64,7 +64,7 @@ user-declared and nothing here proposes one.
       `S3method()` line in the file is accounted for, and every `export()` line
       naming a symbol the extraction procedure's output does not define is
       listed as a re-export and excluded from the function inventory.
-- [x] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
+- [ ] AC6: An unposted draft under `benchmarks/` accounts for every `glue` and
       `resampling-layer` entry in the note exactly once, each entry either
       placed under the upstream ask that would retire it or recorded as
       retired by no upstream ask together with what would retire it instead.
@@ -154,6 +154,9 @@ user-declared and nothing here proposes one.
 - 2026-08-30: T11 — `benchmarks/upstream-asks.md` reworked to match. T-A1 becomes "promise the pre-fit checks, and export the one that is missing": `.has_preprocessor()` and `check_metrics_arg()` are exported under `@keywords internal`, so the ask there is a stability commitment, while `check_installs()`/`is_installed()` are genuinely unexported and keep the export ask; it now retires F002, F003, F011 (~31 lines) and states that F001, F006 and F007 are not claimed. T-A4 becomes "promise the parallel-backend decision" — all three tune functions are exported, so nothing needs writing but one line of documentation. T-A2 no longer calls the reconstruction closable only by tune: exported `.check_grid()` would let this package expand the grid itself, at the price of the same unpromised surface, so the ask is stated in preference order (F9). T-A5 is new and carries the one ask D-024 clause (2) records as live and D-025 preserved — keep `check_rset()`'s top-level `nested_cv` refusal (tune `R/checks.R:19-21`, called at `R/tune_grid.R:360` and `R/tune_bayes.R:322`) where it is (F13). R-A2's retirement is narrowed: three of `check_nested()`'s refusals survive the ask, including the `^id` check that exists for this package's own results object (F11). R-A5 drops the combining-rule half, `labels.vfold_cv()` already pasting `id` and `id2` (F8). The framing paragraph no longer claims the same public surface — R-A1 retires the exported `nested_resamples()`, and the kept-function count is 79 of 106, not 76 (F6). The `ambiguous` section moved out from under the rsample heading, since F001/F006/F007 are tune-side. A script checks all 28 `glue` and `resampling-layer` entries against the draft: each appears under exactly one section (T-A1 3, T-A2 4, T-A3 5, T-A4 3, no-ask 1, R-A1 3, R-A2 3, R-A3 1, R-A4 4, R-A5 1), and the framing sentence is at line 13, ahead of the first ask at line 51.
 
 - 2026-08-30: T12 — `cairn_validate.py` exits 0, all checks pass; 18 `references staleness` advisories, unchanged in count and none naming the new page. One new advisory: M28 now carries 12 tasks against the 10-task split tripwire, the four rework tasks the defect return convened. `devtools::test()` is FAIL 0, WARN 0, SKIP 0, PASS 1628. `git diff origin/main...HEAD -- R/ NAMESPACE man/` is empty, so `devtools::document()` is not required and no code path changed; the branch diff is five markdown files. AC2 and AC6 re-ticked.
+
+- 2026-08-30: defect return: AC6 fails. The fresh-context [O] reviewer found that F061 `new_tbl()` is recorded in the draft as retired by no upstream ask, when tune exports `new_bare_tibble()` (`NAMESPACE:267`, `R/utils.R:82-85`, `#' @keywords internal` under `@rdname empty_ellipses` at `:79-81`, re-verified here against `4c74638`) — a direct counterpart sitting in the very doc block T-A1 already asks tune to promise, so T-A1's promise would retire it and the draft's "what would retire it instead" (this package adding `tibble` to Imports) is not the answer. F061 is one of the 28 ledger rows AC6 quantifies over, so AC6 fails inside its own domain. G3 (T-A4 does not retire F083: `is_mirai_installed()` has a second call site at `R/parallel.R:47` inside `pool_is_cancellable()`) and G4 (T-A3 asks only to *document* the metrics zero-row shape, which retires nothing, so F079 stands) are weaker instances of the same overstated-retirement problem. AC1-AC5 verified with fresh evidence and the consistency gate is clean; eight lesser defects (G2, G5-G10) ride the same rework and three (G11-G13) are rejected. Second defect return on this milestone; the two prior returns were AC6 amendments and stay off this count. Thrash trigger (b) fires — AC6 has failed twice by defect, both times on a tune export fact taken from recall rather than from a sweep of tune's `NAMESPACE`.
+- 2026-08-30: CI on PR #38 has one red job unrelated to this diff: `macos-latest (release)` fails in `R CMD build`'s install step on a broken RSPM macOS arm64 `gower` binary (`symbol not found in flat namespace '___kmpc_barrier'`), deterministic across a re-run and failing identically on `origin/main`. Not an M28 defect, but a merge blocker needing its own disposition before any milestone merges.
 
 ## Decisions
 
@@ -545,3 +548,183 @@ an export and says all three tune functions are already exported; T-A1 splits
 claim F001/F006/F007; and T-A5 carries the D-024 clause (2) ask, confirmed live
 at `cairn/DECISIONS.md:675` and preserved by D-025 at `:722`, with its four
 `check_rset` citations resolving in the tune clone.
+
+**Consistency gate — clean.** `cairn_validate.py` exits 0; all 16 PASS checks
+pass, including `scaffold present`, `coverage complete`, `binding criteria` and
+`references index<->disk`. Advisories: 18 `references staleness`, unchanged in
+count and none naming the new page, plus one `sizing` tripwire (M28 carries 12
+tasks against the 10-task threshold — the four rework tasks the first defect
+return convened). No `DESIGN.md` principle changed, so `cairn_impact.py` is
+skipped. Toolchain slot (`r-package`): `devtools::document()` leaves no diff
+under `R/`, `man/` or `NAMESPACE`; `devtools::check()` is 0 errors, 0 warnings,
+0 notes in 2m 39.1s; `devtools::test()` is FAIL 0, WARN 0, SKIP 0, PASS 1628;
+`pkgdown::check_pkgdown()` finds no problems; no `README.Rmd` exists; both new
+paths are already `.Rbuildignore`d (`^cairn$` line 1, `^benchmarks$` line 11);
+the milestone has no user-visible change, so `NEWS.md` is owed no entry.
+
+**CI — one red job, pre-existing and not this diff's.** On PR #38,
+`macos-latest (release)` fails in ~1m20s during `R CMD build`'s install step:
+`unable to load shared object '…/gower/libs/gower.so': symbol not found in flat
+namespace '___kmpc_barrier'` — the RSPM macOS arm64 binary of `gower`, a
+transitive dependency, built against an OpenMP runtime the runner image does not
+carry. Re-run once; it failed identically, so it is deterministic rather than
+transient. The same job fails the same way on `origin/main` (the M30 merge run),
+so it predates this branch, and this branch changes five markdown files and no R
+code. windows-latest, ubuntu release, ubuntu oldrel-1, test-coverage and pkgdown
+all pass. It is a merge blocker under the never-merge-red rule and needs its own
+disposition, but it is not an M28 defect.
+
+**Review routing.** Declared surface tier is internal and
+`git diff origin/main...HEAD --name-only` is markdown-only
+(`benchmarks/upstream-asks.md`, `cairn/ROADMAP.md`, this file,
+`cairn/references/INDEX.md`, `cairn/references/code-inventory.md`) with no
+script, hook or other executable surface — so single-reviewer mode: one
+fresh-context [O] diff-bug lens, the other two skipped.
+
+### Independent review — single [O] diff-bug lens, 13 findings
+
+Every reported finding and its disposition, ranked as the reviewer ranked them.
+The reviewer's own mechanical pass agreed with the gate's on every count: 106/106
+ledger rows correct for name, `file:line`, line count and export status; all nine
+`Retires:` sums arithmetically right; all 28 draft placements correct; the
+`NAMESPACE` reconciliation complete. It also swept for top-level definitions the
+extraction pattern could miss (`=` assignment, split-line assignment, `assign()`,
+backtick names) and found `` `[.nested_results` `` to be the only one, which
+independently confirms the addendum's claim.
+
+**G1 (AC-failing). `benchmarks/upstream-asks.md:201-214` and
+`cairn/references/code-inventory.md:285-290` — F061 `new_tbl()` is recorded as
+retired by no upstream ask, but tune exports a direct counterpart the note never
+looked for.** `new_bare_tibble()` is exported at tune `NAMESPACE:267` and defined
+at `R/utils.R:82-85` as `vctrs::new_data_frame()` followed by
+`tibble::new_tibble()`, carrying `#' @export`, `#' @keywords internal` and
+`#' @rdname empty_ellipses` at `R/utils.R:79-81` — verified here against the
+pinned clone at `4c74638`. It is callable today as `tune::new_bare_tibble(cols)`,
+does what `new_tbl()` does, needs no `tibble` in this package's Imports, and sits
+in the *same doc block* T-A1 already asks tune to attach a stability promise to.
+T9 re-read every tune symbol the note *cites*; `new_bare_tibble` was never cited,
+so it escaped the sweep. AC6's disjunct "recorded as retired by no upstream ask
+together with what would retire it instead" is therefore false of F061 inside
+AC6's own domain: T-A1's promise would retire it, and the note names a local
+dependency decision instead. → **returns the milestone.**
+
+**G2. `benchmarks/upstream-asks.md:20` contradicts `:253-256`.** The framing says
+granting every ask "would leave nestedtune with 79 of its 106 top-level
+functions" — 106 minus 27, counting F004 `check_nested()` as retired whole —
+while R-A2's own header and body say three of F004's refusals survive and
+"roughly 30 [lines] stay behind", so `check_nested()` remains a function and the
+figure is 80. Confirmed by reading both passages. Same overstated-retirement
+class as the last return's F6, in the paragraph F6 fixed. → fix in the return.
+
+**G3. `benchmarks/upstream-asks.md:177-180` — T-A4's "one line of documentation
+retires three of our functions" is not true of F083.** `is_mirai_installed()` has
+a second call site at `R/parallel.R:47`, inside `pool_is_cancellable()` (F086,
+bucketed `core`), asking "is mirai installed at all" — a question
+`choose_framework()`'s return value cannot answer. Confirmed by reading
+`R/parallel.R:46-51`. Promising `choose_framework()` alone leaves F083 standing.
+→ fix in the return; part of the same AC6 honesty rework.
+
+**G4. `benchmarks/upstream-asks.md:134-150` — T-A3's ask does not retire the five
+functions its header claims.** The heading says "Export the note and metric
+tibble constructors", but the body asks only to export the note constructor and
+the append helper and to *document* the zero-row shape of a metrics tibble.
+Documenting a shape retires nothing, so F079 `empty_metrics()` would still have
+to be written; and F076 `tune_notes()` re-tags `tune::collect_notes()` rows with
+a stage string, which `append_log_notes()` does not cover. Confirmed by reading
+both. → fix in the return; same rework.
+
+**G5. `cairn/references/code-inventory.md:252` — wrong doc block for
+`check_metrics`.** The note says of `check_metrics()` and `check_metrics_arg()`
+"Both are exported under `@keywords internal` in the `choose_metric` block". Only
+`check_metrics_arg` is `@rdname choose_metric` (tune `R/metric-selection.R:305`);
+`check_metrics` is `@rdname empty_ellipses` (`R/checks.R:392`), verified here by
+walking each symbol's own roxygen block. AC2 does **not** fail on it — F011's
+citations (`R/checks.R:397`, `R/metric-selection.R:307`) resolve and the
+load-bearing fact (exported, `@keywords internal`, unpromised) is intact — but
+the sentence is wrong. → fix in the return.
+
+**G6. `cairn/references/code-inventory.md:23` — "106 definitions across 12 files"
+is false.** The extraction output spans 10 files; `R/` holds 12 `.R` files, of
+which `R/nestedtune-package.R` and `R/reexports.R` define nothing the procedure
+emits. Confirmed independently at the gate
+(`grep -lE '^[A-Za-z._][A-Za-z0-9._]* <- function' R/*.R | wc -l` → 10). The same
+wording is in the T1 work-log line and both prior Review sections. It is a
+summary statement about the note's own evidence, which AC1 puts in scope, though
+it does not falsify any of AC1's enumerated requirements. → fix in the return.
+
+**G7. `cairn/references/code-inventory.md:4-5` — the last return's F15 was not
+actually fixed.** The Provenance block still reads "two upstream source trees /
+read read-only outside this repo"; commit `48dcdda` moved the line break so the
+duplication now sits on one line. The T10 work-log line claims "the duplicated
+word in the Provenance block is gone (F15)", which is untrue of the commit
+claiming it. Editorial in the artifact, but a false work-log claim. → fix in the
+return, and correct the work-log claim rather than repeating it.
+
+**G8. `benchmarks/upstream-asks.md:185-186` misstates D-025.** The draft says
+T-A5 is "D-024 clause (2), explicitly preserved by D-025". `cairn/DECISIONS.md:741`
+says the opposite in form: "Clause (2) is superseded rather than confirmed: it
+framed the alternative to retirement as staying an outside companion, and
+organization membership is a third shape it did not anticipate", going on to say
+"What clause (2) asked of tune still holds". The substance of the ask is live;
+the clause is not "preserved". The AC evidence written earlier in this Review
+section repeated the same error and is corrected here. → fix in the return.
+
+**G9. `cairn/references/code-inventory.md:214-217` — the `empty_ellipses`
+location list is short by two.** Three sites are given (`R/checks.R:311`, `:65`,
+`R/grid_helpers.R:114`) for a claim quantified over nine symbols; `.has_spec` is
+documented at tune `R/grid_helpers.R:151-153` and `check_metrics` at
+`R/checks.R:390-392`, neither located in the note. The universal claim is true —
+all nine were verified here — so this is incompleteness, not error. → fix in the
+return, alongside G5 which is the same passage.
+
+**G10. `benchmarks/upstream-asks.md:348` and `cairn/references/code-inventory.md:372`
+— off-by-one in the shared-refusal citation.** rsample `R/labels.R:14` is the
+`labels.rset` signature; the three refusal lines are `:15-17`. The `:28-30` half
+is right. Editorial. → fix in the return.
+
+**G11. `benchmarks/upstream-asks.md:253-254` — R-A2's header noun counts a
+partially-retired function whole.** "Retires: … 3 functions, ~104 lines" sums
+F004+F005+F008 in full and subtracts in prose on the same line ("of which roughly
+30 stay behind"). The arithmetic is right and the qualifier is adjacent. →
+**reject**: the same line states the subtraction, so no reader is misled, and the
+figure is the ledger sum the cross-check script verifies. G2 is the real defect
+in this area and is actioned.
+
+**G12. `cairn/references/code-inventory.md:296-297` — the threshold cite includes
+one unrelated line.** The note cites `:146-147` for the `>= 2` threshold; `:146`
+is `neither <- future_workers < 2 & mirai_workers < 2` and `:147` is the `both <-`
+line. → **reject**: `:147` is the second half of the same two-line threshold
+expression, and citing the pair is not an error.
+
+**G13. `cairn/ROADMAP.md:10` — the hygiene line says "all 16 checks green;
+advisory — 18 references…" while a second advisory (the 12-task sizing tripwire)
+now also fires.** → **reject**: out of scope — the hygiene line is written by the
+post-merge pass of the *previous* milestone and is not this diff's to maintain;
+the next hygiene pass overwrites it.
+
+**Outcome: defect return.** G1 demonstrates AC6 failing inside its own domain —
+F061 is one of the 28 ledger rows AC6 quantifies over, and the disjunct the draft
+takes for it ("retired by no upstream ask") is false, because tune's exported
+`new_bare_tibble()` sits in the very doc block T-A1 asks tune to promise. G3 and
+G4 are weaker instances of the same thing: entries placed under asks that do not
+retire them whole. Status back to `in-progress`; **AC6 unticked**. AC1, AC2, AC3,
+AC4 and AC5 keep the fresh evidence recorded above and are not re-opened — G5,
+G6, G7, G9 and G10 are defects inside them that none of them falsifies, and they
+ride the same rework. G11, G12 and G13 are rejected with reasons above.
+
+**Thrash rule.** This is the **second defect return** on M28; the two AC6
+amendment returns run on their own track and stay off this count, so trigger (a)
+(the third return) has not fired. Trigger (b) **has**: AC6 has now failed twice by
+defect, each by a new mechanism of the same shape — a fact about tune's export
+surface taken from author recall rather than from a procedure over that surface.
+The first return found nine cited symbols wrongly assumed unexported; this one
+finds a tenth symbol that was never cited because nobody looked for it. Re-citing
+entry by entry buys the next uncited symbol, not a fix. The remedy (b) prescribes
+is to reconsider the alternative the plan gate recorded against, which the work
+log holds in two places: the 2026-08-28 plan gate chose the upstream-asks framing
+over a purely descriptive internal-maintenance inventory, and the 2026-08-30
+implementation gate rejected both "treating any export as disqualifying" and a
+sixth bucket for unpromised-export duplicates. The rework should decide, at its
+gate, whether the durable fix is a mechanical sweep of tune's whole `NAMESPACE`
+against every nestedtune helper — which is what neither prior pass had — rather
+than a third round of hand-checked citations.
