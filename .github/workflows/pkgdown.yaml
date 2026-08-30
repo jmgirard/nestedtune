@@ -55,8 +55,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # Not the gating workflows' measured 20-minute cap, which is priced against
-    # a hang inside `test_check("nestedtune")`; this job runs no tests and the
+    # Not the gating workflows' measured 20 minutes, which is priced against a
+    # hang inside `test_check("nestedtune")` -- and which sits at a different
+    # scope in each: on `test-coverage`'s job, on `R-CMD-check`'s
+    # `check-r-package` step (that workflow caps its job at 60, for the devel
+    # leg's from-source dependency build). This job runs no tests and the
     # vignette starts no daemons. It is here only so a runaway build fails in
     # minutes instead of burning GitHub's 360-minute default.
     timeout-minutes: 20

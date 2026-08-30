@@ -40,8 +40,9 @@ permissions: read-all
 jobs:
   stress:
     runs-on: ${{ inputs.os }}
-    # Deliberately far above R-CMD-check's 20: this job is meant to sit through
-    # hangs and record them, where that one is meant to be killed by them.
+    # Deliberately far above the 20 minutes R-CMD-check allows its check step:
+    # this job is meant to sit through hangs and record them, where that one is
+    # meant to be killed by them.
     timeout-minutes: 180
 
     env:
