@@ -44,6 +44,12 @@
 #' @param metrics A [yardstick::metric_set()], or `NULL` to use tune's defaults
 #'   for the model's mode. The first metric in the set selects the best
 #'   candidate.
+#' @param event_level `"first"` (the default) or `"second"`, naming which level
+#'   of a two-class outcome factor is the event. It reaches the tuning run,
+#'   where it decides which candidate is selected; the final fit itself scores
+#'   nothing, so there is no second place for it to act. Metrics that do not
+#'   distinguish the two levels -- accuracy, `roc_auc`, `brier_class` -- are
+#'   unaffected by it. Ignored for a regression model, as it is in tune.
 #'
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
 #'   trained workflow, better reached with [extract_workflow()]), `selected`

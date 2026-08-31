@@ -38,6 +38,13 @@
 #' @param metrics A [yardstick::metric_set()], or `NULL` to use tune's defaults
 #'   for the model's mode. The first metric in the set selects the best inner
 #'   candidate.
+#' @param event_level `"first"` (the default) or `"second"`, naming which level
+#'   of a two-class outcome factor is the event. It reaches both loops: the
+#'   inner tuning run, where it decides which candidate is selected, and the
+#'   outer scoring fit, where it decides what the reported metrics mean.
+#'   Metrics that do not distinguish the two levels -- accuracy, `roc_auc`,
+#'   `brier_class` -- are unaffected by it; `sens`, `spec`, `precision` and
+#'   their relatives are not. Ignored for a regression model, as it is in tune.
 #'
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
@@ -269,9 +276,22 @@
 #'
 #' @section Differences from calling tune directly:
 #'
-#' Inner tuning always runs with `control_grid(allow_par = FALSE)`, forced
-#' rather than left to chance, and there is deliberately no `control` argument
-#' to override it. Parallelism belongs over the outer folds, as above.
+#' There is no `control` argument. What tune's control objects settle is
+#' settled here instead by the arguments above, or forced.
+#'
+#' Settable: `event_level`, which reaches the inner `control_grid()` and the
+#' outer `control_last_fit()` alike.
+#'
+#' Forced: inner tuning always runs at `allow_par = FALSE`. Parallelism belongs
+#' over the outer folds, as above, and leaving that to a caller would put two
+#' pools in contention.
+#'
+#' Not offered: the slots that would have nothing to act on here. `save_pred`,
+#' `extract` and `save_workflow` land on the inner `tune_results`, which each
+#' fold record discards once the fold succeeds; `parallel_over`,
+#' `backend_options`, `workflow_size` and `pkgs` are inert under
+#' `allow_par = FALSE`; and `verbose` output from inside a mirai daemon is not
+#' shown.
 #'
 #' @examples
 #' \donttest{

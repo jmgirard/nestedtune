@@ -140,7 +140,7 @@ two-class test fixture, and the refusal path for a value outside the two.
       refusals on both orchestrators — recording both oracles in the file
       header the way `tests/testthat/test-metrics-argument.R` records O1.
 - [x] T7: extend the parallel-identity coverage to the new fixture (AC5).
-- [ ] T8: document `event_level` on both orchestrators; rewrite the
+- [x] T8: document `event_level` on both orchestrators; rewrite the
       "Differences from calling tune directly" section
       (`R/nested-tune-grid.R:272-275`), which says there is deliberately no
       `control` argument, to say what is settable and what is not; run
@@ -168,6 +168,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: T5 — two-class fixture added to `helper-orchestration.R`: `cls_data()` (n = 120, 32 events against 88, event the first level), `cls_workflow()` (ranger classification, `min_n` tuned), `cls_grid()`, `cls_metrics()` (`metric_set(roc_auc, sens, spec)`), `cls_nested()` (v = 3, outer and inner stratified on the outcome, literal arguments), plus `missing_assessment_levels()` and `cls_design_rsets()` for the class-presence guard. Measured: both classes present in all three outer assessment sets and in all nine per-fold inner assessment sets, no rsample pooling warning. `devtools::test()` 1670 pass, 0 fail.
 - 2026-08-31: T6 — `tests/testthat/test-event-level.R` written: a fixture guard, AC1's refusals on both orchestrators (message and named call), AC2's count-from-the-refit recomputation, AC3's exchange with `.selected` asserted equal, AC4's hand-run `tune_grid()` comparison. Three oracles recorded in the header: O1 closed-form (sensitivity as the definitional rate, `sens_vec()` read beside it), O2 live (the independent `tune_grid()`), O3 invariant (the level exchange). Discrimination proven by planting each defect separately: removing `event_level` from the outer `control_last_fit()` turned AC2 red on all three folds and AC3 red on two, leaving AC4 green; removing it from `nested_final_fit()`'s inner `control_grid()` turned AC4 red and left AC2 and AC3 green. `devtools::test()` 1732 pass, 0 fail.
 - 2026-08-31: T7 — `test-parallel-identity.R` gained a two-class case at `event_level = "second"`: serial and 2-daemon runs, both completing every fold, `last_dispatch()` asserted `"parallel"`, whole objects `identical()`. Its pool start registered in `helper-time-budget.R`. Discrimination proven by dropping `event_level` from the leaning dispatch wrapper's call to the worker, a daemon-path-only defect: the new test went red and the serial-path tests stayed green. `devtools::test()` 1737 pass, 0 fail.
+- 2026-08-31: T8 — `event_level` documented on both orchestrators; the "Differences from calling tune directly" section rewritten from "there is deliberately no `control` argument" to three lists — settable (`event_level`, reaching both control objects), forced (`allow_par = FALSE` on inner tuning), and not offered, naming why each remaining `control_grid()` slot would have nothing to act on here. NEWS entry added, `devtools::document()` run, `air format .` clean. `devtools::test()` 1737 pass, 0 fail.
 
 ## Decisions
 

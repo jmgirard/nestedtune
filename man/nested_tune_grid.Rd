@@ -10,7 +10,8 @@ nested_tune_grid(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 )
 }
 \arguments{
@@ -43,6 +44,14 @@ anything is fitted: every column must name a parameter marked with
 \item{metrics}{A \code{\link[yardstick:metric_set]{yardstick::metric_set()}}, or \code{NULL} to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner
 candidate.}
+
+\item{event_level}{\code{"first"} (the default) or \code{"second"}, naming which level
+of a two-class outcome factor is the event. It reaches both loops: the
+inner tuning run, where it decides which candidate is selected, and the
+outer scoring fit, where it decides what the reported metrics mean.
+Metrics that do not distinguish the two levels -- accuracy, \code{roc_auc},
+\code{brier_class} -- are unaffected by it; \code{sens}, \code{spec}, \code{precision} and
+their relatives are not. Ignored for a regression model, as it is in tune.}
 }
 \value{
 An object of class \code{nested_results}: one row per outer fold, with the
@@ -297,9 +306,22 @@ discard every completed fold whenever a single worker died.
 \section{Differences from calling tune directly}{
 
 
-Inner tuning always runs with \code{control_grid(allow_par = FALSE)}, forced
-rather than left to chance, and there is deliberately no \code{control} argument
-to override it. Parallelism belongs over the outer folds, as above.
+There is no \code{control} argument. What tune's control objects settle is
+settled here instead by the arguments above, or forced.
+
+Settable: \code{event_level}, which reaches the inner \code{control_grid()} and the
+outer \code{control_last_fit()} alike.
+
+Forced: inner tuning always runs at \code{allow_par = FALSE}. Parallelism belongs
+over the outer folds, as above, and leaving that to a caller would put two
+pools in contention.
+
+Not offered: the slots that would have nothing to act on here. \code{save_pred},
+\code{extract} and \code{save_workflow} land on the inner \code{tune_results}, which each
+fold record discards once the fold succeeds; \code{parallel_over},
+\code{backend_options}, \code{workflow_size} and \code{pkgs} are inert under
+\code{allow_par = FALSE}; and \code{verbose} output from inside a mirai daemon is not
+shown.
 }
 
 \examples{
