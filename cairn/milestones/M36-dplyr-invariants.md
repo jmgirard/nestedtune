@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** `m036-dplyr-invariants`
+- **Branch/PR:** `m036-dplyr-invariants` / [#45](https://github.com/tidymodels/nestedtune/pull/45)
 
 ## Goal
 
@@ -42,10 +42,10 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 
 ## Acceptance criteria
 
-- [ ] AC1 `?nested_tune_grid`'s `@return` states the four invariants above and
+- [x] AC1 `?nested_tune_grid`'s `@return` states the four invariants above and
       that an operation violating them returns a bare tibble; the sentence
       "Subsetting rows carries both attributes unchanged" is gone from it.
-- [ ] AC2 Applying each of `filter`, `slice`, `arrange`, `mutate`, `select`,
+- [x] AC2 Applying each of `filter`, `slice`, `arrange`, `mutate`, `select`,
       `rename`, `relocate`, `group_by`, `ungroup`, `bind_rows`, `bind_cols`,
       `left_join` and `[` to a completed 3-fold `nested_results` returns an
       object that either (a) carries class `nested_results`, with `outer_label`,
@@ -54,14 +54,14 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
       `sum(.completed)` of the rows returned, or (b) carries no `nested_results`
       class at all. Each of those thirteen verbs is asserted by name in
       `tests/testthat/test-dplyr-compat.R`.
-- [ ] AC3 Every row-removing and row-adding form in the set `filter(.completed)`,
+- [x] AC3 Every row-removing and row-adding form in the set `filter(.completed)`,
       `slice(1)`, `slice(-1)`, `head(1)`, `x[1, ]`, `x[c(TRUE, FALSE, FALSE), ]`,
       `x[-1, ]` and `bind_rows(x, x)` returns a bare tibble, asserted form by
       form; and none of the returned objects prints
       `Outer resamples: 3-fold cross-validation`.
-- [ ] AC4 `NEWS.md` records the `[.nested_results` behavior change and the new
+- [x] AC4 `NEWS.md` records the `[.nested_results` behavior change and the new
       dplyr methods, under D-003's pre-1.0 waiver of the deprecation cycle.
-- [ ] AC5 `cairn/PROFILE.md`'s verify slot is clean (`devtools::test()`), and
+- [x] AC5 `cairn/PROFILE.md`'s verify slot is clean (`devtools::test()`), and
       the fuller pre-review check it names (`devtools::check()`) passes with 0
       errors and 0 warnings, any NOTE justified in the review record.
 
@@ -119,3 +119,143 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-31 on `m036-dplyr-invariants` at 7d0b0ea, PR
+[#45](https://github.com/tidymodels/nestedtune/pull/45). `origin/main` had not
+moved since the branch was cut, so no merge was needed before gathering
+evidence.
+
+### Acceptance criteria
+
+- AC1 — `?nested_tune_grid`'s `@return` carries a "What an operation on the
+  object may and may not do" block stating the invariants as three bullets
+  covering the four clauses (rows reorderable but never added or removed;
+  columns addable and reorderable; every listed column present holding the
+  values it held) and naming the bare-tibble branch for anything else.
+  `grep -rn "Subsetting rows carries" R/ man/ NEWS.md` returns nothing, so the
+  obsolete sentence is gone from the roxygen and the generated `.Rd` alike.
+- AC2 — `tests/testthat/test-dplyr-compat.R` names all thirteen verbs literally
+  in `dplyr_compat_table()`: `filter`, `slice`, `arrange`, `mutate`, `select`,
+  `rename`, `relocate`, `group_by`, `ungroup`, `bind_rows`, `bind_cols`,
+  `left_join` and `[`, sixteen entries in all, with `mutate`, `select` and `[`
+  carried in both directions. `expect_kept()` asserts branch (a) as the
+  criterion words it — class present, `outer_label`/`grid`/`metrics` identical
+  to the source, `folds_attempted` equal to `nrow(out)` and `folds_completed`
+  to `sum(out$.completed)` — and branch (b) is asserted as the absence of the
+  class. `devtools::test()` on a completed 3-fold fixture: FAIL 0, WARN 0,
+  SKIP 0, PASS 1851, so no entry skipped vacuously.
+- AC3 — all eight forms are asserted one `test_that()` block apiece, so a
+  failure names its form: `filter(.completed)` on a partial run,
+  `slice(1)`, `slice(-1)`, `head(1)`, `x[1, ]`, `x[c(TRUE, FALSE, FALSE), ]`,
+  `x[-1, ]` and `bind_rows(x, x)`. A ninth block asserts none of the eight
+  prints `Outer resamples: 3-fold cross-validation`, over text captured from
+  both `print()` and the cli stream so a bare tibble's empty cli capture cannot
+  pass the negative for the wrong reason; each form's text is asserted
+  non-empty first, and the source object is the passing control, shown to
+  print the line. Green in the same FAIL 0 / SKIP 0 run.
+- AC4 — `NEWS.md`'s dev section opens with a "Breaking:" bullet naming the
+  `[.nested_results` change by example (`slice()`, `head()`, `x[1, ]`,
+  `x[-1, ]`, a `filter()` dropping a failed fold, `bind_rows()`), stating what
+  the old behavior returned, and a following paragraph naming the verbs that
+  keep the class; a second bullet records `dplyr` becoming a hard dependency.
+  No deprecation warning ships, per D-003's pre-1.0 waiver. No milestone
+  numbers appear in the entry.
+- AC5 — `devtools::test()`: FAIL 0, WARN 0, SKIP 0, PASS 1851.
+  `devtools::check()`: `Status: OK`, 0 errors, 0 warnings, 0 notes, duration
+  5m 39.1s. No NOTE to justify.
+
+No `Driving RR:` is declared, so the projection-vs-outcome comparison no-ops.
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0 — every check PASS, including `coverage complete`,
+  `binding criteria` and `scaffold present`. 18 advisory WARNs, all the standing
+  `references staleness` set, unchanged by this milestone. The `release window`
+  advisory did not fire.
+- No `DESIGN.md` principle changed (the file is not in the diff), so
+  `cairn_impact.py --changed` was skipped.
+- Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+  `devtools::document()` produces no diff (working tree after the run holds only
+  this milestone file); `NAMESPACE` and `man/` are regenerated, not hand-edited;
+  `README.Rmd`/`README.md` are untouched by the branch and unchanged since their
+  last knit; `pkgdown::check_pkgdown()` — no problems found; `NEWS.md` carries
+  the milestone's user-visible changes with no milestone numbers; no new
+  top-level file, so no `.Rbuildignore` entry is owed; `devtools::check()`
+  `Status: OK`, 0/0/0.
+
+### Independent review
+
+The diff touches executable surface, so all three lenses ran fresh-context, each
+on its own evidence base.
+
+**[S] blame-history** — no conflict. The four rewritten test files each drop an
+assertion for a reason D-031 records; `as_fold_subset()` keeps the M20-era
+print and `collect_metrics` assertions alive without routing through a `[` that
+no longer yields a classed subset. Independently confirmed that `group_by()` and
+`ungroup()` shed the class through dplyr's own `grouped_df` rebuild rather than
+through this package's rule, so the table's expectation for them is not a
+latent bug.
+
+**[S] prior-PR-comments** — no regression. Archived findings on these files
+(M20 F1 and F2, M03 F1, M34's dots-barrier exemption, M22 P1) are each carried
+forward rather than reintroduced; the `[` rewrite removes the M20 hazard
+(which `NextMethod()` reaches) instead of resurrecting it. The GitHub probe
+found two real inline comments repo-wide, both on workflow files this branch
+does not touch, so the thread walk was skipped.
+**[O] diff-bug** — seven findings, ranked by the lens most severe first. Each
+was re-run against the implementation before triage; verdicts below are this
+session's own measurements on a hand-built 3-fold `nested_results`, not the
+lens's account.
+
+- F1 (CONFIRMED) — the keep branch drops the tibble classes.
+  `reconstruct_results()` promotes nothing, while `bare_results()` does, so a
+  verb that hands `dplyr_reconstruct()` a bare data frame returns
+  `c("nested_results", "data.frame")`. Measured: `filter()`, `mutate()`,
+  `arrange()`, `bind_cols()` and `left_join()` all come back with
+  `is_tibble()` FALSE; `select()`, `relocate()` and `[` stay tibbles, so the
+  class is a tibble subclass for some verbs and not others. User-visible
+  consequence measured: `mutate(res, extra = 1)[, "id"]` reaches
+  `[.data.frame`, whose `drop = TRUE` default returns a bare character vector,
+  where `res[, "id"]` returns a one-column tibble. Contradicts DESIGN.md's
+  "a plain tibble carrying class `nested_results`". Untested in both
+  directions — `expect_kept()` asserts class, attributes and counts only.
+- F2 (CONFIRMED) — adding a column named `id...` drops the class.
+  `record_columns()` greps `^id` to find the design's own id columns, and
+  `can_reconstruct_results()` compares the two record-column sets for equality,
+  so a caller-added `id`-prefixed column is in `data`'s set and not
+  `template`'s. Measured: `mutate(res, id_extra = 1)` and
+  `mutate(res, ideal = 1)` both return a bare tibble, while
+  `mutate(res, extra = 1)` keeps the class. Contradicts the invariant the
+  `@return`, `NEWS.md` and D-031 all state, and `id`-prefixed names are what a
+  caller joins in to label folds.
+- F3 (CONFIRMED) — the `@return` states the rule unconditionally, but
+  `rename()` bypasses it. `dplyr::rename()` is `set_names()`, reaching the class
+  through `names<-` and vctrs, so `rename(res, fold = id)` returns a
+  `nested_results` with no `id` column — an object the class's own
+  `has_results_columns()` gate would reject. The scope call is D-031's and
+  stands; the documented contract does not carry the caveat.
+- F4 (CONFIRMED) — `group_by()` sheds the class but keeps the whole record.
+  Measured: `group_by(res, id)` returns a `grouped_df` still carrying `grid`,
+  `outer_label` and `folds_attempted`, because `bare_results()` is the only
+  place the attributes are stripped and `group_by()` never routes through it.
+  Same root cause as F3: a path that never reaches `dplyr_reconstruct()`.
+  `ungroup()` does clear them.
+- F5 (CONFIRMED) — `bare_results()`'s comment says the class is subtracted
+  rather than replaced "so a grouped result stays grouped", but F4 shows no
+  `grouped_df` ever carries the class, so the stated reason is unreachable.
+  Harmless as code; a later reader may rely on it.
+- F6 (PLAUSIBLE) — two rewritten tests no longer exercise the path their titles
+  name. `as_fold_subset()` hand-stamps a classed object with `outer_label`
+  omitted, a state `reconstruct_results()` can no longer produce, so "the outer
+  scheme is dropped rather than misreported after subsetting" no longer tests
+  subsetting. The assertions are still worth keeping; the titles overclaim.
+- F7 (REFUTED) — the lens read `dplyr (>= 1.1.0)` as narrowing installability
+  for no recorded cause. `tune` is already an Import and its own DESCRIPTION
+  requires `dplyr (>= 1.1.0)`, so the floor costs no installation anything.
+
+One further finding from the gate itself, outside the lenses: D-030 sits inside
+`cairn/DECISIONS.md`'s trailing `<!-- Template:` comment block, so the entry is
+present to a heading grep but renders nowhere. Pre-existing — `git show
+main:cairn/DECISIONS.md` puts the `<!-- Template:` line at 892 and D-030 at 894
+— and not introduced by this diff.
+
