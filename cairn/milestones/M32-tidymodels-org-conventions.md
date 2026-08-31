@@ -1,6 +1,6 @@
 # M32: The community files and site template the tidymodels organization shares
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -130,6 +130,8 @@ CI workflow change → M33.
 - 2026-08-30: T6 — D-027 records the template switch and the `tidyverse/tidytemplate` declaration, extending D-022; NEWS gains one bullet for the site's new look, its two community pages and the README's experimental badge.
 
 - 2026-08-30: T7 — `devtools::document()` leaves no diff; `devtools::test()` reports FAIL 0 | WARN 0 | SKIP 0 | PASS 1628; `devtools::check()` returns `Status: OK` (0 errors, 0 warnings, 0 notes).
+
+- 2026-08-30: all seven tasks done, profile verify and the fuller check clean; status → review.
 
 ## Decisions
 
