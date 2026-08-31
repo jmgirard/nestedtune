@@ -930,8 +930,6 @@ without further argument. Falsified by an invariant-respecting operation that
 still yields an object whose record is untrue of its rows, or by a caller with
 a legitimate need for a row subset that stays a `nested_results`.
 
-<!-- Template:
-
 ### D-030 (2026-08-31): `event_level` is offered as its own argument rather than a `control` argument taking tune's settings object — the first slot of tune's control objects this package exposes, and the shape D-010's "no `control` argument" now takes
 
 **Context:** M35 needed the caller to name which factor level counts as the
@@ -960,6 +958,8 @@ decision — `eval_time` is the next candidate and stays on the ROADMAP.
 Falsified by a caller needing a slot other than `event_level`, or by the inner
 tuning run being retained on `nested_results`, which would give `save_pred` and
 `extract` something to act on.
+
+<!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
 
