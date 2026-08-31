@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M36: Removing an outer fold's row stops producing a `nested_results`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** —
+- **Branch/PR:** `m036-dplyr-invariants`
 
 ## Goal
 
@@ -71,7 +71,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 
 ## Tasks
 
-- [ ] T1 Write `tests/testthat/test-dplyr-compat.R`: the thirteen-verb table with
+- [x] T1 Write `tests/testthat/test-dplyr-compat.R`: the thirteen-verb table with
       each verb's expected branch stated in the table, plus AC3's eight
       row-changing forms. Record which verbs fail against the current code —
       `dplyr::slice(res, 1)` is known to keep the class with the parent's
@@ -101,6 +101,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: plan gate chose tune#221's strict invariant (a row-count change drops the class) over extending M04's existing `[` behavior (keep the class, recompute the counts) because #32 asks for the strict answer in so many words and it is what tune and rsample already declare; the cost is an API change to `[.nested_results`, waived by D-003. Falsified by a caller or a downstream package depending on a row subset staying a `nested_results`.
 - 2026-08-31: plan gate chose dplyr-only over dplyr-plus-vctrs because the reproduced defect is on the dplyr path and the vctrs half roughly doubles the diff; the vctrs methods go to a candidate row. Falsified by a `vec_rbind()` or `vec_ptype2()` path reaching the same stale-attribute state the dplyr methods now block.
 - 2026-08-31: [O] criteria audit ran in **full** mode (declared tier user-facing) and returned six findings, all disposed here: the `?nested_results` topic does not exist (retargeted to `?nested_tune_grid`, AC1); AC2's universal quantified over the test file's own table rather than the class (verbs now named literally, table construction moved to T1); AC2 branch one demanded attributes identical to source, which IP4 forbids for the counts (counts now promised against the rows returned); a vacuous-skip leak if dplyr landed in Suggests (T2 recommends Imports and states the leak); AC3's row-removal family stood on two exemplars (widened to eight forms across index, verb and addition); AC5 named a pre-existing NOTE set `cairn/PROFILE.md` does not record (cut to the profile's own verify and check slots, budget registration moved to T5).
+- 2026-08-31: T1 — `tests/testthat/test-dplyr-compat.R` written and run against the current code: 10+ failures, the named forms being `slice(1)`, `mutate(.completed = FALSE)`, `rename(fold = id)`, `bind_rows(x, x)`, `x[1, ]` and `filter(.completed)` on a partial run (all keep the class), plus `mutate`/`relocate`/`select(everything())` returning a `nested_results` whose `outer_label` is `NULL`. Both fixtures are cache hits off existing signatures (2 builds, 11 requests). The suite is red at this checkpoint by design.
 
 ## Decisions
 
