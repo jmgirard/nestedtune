@@ -41,7 +41,7 @@ none is up for revision here.
 
 ## Acceptance criteria
 
-- [ ] `.github/workflows/lock.yaml`, `pr-commands.yaml` and
+- [x] `.github/workflows/lock.yaml`, `pr-commands.yaml` and
       `format-suggest.yaml` each hash to the modal git blob of a nine-repository
       survey re-run on the implementation date (`gh api
       repos/tidymodels/<repo>/contents/.github/workflows/<file> --jq .sha` over
@@ -49,19 +49,19 @@ none is up for revision here.
       hardhat). On 2026-08-30 those modes were `d55e238e` (7 of 9), `2edd93f2`
       (9 of 9) and `8c4f117d` (6 of the 7 that carry the file). Evidence:
       `git hash-object` per file, and the survey output with its counts.
-- [ ] `.github/ci-usage.py` still runs: with the three workflows added it exits
+- [x] `.github/ci-usage.py` still runs: with the three workflows added it exits
       zero over a stated window, and the `paths_ignore.source` it reports names
       the same workflow files it named before this milestone. Evidence: the
       script's own output from before and after the additions, both quoted.
-- [ ] That exit-zero is informative rather than vacuous: with a scratch
+- [x] That exit-zero is informative rather than vacuous: with a scratch
       workflow file added carrying a bare `push:` trigger and no
       `paths-ignore` block, `.github/ci-usage.py` exits non-zero naming that
       trigger; the scratch file is removed and is not committed. Evidence: the
       failing invocation's output quoted.
-- [ ] `air format .` leaves the working tree unchanged over the whole
+- [x] `air format .` leaves the working tree unchanged over the whole
       repository. Evidence: the command run on a clean tree, followed by
       `git status --porcelain` printing nothing.
-- [ ] The reformatting is separable from everything else in the branch: one
+- [x] The reformatting is separable from everything else in the branch: one
       commit performs it, and re-running `air format .` over that commit's
       parent tree reproduces the commit's tree byte for byte apart from two
       named files — `tests/testthat/helper-time-budget.R`, whose `file:line`
@@ -74,7 +74,7 @@ none is up for revision here.
       file the commit touches under `benchmarks/` still `parse()`s. Evidence:
       the reproduction diff, both test summaries, the `--stat` output, and the
       `parse()` results.
-- [ ] The profile's `verify` slot is clean and the fuller pre-review check
+- [x] The profile's `verify` slot is clean and the fuller pre-review check
       passes: `devtools::test()` clean, `devtools::document()` no diff,
       `devtools::check()` clean (0 errors, 0 warnings; NOTEs justified).
 
@@ -122,7 +122,38 @@ none is up for revision here.
 - 2026-08-30: T4 done in one commit. `devtools::test()` on the parent `1d351cc`: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628, no failing tests; on the reformat commit: the same, so both the counts and the (empty) failing-test set match. `air format .` (air 0.11.0) rewrote 60 files — 10 under `R/`, 39 under `tests/`, 11 under `benchmarks/`. `tests/testthat/helper-time-budget.R`'s 71 ledger rows were then re-pointed: 68 by matching each file's `SYMBOL_FUNCTION_CALL` sequence from `utils::getParseData()` before and after, which was element-wise identical in call order so only line numbers moved, and the 3 rows naming no budgeted call (`test-parallel-detection.R` 183→184 and 188→189, `test-parallel-interrupt.R` 92→98) by a `difflib` line map over the file's own before/after text. A second `air format .` left the re-pointed helper unchanged and `air format --check .` is silent. All 11 reformatted files under `benchmarks/` `parse()` without error.
 - 2026-08-30: T5 done. `cairn/DESIGN.md` gains an `air` Conventions bullet, the first code-style convention it records, naming the ledger re-point a reformatting pass forces. `D-028` records adopting `air` and vendoring the three workflows unmodified, with the two gate rejections (taking `format-suggest.yaml` without a formatter; pinning the vendored files' actions). `PROFILE.md`'s `test-doctrine` slot names the three added workflows and that none carries a filtered trigger; the slot's divergences bullet was re-wrapped at 98 columns with no wording change, reclaiming two lines to keep the file under its 120-line cap (119). The write-token action-pin question was absorbed into the standing pkgdown-pin candidate row rather than opened as a new one. The wider CI-records refresh the standing candidate row owns is untouched.
 - 2026-08-30: T6 done, milestone to review. `devtools::document()` produced no diff; `devtools::test()` on the branch tip: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes in 3m 20.9s, so `air.toml`'s `.Rbuildignore` entry holds. `air format --check .` prints nothing on the committed tree. Reproduction check for AC5: `git archive HEAD~1` into a scratch tree, `air format .` there, `diff -r` against `git archive HEAD` — the only two differing paths are `tests/testthat/helper-time-budget.R` and this file, the two the criterion names; within the helper the difference is 56 `NNNL,` ledger lines and nothing else.
+- 2026-08-30: review — every criterion re-executed with fresh evidence, all six met; PR #41 opened as a draft; `cairn_validate` all 16 PASS; three fresh-context reviewers returned five findings, none meeting the return floor.
 
 ## Decisions
 
 ## Review
+
+### Acceptance criteria
+
+- AC1 — **met.** Nine-repository survey re-run 2026-08-30 via `gh api repos/tidymodels/<repo>/contents/.github/workflows/<file> --jq .sha`: `lock.yaml` `d55e238e` in 7 of 9 (recipes `3f63a3a8`, broom `1fab65a8`); `pr-commands.yaml` `2edd93f2` in 9 of 9; `format-suggest.yaml` `8c4f117d` in 6 of the 7 that carry it (parsnip `24e4fc16`; yardstick and broom return 404). `git hash-object` on the three vendored files returns `d55e238e`, `2edd93f2` and `8c4f117d` — each at its survey's modal blob.
+- AC2 — **met.** `.github/ci-usage.py --since 2026-08-01T00:00:00Z --until 2026-08-31T00:00:00Z` run twice: on a scratch clone checked out at `main` (`9b0c177`, four workflows) and on the branch tip (seven). Exit 0 both times, and the two outputs are byte-identical under `diff`; both report `Path filter read from R-CMD-check.yaml, pkgdown.yaml, test-coverage.yaml`, the same three source workflows as before the milestone.
+- AC3 — **met.** With a scratch `.github/workflows/zz-scratch-probe.yaml` carrying a bare `push:` trigger and no `paths-ignore`, the same invocation exits 1 with `these triggers carry no `paths-ignore` while others do, so their runs are not filtered and crediting them to the filter would overstate it: zz-scratch-probe.yaml:push`. The scratch file was deleted; `git status --porcelain` shows it gone and it is not committed.
+- AC4 — **met.** `air format .` (air 0.11.0) run on a clean tree at the branch tip: exit 0, and `git status --porcelain` printed nothing afterwards.
+- AC5 — **met**, on four separate checks of the reformat commit `d03442b`. *Reproduction:* `git archive d03442b^` and `git archive d03442b` into two scratch trees, `air format .` over the first, `diff -r` between them — exactly two paths differ, `tests/testthat/helper-time-budget.R` and this milestone file, the two the criterion names; within the helper all 112 changed diff lines are `NNNL,` ledger numbers (56 rows) and nothing else. *Scope:* `git show --stat d03442b` lists 61 files — 10 under `R/`, 39 under `tests/`, 11 under `benchmarks/`, plus this file, nothing else. *Tests:* `devtools::test()` in clean archives of the parent and of the commit: `FAIL 0 | WARN 0 | SKIP 0 | PASS 1628` on each, with an empty failing-test set on both. *Parse:* all 11 reformatted `benchmarks/` files `parse()` without error.
+- AC6 — **met.** On the branch tip: `devtools::document()` produced no diff (`git status --porcelain` empty after it); `devtools::test()` reported `FAIL 0 | WARN 0 | SKIP 0 | PASS 1628`; `devtools::check()` reported `Status: OK` — 0 errors, 0 warnings, 0 notes — in 3m 45.4s.
+
+### Consistency gate
+
+- `cairn_validate.py` exits 0; all 16 checks PASS, `coverage complete` among them. 18 advisory `references staleness` warnings, unchanged from the last hygiene stamp and not a gate failure.
+- No `DESIGN.md` IP/GP principle changed in this branch (the DESIGN edit is a Conventions bullet), so `cairn_impact.py` is skipped.
+- Profile `consistency-gate` slot (r-package): `document()` no diff; generated files regenerate (the no-diff `document()` covers it); no `README.Rmd` exists — the README is hand-written, which the standing candidate row owns; `pkgdown::check_pkgdown()` reports "No problems found"; `NEWS.md` gains no entry, the milestone changing no user-visible behaviour (developer workflows under `.github/`, plus a formatting pass that leaves the suite's counts and failing-test set identical); `air.toml` carries its `.Rbuildignore` entry and `check()` reports 0 NOTEs; `devtools::check()` clean.
+
+### Independent review
+
+Three fresh-context reviewers, distinct evidence bases, none having seen the implementation: [O] diff-bug over `git diff main..HEAD`, [S] blame-history over `git log`/`git blame` on the modified lines, [S] prior-review record over `cairn/milestones/archive/` plus a probe of GitHub PR threads.
+
+The prior-review lens found no regression: it confirmed the write-token pin divergence from M17 review F10 is disclosed in D-028 and carried as a candidate row rather than silently repeated, and that its GitHub probe returned two real inline comments, both by topepo on the open PR #30, on files this diff does not touch.
+
+**F1 — 125 `file:line` citations across the repo now point at the wrong line, broken by the reformat.** Reported by [O] (ranked 1 and 2) and independently re-measured at review with a script that resolves each citation's pre-reformat line content in the post-reformat file: `cairn/references/code-inventory.md` 82, `cairn/references/outer-loop-object-requirements.md` 29, `cairn/references/mori-backend-assessment.md` 5, `benchmarks/upstream-asks.md` 3, `cairn/ROADMAP.md` 2, and 4 in-code comments (`R/parallel.R` 1, `benchmarks/probe-mori-dispatch.R` 2, `benchmarks/rsample-283-reprex.R` 1). Verified by hand on two: `cairn/references/code-inventory.md:160` records `check_column_class()` at `R/checks.R:185`, which was its `function` line on `main` and is now a comment (the definition moved to 191); `benchmarks/upstream-asks.md:213` cites `bind_notes()` at `R/nested-tune-grid.R:567`, now 572. 108 of the 125 relocate to exactly one new line by content match; the other 17 need the symbol name because the cited line was itself re-wrapped. AC5 promises reproducibility and scope, not citation integrity, so this is outside the criteria — a records defect the diff introduced.
+**F2 — `tests/testthat/helper-time-budget.R:44` and `:332` still cite `classify:693` and `:699`.** Reported by [S] (ranked 1) and [O] (ranked 4); verified at review: `test-parallel-classify.R:693` and `:699` are now a closing brace and a blank, and the option-set and option-spend calls the prose names are at 745 and 751. The milestone's re-point procedure matched `tb_row()` call sequences, which by construction never reaches free prose, so this class of citation was never in its scope. Same shape as F1, inside the one file the milestone re-pointed by hand.
+**F3 — the vendored `pr-commands.yaml` `/style` job runs `styler::style_pkg()`, a different formatter than the `air` D-028 just adopted.** Reported by [O] (ranked 3) and [S] (ranked 2). A maintainer typing `/style` on a PR commits a styler-formatted tree back to the branch, and `format-suggest.yaml` then posts `air` suggestions over what it just wrote. Not fixable in the file — AC1 holds it at the organization's blob — and D-028 records neither this collision nor a rule against using `/style` here.
+**F4 — `cairn/PROFILE.md:46` says "Four divergences from that stock shape (M11 x2, M12 rev. M31, M14)" and the bullet now carries five.** Reported by [O] (ranked 6). The diff appended the three organization workflows as a fifth bolded divergence without bumping the count or the milestone list.
+**F5 — the three vendored workflows' action pins and permissions.** Reported by [O] (ranked 7, 8, 9): `format-suggest.yaml`'s `pull_request_target` checks out the PR head into a job holding `pull-requests: write` with `posit-dev/setup-air@v1` and `reviewdog/action-suggester@v1` on moving tags; `lock.yaml` declares no `permissions:` block, so `dessant/lock-threads@v2` runs on the repository's default workflow token and would 403 nightly if that default is read-only; `format-suggest.yaml`'s `permissions:` block zeroes `contents`, which works because the repository is public. None is editable without putting the file off its modal blob, which AC1 forbids. The default-permission setting could not be read at review: `gh api repos/tidymodels/nestedtune/actions/permissions/workflow` returns 403 for this token. The pin half is already carried by the pkgdown-pin candidate row, which the milestone extended.
+
+No finding demonstrates an acceptance criterion failing, and none is a defect in what the package does for its users, so none meets the return floor; dispositions are the maintainer's at the merge gate.
+
