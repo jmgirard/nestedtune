@@ -46,8 +46,14 @@ partial_results <- function() {
 
 # Branch (a): the class is back, the call's record is the source's, and the
 # fold counts describe the rows in hand rather than the rows they came from.
+#
+# `tbl_df` is asserted in both branches because dplyr hands
+# `dplyr_reconstruct()` a bare data frame for several verbs, so a rule that
+# only adds the class back returns a `nested_results` that is not a tibble --
+# and the class is documented as a tibble subclass (M36 review F1).
 expect_kept <- function(out, src) {
   testthat::expect_s3_class(out, "nested_results")
+  testthat::expect_s3_class(out, "tbl_df")
   testthat::expect_identical(attr(out, "outer_label"), attr(src, "outer_label"))
   testthat::expect_identical(attr(out, "grid"), attr(src, "grid"))
   testthat::expect_identical(attr(out, "metrics"), attr(src, "metrics"))
@@ -56,9 +62,11 @@ expect_kept <- function(out, src) {
   invisible(out)
 }
 
-# Branch (b): no claim to be a results object at all.
+# Branch (b): no claim to be a results object at all -- and still a tibble,
+# which is not a downgrade the caller asked for.
 expect_bare <- function(out) {
   testthat::expect_false(inherits(out, "nested_results"))
+  testthat::expect_s3_class(out, "tbl_df")
   invisible(out)
 }
 
@@ -77,6 +85,13 @@ dplyr_compat_table <- function() {
     }),
     list(name = "mutate (column added)", branch = "kept", f = function(x) {
       dplyr::mutate(x, extra = 1)
+    }),
+    # An id-prefixed name is what a caller joins in to label folds with, and
+    # the record's own id columns are found by grepping `^id`, so an added one
+    # lands in the same set. "Columns may be added" has to hold for it too
+    # (M36 review F2).
+    list(name = "mutate (id-prefixed column added)", branch = "kept", f = function(x) {
+      dplyr::mutate(x, id_extra = 1)
     }),
     list(
       name = "mutate (record column overwritten)",
@@ -156,6 +171,48 @@ test_that("every dplyr verb lands in the branch the invariants assign it", {
         label = paste0(case$name, " keeps the class")
       )
     }
+  }
+})
+
+# The five verbs dplyr hands `dplyr_reconstruct()` a bare data frame for, named
+# literally so a regression says which one lost its tibble classes rather than
+# only that the table entry failed.
+test_that("a verb that keeps the class returns a tibble, not a bare data frame", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  forms <- list(
+    filter = dplyr::filter(res, .completed),
+    mutate = dplyr::mutate(res, extra = 1),
+    arrange = dplyr::arrange(res, dplyr::desc(id)),
+    bind_cols = dplyr::bind_cols(res, data.frame(extra = seq_len(nrow(res)))),
+    left_join = dplyr::left_join(
+      res,
+      data.frame(id = res$id, extra = seq_len(nrow(res))),
+      by = "id"
+    )
+  )
+
+  for (nm in names(forms)) {
+    expect_s3_class(forms[[nm]], "nested_results")
+    expect_s3_class(forms[[nm]], "tbl_df")
+  }
+
+  # What the missing tibble classes cost a caller: `[.data.frame` drops to a
+  # vector where `[.tbl_df` returns a one-column tibble.
+  expect_s3_class(dplyr::mutate(res, extra = 1)[, "id"], "tbl_df")
+})
+
+# An added column is the caller's, whatever it is named. `id_extra` and `ideal`
+# both match the `^id` grep the record's own id columns are found with.
+test_that("an id-prefixed column added by the caller keeps the class", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  for (nm in c("id_extra", "ideal", "extra")) {
+    out <- dplyr::mutate(res, !!nm := 1)
+    expect_kept(out, res)
+    expect_true(nm %in% names(out))
   }
 })
 

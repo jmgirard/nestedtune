@@ -72,7 +72,8 @@ outer_scheme_label <- function(resamples) {
 
 # The run's record: every column new_nested_results() writes. The id columns are
 # grepped rather than named because a repeated design carries `id` and `id2`,
-# the same reason fold_ids() greps.
+# the same reason fold_ids() greps. Read off the TEMPLATE only -- see
+# can_reconstruct_results().
 record_columns <- function(nms) {
   fixed <- c(
     "splits",
@@ -87,18 +88,24 @@ record_columns <- function(nms) {
   nms %in% fixed | grepl("^id", nms)
 }
 
-# Whether `data` may wear `template`'s class: same record columns, holding the
-# same values, over the same number of rows. Row ORDER is exempt -- the folds
-# are a set, and arrange() rearranging them changes nothing the object claims --
-# so both sides are put in id order before their values are compared.
+# Whether `data` may wear `template`'s class: every column of the template's
+# record still present, holding the same values, over the same number of rows.
+# Row ORDER is exempt -- the folds are a set, and arrange() rearranging them
+# changes nothing the object claims -- so both sides are put in id order before
+# their values are compared.
+#
+# The record compared is the TEMPLATE's, and a column `data` carries beyond it
+# is simply not looked at. Comparing the two sets for equality instead would
+# read a caller-added column as a record that no longer matches, which is what
+# "columns may be added" forbids -- and an added name is not exotic here: the
+# id columns are found by grepping `^id`, so `id_extra`, the sort of thing a
+# caller joins in to label folds with, lands in the set (M36 review F2).
 can_reconstruct_results <- function(data, template) {
   if (!is.data.frame(data) || !has_results_columns(data)) {
     return(FALSE)
   }
-  cols <- sort(names(data)[record_columns(names(data))])
-  if (
-    !identical(cols, sort(names(template)[record_columns(names(template))]))
-  ) {
+  cols <- sort(names(template)[record_columns(names(template))])
+  if (!all(cols %in% names(data))) {
     return(FALSE)
   }
   if (!identical(nrow(data), nrow(template))) {
@@ -118,7 +125,11 @@ reconstruct_results <- function(data, template) {
   if (!can_reconstruct_results(data, template)) {
     return(bare_results(data))
   }
-  out <- data
+  # Promoted before the class goes on, for the reason as_results_tbl() gives:
+  # the class is documented as a tibble subclass, and dplyr hands this function
+  # a bare data frame often enough that only the bare branch promoting would
+  # make it one for some verbs and not others (M36 review F1).
+  out <- as_results_tbl(data)
   if (!inherits(out, "nested_results")) {
     class(out) <- c("nested_results", class(out))
   }
@@ -141,16 +152,24 @@ reconstruct_results <- function(data, template) {
 # which is the same fault one layer down.
 #
 # The class is removed by subtraction rather than replaced with tibble's three,
-# so a grouped result stays grouped. What comes back is still a tibble, though:
-# dplyr hands `dplyr_reconstruct()` a bare data frame for some verbs -- `slice()`
-# and `bind_rows()` both do, measured 2026-08-31 -- and subtraction alone would
-# turn a sliced tibble into a data.frame, which is a downgrade the caller never
-# asked for and nothing in the invariants calls for.
+# which leaves whatever else the object was carrying alone.
 bare_results <- function(data) {
   for (nm in results_attributes()) {
     attr(data, nm) <- NULL
   }
   class(data) <- setdiff(class(data), "nested_results")
+  as_results_tbl(data)
+}
+
+# What both branches return is a tibble. `nested_results` is a tibble subclass
+# (DESIGN: "a plain tibble carrying class `nested_results`"), and dplyr hands
+# `dplyr_reconstruct()` a bare data frame for a good half of the verbs --
+# `filter()`, `mutate()`, `arrange()`, `bind_cols()`, `left_join()`, `slice()`
+# and `bind_rows()` all do, measured 2026-08-31 -- so leaving the classes off
+# would make the result a tibble after `select()` and not after `mutate()`,
+# and drop `x[, "id"]` to a bare vector for the second. Neither branch is a
+# downgrade the caller asked for.
+as_results_tbl <- function(data) {
   if (!inherits(data, "tbl_df")) {
     class(data) <- c("tbl_df", "tbl", class(data))
   }
