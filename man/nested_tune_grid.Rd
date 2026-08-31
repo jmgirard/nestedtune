@@ -194,9 +194,10 @@ a scored candidate at all â€” tuning itself raised, or every candidate failed â€
 holds a zero-row table. No fold is reported as having searched a grid it did
 not.
 
-Subsetting rows recomputes \code{folds_attempted} and \code{folds_completed} for the
-rows kept, so the counts always describe the object in hand. Dropping the
-\code{.completed} column drops the \code{nested_results} class with it.
+Any operation outside the invariants stated under \strong{Value} above returns a
+bare tibble, and both counts go with the class rather than being recomputed
+for whatever rows are left. Dropping the \code{.completed} column is one such
+operation.
 
 The run warns when it finishes with any fold unfinished, and
 \code{\link[=collect_metrics]{collect_metrics()}} warns again, summarizing only the folds that ran and

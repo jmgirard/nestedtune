@@ -303,3 +303,55 @@ test_that("no row-changing result prints the outer resampling scheme", {
     expect_no_match(text, "Outer resamples: 3-fold cross-validation")
   }
 })
+
+# The help page may not still promise the behavior this rule replaced (M36
+# review O1).
+#
+# The behavioral half is already covered: test-nested-tune-grid-failures.R
+# asserts that a row subset comes back with all five attributes NULL. What was
+# missing is a guard on the prose, which went on promising the opposite in a
+# `@details` paragraph that AC1's own grep was scoped away from. Both the
+# roxygen source and the generated `.Rd` are read, because the sentence has to
+# leave both.
+#
+# `test_path("..", "..", ...)` resolves outside the source tree under
+# `R CMD check`, so this skips there and fires where the documentation is
+# actually edited -- the same layout note test-vignette-citations.R records.
+# Each file is asserted non-empty and shown to still carry the sentence that
+# replaced the claim, so a mistyped path or an empty read cannot pass the
+# negatives for the wrong reason.
+doc_sources <- function() {
+  list(
+    roxygen = test_path("..", "..", "R", "nested-tune-grid.R"),
+    rd = test_path("..", "..", "man", "nested_tune_grid.Rd")
+  )
+}
+
+# One whitespace-normalized string per file, so a claim that happens to wrap
+# across two lines is still found.
+doc_text <- function(path) {
+  gsub("\\s+", " ", paste(readLines(path, warn = FALSE), collapse = " "))
+}
+
+test_that("the help page makes no promise about what subsetting rows keeps", {
+  paths <- doc_sources()
+  skip_if_not(all(vapply(paths, file.exists, logical(1))), "sources absent")
+
+  # Each claim is asserted by name, so a failure says which promise survived.
+  claims <- c(
+    "Subsetting rows recomputes",
+    "Subsetting rows carries",
+    "counts always describe the object in hand"
+  )
+
+  for (nm in names(paths)) {
+    text <- doc_text(paths[[nm]])
+    expect_gt(nchar(text), 1000L)
+    # The passing control: the sentence that replaced the claim is present, so
+    # the file being read is the one the claims would be in.
+    expect_match(text, "returns a bare tibble", fixed = TRUE)
+    for (claim in claims) {
+      expect_no_match(text, claim, fixed = TRUE)
+    }
+  }
+})
