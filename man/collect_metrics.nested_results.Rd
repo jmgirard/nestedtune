@@ -4,15 +4,15 @@
 \alias{collect_metrics.nested_results}
 \title{Collect the metrics from a nested resampling run}
 \usage{
-\method{collect_metrics}{nested_results}(x, summarize = TRUE, ...)
+\method{collect_metrics}{nested_results}(x, ..., summarize = TRUE)
 }
 \arguments{
 \item{x}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}}.}
 
+\item{...}{Not used.}
+
 \item{summarize}{Whether to average the per-fold metrics (\code{TRUE}, the
 default) or return them one row per outer fold (\code{FALSE}).}
-
-\item{...}{Not used.}
 }
 \value{
 A tibble. Summarized, one row per metric with the mean across outer

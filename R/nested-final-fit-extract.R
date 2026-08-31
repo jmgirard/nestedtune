@@ -78,6 +78,7 @@ extract_tune_results <- function(x, ...) {
 
 #' @export
 extract_tune_results.default <- function(x, ...) {
+  rlang::check_dots_empty()
   # `current_env()` and not `caller_env()`: inside a method reached by
   # UseMethod() the former renders the generic's own call --
   # `extract_tune_results(x)` -- while the latter renders the call one frame
@@ -91,6 +92,7 @@ extract_tune_results.default <- function(x, ...) {
 
 #' @export
 extract_tune_results.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   x$tuning
 }
 
@@ -152,6 +154,7 @@ extract_scored_candidates <- function(x, ...) {
 
 #' @export
 extract_scored_candidates.default <- function(x, ...) {
+  rlang::check_dots_empty()
   abort_no_extract_method(
     "extract_scored_candidates",
     x,
@@ -161,6 +164,7 @@ extract_scored_candidates.default <- function(x, ...) {
 
 #' @export
 extract_scored_candidates.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   # The same derivation the loop uses, deliberately: two functions deriving one
   # thing is two chances to describe it differently, and the `@return` above
   # promises a reader they can compare this against a fold's `.grid` directly.

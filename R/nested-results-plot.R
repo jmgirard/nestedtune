@@ -83,6 +83,7 @@ autoplot.nested_results <- function(
   type = c("parameters", "performance"),
   ...
 ) {
+  rlang::check_dots_empty()
   type <- check_plot_type(type)
   check_any_completed(object, action = "plot")
 

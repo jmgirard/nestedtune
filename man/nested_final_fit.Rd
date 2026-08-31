@@ -4,7 +4,14 @@
 \alias{nested_final_fit}
 \title{Fit the final model after nested cross-validation}
 \usage{
-nested_final_fit(object, resamples, grid = 10, metrics = NULL)
+nested_final_fit(
+  object,
+  resamples,
+  ...,
+  param_info = NULL,
+  grid = 10,
+  metrics = NULL
+)
 }
 \arguments{
 \item{object}{A \code{\link[workflows:workflow]{workflows::workflow()}} with at least one parameter marked
@@ -20,6 +27,14 @@ too: its \code{splits} column must hold \code{rsplit} objects and its
 follow: this function additionally needs the design's stored inner
 specification, which the loop never re-runs, so a design with none is
 refused here and runs perfectly well there.}
+
+\item{...}{Not used; must be empty. Everything after it is matched by name,
+so a mistyped or unsupported argument is an error rather than a silent
+positional match.}
+
+\item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
+derive one from the workflow. Passed unchanged to \code{\link[tune:tune_grid]{tune::tune_grid()}}, so a
+restricted range restricts the grid the final fit's tuning run searches.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to

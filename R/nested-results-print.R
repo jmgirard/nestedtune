@@ -57,6 +57,7 @@
 #' @seealso [nested_tune_grid()], [collect_metrics()]
 #' @export
 print.nested_results <- function(x, ...) {
+  rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
   print_design(x)
   print_failures(x)

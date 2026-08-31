@@ -28,6 +28,7 @@
 #'   [extract_tune_results()], [extract_scored_candidates()]
 #' @export
 print.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation final fit")
   cli::cli_text("Selected: {selected_label(x$selected)}")
   cli::cli_text("")

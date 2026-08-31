@@ -206,7 +206,8 @@ new_tbl <- function(cols) {
 #' *arXiv:2408.03138*.
 #'
 #' @export
-collect_metrics.nested_results <- function(x, summarize = TRUE, ...) {
+collect_metrics.nested_results <- function(x, ..., summarize = TRUE) {
+  rlang::check_dots_empty()
   check_any_completed(x)
   warn_partial_summary(x)
 

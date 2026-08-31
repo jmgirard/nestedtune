@@ -23,6 +23,9 @@
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()]. Ordinarily the same workflow passed to
 #'   [nested_tune_grid()].
+#' @param ... Not used; must be empty. Everything after it is matched by name,
+#'   so a mistyped or unsupported argument is an error rather than a silent
+#'   positional match.
 #' @param resamples A nested resampling design, from [nested_resamples()] or
 #'   [rsample::nested_cv()]. Only its inner specification and its data are
 #'   *used* — the outer folds play no part in a final fit — but the whole design
@@ -32,6 +35,9 @@
 #'   follow: this function additionally needs the design's stored inner
 #'   specification, which the loop never re-runs, so a design with none is
 #'   refused here and runs perfectly well there.
+#' @param param_info A [dials::parameters()] object, or `NULL` to let tune
+#'   derive one from the workflow. Passed unchanged to [tune::tune_grid()], so a
+#'   restricted range restricts the grid the final fit's tuning run searches.
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
 #'   [tune::tune_grid()].
@@ -171,12 +177,21 @@
 #'
 #' @seealso [nested_tune_grid()], [extract_workflow()]
 #' @export
-nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
+nested_final_fit <- function(
+  object,
+  resamples,
+  ...,
+  param_info = NULL,
+  grid = 10,
+  metrics = NULL
+) {
+  rlang::check_dots_empty()
   check_workflow(object)
   check_nested(resamples)
   check_grid(grid)
   check_grid_params(object, grid)
   check_metrics(metrics)
+  check_param_info(param_info)
   inside <- check_inside_spec(resamples)
 
   env <- rlang::caller_env()
@@ -200,6 +215,7 @@ nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
     object,
     grid,
     metrics,
+    param_info = param_info,
     call = rlang::current_env()
   )
 }
@@ -224,6 +240,7 @@ final_fit_worker <- function(
   object,
   grid,
   metrics,
+  param_info = NULL,
   call = rlang::caller_env()
 ) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
@@ -237,6 +254,7 @@ final_fit_worker <- function(
   tuned <- tune::tune_grid(
     object,
     resamples = inner,
+    param_info = param_info,
     grid = grid,
     metrics = metrics,
     control = tune::control_grid(allow_par = FALSE)
@@ -278,5 +296,6 @@ new_nested_final_fit <- function(workflow, selected, tuning, seeds) {
 #' @importFrom tune extract_workflow
 #' @export
 extract_workflow.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   x$workflow
 }

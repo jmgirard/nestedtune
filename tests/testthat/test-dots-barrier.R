@@ -126,9 +126,18 @@ collect_metrics_call_args <- function(path) {
     i <- open + 1L
     while (i <= length(chars) && depth > 0L) {
       ch <- chars[[i]]
-      if (ch == "(") depth <- depth + 1L
-      if (ch == ")") depth <- depth - 1L
-      if (depth == 0L) break
+      # `[` and `{` count too: `collect_metrics(res[1L, ])` has a comma that
+      # belongs to the subscript, and a splitter blind to it reports a second
+      # positional argument that was never written.
+      if (ch %in% c("(", "[", "{")) {
+        depth <- depth + 1L
+      }
+      if (ch %in% c(")", "]", "}")) {
+        depth <- depth - 1L
+      }
+      if (depth == 0L) {
+        break
+      }
       if (ch == "," && depth == 1L) {
         args <- c(args, current)
         current <- ""
@@ -185,8 +194,14 @@ test_that("AC6: the positional-argument scan can see a positional argument", {
   # absence of positional calls being reported and not the absence of a scan.
   path <- tempfile(fileext = ".R")
   on.exit(unlink(path), add = TRUE)
+  # Assembled rather than written whole, so the scan above -- which reads this
+  # file along with every other -- does not find the planted defect here and
+  # report it against the repo.
   writeLines(
-    c("collect_metrics(res, FALSE)", "collect_metrics(res, summarize = FALSE)"),
+    c(
+      paste0("collect_", "metrics(res, FALSE)"),
+      paste0("collect_", "metrics(res, summarize = FALSE)")
+    ),
     path
   )
   calls <- collect_metrics_call_args(path)

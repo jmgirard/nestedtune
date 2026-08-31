@@ -76,22 +76,22 @@ addressed; R's own matching rule, and no fence sees it.
 
 - [x] T1 Test-first: assert the three formals vectors and the three
       `nonesuch = 1` errors; they fail against today's signatures.
-- [ ] T2 Add `...` + `check_dots_empty()` and `param_info` to
+- [x] T2 Add `...` + `check_dots_empty()` and `param_info` to
       `nested_tune_grid()` ([R/nested-tune-grid.R:300](R/nested-tune-grid.R:300))
       and `nested_final_fit()` ([R/nested-final-fit.R:174](R/nested-final-fit.R:174));
       thread `param_info` to the `tune::tune_grid()` calls at
       [R/nested-tune-grid.R:359](R/nested-tune-grid.R:359) and
       [R/nested-final-fit.R:237](R/nested-final-fit.R:237). Add `...` to
       `nested_resamples()` ([R/nested-resamples.R:60](R/nested-resamples.R:60)).
-- [ ] T3 Update every in-repo positional call site the new barrier breaks —
+- [x] T3 Update every in-repo positional call site the new barrier breaks —
       `R/`, `tests/`, roxygen examples, `vignettes/` — found by grep, not by
       recall.
 - [ ] T4 Carry `param_info` through `dispatch_folds()`
       ([R/parallel.R:194](R/parallel.R:194)) and `nested_fold_fit()` to the
       daemon path; write the serial/2-worker identity test.
-- [ ] T5 Fence the nine "Not used" methods; write the NAMESPACE-enumerated
+- [x] T5 Fence the nine "Not used" methods; write the NAMESPACE-enumerated
       probe test with `[.nested_results` named as the exemption.
-- [ ] T6 Move `summarize` after `...` in
+- [x] T6 Move `summarize` after `...` in
       [R/nested-results.R:209](R/nested-results.R:209); fix the call sites the
       grep finds.
 - [ ] T7 Roxygen for the new arguments, `document()`, changelog entry,
@@ -131,6 +131,23 @@ addressed; R's own matching rule, and no fence sees it.
   vectors, the three `nonesuch = 1` errors asserted by condition class, the
   NAMESPACE-registry method probe, and the `collect_metrics()` positional scan
   with its planted-defect control. Ten failures against today's signatures.
+- 2026-08-30: T2/T3/T5/T6 landed in one commit. Each is a piece of one
+  signature change and no intermediate state is green — `check_dots_empty()`
+  on `nested_tune_grid()` breaks the mocked `fold_task` stubs until the
+  parallel path carries `param_info` too, and the T1 file asserts all four at
+  once.
+- 2026-08-30: T3 found no in-repo call site the barrier breaks. A parser-based
+  scan over `R/`, `tests/`, `vignettes/` and the roxygen sources (57 files)
+  counted unnamed arguments per call and reported one hit, in a prose comment
+  in `helper-orchestration.R` rather than in code.
+- 2026-08-30: minor amendment — `param_info`'s carry through `dispatch_folds()`
+  and `fold_task()`, planned as T4, landed with T2: `dispatch_folds()` is the
+  only route to `tune::tune_grid()`, serial path included, so T2 could not
+  reach it any other way. T4 keeps the serial/2-worker identity test.
+- 2026-08-30: seven test stubs of `fold_task()`/`nested_fold_fit()` grew the
+  `param_info` argument, and `test-parallel-classify.R`'s recorded formals
+  literal was updated; the three time-budget ledger rows for that file moved
+  three lines with it.
 
 ## Decisions
 

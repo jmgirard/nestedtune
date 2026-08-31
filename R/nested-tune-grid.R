@@ -16,6 +16,9 @@
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
+#' @param ... Not used; must be empty. Everything after it is matched by name,
+#'   so a mistyped or unsupported argument is an error rather than a silent
+#'   positional match.
 #' @param resamples A nested resampling design, from [nested_resamples()] or
 #'   [rsample::nested_cv()]. Its `splits` column must hold `rsplit` objects and
 #'   its `inner_resamples` column an `rset` per outer fold. Both are checked
@@ -23,6 +26,10 @@
 #'   whatever its `inside` argument returned — so a specification that produces
 #'   no `rset` gives a design that cannot be run, where [nested_resamples()]
 #'   refuses one at construction.
+#' @param param_info A [dials::parameters()] object, or `NULL` to let tune
+#'   derive one from the workflow. Passed unchanged to [tune::tune_grid()] on
+#'   every outer fold, so a restricted range restricts the grid every fold
+#'   searches.
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
 #'   [tune::tune_grid()]. A data frame is checked against the workflow before
@@ -297,12 +304,21 @@
 #'
 #' @seealso [nested_resamples()], [nested_final_fit()], [tune::tune_grid()]
 #' @export
-nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
+nested_tune_grid <- function(
+  object,
+  resamples,
+  ...,
+  param_info = NULL,
+  grid = 10,
+  metrics = NULL
+) {
+  rlang::check_dots_empty()
   check_workflow(object)
   check_nested(resamples)
   check_grid(grid)
   check_grid_params(object, grid)
   check_metrics(metrics)
+  check_param_info(param_info)
 
   n <- nrow(resamples)
 
@@ -332,6 +348,7 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
     object = object,
     grid = grid,
     metrics = metrics,
+    param_info = param_info,
     call = rlang::current_env()
   )
 
@@ -347,7 +364,15 @@ nested_tune_grid <- function(object, resamples, grid = 10, metrics = NULL) {
 # nothing is drawn here, so the fold's result depends on its position in the
 # design and not on when or where it runs -- which is what makes the loop safe
 # to reorder or, later, to parallelize (IP2).
-nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
+nested_fold_fit <- function(
+  split,
+  inner,
+  seeds,
+  object,
+  grid,
+  metrics,
+  param_info = NULL
+) {
   set_fold_seed(seeds[[1L]])
 
   # `tuned` is assigned inside the tryCatch expression, which evaluates in this
@@ -359,6 +384,7 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
       tuned <- tune::tune_grid(
         object,
         resamples = inner,
+        param_info = param_info,
         grid = grid,
         metrics = metrics,
         control = tune::control_grid(allow_par = FALSE)
