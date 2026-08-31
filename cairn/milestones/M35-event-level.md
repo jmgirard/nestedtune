@@ -48,53 +48,45 @@ two-class test fixture, and the refusal path for a value outside the two.
 
 - [ ] AC1: `nested_tune_grid()` and `nested_final_fit()` each take
       `event_level` after `...`, defaulting to `"first"`. A value outside
-      `c("first", "second")` — a wrong string, a non-character, a length-2
-      character vector, `NA_character_` — is refused by both before anything is
-      fitted, and each test asserts the abort's message and the call it names,
-      the way `tests/testthat/test-nested-tune-grid-checks.R` asserts the
-      existing checks.
+      `c("first", "second")`, in any of four forms — a wrong string, a
+      non-character, a length-2 character vector, `NA_character_` — is refused
+      by both before anything is fitted, the abort naming as its call the
+      orchestrator the caller called and diagnosing the rejected value or its
+      type.
 - [ ] AC2: `nested_tune_grid()` passes a `tune::control_last_fit()` carrying
       the caller's `event_level` to the outer scoring fit. On the two-class
-      fixture the sensitivity it reports for each completed outer fold equals
-      the value obtained by refitting that fold's `.selected` candidate on the
-      fold's analysis set under its recorded `.outer_fit_seed`, predicting the
-      assessment set, and calling `yardstick::sens_vec()` at that same
-      `event_level` — the metric computed by yardstick directly, no `tune`
-      scoring function involved. The values reported at `"first"` and
-      `"second"` differ.
+      fixture its runs complete every outer fold, and the sensitivity it
+      reports for each equals the value obtained by refitting that fold's
+      `.selected` candidate on the fold's analysis set under its recorded
+      `.outer_fit_seed`, predicting the assessment set, and calling
+      `yardstick::sens_vec()` at that same `event_level` — no `tune` scoring
+      function involved. The sensitivity differs between the two levels on at
+      least one fold (T5's guard). AC2 anchors this site absolutely and AC4
+      the final-fit inner site; AC3 and AC5 establish symmetry and
+      mode-independence only.
 - [ ] AC3: on the two-class fixture, the two `nested_tune_grid()` runs at the
       same seed under `yardstick::metric_set(roc_auc, sens, spec)` complete
       every outer fold, have `.selected` identical, and on every fold the
       sensitivity at `event_level = "second"` equals the specificity at
       `"first"` and the specificity at `"second"` equals the sensitivity at
-      `"first"`. `roc_auc` leads the set so that selection is level-invariant:
-      `select_best()` reads the tuned object's first metric name, and under a
-      `sens`-led set the two runs select different candidates and the identity
-      fails on correct code. The criterion establishes symmetry, not which
-      level is which; AC2 is the absolute anchor.
+      `"first"`. `roc_auc` leads the set, which is what holds selection
+      level-invariant.
 - [ ] AC4: `nested_final_fit()` sets the caller's `event_level` on its inner
       `tune::control_grid()`. On the two-class fixture under
       `yardstick::metric_set(roc_auc, sens, spec)`, the tuning run
       `extract_tune_results()` returns at `"second"` reports the metric values
       a `tune::tune_grid()` the test runs itself reports under
       `control_grid(allow_par = FALSE, event_level = "second")`, seeded by the
-      by-hand recipe `R/nested-final-fit.R:100-112` documents — the object's
-      own `tuning_seed`, kind-pinned, inner rset built inside that seed's
-      scope — so what is checked is what tune did with the setting, not the
-      seeding. Against the same object at `"first"`, `roc_auc` agrees
-      candidate for candidate while each candidate's `sens` and `spec` are
-      exchanged, at least one candidate's two estimates differing (T5's inner
-      guard). Under tune's classification defaults there is no such
-      difference, which is why the set is named.
+      recipe `R/nested-final-fit.R:106-118` documents — the object's own
+      `tuning_seed`, kind-pinned, inner rset built inside that seed's scope.
+      Against the same object at `"first"`, `roc_auc` agrees candidate for
+      candidate while each candidate's `sens` and `spec` are exchanged, at
+      least one candidate's two estimates differing.
 - [ ] AC5: on the two-class fixture under `metric_set(roc_auc, sens, spec)`
       and `event_level = "second"`, a `nested_tune_grid()` run at 2 mirai
       daemons and the serial run at the same seed complete every fold, the
-      parallel run reporting `last_dispatch()` as `"parallel"` — the pairing
-      every identity test in `tests/testthat/test-parallel-identity.R` uses,
-      without which the comparison is serial against serial — and the two are
-      `identical()` as whole objects. This establishes mode-independence, not
-      correctness: a level dropped on both paths preserves the identity, and
-      AC2 and AC4 are the anchors for that.
+      parallel run reporting `last_dispatch()` as `"parallel"`, and the two
+      runs are `identical()` as whole objects.
 - [ ] AC6: `devtools::test()` clean, and `devtools::check()` clean — 0 errors,
       0 warnings, any NOTE justified in the review evidence.
 
@@ -152,6 +144,8 @@ two-class test fixture, and the refusal path for a value outside the two.
 - [x] T11: (discovered) give `README.Rmd`, which the default branch added
       without one, its `.Rbuildignore` entry, so `devtools::check()` stops
       reporting a non-standard top-level file.
+- [ ] T12: (discovered) add `event_level` to both documented by-hand recipes
+      and to `cairn/DESIGN.md:237-239`, which this milestone's change falsified.
 
 ## Work log
 
@@ -184,6 +178,10 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: T11 — `^README\.Rmd$` appended to `.Rbuildignore`. `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 53.7s, tests `[82s/125s]`. No NOTE to justify.
 - 2026-08-31: all tasks done, suite and check clean on the merged branch; status set to review again.
 - 2026-08-31: /milestone-review returned M35 to in-progress at step 4: the consistency gate FAILs `weight caps` — 155 plan-owned lines against the <150 cap, Acceptance criteria 54 and Tasks 46 the heaviest, pushed over by the T10 and T11 amendments; both sections are plan-owned so the compression is an implement-side amendment. Everything else gathered fresh passed: `devtools::test()` 1736 pass 0 fail, `devtools::check()` Status OK 0/0/0, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entry present, branch level with `origin/main`. The three review lenses ran; the [O] lens returned 11 ranked findings, of which the documented by-hand recipes on both orchestrators (`R/nested-tune-grid.R:93-104`, `R/nested-final-fit.R:106-118`) and `DESIGN.md`'s architecture paragraph state a pre-M35 shape the change falsified. All 11 are recorded in the Review section. Second defect return on this milestone.
+- 2026-08-31: amendment criteria audit ran in FULL mode (user-facing tier), three rounds, each a fresh [O] reader that authored none of the wording under audit. Every round returned the same compression verdict: no binding clause dropped or weakened, and no place made satisfiable by code the old wording would have failed. Round 1 returned 5 findings on the first compression, round 2 returned 5 on the repaired text, round 3 returned 7 on the final text. Fixed across the rounds: AC2 was satisfiable by code that failed every outer fold, its per-fold equality vacuous and its difference clause having no values to compare, so it gained "complete every outer fold"; AC1's "each test asserts the abort's message and the call it names" bound an instrument, replaced by the deliverable property (the abort names the orchestrator as its call and diagnoses the value); the first compression dropped `c("first", "second")` from AC1, so an implementation refusing `"second"` would have satisfied it; "diagnosing the rejected value" was false for three of AC1's four forms, `check_event_level()` emitting `{.obj_type_friendly}` rather than `{.val}` outside the length-1 non-`NA` character case; AC2's "the values reported at `"first"` and `"second"` differ" is falsified by correct code, `roc_auc` being byte-identical at the two levels; AC4 cited `R/nested-final-fit.R:100-112` for a recipe block that runs 106-118; AC4's "(T5's inner guard)" pointed at a guard that lives in AC4's own test (`test-event-level.R:309`), not the fixture helper.
+- 2026-08-31: substantive amendment adopted at the mini gate — `## Acceptance criteria` compressed from 54 lines to 46, the plan-owned body from 155 to 147, clearing the <150 cap the consistency gate FAILed. What was removed is rationale the work log records: AC1's `test-nested-tune-grid-checks.R` style pointer, AC2's "the metric computed by yardstick directly", AC3's `select_best()` mechanism sentence and its symmetry disclaimer, AC4's "not the seeding" clause and its tune-defaults justification for naming the metric set, AC5's `test-parallel-identity.R` pairing citation and its mode-independence disclaimer — the two disclaimers consolidated into one sentence in AC2. Repairs adopted with it, each at the user's selection: AC1 regained `c("first", "second")` and now says "the rejected value or its type"; AC4's citation moved to `R/nested-final-fit.R:106-118`; AC2's difference clause, tightened to a per-fold universal that T5's guard does not underwrite, was narrowed back to "on at least one fold (T5's guard)". A narrowing throughout: no criterion was added and no criterion's promise extended to a property or domain it did not previously bind (D-118).
+- 2026-08-31: the round-3 audit's six inherited findings are held for review disposition, not repaired here — each repair would widen the criteria set on a milestone with two recorded defect returns (D-118), and T12 is the follow-up home for the documentation one. (a) AC1's call-name and diagnosis clauses are asserted for one exemplar per orchestrator, not all four forms. (b) AC1's four forms leave `check_event_level()`'s `NULL` and `character(0)` branches unbound (Review finding 9). (c) AC4 quantifies over "the metric values" while the test compares `collect_metrics()`, the resample-averaged summary, so a defect preserving the mean satisfies it. (d) AC4's line citation will drift when T12 rewrites that block, and `test-event-level.R`'s O2 header still cites the old `100-112`. (e) AC5 binds the parallel run's `last_dispatch()` but not the serial run's, so leaked daemons would leave the identity holding and establishing nothing; `test-parallel-identity.R:490` does assert it. (f) No criterion binds documentation correctness, which is what T12 repairs.
+- 2026-08-31: minor amendment — added discovered task T12, carrying review findings 1, 2 and 3. Both documented by-hand recipes and `cairn/DESIGN.md`'s architecture paragraph describe the pre-M35 shape this milestone's own change falsified; finding 1 was confirmed by execution, the documented recipe returning fold 1's sens/spec pair transposed against the package's 0.967 / 0.0909 at `"second"`.
 
 ## Decisions
 
