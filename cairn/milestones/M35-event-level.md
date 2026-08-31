@@ -46,14 +46,14 @@ two-class test fixture, and the refusal path for a value outside the two.
 
 ## Acceptance criteria
 
-- [ ] AC1: `nested_tune_grid()` and `nested_final_fit()` each take
+- [x] AC1: `nested_tune_grid()` and `nested_final_fit()` each take
       `event_level` after `...`, defaulting to `"first"`. A value outside
       `c("first", "second")`, in any of four forms — a wrong string, a
       non-character, a length-2 character vector, `NA_character_` — is refused
       by both before anything is fitted, the abort naming as its call the
       orchestrator the caller called and diagnosing the rejected value or its
       type.
-- [ ] AC2: `nested_tune_grid()` passes a `tune::control_last_fit()` carrying
+- [x] AC2: `nested_tune_grid()` passes a `tune::control_last_fit()` carrying
       the caller's `event_level` to the outer scoring fit. On the two-class
       fixture its runs complete every outer fold, and the sensitivity it
       reports for each equals the value obtained by refitting that fold's
@@ -64,14 +64,14 @@ two-class test fixture, and the refusal path for a value outside the two.
       least one fold (T5's guard). AC2 anchors this site absolutely and AC4
       the final-fit inner site; AC3 and AC5 establish symmetry and
       mode-independence only.
-- [ ] AC3: on the two-class fixture, the two `nested_tune_grid()` runs at the
+- [x] AC3: on the two-class fixture, the two `nested_tune_grid()` runs at the
       same seed under `yardstick::metric_set(roc_auc, sens, spec)` complete
       every outer fold, have `.selected` identical, and on every fold the
       sensitivity at `event_level = "second"` equals the specificity at
       `"first"` and the specificity at `"second"` equals the sensitivity at
       `"first"`. `roc_auc` leads the set, which is what holds selection
       level-invariant.
-- [ ] AC4: `nested_final_fit()` sets the caller's `event_level` on its inner
+- [x] AC4: `nested_final_fit()` sets the caller's `event_level` on its inner
       `tune::control_grid()`. On the two-class fixture under
       `yardstick::metric_set(roc_auc, sens, spec)`, the tuning run
       `extract_tune_results()` returns at `"second"` reports the metric values
@@ -82,12 +82,12 @@ two-class test fixture, and the refusal path for a value outside the two.
       Against the same object at `"first"`, `roc_auc` agrees candidate for
       candidate while each candidate's `sens` and `spec` are exchanged, at
       least one candidate's two estimates differing.
-- [ ] AC5: on the two-class fixture under `metric_set(roc_auc, sens, spec)`
+- [x] AC5: on the two-class fixture under `metric_set(roc_auc, sens, spec)`
       and `event_level = "second"`, a `nested_tune_grid()` run at 2 mirai
       daemons and the serial run at the same seed complete every fold, the
       parallel run reporting `last_dispatch()` as `"parallel"`, and the two
       runs are `identical()` as whole objects.
-- [ ] AC6: `devtools::test()` clean, and `devtools::check()` clean — 0 errors,
+- [x] AC6: `devtools::test()` clean, and `devtools::check()` clean — 0 errors,
       0 warnings, any NOTE justified in the review evidence.
 
 ## Coverage
@@ -184,6 +184,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: minor amendment — added discovered task T12, carrying review findings 1, 2 and 3. Both documented by-hand recipes and `cairn/DESIGN.md`'s architecture paragraph describe the pre-M35 shape this milestone's own change falsified; finding 1 was confirmed by execution, the documented recipe returning fold 1's sens/spec pair transposed against the package's 0.967 / 0.0909 at `"second"`.
 - 2026-08-31: T12 — `event_level` added to both documented by-hand recipes and to `cairn/DESIGN.md`'s architecture paragraph. `nested_tune_grid()`'s recipe gained it on the inner `control_grid()` and gained the `control_last_fit()` argument its `last_fit()` line never carried; `nested_final_fit()`'s gained it on the inner `control_grid()`, reflowed so the fenced block keeps its line count and AC4's `106-118` citation stays exact. `test-event-level.R`'s O2 header, which cited the pre-M35 `100-112`, now cites `106-118` too. Verified by execution on the two-class fixture at `event_level = "second"`, seed 42, fold 1: the package reports sens 0.8333 / spec 0.4545 / roc_auc 0.6364, and the recipe as now documented returns the same three. Discrimination proven by deleting the `control_last_fit()` line again — the recipe then returns sens 0.4545 / spec 0.8333, the pair transposed, which is review finding 1 reproduced. `devtools::document()` run, `air format .` clean, `devtools::test()` 1736 pass, 0 fail.
 - 2026-08-31: all tasks done. `devtools::test()` 1736 pass, 0 fail; `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 48.7s, tests `[80s/121s]`. No NOTE to justify. `cairn_validate` weight caps PASS at 147 plan-owned lines. Status set to review; third time.
+- 2026-08-31: /milestone-review third pass — all six criteria verified with fresh evidence and ticked; consistency gate PASS (cairn_validate 16/16, document no-diff, pkgdown clean, air clean, check 0/0/0). Three lenses ran: [S] blame no finding, [S] prior-review 4, [O] diff-bug 10. Nothing meets the return floor; disposition goes to the approval gate.
 
 ## Decisions
 
@@ -252,3 +253,105 @@ both orchestrators and both dispatch shapes, and reports 11 findings, ranked:
 Disposition of the findings goes to the maintainer at the next review's gate.
 Findings 1, 2 and 3 are the ones an implement pass should carry: 1 and 2 are
 user-facing prose that the milestone's own change falsified.
+
+### 2026-08-31 — third review pass: all criteria verified
+
+Evidence gathered fresh on the branch, level with `origin/main` (0 behind, 19
+ahead; `origin/main` has not moved since the merge recorded in the work log).
+
+**Per criterion.**
+
+- AC1 — `test-event-level.R`'s two refusal tests are green. Each of the four
+  forms (`"third"`, `1L`, `c("first", "second")`, `NA_character_`) is refused by
+  both orchestrators with a message naming `"first"` or `"second"`; the abort's
+  call is `nested_tune_grid` / `nested_final_fit` respectively, and the message
+  carries the rejected value (`"third"`) or its type (`"an integer"`). A second
+  test shows `.Random.seed` unchanged across the refusal, so nothing is fitted.
+- AC2 — green. On the two-class fixture both runs report `.completed` TRUE on
+  every outer fold, and for each fold the reported `sens` equals the rate
+  counted from a refit of `.selected` under `.outer_fit_seed` with no tune
+  scoring function involved; `yardstick::sens_vec()` read beside it agrees. The
+  per-fold assertion that `sens` at `"first"` differs from `sens` at `"second"`
+  holds on all three folds.
+- AC3 — green. `.selected` is `identical()` between the two runs, every fold
+  completed, and on each fold sens@"second" == spec@"first" and
+  spec@"second" == sens@"first".
+- AC4 — green. `collect_metrics(extract_tune_results(fit))` at `"second"` is
+  `identical()` to the hand-run `tune::tune_grid()` under
+  `control_grid(allow_par = FALSE, event_level = "second")` seeded by the
+  documented recipe. Against the same object at `"first"`, `roc_auc` agrees
+  candidate for candidate while `sens` and `spec` are exchanged, with at least
+  one candidate's two estimates differing.
+- AC5 — green. `test-parallel-identity.R`'s new two-class case at
+  `event_level = "second"` completes every fold in both runs, `last_dispatch()`
+  reports `"serial"` then `"parallel"`, and the two objects are `identical()`.
+- AC6 — green. `devtools::test()` FAIL 0 / WARN 0 / SKIP 0 / PASS 1736.
+  `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes; duration
+  2m 48.7s, tests `[78s/121s]`. No NOTE to justify.
+
+The two test files were also run on their own to name the criteria they carry:
+`test-event-level.R` 62 assertions, 0 failures; `test-parallel-identity.R` all
+green.
+
+**Consistency gate — PASS.** `cairn_validate.py` exits 0, all 16 checks PASS
+including `weight caps` (147 plan-owned lines) and `coverage complete`; 19
+advisories, none a gate failure (the 18 references-staleness lines, unchanged,
+and the 13-task sizing tripwire). No `DESIGN.md` principle (IP/GP) changed —
+only the Architecture prose — so `cairn_impact.py` was not owed. Toolchain
+checks from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` leaves no diff (`git status` clean after it);
+`pkgdown::check_pkgdown()` reports no problems; `NEWS.md` carries the
+`event_level` entry; README.Rmd/README.md are the default branch's own and in
+sync; `.Rbuildignore` gained `^README\.Rmd$` and `check()` reports no
+non-standard-file NOTE; `air format --check .` clean; `devtools::check()` clean.
+
+**Review fan-out.** Three fresh-context lenses, distinct evidence bases.
+
+*Scope note the [O] lens surfaced and the others inherited:* the lenses were
+pointed at `main..HEAD`, and the local `main` is 6 commits behind
+`origin/main`. M35's diff is `origin/main..HEAD` — 23 files. Findings against
+`.github/`, `_pkgdown.yml`, `README.*` and `DESCRIPTION` are therefore about
+commits already on the default branch (external PR #30), not this milestone's
+work.
+
+*[S] blame-history lens — no finding.* The outer `last_fit()` has carried no
+control object since M02 (`39d2f68`); M35 closes that gap deliberately. D-010
+("no `control` argument") is not violated — no generic `control` argument is
+added. D-011/D-016's RNG contract is untouched, `allow_par = FALSE` is still
+hard-coded on every inner `control_grid()`, M34's `...`-barrier placement is
+followed, the mocked `fold_task()` was updated in lockstep with the signature,
+and `DESIGN.md`'s architecture prose now matches the code.
+
+*[S] prior-review-record lens — 4 findings (P1–P4).*
+
+*[O] diff-bug lens — 10 findings (O1–O10).* It confirms `event_level` reaches
+every hop on both orchestrators and all three dispatch shapes, that
+`check_event_level()` runs before the seed draw on both entry points, and that
+ten input shapes are all refused sensibly. It reports no defect that changes a
+reported number.
+
+**Findings and disposition.** Ranked as reported.
+
+| # | Finding | Disposition |
+|---|---|---|
+| O1 | `R/nested-tune-grid.R:443-446` — the comment justifying the new outer control object says `allow_par` "is left at tune's own default rather than forced off the way the inner run's is". In tune 2.1.0 `control_last_fit()`'s `allow_par` default is `FALSE` (verified at review: `function(verbose = FALSE, event_level = "first", allow_par = FALSE)`), so the comment tells a reader the opposite of what is true. DESIGN's "keep `tune` serial within the outer loop" convention is satisfied here only by an upstream default the package does not pin, and the roxygen "Forced:" paragraph never says the outer fit is serial. | recommend **fix now** — behaviour is already correct, so pinning `allow_par = FALSE` and correcting the comment is zero-risk |
+| O2 | `tests/testthat/helper-drift-manifest.R:76-88` — T0's guard prefixes `(?<![0-9.,])`, blocking a match on the *tail* of a longer number but not the *head*: `9.13` still matches inside `9.134`, `150 B` inside `150 Bytes`. The comment claims both sides. (Prior review's finding 8, still open.) | recommend **fix now** — one regex and its comment |
+| O3 | `tests/testthat/test-fixture-cache.R:230-238` — the list titled "the key separates every fixture signature this suite asks for" gained none of M35's four `cls_*` signatures, and no pair in it differs only by `event_level`, so the separation the new tests depend on is assumed rather than pinned. (Prior review's finding 5.) | recommend **follow-up** — candidate row |
+| O4 | `tests/testthat/test-event-level.R:170-183` — AC1's "before anything is fitted" is pinned by a `.Random.seed`-unchanged assertion against `nested_tune_grid()` only, never `nested_final_fit()`. The property itself holds: verified at review by direct execution — `nested_final_fit(..., event_level = "third")` errors and leaves `.Random.seed` identical. | recommend **fix now** — three lines closing an AC-evidence gap |
+| O5 | `tests/testthat/test-parallel-identity.R:471` — the new test is labelled "BC1", already used at `:23` and `:81` in the same file; three tests reporting as BC1 makes a failure line ambiguous. The sibling M34 test names its origin ("BC6: … (M34, AC4)"). | recommend **fix now** — rename to BC7 |
+| O6 | `R/nested-tune-grid.R:296-297` — the "Not offered" paragraph justifies withholding `verbose` with "output from inside a mirai daemon is not shown", but the function runs serially whenever no daemons are configured, and there `control_grid(verbose = TRUE)` would print. The stated reason does not cover the default path. | recommend **fix now** — user-facing prose |
+| O7 | `tests/testthat/test-event-level.R:66` — `cls_runs(d, nested, wf)` takes `d` and never uses it. | recommend **fix now** — trivial |
+| O8 | Every internal hop defaults `event_level = "first"` (`R/parallel.R:200`, `:929`, `R/nested-tune-grid.R:401`, `R/nested-final-fit.R:253`), so a hop that stopped threading it would degrade silently rather than error. | recommend **reject** — matches how `param_info` was added (M34); a convention observation, not a regression, and T7's daemon test covers today's hops |
+| O9 | The milestone's `## Decisions` is empty and no D-entry records choosing a narrow `event_level` argument over accepting tune's `control` object, though the plan gate recorded it with a falsifier and the roxygen now asserts the stance publicly. (Prior review's finding 6, still open.) | recommend **fix now** — a D-entry |
+| O10 | `R/nested-tune-grid.R:293-295` calls `pkgs` and `workflow_size` "inert under `allow_par = FALSE`". True for `workflow_size`; `pkgs` is redundant serially but the fold runs inside a mirai daemon on the parallel path, where the claim holds only because the daemon pre-flight already requires the namespace — a different guarantee than the sentence gives. | recommend **fix now** — bundled with O6's prose pass |
+| P1 | `.github/workflows/pkgdown.yaml` — a single `pkgdown` job both runs `build_site_github_pages()` (executing the ref's vignette and example code) and carries job-level `permissions: contents: write`. M17's review split exactly this into a read-only `build` job and a separate `deploy` job for exactly this reason (F2, fixed). | **out of scope, follow-up** — the file is not in M35's diff (`origin/main..HEAD` touches no `.github/` file); it arrived on the default branch with external PR #30. Recommend a candidate row, and it is the one with a security edge |
+| P2 | `.github/workflows/pkgdown.yaml` — `extra-packages: any::pkgdown, local::.` reintroduces the ad-hoc `any::pkgdown` line D-022 rejected, making `DESCRIPTION`'s `Config/Needs/website` declaration decorative again (M17 F1). | **out of scope, follow-up** — same origin as P1; fold into the same candidate row |
+| P3 | Upstream PR tidymodels/nestedtune#30 carries an unresolved inline comment from `topepo` on the `pkgdown.yaml` hunk that deleted the split-job and guard steps: "I wasn't sure if any of this should be retained." | **out of scope, follow-up** — same origin; the same candidate row is where the question gets answered |
+| P4 | `R/parallel.R:364` — the comment "That signature has since grown `...` and `param_info` (M34), neither of which carries a bound" was not updated for `event_level`, which M35 adds to the same signature. M34's own review caught and fixed this exact drift one milestone earlier. Confirmed by reading the line. | recommend **fix now** — one line |
+
+**Return floor.** No finding demonstrates an acceptance criterion failing, and
+none is a load-bearing defect in what the package does for a user: O1 is a
+comment that misdescribes correct behaviour, O4's property holds under
+execution, and P1–P3 are pre-existing on the default branch. Status stays
+`review`; disposition goes to the maintainer at the approval gate.
+
