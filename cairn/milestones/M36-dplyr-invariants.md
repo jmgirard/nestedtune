@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M36: Removing an outer fold's row stops producing a `nested_results`
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -114,6 +114,30 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
       rewritten test titles in `test-nested-results-print.R` and
       `test-nested-tune-grid-failures.R` stop claiming subsetting coverage they
       no longer have.
+- [ ] T8 Delete the stale `@details` sentence in `R/nested-tune-grid.R:170-172`
+      promising that subsetting recomputes `folds_attempted` and
+      `folds_completed`, which the new rule makes false, and re-run
+      `devtools::document()` so `man/nested_tune_grid.Rd` loses it too. Replace
+      it with whatever the surrounding paragraph still needs — the
+      `.completed`-column sentence beside it is still true. Add a test that
+      fails on the claim: a row subset's five attributes are already asserted
+      `NULL` in `test-nested-tune-grid-failures.R`, so widen the roxygen grep
+      guard rather than duplicating it if the suite has one.
+- [ ] T9 Settle how `record_columns()` identifies the design's own id columns,
+      against D-031's "every column `new_nested_results()` writes" (O6), and fix
+      the three defects the current `^id` grep leaves. Narrowing the match to
+      what rsample actually names (`^id$|^id[0-9]+$`) is the alternative T6
+      recorded against and is what stops a caller-added `id_junk` list column
+      from becoming an `order()` key on a repeated design (O2) and stops
+      `ideal`/`id_extra` from being unremovable once added (O3); weigh it
+      against recording the constructor's id columns on the object. Add the
+      `length(id_cols) == 0L` guard so an id-less template cannot make the value
+      comparison vacuous (O5). Tests first, each red before the fix: a repeated
+      design (`id`/`id2` with a tie) taking an added `^id`-prefixed list column
+      through two verbs; the add-then-remove round trip for `ideal`, `id_extra`
+      and `extra`; the id-less-template case on `can_reconstruct_results()`
+      directly; and `expect_bare()` in the compat table's `bare` branch so it
+      asserts `tbl_df` like the AC3 blocks do (O7).
 
 ## Work log
 
@@ -136,6 +160,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: defect return 1 closed — `devtools::check()` `Status: OK`, 0 errors, 0 warnings, 0 notes, 2m 43.8s. Status → review.
 - 2026-08-31: review — all five criteria passed with fresh evidence and the consistency gate is green, but the [O] lens returned two confirmed behavior defects the criteria do not reach and the maintainer judged load-bearing at the gate: `reconstruct_results()` keeps the class while dropping the tibble classes for the five verbs dplyr hands a bare data frame, and `can_reconstruct_results()`'s set-equality over `^id`-matching names drops the class when a caller adds an `id`-prefixed column, contradicting the "columns may be added" invariant the docs and NEWS both state. Approval withheld; status → in-progress for T6 and T7. Defect return 1. F4 absorbed into the vctrs candidate row, F7 rejected as refuted, the D-030 comment-block finding rejected as pre-existing.
 - 2026-08-31: review round 2 — all five criteria re-verified against T6/T7's code (test 1911 PASS / 0 FAIL, check Status: OK 0/0/0) and the consistency gate is green. Three lenses ran; the [O] lens returned seven findings, all confirmed on re-measurement: a stale `@details` sentence still promising the old subsetting behavior, and a family of four rooted in `record_columns()`'s `^id` grep (a hard `order()` error on a repeated design, an added `^id` column that cannot be removed again, a vacuous check under an id-less template, a divergence from the constructor's own id rule), plus two more paths leaving the record readable and one test-rigor gap. Presented at the merge gate.
+- 2026-08-31: review round 2 — approval withheld at the merge gate; status → in-progress for T8 and T9. No acceptance criterion failed; the return is under the floor's second limb, the maintainer judging the shipped help page's now-false subsetting sentence (O1), the hard `order()` error a caller-added `^id` list column raises on a repeated design (O2) and the added `^id` column that cannot be removed again (O3) load-bearing for users. O5, O6 and O7 fold into T9 as the same helper's remaining gaps; O4 goes to the vctrs candidate row with round 1's F4. Defect return 2.
 
 ## Decisions
 
@@ -470,3 +495,27 @@ T6 recorded a gate choice between the template-only read that shipped and
 narrowing that grep, on the ground that the two "measure the same"; O2 and O3
 are residue the narrowing alternative would not have left, since `id_junk`,
 `ideal` and `id_extra` all stop matching `^id$|^id[0-9]+$`.
+
+#### Triage (round 2)
+
+Presented at the merge-approval gate 2026-08-31; approval withheld. No
+acceptance criterion failed, so the return is under the floor's second limb: the
+maintainer judged O2 and O3 load-bearing defects in what the package does for
+its users, and O1 a user-facing contradiction in the shipped help page. All
+three need new test coverage as well as a code or doc change, so they return the
+milestone rather than being patched at the gate.
+
+- O1 — fix, as T8. Returns the milestone.
+- O2 — fix, as T9. Returns the milestone.
+- O3 — fix, as T9. Returns the milestone.
+- O4 — follow-up. Absorbed into the existing `vctrs compatibility methods`
+  candidate row alongside round 1's F4, which it widens from `group_by()` alone
+  to `rowwise()` and `tibble::as_tibble()`. Filed at the post-merge hygiene pass.
+- O5 — fix, as T9. The guard belongs in the same helper T9 rewrites.
+- O6 — fix, as T9. How the design's own id columns are identified is exactly
+  what T9 settles, and D-031's "every column the constructor writes" is the
+  yardstick the divergence is measured against.
+- O7 — fix, as T9's test work. The table's `bare` branch asserts `tbl_df` too,
+  so the branch cannot pass over the defect its sibling branch is guarded for.
+
+Defect returns on M36: 2.
