@@ -360,6 +360,115 @@ print_text <- function(x, width = 200) {
   paste(cli::cli_fmt(print(x)), collapse = "\n")
 }
 
+# The two-class fixture (M35).
+#
+# `event_level` names a factor level, so nothing in the regression fixtures
+# above can exercise it. Three things this one has to get right.
+#
+# The outcome is deliberately imbalanced, 32 events against 88, with the event
+# the FIRST level -- so `event_level = "first"` is the interesting case rather
+# than a formality, and so sensitivity and specificity separate. At a 50/50
+# outcome a symmetric classifier scores them close together and the difference
+# clauses AC2 and AC4 rest on would be measuring noise.
+#
+# Both the outer and the inner splits are stratified on the outcome. With 32
+# events across three folds each assessment set holds ten or eleven of them, so
+# no assessment set is single-class -- which is what sensitivity being NA would
+# otherwise mean, and what would take `select_best()` down with it. 32/88 at
+# v = 3 is also above rsample's pooling threshold, so stratifying here raises
+# no warning.
+#
+# The metric set leads with `roc_auc`. `select_best()` resolves its metric from
+# the tuned object's first metric name, and `roc_auc` returns byte-identical
+# values at the two event levels -- so selection is level-invariant and the two
+# runs score the same candidate, which is what makes AC3's swap an identity
+# rather than a comparison of two different models.
+cls_data <- function(n = 120, seed = 3535) {
+  old <- RNGkind()
+  on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
+  set.seed(
+    seed,
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  d <- data.frame(
+    x1 = rnorm(n),
+    x2 = rnorm(n),
+    x3 = rnorm(n),
+    x4 = rnorm(n)
+  )
+  # The -0.9 intercept is what makes the event the minority class.
+  p <- stats::plogis(1.1 * d$x1 - 0.8 * d$x2 + 0.4 * d$x3 - 0.9)
+  d$y <- factor(
+    ifelse(runif(n) < p, "event", "other"),
+    levels = c("event", "other")
+  )
+  d
+}
+
+# ranger, not a deterministic engine: the outer fit has to be reproducible from
+# its recorded seed for AC2 to refit it, and with a deterministic engine that
+# would pass whatever the seeding did (RR01 Q8).
+cls_workflow <- function(data) {
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(min_n = tune::tune(), trees = 25),
+      "ranger",
+      num.threads = 1
+    ),
+    "classification"
+  )
+  workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)
+}
+
+cls_grid <- function() data.frame(min_n = c(2L, 10L, 25L))
+
+cls_metrics <- function() {
+  yardstick::metric_set(yardstick::roc_auc, yardstick::sens, yardstick::spec)
+}
+
+# Literal arguments, so nested_final_fit() can re-evaluate the stored call.
+cls_nested <- function(data, seed = 35) {
+  old <- RNGkind()
+  on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
+  set.seed(
+    seed,
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  nested_resamples(
+    data,
+    outside = rsample::vfold_cv(v = 3, strata = y),
+    inside = rsample::vfold_cv(v = 3, strata = y)
+  )
+}
+
+# The class-presence guard. Returns the levels missing from each assessment
+# set, so a failure names which split rather than reporting a count.
+missing_assessment_levels <- function(rset, levels = c("event", "other")) {
+  vapply(
+    rset$splits,
+    function(sp) {
+      paste(
+        setdiff(levels, as.character(unique(rsample::assessment(sp)$y))),
+        collapse = ","
+      )
+    },
+    character(1)
+  )
+}
+
+# Every rset a run of this fixture will score against: the outer assessment
+# sets, and the inner rset of each outer fold. The rset `nested_final_fit()`
+# builds from the full data is not reachable from the design -- it is drawn
+# under the tuning seed the run records -- so the final-fit test checks that
+# one where it reconstructs it.
+cls_design_rsets <- function(nested) {
+  c(list(nested), as.list(nested$inner_resamples))
+}
+
 skip_if_no_engines <- function(stochastic = FALSE) {
   testthat::skip_if_not_installed("recipes")
   testthat::skip_if_not_installed("yardstick")

@@ -234,8 +234,10 @@ folds. It validates its arguments (`R/checks.R`), draws every fold's seeds up
 front, and hands each fold to `nested_fold_fit()` — a worker whose inputs are
 the outer split, the inner `rset`, the fold's two seeds, and the static
 workflow/grid/metrics. The worker delegates the entire statistical pipeline to
-tune: `tune_grid()` on the inner `rset` with `control_grid(allow_par = FALSE)`,
-`select_best()`, `finalize_workflow()`, `last_fit()` on the outer split.
+tune: `tune_grid()` on the inner `rset` with `control_grid(allow_par = FALSE,
+event_level = event_level)`, `select_best()`, `finalize_workflow()`,
+`last_fit()` on the outer split under `control_last_fit(event_level =
+event_level)`.
 Nothing is read from the enclosing loop and nothing is drawn inside it, which
 is what makes fold results independent of execution order and the loop safe to
 parallelize later.

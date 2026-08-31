@@ -345,7 +345,14 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
 
   start_daemons(2)
   local_mocked_bindings(
-    fold_task = function(payload, object, grid, metrics, param_info) {
+    fold_task = function(
+      payload,
+      object,
+      grid,
+      metrics,
+      param_info,
+      event_level
+    ) {
       seed <- payload$seeds[[1L]]
       file.create(file.path(
         Sys.getenv("NESTEDTUNE_LEDGER"),
@@ -362,7 +369,8 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
         object = object,
         grid = grid,
         metrics = metrics,
-        param_info = param_info
+        param_info = param_info,
+        event_level = event_level
       )
     }
   )
@@ -449,4 +457,54 @@ test_that("BC6: the identity holds with param_info supplied (M34, AC4)", {
   expect_true(all(
     vapply(parallel$.selected, function(x) x$min_n, integer(1)) <= 8L
   ))
+})
+
+# AC5 (M35). The event level is the first setting the identity has to carry
+# that changes a *reported metric value* rather than the candidate chosen:
+# `.metrics` is fed by the `control_last_fit()` the outer scoring fit now
+# receives, so a level dropped on the daemon path alone -- threaded into
+# `fold_task()` but never reaching the worker -- shows up here. What this does
+# not establish is which level is which: a level dropped on both paths
+# preserves the identity exactly, and test-event-level.R is the anchor for
+# that.
+
+test_that("BC7: the identity holds with a two-class fixture at event_level = \"second\" (M35, AC5)", {
+  skip_if_no_daemons()
+  skip_if_not_installed("ranger")
+  skip_if_no_engines(stochastic = TRUE)
+
+  data <- cls_data()
+  nested <- cls_nested(data)
+  wf <- cls_workflow(data)
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  mirai::daemons(0)
+  set.seed(2026L)
+  serial <- nested_tune_grid(
+    wf,
+    nested,
+    grid = cls_grid(),
+    metrics = cls_metrics(),
+    event_level = "second"
+  )
+  expect_identical(last_dispatch(), "serial")
+
+  start_daemons(2)
+  set.seed(2026L)
+  parallel <- without_pkgload_warning(
+    nested_tune_grid(
+      wf,
+      nested,
+      grid = cls_grid(),
+      metrics = cls_metrics(),
+      event_level = "second"
+    )
+  )
+
+  expect_identical(last_dispatch(), "parallel")
+  # Every fold completed, so the identity below is between two runs that
+  # produced metrics rather than two matching sets of failures.
+  expect_true(all(serial$.completed))
+  expect_true(all(parallel$.completed))
+  expect_identical(parallel, serial)
 })

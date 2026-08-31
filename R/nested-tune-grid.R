@@ -38,6 +38,13 @@
 #' @param metrics A [yardstick::metric_set()], or `NULL` to use tune's defaults
 #'   for the model's mode. The first metric in the set selects the best inner
 #'   candidate.
+#' @param event_level `"first"` (the default) or `"second"`, naming which level
+#'   of a two-class outcome factor is the event. It reaches both loops: the
+#'   inner tuning run, where it decides which candidate is selected, and the
+#'   outer scoring fit, where it decides what the reported metrics mean.
+#'   Metrics that do not distinguish the two levels -- accuracy, `roc_auc`,
+#'   `brier_class` -- are unaffected by it; `sens`, `spec`, `precision` and
+#'   their relatives are not. Ignored for a regression model, as it is in tune.
 #'
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
@@ -89,11 +96,14 @@
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-#'                    metrics = metrics, control = control_grid(allow_par = FALSE))
+#'                    metrics = metrics,
+#'                    control = control_grid(allow_par = FALSE,
+#'                                           event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
-#' last_fit(final, resamples$splits[[i]], metrics = metrics)
+#' last_fit(final, resamples$splits[[i]], metrics = metrics,
+#'          control = control_last_fit(event_level = event_level))
 #' ```
 #'
 #' The caller's RNG state and generator kind are restored on exit, including
@@ -269,9 +279,25 @@
 #'
 #' @section Differences from calling tune directly:
 #'
-#' Inner tuning always runs with `control_grid(allow_par = FALSE)`, forced
-#' rather than left to chance, and there is deliberately no `control` argument
-#' to override it. Parallelism belongs over the outer folds, as above.
+#' There is no `control` argument. What tune's control objects settle is
+#' settled here instead by the arguments above, or forced.
+#'
+#' Settable: `event_level`, which reaches the inner `control_grid()` and the
+#' outer `control_last_fit()` alike.
+#'
+#' Forced: both tune calls a fold makes -- the inner tuning run and the outer
+#' scoring fit -- run at `allow_par = FALSE`. Parallelism belongs over the
+#' outer folds, as above, and leaving that to a caller would put two pools in
+#' contention.
+#'
+#' Not offered: the slots that would have nothing to act on here. `save_pred`,
+#' `extract` and `save_workflow` land on the inner `tune_results`, which each
+#' fold record discards once the fold succeeds; `parallel_over`,
+#' `backend_options` and `workflow_size` are inert under `allow_par = FALSE`;
+#' `pkgs` is redundant serially, and on the parallel path the daemon pre-flight
+#' has already required this package's namespace in every worker; and `verbose`
+#' would print from a mirai daemon where nothing shows it, and duplicate the
+#' progress the outer loop reports where the run is serial.
 #'
 #' @examples
 #' \donttest{
@@ -310,7 +336,8 @@ nested_tune_grid <- function(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -319,6 +346,7 @@ nested_tune_grid <- function(
   check_grid_params(object, grid)
   check_metrics(metrics)
   check_param_info(param_info)
+  check_event_level(event_level)
 
   n <- nrow(resamples)
 
@@ -349,6 +377,7 @@ nested_tune_grid <- function(
     grid = grid,
     metrics = metrics,
     param_info = param_info,
+    event_level = event_level,
     call = rlang::current_env()
   )
 
@@ -371,7 +400,8 @@ nested_fold_fit <- function(
   object,
   grid,
   metrics,
-  param_info = NULL
+  param_info = NULL,
+  event_level = "first"
 ) {
   set_fold_seed(seeds[[1L]])
 
@@ -387,7 +417,10 @@ nested_fold_fit <- function(
         param_info = param_info,
         grid = grid,
         metrics = metrics,
-        control = tune::control_grid(allow_par = FALSE)
+        control = tune::control_grid(
+          allow_par = FALSE,
+          event_level = event_level
+        )
       )
       # Resolved from the tuned object rather than from `metrics`, so the same
       # code answers whether the caller supplied a metric set or let tune pick.
@@ -408,7 +441,23 @@ nested_fold_fit <- function(
     {
       final_wf <- tune::finalize_workflow(object, selected)
       set_fold_seed(seeds[[2L]])
-      tune::last_fit(final_wf, split = split, metrics = metrics)
+      # The outer fit had no control object at all until M35, so its metrics
+      # were computed at tune's default event level whatever the inner run had
+      # been told -- the one place the setting had to reach for a reported
+      # number to move. `allow_par = FALSE` is stated rather than left to
+      # tune, whose `control_last_fit()` defaults it off today: the outer fit
+      # runs inside a mirai daemon on the parallel path, and "keep tune serial
+      # within the outer loop" is this package's convention to hold, not an
+      # upstream default's to keep.
+      tune::last_fit(
+        final_wf,
+        split = split,
+        metrics = metrics,
+        control = tune::control_last_fit(
+          event_level = event_level,
+          allow_par = FALSE
+        )
+      )
     },
     error = function(cnd) cnd
   )

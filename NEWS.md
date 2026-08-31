@@ -19,6 +19,15 @@
   grid every fold searches. A `param_info` that is not a `dials::parameters()`
   object is refused before the first fold is fitted.
 
+* `nested_tune_grid()` and `nested_final_fit()` gain `event_level`, naming
+  which level of a two-class outcome factor counts as the event. It reaches the
+  inner tuning run on both functions, and on `nested_tune_grid()` the outer
+  scoring fit as well, which the package sent no settings to before — so a
+  reported `sens` or `spec` was computed against the first level whatever the
+  inner run had been told. Metrics that do not distinguish the two levels, such
+  as `roc_auc` and `accuracy`, are unaffected. A value that is not `"first"` or
+  `"second"` is refused before the first fold is fitted.
+
 * The documentation site now builds with the tidymodels organization's shared
   pkgdown theme, and the organization's contributing guide and code of conduct
   have joined the repository and build as pages of the site. The README says on

@@ -197,6 +197,7 @@ dispatch_folds <- function(
   grid,
   metrics,
   param_info = NULL,
+  event_level = "first",
   call = rlang::caller_env()
 ) {
   if (!use_parallel()) {
@@ -207,7 +208,8 @@ dispatch_folds <- function(
       object = object,
       grid = grid,
       metrics = metrics,
-      param_info = param_info
+      param_info = param_info,
+      event_level = event_level
     ))
   }
 
@@ -272,6 +274,7 @@ dispatch_folds <- function(
       grid,
       metrics,
       param_info,
+      event_level,
       shared,
       worker
     ) {
@@ -281,7 +284,8 @@ dispatch_folds <- function(
         object,
         grid,
         metrics,
-        param_info
+        param_info,
+        event_level
       )
     }
     args <- list(
@@ -289,6 +293,7 @@ dispatch_folds <- function(
       grid = grid,
       metrics = metrics,
       param_info = param_info,
+      event_level = event_level,
       shared = shared,
       worker = worker
     )
@@ -298,7 +303,8 @@ dispatch_folds <- function(
       object = object,
       grid = grid,
       metrics = metrics,
-      param_info = param_info
+      param_info = param_info,
+      event_level = event_level
     )
   }
   environment(task) <- globalenv()
@@ -355,7 +361,8 @@ dispatch_folds <- function(
 # The bound is an option rather than an argument (D-020): it tunes
 # infrastructure and never anything statistical, so no result depends on it and
 # it names nothing in nested_tune_grid()'s signature. That signature has since
-# grown `...` and `param_info` (M34), neither of which carries a bound. Non-finite is refused along
+# grown `...` and `param_info` (M34) and `event_level` (M35), none of which
+# carries a bound. Non-finite is refused along
 # with non-positive and non-numeric (M10-D2) -- an `Inf` bound is not a bound,
 # and would hand back the unbreakable hang this exists to convert into an error.
 default_preflight_timeout_ms <- 30000L
@@ -914,7 +921,14 @@ worker_failure_message <- function(x) {
 # none of the package's internals resolve (RR03 Q5). Looking the namespace up
 # here either works or fails loudly, and the pre-flight check makes it the
 # latter before any fold is dispatched.
-fold_task <- function(payload, object, grid, metrics, param_info = NULL) {
+fold_task <- function(
+  payload,
+  object,
+  grid,
+  metrics,
+  param_info = NULL,
+  event_level = "first"
+) {
   ns <- asNamespace("nestedtune")
   ns$nested_fold_fit(
     split = payload$split,
@@ -923,6 +937,7 @@ fold_task <- function(payload, object, grid, metrics, param_info = NULL) {
     object = object,
     grid = grid,
     metrics = metrics,
-    param_info = param_info
+    param_info = param_info,
+    event_level = event_level
   )
 }

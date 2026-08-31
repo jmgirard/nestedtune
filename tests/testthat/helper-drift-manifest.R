@@ -74,6 +74,20 @@ drift_rendering_value <- function(rendering) {
   c(printed = printed * unit, tol = 0.5 * 10^(-decimals) * unit)
 }
 
+# A rendering matches only where it is the whole number printed, never where it
+# sits inside a longer one. A plain substring search read "524 B" out of the
+# middle of "31,524 B" in a hygiene note about an unrelated byte budget, which
+# both reported drift in a figure that had not drifted and, worse, restored the
+# declared occurrence count after a real occurrence was perturbed away -- so
+# the counter went green on exactly the defect it exists to catch. The guard is
+# a lookaround pair rather than a word boundary: a rendering can begin and end
+# with a digit, and `\\b` would separate neither "524 B" from the "1,524 B" it
+# ends nor "9.13" from the "9.134" it begins.
+rendering_pattern <- function(rendering) {
+  escaped <- gsub("([][(){}.^$|*+?\\\\])", "\\\\\\1", rendering)
+  paste0("(?<![0-9.,])", escaped, "(?![0-9]|[.,][0-9])")
+}
+
 # The check proper. Enumerates from the declaration (never parses prose for
 # what counts as a figure); a declared name the manifest lacks, a declared
 # rendering printed a different number of times than declared, and a
@@ -102,7 +116,7 @@ drift_failures <- function(doc_path, figures) {
       rendering <- entry$rendering[[i]]
       expected <- entry$count[[i]]
       checked <- checked + 1L
-      hits <- gregexpr(rendering, body, fixed = TRUE)[[1]]
+      hits <- gregexpr(rendering_pattern(rendering), body, perl = TRUE)[[1]]
       found <- if (hits[[1]] == -1L) 0L else length(hits)
       if (found != expected) {
         failures <- c(

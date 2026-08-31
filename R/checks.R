@@ -427,3 +427,31 @@ check_param_info <- function(param_info, call = rlang::caller_env()) {
   }
   invisible(param_info)
 }
+
+# `event_level` is tune's, and it is passed through untouched. tune accepts the
+# setting on a regression workflow and ignores it, so the mode is not consulted
+# here (plan gate, 2026-08-31) -- refusing it there would diverge from tune for
+# the same argument and would punish one wrapper written for both kinds of
+# model. What is refused is a value that names no level at all, before a whole
+# outer loop is paid for.
+check_event_level <- function(event_level, call = rlang::caller_env()) {
+  named_a_level <- is.character(event_level) &&
+    length(event_level) == 1L &&
+    !is.na(event_level)
+
+  if (named_a_level && event_level %in% c("first", "second")) {
+    return(invisible(event_level))
+  }
+
+  cli::cli_abort(
+    c(
+      "{.arg event_level} must be {.val first} or {.val second}.",
+      x = if (named_a_level) {
+        "Got {.val {event_level}}."
+      } else {
+        "Got {.obj_type_friendly {event_level}}."
+      }
+    ),
+    call = call
+  )
+}

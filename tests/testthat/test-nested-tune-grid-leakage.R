@@ -9,7 +9,16 @@
 
 record_handoffs <- function(wf, folds, grid, metrics) {
   seen <- list()
-  stub <- function(split, inner, seeds, object, grid, metrics, param_info) {
+  stub <- function(
+    split,
+    inner,
+    seeds,
+    object,
+    grid,
+    metrics,
+    param_info,
+    event_level
+  ) {
     seen[[length(seen) + 1L]] <<- list(split = split, inner = inner)
     list(
       completed = TRUE,

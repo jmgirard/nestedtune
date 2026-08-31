@@ -10,7 +10,8 @@ nested_tune_grid(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 )
 }
 \arguments{
@@ -43,6 +44,14 @@ anything is fitted: every column must name a parameter marked with
 \item{metrics}{A \code{\link[yardstick:metric_set]{yardstick::metric_set()}}, or \code{NULL} to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner
 candidate.}
+
+\item{event_level}{\code{"first"} (the default) or \code{"second"}, naming which level
+of a two-class outcome factor is the event. It reaches both loops: the
+inner tuning run, where it decides which candidate is selected, and the
+outer scoring fit, where it decides what the reported metrics mean.
+Metrics that do not distinguish the two levels -- accuracy, \code{roc_auc},
+\code{brier_class} -- are unaffected by it; \code{sens}, \code{spec}, \code{precision} and
+their relatives are not. Ignored for a regression model, as it is in tune.}
 }
 \value{
 An object of class \code{nested_results}: one row per outer fold, with the
@@ -111,11 +120,14 @@ This makes any single fold reproducible by hand. Fold \code{i} is exactly:
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
 tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-                   metrics = metrics, control = control_grid(allow_par = FALSE))
+                   metrics = metrics,
+                   control = control_grid(allow_par = FALSE,
+                                          event_level = event_level))
 final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
-last_fit(final, resamples$splits[[i]], metrics = metrics)
+last_fit(final, resamples$splits[[i]], metrics = metrics,
+         control = control_last_fit(event_level = event_level))
 }\if{html}{\out{</div>}}
 
 The caller's RNG state and generator kind are restored on exit, including
@@ -297,9 +309,25 @@ discard every completed fold whenever a single worker died.
 \section{Differences from calling tune directly}{
 
 
-Inner tuning always runs with \code{control_grid(allow_par = FALSE)}, forced
-rather than left to chance, and there is deliberately no \code{control} argument
-to override it. Parallelism belongs over the outer folds, as above.
+There is no \code{control} argument. What tune's control objects settle is
+settled here instead by the arguments above, or forced.
+
+Settable: \code{event_level}, which reaches the inner \code{control_grid()} and the
+outer \code{control_last_fit()} alike.
+
+Forced: both tune calls a fold makes -- the inner tuning run and the outer
+scoring fit -- run at \code{allow_par = FALSE}. Parallelism belongs over the
+outer folds, as above, and leaving that to a caller would put two pools in
+contention.
+
+Not offered: the slots that would have nothing to act on here. \code{save_pred},
+\code{extract} and \code{save_workflow} land on the inner \code{tune_results}, which each
+fold record discards once the fold succeeds; \code{parallel_over},
+\code{backend_options} and \code{workflow_size} are inert under \code{allow_par = FALSE};
+\code{pkgs} is redundant serially, and on the parallel path the daemon pre-flight
+has already required this package's namespace in every worker; and \code{verbose}
+would print from a mirai daemon where nothing shows it, and duplicate the
+progress the outer loop reports where the run is serial.
 }
 
 \examples{

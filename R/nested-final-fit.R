@@ -44,6 +44,12 @@
 #' @param metrics A [yardstick::metric_set()], or `NULL` to use tune's defaults
 #'   for the model's mode. The first metric in the set selects the best
 #'   candidate.
+#' @param event_level `"first"` (the default) or `"second"`, naming which level
+#'   of a two-class outcome factor is the event. It reaches the tuning run,
+#'   where it decides which candidate is selected; the final fit itself scores
+#'   nothing, so there is no second place for it to act. Metrics that do not
+#'   distinguish the two levels -- accuracy, `roc_auc`, `brier_class` -- are
+#'   unaffected by it. Ignored for a regression model, as it is in tune.
 #'
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
 #'   trained workflow, better reached with [extract_workflow()]), `selected`
@@ -103,8 +109,8 @@
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
-#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
-#'                    control = control_grid(allow_par = FALSE))
+#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics, control =
+#'   control_grid(allow_par = FALSE, event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -183,7 +189,8 @@ nested_final_fit <- function(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -192,6 +199,7 @@ nested_final_fit <- function(
   check_grid_params(object, grid)
   check_metrics(metrics)
   check_param_info(param_info)
+  check_event_level(event_level)
   inside <- check_inside_spec(resamples)
 
   env <- rlang::caller_env()
@@ -216,6 +224,7 @@ nested_final_fit <- function(
     grid,
     metrics,
     param_info = param_info,
+    event_level = event_level,
     call = rlang::current_env()
   )
 }
@@ -241,6 +250,7 @@ final_fit_worker <- function(
   grid,
   metrics,
   param_info = NULL,
+  event_level = "first",
   call = rlang::caller_env()
 ) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
@@ -257,7 +267,10 @@ final_fit_worker <- function(
     param_info = param_info,
     grid = grid,
     metrics = metrics,
-    control = tune::control_grid(allow_par = FALSE)
+    control = tune::control_grid(
+      allow_par = FALSE,
+      event_level = event_level
+    )
   )
   # Resolved from the tuned object rather than from `metrics`, so the same code
   # answers whether the caller supplied a metric set or let tune pick.
