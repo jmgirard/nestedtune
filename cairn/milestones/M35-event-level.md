@@ -102,7 +102,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - [x] T0: (discovered) stop the drift check counting a figure that sits inside a
       longer number, which had the suite red on the default branch before this
       milestone changed anything.
-- [ ] T1: add `check_event_level()` to `R/checks.R` beside `check_param_info()`
+- [x] T1: add `check_event_level()` to `R/checks.R` beside `check_param_info()`
       (`R/checks.R:418`), covering the four refusal forms AC1 names.
 - [ ] T2: add `event_level` to `nested_tune_grid()` after `...`; thread it
       through `dispatch_folds()` (`R/parallel.R:194-306`) and `fold_task()`
@@ -143,6 +143,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: /milestone-implement began; branch `m035-event-level` cut from `main` at `e10a8e5`.
 - 2026-08-31: implementation gate chose the new outer control object to carry `event_level` alone, a hand-written refusal message matching the sibling checks in `R/checks.R`, and accepting `event_level` on a regression workflow the way tune does.
 - 2026-08-31: minor amendment — added discovered task T0. `devtools::test()` was red on the default branch at `e10a8e5` (3 failures, all in `test-drift-manifest.R`): the drift check counted a rendering by plain substring, so `524 B` matched inside the hygiene stamp's unrelated `31,524 B` and, once a real occurrence was perturbed away, the accidental match restored the declared count and the checker's own planted-defect self-test went green. `rendering_pattern()` now anchors each rendering with a lookbehind. Suite green on that file, self-test red on the perturbation again.
+- 2026-08-31: T1 — `check_event_level()` added beside `check_param_info()`; refuses a wrong string, a non-character, a length-2 character vector, `NA_character_`, `character(0)` and `NULL`, each with its own diagnosis bullet. `devtools::test()` 1670 pass, 0 fail.
 
 ## Decisions
 
