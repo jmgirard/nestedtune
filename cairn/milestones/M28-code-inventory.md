@@ -1344,3 +1344,63 @@ fired on AC6. I1–I5 are a fourth instance of the class both returns turned on 
 a claim about an upstream export surface the instrument in hand did not reach —
 this time found inside the stated, re-runnable sweep that was supposed to end it,
 and in prose no acceptance criterion quantifies over.
+
+**Triage at the gate — all eight actioned fix-now, none returning the
+milestone.** The maintainer chose to fix all eight on the branch. No finding met
+the return floor: none demonstrates an acceptance criterion failing inside its
+own domain, and the maintainer did not judge any a load-bearing defect in what
+the two documents do for their readers. The defect-return count stays at two.
+What each fix did:
+
+- **I1** — the note's F075–F079 entry now names `.catch_and_log()`
+  (`NAMESPACE:135`, `R/logging.R:228`, `@rdname tune-internal-functions`) as the
+  exported route onto three of the four logging helpers, and says what it does
+  not offer: it catches and logs a whole expression, where this package assembles
+  and re-tags note frames it already holds. The draft's false sentence is
+  replaced — T-A3 now states that the sweep found an exported *route* but no
+  counterpart, and that the ask is for the pieces rather than for a surface tune
+  does not expose. All four citations re-read against `4c74638`.
+- **I2** — both documents now record `tune-internal-functions`
+  (`R/grid_performance.R:61-62`) as a fourth developer-facing topic, with
+  `.load_namespace` (`R/load_ns.R:40`) and `.catch_and_log` as the members this
+  page cites. T-A1's requested promise is widened to cover it, with the note that
+  a promise scoped to `empty_ellipses` and `choose_metric` alone would leave both
+  uncovered.
+- **I3** — the sweep's self-description is corrected: it found four counterparts,
+  and a name match would have missed **all four**, since no upstream name shares
+  a substring with the nestedtune function it duplicates.
+- **I4** — "Thirteen such symbols" becomes "at least nineteen", with the thirteen
+  the `glue` reasoning rests on distinguished from the six further exported
+  symbols the page cites without leaning on (`.has_preprocessor_recipe` `:159`,
+  `.has_preprocessor_formula` `:158`, `.has_preprocessor_variables` `:160`,
+  `.load_namespace` `:163`, `estimate_tune_results` `:209`, `collect_notes`
+  `:197` — all six confirmed in `NAMESPACE` here).
+- **I5** — the sweep's domain is restated as 37 entries, the addendum included,
+  matching the evidence snapshot's "every entry this page does not bucket `core`
+  or `furniture`".
+- **I6** — `pool_is_cancellable()` is cited at `R/parallel.R:46`, the definition
+  line the ledger's F086 row records.
+- **I7** — F006's entry no longer says tune's `.check_grid()` validates the same
+  triple: its `nrow() == 0L` test is on the parameter set rather than the grid,
+  so it has no counterpart to F006's zero-row refusal (`R/checks.R:206-211`), and
+  it coerces with `as.integer(grid[1])` rather than refusing a non-integral
+  numeric (`R/checks.R:215`). Both re-read here.
+- **I8** — the sweep's rsample near-misses now name `add_resample_id()`
+  (`R/labels.R:92`, `NAMESPACE:373`) for F067, and say why it does not reach it:
+  it cbinds one split's label tibble onto a frame, where F067 pastes an rset's
+  `^id` columns into a single fold label.
+
+**Post-fix re-verification.** The ledger is unchanged and re-checked: 106 rows,
+name set equal to the extraction output, every `file:line` exact, 106/106 line
+counts exact, buckets still 32 core / 38 furniture / 16 glue / 12
+resampling-layer / 8 ambiguous, and the 5 `exported` rows still the only ones.
+AC6 re-cross-checked: all 28 `glue` and `resampling-layer` IDs under exactly one
+draft section, none in the preamble (T-A1 4, T-A2 4, T-A3 5, T-A4 3, R-A1 3,
+R-A2 3, R-A3 1, R-A4 4, R-A5 1), and all nine `Retires:` figures recomputed from
+the ledger are correct for count and line total. Framing sentence still at line
+13, first ask now at line 64. All 148 non-ledger citations resolve in one of the
+three trees, and every citation the fixes added was read at its line. Gate re-run
+over the corrected files: `cairn_validate.py` exits 0, all 16 checks pass, same
+two advisory classes; `devtools::test()` FAIL 0, WARN 0, SKIP 0, PASS 1628. No
+`R/`, `NAMESPACE` or `man/` file differs from `origin/main`, so `document()` and
+`check()` are unaffected by prose-only edits to two `.Rbuildignore`d paths.

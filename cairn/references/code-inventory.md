@@ -93,11 +93,12 @@ grep -oE '^export\(([^)]+)\)' NAMESPACE   # in each upstream tree
 ```
 
 That emits 152 names for tune at `4c74638` and 62 for rsample at `658545c`. Both
-lists were then **read** — not matched by name — against the 36 entries this page
-buckets `glue` (16), `resampling-layer` (12) or `ambiguous` (8), asking of each
-upstream name whether it does the work the entry does. A name match is not the
-test and would have missed two of the three hits below: `new_bare_tibble` against
-`new_tbl`, and `load_pkgs` against `check_model_spec`.
+lists were then **read** — not matched by name — against the 37 entries this page
+buckets `glue` (16), `resampling-layer` (12) or `ambiguous` (8, plus the
+addendum), asking of each upstream name whether it does the work the entry does.
+A name match is not the test and would have missed **all four** of the hits
+below: no upstream name shares a substring with the nestedtune function it
+duplicates.
 
 Run 2026-08-30, the sweep found four counterparts this page had missed, all four
 exported:
@@ -131,7 +132,10 @@ reason in this repo's own comment at `R/nested-resamples.R:160-164`: rebuilding
 the splits from scratch drops the split subclass and the per-split `id` tibble
 that `labels()` reads. `populate()` (`R/complement.R:126`) fills a split's
 `out_id`, but in that split's own index space, not the outer-fold space F026
-remaps into.
+remaps into. `add_resample_id()` (`R/labels.R:92`, exported and fully documented,
+not `@keywords internal`) is the same shape of near-miss for F067: it cbinds one
+split's label tibble onto a frame, where F067 pastes an rset's `^id` columns into
+a single fold label.
 
 The four hits are folded into the entries below. What the sweep does not settle
 is behavioural equivalence beyond the reading: it establishes that a counterpart
@@ -278,7 +282,8 @@ otherwise.
 
 **What "inside tune" means when tune already exports the counterpart.** Most of
 the helpers cited below are *exported* at v2.1.0, so the code is callable today
-as `tune::<name>()`. Thirteen such symbols are cited on this page:
+as `tune::<name>()`. At least nineteen such symbols are cited on this page. The
+thirteen the `glue` reasoning rests on are:
 `check_workflow` (`NAMESPACE:191`), `.has_preprocessor` (`:157`), `.has_spec`
 (`:161`), `.check_grid` (`:136`), `check_metrics` (`:186`), `check_metrics_arg`
 (`:187`), `choose_framework` (`:193`), `get_mirai_workers` (`:237`),
@@ -288,7 +293,16 @@ confirmed — and `.config_key_from_metrics` (`:138`), `.get_config_key` (`:144`
 verified against the pinned clone, observed 2026-08-30. Every one of the thirteen
 carries `#' @keywords internal`, in its own roxygen block or in the block its
 `@rdname` joins, and each is documented in one of three developer-facing topics
-or on a block of its own:
+or on a block of its own. tune has a **fourth** such topic,
+`tune-internal-functions` (headed at `R/grid_performance.R:61-62` with
+`#' @keywords internal`), which none of the thirteen joins but which matters
+below: `.load_namespace` (`R/load_ns.R:40`) and `.catch_and_log`
+(`R/logging.R:228`) are members, and both are cited on this page. The six further
+exported symbols cited here but not carrying any `glue` entry's reasoning are
+`.has_preprocessor_recipe` (`NAMESPACE:159`), `.has_preprocessor_formula`
+(`:158`), `.has_preprocessor_variables` (`:160`), `.load_namespace` (`:163`),
+`estimate_tune_results` (`:209`) and `collect_notes` (`:197`). The three topics
+the thirteen do join:
 
 - `empty_ellipses` — `.check_grid` (`R/checks.R:65`), `check_workflow`
   (`:311`), `check_metrics` (`:391`), `.has_preprocessor`
@@ -388,9 +402,15 @@ for the whole run.
 `empty_metrics()` build, relabel, concatenate and zero-fill the note and metric
 tibbles this package files per fold. tune builds the same structures internally:
 `new_note()` at `R/logging.R:320`, `append_log_notes()` at `R/logging.R:282`,
-`remove_log_notes()` at `:414`, `has_log_notes()` at `:274`. Inside tune a fold's
-notes are appended through that machinery rather than rebuilt from
-`tune::collect_notes()` output and re-tagged with a stage string.
+`remove_log_notes()` at `:414`, `has_log_notes()` at `:274`. None of those four
+is exported, but `.catch_and_log()` is (`NAMESPACE:135`, `R/logging.R:228`,
+`@rdname tune-internal-functions`), and its body calls three of them — so the
+machinery is reachable from outside tune through one entry point, on the same
+unpromised terms as the rest of this section. What is not reachable is using the
+pieces separately: inside tune a fold's notes are appended through that machinery
+as results arrive, rather than rebuilt from `tune::collect_notes()` output and
+re-tagged with a stage string, which is the shape this package needs and
+`.catch_and_log()` does not offer.
 
 **Building a tibble without depending on tibble (F061).**
 `new_tbl()` sets three classes and compact row names by hand. Its own comment
@@ -544,7 +564,11 @@ Eight entries in the ledger, plus the addendum.
   also carry a "~65 lines retired" figure that no upstream change reaches.
 - **F006 `check_grid()`, F007 `check_grid_params()`** (`R/checks.R:204`, `:234`,
   ~23 and ~41 lines). tune's `.check_grid()` (`R/checks.R:67`, `NAMESPACE:136`)
-  validates the same triple and returns the expanded grid, and `.get_config_key()`
+  validates most of the same triple and returns the expanded grid — though not
+  all of it: its `nrow() == 0L` test is on the parameter set, not on the grid, so
+  it has no counterpart to F006's zero-row refusal (`R/checks.R:206-211`), and it
+  coerces a numeric with `as.integer(grid[1])` rather than refusing a non-integral
+  one, F006's `grid != trunc(grid)` branch. `.get_config_key()`
   (`R/loop_over_all_stages-helpers.R:412`, `NAMESPACE:144`) makes F007's check
   exactly: its two aborts are the same two `setdiff()` calls, `setdiff(info$id,
   names(grid))` at `:416` against `R/checks.R:261` and `setdiff(names(grid),

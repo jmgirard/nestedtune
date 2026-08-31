@@ -82,9 +82,13 @@ developer-facing. A package on CRAN cannot put its argument checking on a surfac
 its dependency has said it may change. The ask is not to export them — it is to
 say which of these developer-facing helpers a downstream package may depend on,
 and to deprecate rather than remove them. A short "these are stable for
-downstream use" note would do it — in `empty_ellipses` and `choose_metric`, and
-on `load_pkgs`'s own block, which is not in either and carries the third of the
-four retirements below.
+downstream use" note would do it — in `empty_ellipses` and `choose_metric`, on
+`load_pkgs`'s own block, which is in neither and carries the third of the four
+retirements below, and in `tune-internal-functions`
+(`R/grid_performance.R:61-62`), a fourth developer-facing topic that holds
+`.load_namespace()` — the function `load_pkgs.model_spec()` actually delegates
+the refusal to — and `.catch_and_log()`, which T-A3 below turns on. A promise
+scoped to the first two blocks would leave both uncovered.
 
 **The engine-package check is reachable too, by another name.**
 `check_installs()` over `is_installed()` (`R/checks.R:234`, `:229`) is indeed
@@ -191,11 +195,19 @@ builds and appends the same structures internally — `new_note()`
 (`R/logging.R:320`), `append_log_notes()` (`R/logging.R:282`),
 `remove_log_notes()` (`:414`), `has_log_notes()` (`:274`).
 
-The ask has three parts, and only the first is an export request — the sweep
-found no exported counterpart for any of this, unlike T-A1 and T-A2.
+The ask has three parts, and only the first is an export request. Unlike T-A1
+and T-A2 the sweep found no exported counterpart that does what these functions
+do — but it did find an exported *route* onto the pieces: `.catch_and_log()`
+(`NAMESPACE:135`, `R/logging.R:228`, in the `tune-internal-functions` block T-A1
+also asks about) calls `has_log_notes()`, `append_log_notes()` and
+`remove_log_notes()` in one wrapper. That wrapper catches and logs a whole
+expression, which is not what this package needs — it assembles and re-tags note
+frames it already holds — so the ask below stands, but it is an export request
+for the pieces rather than for a surface tune does not expose at all.
 
 1. **Export `new_note()` and `append_log_notes()`** (`R/logging.R:320`, `:282`).
-   Neither is in tune's `NAMESPACE`. These retire three outright. `new_note()`
+   Neither is in tune's `NAMESPACE` by name, and `.catch_and_log()` reaches them
+   only as a bundle. These retire three outright. `new_note()`
    is what F075 `own_note()` reimplements, and its own defaults are what F078
    `empty_notes()` hand-builds — those two go outright. F077 `bind_notes()`
    (`R/nested-tune-grid.R:567`) is the third and the argument for it is weaker,
@@ -253,7 +265,7 @@ its removal would go through a deprecation cycle. Nothing needs to be written.
 
 That retires F084 and F085 and most of F083, but not all of it, and the ask
 should not claim otherwise. `is_mirai_installed()` has a second caller inside
-this package: `pool_is_cancellable()` (`R/parallel.R:47`, an inventory `core`
+this package: `pool_is_cancellable()` (`R/parallel.R:46`, an inventory `core`
 entry) asks the plain question "is mirai installed at all", which
 `choose_framework()`'s return value cannot answer — it names a framework, not an
 installation. Promising `mirai_installed()` (`NAMESPACE:265`) alongside
