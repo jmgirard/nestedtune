@@ -959,6 +959,42 @@ Falsified by a caller needing a slot other than `event_level`, or by the inner
 tuning run being retained on `nested_results`, which would give `save_pred` and
 `extract` something to act on.
 
+### D-032 (2026-08-31): `vctrs` joins Imports, and the two doors that reach no generic — `rbind()` and `rename()` — get methods of their own — extends the dependency set D-031 last touched, and completes for vctrs the invariant D-031 fixed for dplyr
+
+**Context:** #32 asked for the invariants tune declares on its results objects
+through both of the interfaces a caller can reach them by. D-031 took the dplyr
+half and parked the vctrs half. Three things had to be settled before the rest
+could be written: how `vctrs` is depended on, which methods carry the rule, and
+what to do about the operations that consult neither dplyr nor vctrs and so
+reach no rule at all.
+
+**Decision:** `vctrs (>= 0.6.1)` joins Imports, the minimum `tune` states;
+`dplyr`, already an Import, requires a newer one, so no install changes.
+`vec_restore.nested_results()` carries the same rule
+`dplyr_reconstruct.nested_results()` carries, and the `vec_ptype2` and
+`vec_cast` pairs among `nested_results`, `tbl_df` and `data.frame` are
+registered to what each entry point was measured to reach.
+`rbind.nested_results()` and `names<-.nested_results()` are written as well:
+base `rbind()` and dplyr's `rename()` reach no generic either package
+dispatches on, so without them an operation that doubles the rows, or renames
+a column the record is kept in, returns an object still reporting the run it
+came from. Considered and rejected: `vctrs` in Suggests with the methods
+registered at load time (every test of these invariants would skip vacuously
+where it is absent, and `dplyr` requires `vctrs` anyway); leaving `rbind()` as
+rsample and tune both leave it, and saying so in the help page instead (an
+untrue record is not traded away by documenting it).
+
+**Consequences:** this package diverges from both upstream packages on three
+operations, deliberately. `rbind()` stops returning a results object where
+rsample's and tune's keep theirs; `vec_cbind()` keeps the class here, matching
+what `bind_cols()` does through the other door, where rsample drops it; and a
+plain table does not cast up to a `nested_results`, so combining one with a
+bare tibble refuses rather than quietly producing a table. The divergences are
+raised with the upstream maintainer on #32. `vctrs` in Imports means the
+package may use its functions internally without further argument. Falsified
+by a coherence requirement in vctrs that the registered pairs violate, or by a
+downstream package depending on any of the three upstream behaviors.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

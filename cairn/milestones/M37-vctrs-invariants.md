@@ -95,7 +95,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
       builder rather than keying a new signature (M36 paid for that once). Record
       which forms already pass against the current code, so the file demonstrably
       fails before T3.
-- [ ] T2 Settle the dependency and write the `cairn/DECISIONS.md` entry:
+- [x] T2 Settle the dependency and write the `cairn/DECISIONS.md` entry:
       `vctrs` into Imports (already installed under `dplyr`, `tibble` and
       `rsample`, and Suggests plus `vctrs::s3_register()` would let AC1–AC5 skip
       vacuously), and the `rbind` divergence from rsample and tune, which is an
@@ -126,3 +126,4 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: T3 measurement, ahead of registering: `vec_slice`, `vec_rbind`, `vec_c`, `vec_cbind`, `vec_ptype` and `vec_cast` all reach `vec_restore`; `rbind()` and `rename()` reach no vctrs or dplyr generic; a plain tibble subclass keeps its class through every form but `vec_cbind`, which drops it, and an rsample `rset` sheds on all but `rbind()` and a reorder.
 - 2026-08-31: implementation gate chose `vctrs (>= 0.6.1)` in Imports, matching tune's declared minimum; `dplyr`, already an Import, requires 0.7.1, so no install changes.
 - 2026-08-31: T1 — `tests/testthat/test-vctrs-compat.R`, 11 blocks, on the same fixture signature `test-dplyr-compat.R` builds (cache report: 1 build, 11 requests). Against the current code 7 fail and 4 pass: AC1's five forms all fail, AC3's `vec_cbind` fails (it drops the class where `bind_cols()` keeps it) and AC4's refusal fails (a tibble casts up silently); AC2's reorder, AC4's downward cast, AC5's five pairs and AC6's three paths pass, the reorder only because nothing intercepts it yet.
+- 2026-08-31: T2 — `vctrs (>= 0.6.1)` joins Imports and D-032 records it, together with the `rbind()` and `rename()` divergences from rsample and tune.

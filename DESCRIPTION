@@ -23,6 +23,7 @@ Imports:
     rlang,
     rsample,
     tune (>= 2.0.0),
+    vctrs (>= 0.6.1),
     workflows
 Suggests:
     dials,
