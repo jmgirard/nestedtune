@@ -1,11 +1,11 @@
 # M32: The community files and site template the tidymodels organization shares
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m032-tidymodels-org-conventions`
 
 ## Goal
 
@@ -91,7 +91,7 @@ CI workflow change → M33.
 
 ## Tasks
 
-- [ ] T1: Re-run the nine-repository survey for both community files, record
+- [x] T1: Re-run the nine-repository survey for both community files, record
       the shas and the date in the work log, and vendor the modal texts to
       `.github/CONTRIBUTING.md` and `.github/CODE_OF_CONDUCT.md`.
 - [ ] T2: Switch `_pkgdown.yml`'s `template:` block to
@@ -116,6 +116,8 @@ CI workflow change → M33.
 - 2026-08-30: plan-gate criteria audit ran in **full** mode (declared surface tier user-facing), in-session rather than by a fresh-context [O] reader, under the harness instruction restricting subagent spawns. Three findings, all fixed before the criteria above were written. (1) A draft AC4 cited "the built `docs/index.html` links the tidytemplate stylesheet" as evidence — an asset filename not established by anything read at plan time; narrowed to the build completing, which already proves resolution. (2) A draft AC3 promised "no repo-internal page joins them", a universal whose only named procedure is a hardcoded two-name assertion that cannot enumerate that domain (bounded-promise rule); narrowed to what the assertion actually sweeps. (3) A draft criterion required a D-entry in `cairn/DECISIONS.md` — a recording act, an instrument property rather than a property of the deliverable (D-118, D-120); moved to T6.
 - 2026-08-30: plan gate chose vendoring the community files at a surveyed modal blob sha over copying one named sibling, because the files are not uniform across the organization — CONTRIBUTING has five distinct texts across nine repositories while CODE_OF_CONDUCT has one — so naming a sibling would pick a minority text by accident; falsified by a survey re-run in which no text holds a plurality, which would mean there is no shared convention to adopt.
 - 2026-08-30: plan gate chose declaring `tidytemplate` in `Config/Needs/website` over naming it in the pkgdown workflow's `extra-packages`, because D-022 rejected that route for `pkgdown` itself and the M17 lesson records why — the action installs it either way, so the DESCRIPTION field becomes decorative and a criterion asserting the declaration cannot fail; falsified by evidence that `setup-r-dependencies` does not resolve a GitHub-style `owner/repo` entry from that field.
+
+- 2026-08-30: T1 — survey re-run over the nine repositories. CODE_OF_CONDUCT `3ac34c82` on all nine (rsample, tune, workflows, yardstick, parsnip, recipes, dials, broom, hardhat). CONTRIBUTING mode `23b135bd` at 3 of 9 (rsample, parsnip, recipes), runner-up `34272f04` at 2 of 9 (workflows, hardhat), then `a8bc0ffd` (tune), `a92ca611` (yardstick), `665fb3cf` (dials), `525e9d0d` (broom); mode unmoved. Both texts vendored from their blobs and `git hash-object` returns the two target shas.
 
 ## Decisions
 
