@@ -1,11 +1,11 @@
 # M35: The factor level a caller can name as the event
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP1, GP2, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m035-event-level`
 
 ## Goal
 
@@ -99,6 +99,9 @@ two-class test fixture, and the refusal path for a value outside the two.
 
 ## Tasks
 
+- [x] T0: (discovered) stop the drift check counting a figure that sits inside a
+      longer number, which had the suite red on the default branch before this
+      milestone changed anything.
 - [ ] T1: add `check_event_level()` to `R/checks.R` beside `check_param_info()`
       (`R/checks.R:418`), covering the four refusal forms AC1 names.
 - [ ] T2: add `event_level` to `nested_tune_grid()` after `...`; thread it
@@ -137,6 +140,9 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: plan gate chose two independent oracle types over M34's single before/after difference because the change moves a reported number; falsified by the identity oracle proving unrunnable on the fixture.
 - 2026-08-31: plan gate chose to leave `nested_tune_grid()`'s inner run behaviourally unasserted over widening scope to retain it; falsified by a fixture in which the event level demonstrably reorders inner candidates.
 - 2026-08-31: plan gate chose to leave `eval_time` on its candidate row over planning it as a second milestone now; falsified by a user needing a dynamic survival metric.
+- 2026-08-31: /milestone-implement began; branch `m035-event-level` cut from `main` at `e10a8e5`.
+- 2026-08-31: implementation gate chose the new outer control object to carry `event_level` alone, a hand-written refusal message matching the sibling checks in `R/checks.R`, and accepting `event_level` on a regression workflow the way tune does.
+- 2026-08-31: minor amendment — added discovered task T0. `devtools::test()` was red on the default branch at `e10a8e5` (3 failures, all in `test-drift-manifest.R`): the drift check counted a rendering by plain substring, so `524 B` matched inside the hygiene stamp's unrelated `31,524 B` and, once a real occurrence was perturbed away, the accidental match restored the declared count and the checker's own planted-defect self-test went green. `rendering_pattern()` now anchors each rendering with a lookbehind. Suite green on that file, self-test red on the perturbation again.
 
 ## Decisions
 
