@@ -1,7 +1,11 @@
 url: https://nestedtune.tidymodels.org/
 
 template:
+  package: tidytemplate
   bootstrap: 5
+  bslib:
+    primary: "#CA225E"
+    danger: "#CA225E"
 
 articles:
 - title: Guides

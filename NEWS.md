@@ -1,5 +1,10 @@
 # nestedtune 0.0.0.9000
 
+* The documentation site now builds with the tidymodels organization's shared
+  pkgdown theme, and the organization's contributing guide and code of conduct
+  have joined the repository and build as pages of the site. The README says on
+  its face that the interface is experimental.
+
 * The package has moved to the tidymodels organization. It now lives at
   <https://github.com/tidymodels/nestedtune>, its documentation site is served
   at <https://nestedtune.tidymodels.org/>, and `DESCRIPTION`, the README badges
