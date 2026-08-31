@@ -20,7 +20,8 @@
 #' the one to report (IP3).
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return `x`, invisibly.
 #'
@@ -28,6 +29,7 @@
 #'   [extract_tune_results()], [extract_scored_candidates()]
 #' @export
 print.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation final fit")
   cli::cli_text("Selected: {selected_label(x$selected)}")
   cli::cli_text("")

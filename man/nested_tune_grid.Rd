@@ -4,7 +4,14 @@
 \alias{nested_tune_grid}
 \title{Run the nested cross-validation loop}
 \usage{
-nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
+nested_tune_grid(
+  object,
+  resamples,
+  ...,
+  param_info = NULL,
+  grid = 10,
+  metrics = NULL
+)
 }
 \arguments{
 \item{object}{A \code{\link[workflows:workflow]{workflows::workflow()}} with at least one parameter marked
@@ -17,6 +24,15 @@ before anything is fitted, because \code{\link[rsample:nested_cv]{rsample::neste
 whatever its \code{inside} argument returned — so a specification that produces
 no \code{rset} gives a design that cannot be run, where \code{\link[=nested_resamples]{nested_resamples()}}
 refuses one at construction.}
+
+\item{...}{Not used; must be empty. Everything after it is matched by name,
+so a mistyped or unsupported argument is an error rather than a silent
+positional match.}
+
+\item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
+derive one from the workflow. Passed unchanged to \code{\link[tune:tune_grid]{tune::tune_grid()}} on
+every outer fold, so a restricted range restricts the grid every fold
+searches.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to

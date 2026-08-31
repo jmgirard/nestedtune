@@ -357,14 +357,14 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      865L,
+      868L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "dispatch accepts daemons primed with the package"
     ),
     tb_row(
       "test-parallel-classify.R",
-      872L,
+      875L,
       "daemons_load_status",
       60,
       "dispatch accepts daemons primed with the package",
@@ -372,7 +372,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      873L,
+      876L,
       "check_daemons_can_load",
       0,
       "dispatch accepts daemons primed with the package",
@@ -603,6 +603,13 @@ time_budget_ledger <- function() {
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the parallel branch really ran"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      431L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the identity holds with param_info supplied"
     ),
 
     # --- test-parallel-metrics.R --------------------------------------------

@@ -26,7 +26,8 @@
 #' re-run on the complete dataset.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return The stored `tune_results` object, unchanged. It is tune's own object,
 #'   so tune's generics apply to it directly.
@@ -78,6 +79,7 @@ extract_tune_results <- function(x, ...) {
 
 #' @export
 extract_tune_results.default <- function(x, ...) {
+  rlang::check_dots_empty()
   # `current_env()` and not `caller_env()`: inside a method reached by
   # UseMethod() the former renders the generic's own call --
   # `extract_tune_results(x)` -- while the latter renders the call one frame
@@ -91,6 +93,7 @@ extract_tune_results.default <- function(x, ...) {
 
 #' @export
 extract_tune_results.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   x$tuning
 }
 
@@ -101,7 +104,8 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #' [nested_tune_grid()] records for each outer fold.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return A tibble with one row per candidate scored, carrying one column per
 #'   tuned parameter plus tune's `.config` label for the candidate. It is the
@@ -152,6 +156,7 @@ extract_scored_candidates <- function(x, ...) {
 
 #' @export
 extract_scored_candidates.default <- function(x, ...) {
+  rlang::check_dots_empty()
   abort_no_extract_method(
     "extract_scored_candidates",
     x,
@@ -161,6 +166,7 @@ extract_scored_candidates.default <- function(x, ...) {
 
 #' @export
 extract_scored_candidates.nested_final_fit <- function(x, ...) {
+  rlang::check_dots_empty()
   # The same derivation the loop uses, deliberately: two functions deriving one
   # thing is two chances to describe it differently, and the `@return` above
   # promises a reader they can compare this against a fold's `.grid` directly.

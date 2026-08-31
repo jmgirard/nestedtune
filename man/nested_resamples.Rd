@@ -4,7 +4,7 @@
 \alias{nested_resamples}
 \title{Build a nested resampling design without copying the data per outer fold}
 \usage{
-nested_resamples(data, outside, inside)
+nested_resamples(data, outside, inside, ...)
 }
 \arguments{
 \item{data}{A data frame.}
@@ -16,6 +16,9 @@ unevaluated call such as \code{vfold_cv(v = 5)} or as an already-evaluated
 \item{inside}{The inner resampling specification, given as an unevaluated
 call such as \code{vfold_cv(v = 5)}. Unlike \code{outside}, this cannot be an
 existing object, because it is evaluated once per outer fold.}
+
+\item{...}{Not used; must be empty. All three arguments above are required,
+so the barrier is what turns a mistyped fourth into an error.}
 }
 \value{
 An object of class \code{nested_resamples}, which also carries the classes

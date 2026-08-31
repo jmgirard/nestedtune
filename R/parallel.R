@@ -196,6 +196,7 @@ dispatch_folds <- function(
   object,
   grid,
   metrics,
+  param_info = NULL,
   call = rlang::caller_env()
 ) {
   if (!use_parallel()) {
@@ -205,7 +206,8 @@ dispatch_folds <- function(
       fold_task,
       object = object,
       grid = grid,
-      metrics = metrics
+      metrics = metrics,
+      param_info = param_info
     ))
   }
 
@@ -264,20 +266,40 @@ dispatch_folds <- function(
     # dependency this milestone declined to add on its own authority.
     worker <- fold_task
     environment(worker) <- globalenv()
-    task <- function(payload, object, grid, metrics, shared, worker) {
+    task <- function(
+      payload,
+      object,
+      grid,
+      metrics,
+      param_info,
+      shared,
+      worker
+    ) {
       ns <- asNamespace("nestedtune")
-      worker(ns$rehydrate_payload(payload, shared), object, grid, metrics)
+      worker(
+        ns$rehydrate_payload(payload, shared),
+        object,
+        grid,
+        metrics,
+        param_info
+      )
     }
     args <- list(
       object = object,
       grid = grid,
       metrics = metrics,
+      param_info = param_info,
       shared = shared,
       worker = worker
     )
   } else {
     task <- fold_task
-    args <- list(object = object, grid = grid, metrics = metrics)
+    args <- list(
+      object = object,
+      grid = grid,
+      metrics = metrics,
+      param_info = param_info
+    )
   }
   environment(task) <- globalenv()
 
@@ -332,7 +354,8 @@ dispatch_folds <- function(
 #
 # The bound is an option rather than an argument (D-020): it tunes
 # infrastructure and never anything statistical, so no result depends on it and
-# nested_tune_grid()'s signature stays what it was. Non-finite is refused along
+# it names nothing in nested_tune_grid()'s signature. That signature has since
+# grown `...` and `param_info` (M34), neither of which carries a bound. Non-finite is refused along
 # with non-positive and non-numeric (M10-D2) -- an `Inf` bound is not a bound,
 # and would hand back the unbreakable hang this exists to convert into an error.
 default_preflight_timeout_ms <- 30000L
@@ -891,7 +914,7 @@ worker_failure_message <- function(x) {
 # none of the package's internals resolve (RR03 Q5). Looking the namespace up
 # here either works or fails loudly, and the pre-flight check makes it the
 # latter before any fold is dispatched.
-fold_task <- function(payload, object, grid, metrics) {
+fold_task <- function(payload, object, grid, metrics, param_info = NULL) {
   ns <- asNamespace("nestedtune")
   ns$nested_fold_fit(
     split = payload$split,
@@ -899,6 +922,7 @@ fold_task <- function(payload, object, grid, metrics) {
     seeds = payload$seeds,
     object = object,
     grid = grid,
-    metrics = metrics
+    metrics = metrics,
+    param_info = param_info
   )
 }

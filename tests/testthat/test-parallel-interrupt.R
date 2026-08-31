@@ -17,7 +17,7 @@
 # A fold record's shape, built inline rather than by calling a helper: the task
 # is serialized to a daemon with its environment stripped to the global one, so
 # its body can reach nothing this file defines.
-completed_fold_task <- function(payload, object, grid, metrics) {
+completed_fold_task <- function(payload, object, grid, metrics, param_info) {
   list(
     completed = TRUE,
     metrics = data.frame(.metric = "rmse", .estimate = payload$value),
@@ -47,7 +47,7 @@ test_that("an interrupted run leaves no fold executing", {
   on.exit(unlink(markers), add = TRUE)
 
   local_mocked_bindings(
-    fold_task = function(payload, object, grid, metrics) {
+    fold_task = function(payload, object, grid, metrics, param_info) {
       file.create(payload$marker)
       Sys.sleep(60)
       NULL

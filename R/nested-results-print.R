@@ -28,7 +28,8 @@
 #' fold's candidate count and appears only when the sets actually differ.
 #'
 #' @param x A `nested_results` object from [nested_tune_grid()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return `x`, invisibly.
 #'
@@ -57,6 +58,7 @@
 #' @seealso [nested_tune_grid()], [collect_metrics()]
 #' @export
 print.nested_results <- function(x, ...) {
+  rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
   print_design(x)
   print_failures(x)

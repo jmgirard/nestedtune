@@ -1,5 +1,24 @@
 # nestedtune 0.0.0.9000
 
+* Breaking: `nested_tune_grid()`, `nested_final_fit()` and `nested_resamples()`
+  now take `...` immediately after their required arguments, so `grid`,
+  `metrics` and `param_info` must be named. A call that passed them by position
+  needs updating, and so does one that abbreviated a name: R does not
+  partial-match an argument that follows `...`, so `metrics` can no longer be
+  written `met`. In exchange, a mistyped or unsupported argument is now an
+  error naming the function it was passed to, instead of being ignored. Every
+  method the package registers whose `...` is documented as unused refuses an
+  argument the same way.
+
+* Breaking: `collect_metrics()` on a `nested_results` object takes `summarize`
+  after `...`, matching tune's own method, so it must be named.
+
+* `nested_tune_grid()` and `nested_final_fit()` gain `param_info`, passed
+  unchanged to `tune::tune_grid()` — on every outer fold and on the parallel
+  path as well as the serial one. Restricting a parameter's range restricts the
+  grid every fold searches. A `param_info` that is not a `dials::parameters()`
+  object is refused before the first fold is fitted.
+
 * The documentation site now builds with the tidymodels organization's shared
   pkgdown theme, and the organization's contributing guide and code of conduct
   have joined the repository and build as pages of the site. The README says on

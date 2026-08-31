@@ -21,6 +21,8 @@
 #' @param inside The inner resampling specification, given as an unevaluated
 #'   call such as `vfold_cv(v = 5)`. Unlike `outside`, this cannot be an
 #'   existing object, because it is evaluated once per outer fold.
+#' @param ... Not used; must be empty. All three arguments above are required,
+#'   so the barrier is what turns a mistyped fourth into an error.
 #'
 #' @return An object of class `nested_resamples`, which also carries the classes
 #'   [rsample::nested_cv()] returns, so methods written against those keep
@@ -57,7 +59,8 @@
 #'
 #' @seealso [rsample::nested_cv()]
 #' @export
-nested_resamples <- function(data, outside, inside) {
+nested_resamples <- function(data, outside, inside, ...) {
+  rlang::check_dots_empty()
   cl <- match.call()
   env <- rlang::caller_env()
 

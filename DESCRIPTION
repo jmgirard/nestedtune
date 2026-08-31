@@ -24,6 +24,7 @@ Imports:
     tune (>= 2.0.0),
     workflows
 Suggests:
+    dials,
     knitr,
     lobstr,
     mirai (>= 2.4.0),

@@ -411,3 +411,19 @@ check_metrics <- function(metrics, call = rlang::caller_env()) {
   }
   invisible(metrics)
 }
+
+# `param_info` is tune's, and it is passed through untouched -- so the only
+# thing worth checking here is the one mistake that would otherwise be paid for
+# by a whole outer loop before tune saw it.
+check_param_info <- function(param_info, call = rlang::caller_env()) {
+  if (!is.null(param_info) && !inherits(param_info, "parameters")) {
+    cli::cli_abort(
+      c(
+        "{.arg param_info} must be a {.fn dials::parameters} object or {.code NULL}.",
+        x = "Got {.obj_type_friendly {param_info}}."
+      ),
+      call = call
+    )
+  }
+  invisible(param_info)
+}
