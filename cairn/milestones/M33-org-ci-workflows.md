@@ -5,7 +5,7 @@
 - **Depends on:** M32
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m033-org-ci-workflows`
+- **Branch/PR:** `m033-org-ci-workflows` / https://github.com/tidymodels/nestedtune/pull/41
 
 ## Goal
 
