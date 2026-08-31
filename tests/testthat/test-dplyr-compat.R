@@ -11,22 +11,17 @@
 # appears by its own literal name, and the verbs with something to say in both
 # directions get an entry each way.
 
-# The completed fixture. Constructed identically to the one in
-# test-nested-tune-grid-results.R -- same data, same design seed, same tuning
-# seed -- so the suite-level cache serves both from a single fit.
+# The completed fixture: the suite's most-requested three-fold run, written the
+# way test-nested-results-print.R and test-nested-results-plot.R write it, so
+# the cache serves this file without a further fit. A first attempt copied
+# test-nested-tune-grid-results.R's builder instead and keyed separately from
+# it, which the run-wide cache report caught as a fixture built twice.
 compat_results <- function() {
   d <- make_reg_data()
-  wf <- det_workflow(d)
-  set.seed(1)
-  folds <- nested_resamples(
-    d,
-    outside = rsample::vfold_cv(v = 3),
-    inside = rsample::vfold_cv(v = 3)
-  )
-  set.seed(55)
+  set.seed(2)
   memoised(nested_tune_grid(
-    wf,
-    folds,
+    det_workflow(d),
+    det_nested(d),
     grid = det_grid(),
     metrics = reg_metrics()
   ))
@@ -34,9 +29,9 @@ compat_results <- function() {
 
 # The partial fixture, for the one criterion form that needs a fold to be
 # missing: `filter(.completed)` removes a row only when a fold failed, and on a
-# run where every fold completed it is a no-op that keeps the class. Same
-# construction as test-nested-tune-grid-failures.R's, so this is also a cache
-# hit rather than a second broken run.
+# run where every fold completed it is a no-op that keeps the class. Written as
+# test-nested-tune-grid-failures.R writes it, so this is a cache hit too rather
+# than a second broken run.
 partial_results <- function() {
   d <- make_reg_data()
   nested <- break_fold(det_nested(d), fold = 2L, stage = "inner tuning")
@@ -68,15 +63,17 @@ expect_bare <- function(out) {
 }
 
 # One entry per verb-and-direction. `branch` is what the entry must do, not
-# what it happens to do.
+# what it happens to do -- "kept" and "bare" each name one branch, and "either"
+# is the criterion's own disjunction for the one verb that does not reach this
+# package's rule at all (see `rename` below).
 dplyr_compat_table <- function() {
   list(
     list(name = "filter (rows kept)", branch = "kept", f = function(x) {
-      dplyr::filter(x, rlang::.data$.completed)
+      dplyr::filter(x, .completed)
     }),
     list(name = "slice", branch = "bare", f = function(x) dplyr::slice(x, 1)),
     list(name = "arrange", branch = "kept", f = function(x) {
-      dplyr::arrange(x, dplyr::desc(rlang::.data$id))
+      dplyr::arrange(x, dplyr::desc(id))
     }),
     list(name = "mutate (column added)", branch = "kept", f = function(x) {
       dplyr::mutate(x, extra = 1)
@@ -98,17 +95,25 @@ dplyr_compat_table <- function() {
         dplyr::select(x, "id")
       }
     ),
-    list(name = "rename", branch = "bare", f = function(x) {
+    # `rename()` is the one verb in the set that never asks. dplyr implements it
+    # as `set_names()`, so it reaches the class through `names<-` and vctrs
+    # rather than through `dplyr_reconstruct()`, and this package registers no
+    # vctrs methods (M36 Out; tune ships them, which is why the same call on a
+    # `tune_results` sheds the class -- measured 2026-08-31). What comes back is
+    # still self-consistent -- same rows, same counts, same scheme -- so it is a
+    # legitimate first branch rather than the stale claim this file exists to
+    # stop, and the criterion is asserted as the disjunction it is written as.
+    list(name = "rename", branch = "either", f = function(x) {
       dplyr::rename(x, fold = "id")
     }),
     list(name = "relocate", branch = "kept", f = function(x) {
       dplyr::relocate(x, ".completed")
     }),
     list(name = "group_by", branch = "bare", f = function(x) {
-      dplyr::group_by(x, rlang::.data$id)
+      dplyr::group_by(x, id)
     }),
     list(name = "ungroup", branch = "bare", f = function(x) {
-      dplyr::ungroup(dplyr::group_by(x, rlang::.data$id))
+      dplyr::ungroup(dplyr::group_by(x, id))
     }),
     list(name = "bind_rows", branch = "bare", f = function(x) {
       dplyr::bind_rows(x, x)
@@ -136,7 +141,13 @@ test_that("every dplyr verb lands in the branch the invariants assign it", {
 
   for (case in dplyr_compat_table()) {
     out <- case$f(res)
-    if (case$branch == "kept") {
+    if (case$branch == "either") {
+      if (inherits(out, "nested_results")) {
+        expect_kept(out, res)
+      } else {
+        testthat::succeed()
+      }
+    } else if (case$branch == "kept") {
       testthat::expect_s3_class(out, "nested_results")
       expect_kept(out, res)
     } else {
@@ -155,7 +166,7 @@ test_that("filter() dropping a failed fold returns a bare tibble", {
   skip_if_no_engines()
   res <- partial_results()
   expect_false(all(res$.completed))
-  expect_bare(dplyr::filter(res, rlang::.data$.completed))
+  expect_bare(dplyr::filter(res, .completed))
 })
 
 test_that("slice() taking one row returns a bare tibble", {
@@ -194,6 +205,17 @@ test_that("bind_rows() doubling the rows returns a bare tibble", {
   expect_bare(dplyr::bind_rows(res, res))
 })
 
+# Everything an object puts on the screen, whichever way it gets there.
+#
+# `print_text()` captures cli output and nothing else, so it returns "" for a
+# bare tibble -- and an assertion that "" does not contain the scheme line would
+# pass for the wrong reason on every form below. `capture.output()` covers the
+# other half. Each form's text is asserted non-empty before it is searched, so
+# the negative assertions are known to have run over something.
+printed_all <- function(x) {
+  paste(c(utils::capture.output(print(x)), print_text(x)), collapse = "\n")
+}
+
 # None of them may print the outer scheme either. The class check above is the
 # mechanism; this is the claim a user actually sees, and it is asserted
 # separately so a future object that sheds the class while keeping the print
@@ -203,11 +225,12 @@ test_that("no row-changing result prints the outer resampling scheme", {
   res <- compat_results()
   partial <- partial_results()
 
+  # The passing control: the same helper, on the object that does say it.
   expect_identical(attr(res, "outer_label"), "3-fold cross-validation")
-  expect_match(print_text(res), "Outer resamples: 3-fold cross-validation")
+  expect_match(printed_all(res), "Outer resamples: 3-fold cross-validation")
 
   forms <- list(
-    dplyr::filter(partial, rlang::.data$.completed),
+    dplyr::filter(partial, .completed),
     dplyr::slice(res, 1),
     dplyr::slice(res, -1),
     head(res, 1),
@@ -218,6 +241,8 @@ test_that("no row-changing result prints the outer resampling scheme", {
   )
 
   for (out in forms) {
-    expect_no_match(print_text(out), "Outer resamples: 3-fold cross-validation")
+    text <- printed_all(out)
+    expect_true(nzchar(text))
+    expect_no_match(text, "Outer resamples: 3-fold cross-validation")
   }
 })

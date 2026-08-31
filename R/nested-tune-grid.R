@@ -76,9 +76,25 @@
 #'   never `NULL`.
 #'
 #'   `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
-#'   than `NULL` when none was supplied. Subsetting rows carries both
-#'   attributes unchanged, since they describe the call rather than the rows
-#'   kept; `.grid` is a column, so it travels with the fold it describes.
+#'   than `NULL` when none was supplied. `.grid` is a column, so it travels
+#'   with the fold it describes.
+#'
+#'   **What an operation on the object may and may not do.** The result carries
+#'   the invariants `tune` declares on its own results objects:
+#'
+#'   * rows may be reordered, but never added or removed;
+#'   * columns may be added or reordered;
+#'   * every column listed above must still be present, holding the values it
+#'     held.
+#'
+#'   An operation that stays inside those rules — `arrange()`, `mutate()`
+#'   adding a column, a join that matches one row apiece — returns a
+#'   `nested_results` with the call's record intact. Anything else — `slice()`,
+#'   a `filter()` that drops a fold, `bind_rows()`, `x[1, ]`, dropping one of
+#'   the columns above — returns a bare tibble, with the record removed along
+#'   with the class. A three-row object cannot honestly describe itself as the
+#'   ten-fold design it was cut from, so it stops describing itself at all and
+#'   hands back the data.
 #'
 #' @section Reproducibility:
 #'

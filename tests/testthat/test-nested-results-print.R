@@ -34,9 +34,12 @@ test_that("the outer scheme is dropped rather than misreported after subsetting"
     grid = det_grid(),
     metrics = reg_metrics()
   ))
-  txt <- print_text(res[1:2, ])
+  txt <- print_text(as_fold_subset(res, 1:2))
 
-  # The rows kept are not the design the label describes (IP4).
+  # The rows kept are not the design the label describes (IP4). Since M36 `[`
+  # sheds the class outright on a row subset, so the object printed here is
+  # built by the helper rather than by `[`; what print() must do with a results
+  # object carrying no scheme label is unchanged, and that is what this asserts.
   expect_no_match(txt, "3-fold cross-validation")
   expect_match(txt, "2 requested")
 })
@@ -240,7 +243,7 @@ test_that("a single completed fold reads in the singular", {
   ))
 
   expect_match(
-    print_text(res[1L, ]),
+    print_text(as_fold_subset(res, 1L)),
     "Estimate (1 of 1 outer fold)",
     fixed = TRUE
   )

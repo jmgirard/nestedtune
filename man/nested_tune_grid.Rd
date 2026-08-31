@@ -84,9 +84,26 @@ recorded. A fold that scored no candidate at all carries a zero-row table,
 never \code{NULL}.
 
 \code{attr(x, "metrics")} holds the \code{metrics} argument, and is absent rather
-than \code{NULL} when none was supplied. Subsetting rows carries both
-attributes unchanged, since they describe the call rather than the rows
-kept; \code{.grid} is a column, so it travels with the fold it describes.
+than \code{NULL} when none was supplied. \code{.grid} is a column, so it travels
+with the fold it describes.
+
+\strong{What an operation on the object may and may not do.} The result carries
+the invariants \code{tune} declares on its own results objects:
+\itemize{
+\item rows may be reordered, but never added or removed;
+\item columns may be added or reordered;
+\item every column listed above must still be present, holding the values it
+held.
+}
+
+An operation that stays inside those rules — \code{arrange()}, \code{mutate()}
+adding a column, a join that matches one row apiece — returns a
+\code{nested_results} with the call's record intact. Anything else — \code{slice()},
+a \code{filter()} that drops a fold, \code{bind_rows()}, \code{x[1, ]}, dropping one of
+the columns above — returns a bare tibble, with the record removed along
+with the class. A three-row object cannot honestly describe itself as the
+ten-fold design it was cut from, so it stops describing itself at all and
+hands back the data.
 }
 \description{
 \code{nested_tune_grid()} drives the outer loop of nested cross-validation. For

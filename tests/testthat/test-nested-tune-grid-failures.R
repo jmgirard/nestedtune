@@ -276,7 +276,7 @@ test_that("a fold that completed on a truncated inner design keeps tune's notes"
   expect_identical(nrow(res$.notes[[1L]]), 0L)
 })
 
-test_that("subsetting keeps the object's record of what ran true", {
+test_that("a row subset carries no record of the run at all", {
   skip_if_no_engines()
   d <- make_reg_data()
   nested <- break_fold(det_nested(d), fold = 1L, stage = "inner tuning")
@@ -291,14 +291,22 @@ test_that("subsetting keeps the object's record of what ran true", {
     ))
   )
 
-  # The counts describe the rows in hand, not the run they came from.
-  kept <- res[res$.completed, ]
-  expect_identical(attr(kept, "folds_attempted"), 2L)
-  expect_identical(attr(kept, "folds_completed"), 2L)
-
-  failed_only <- res[1L, ]
-  expect_identical(attr(failed_only, "folds_attempted"), 1L)
-  expect_identical(attr(failed_only, "folds_completed"), 0L)
+  # Until M36 these came back classed with the counts recomputed, which kept the
+  # record true but left a two-row object describing itself as the three-fold
+  # design it was cut from. Now the class goes, and the run's record goes with
+  # it -- there is nothing left to be stale (#32, IP4).
+  for (subset in list(res[res$.completed, ], res[1L, ])) {
+    expect_false(inherits(subset, "nested_results"))
+    for (nm in c(
+      "grid",
+      "metrics",
+      "outer_label",
+      "folds_attempted",
+      "folds_completed"
+    )) {
+      expect_null(attr(subset, nm))
+    }
+  }
 })
 
 test_that("a subset holding no completed fold refuses to summarize", {
@@ -318,7 +326,10 @@ test_that("a subset holding no completed fold refuses to summarize", {
 
   # Before the fix this passed the guard on the parent's stale count and
   # returned a 0-row tibble, reporting "2 of 3" for an object covering none.
-  expect_error(collect_metrics(res[1L, ]), "no outer fold completed")
+  expect_error(
+    collect_metrics(as_fold_subset(res, 1L)),
+    "no outer fold completed"
+  )
 })
 
 test_that("dropping any of the per-fold columns sheds the results class", {
@@ -357,7 +368,10 @@ test_that("dropping any of the per-fold columns sheds the results class", {
   expect_false(
     inherits(res[, setdiff(names(res), ".grid")], "nested_results")
   )
-  expect_s3_class(res[1:2, ], "nested_results")
+  # The control: a column selection that drops nothing keeps the class, so the
+  # assertions above fail on the column they name rather than on `[` having
+  # stopped returning a results object for any reason at all.
+  expect_s3_class(res[, names(res)], "nested_results")
 })
 
 # What the evaluated-candidate record says when not everything ran (M21, IP4).

@@ -360,6 +360,25 @@ print_text <- function(x, width = 200) {
   paste(cli::cli_fmt(print(x)), collapse = "\n")
 }
 
+# A results object narrowed to some of its folds, still carrying the class.
+#
+# `[` used to build this and no longer does: since M36 a row subset returns a
+# bare tibble, which is the whole point of that milestone. The tests that need
+# such an object are about something else -- how print() words one fold versus
+# several, what collect_metrics() does when no fold in hand completed -- and
+# still need a way to reach the shape. This stamps the record the constructor
+# would have written for a run of exactly those folds, and deliberately leaves
+# `outer_label` off, since the folds kept are not the design that names.
+as_fold_subset <- function(x, i) {
+  out <- x[i, ]
+  attr(out, "grid") <- attr(x, "grid")
+  attr(out, "metrics") <- attr(x, "metrics")
+  attr(out, "folds_attempted") <- nrow(out)
+  attr(out, "folds_completed") <- sum(out$.completed)
+  class(out) <- c("nested_results", class(out))
+  out
+}
+
 # The two-class fixture (M35).
 #
 # `event_level` names a factor level, so nothing in the regression fixtures
