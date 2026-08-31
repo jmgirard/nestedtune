@@ -120,11 +120,14 @@ This makes any single fold reproducible by hand. Fold \code{i} is exactly:
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
 tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-                   metrics = metrics, control = control_grid(allow_par = FALSE))
+                   metrics = metrics,
+                   control = control_grid(allow_par = FALSE,
+                                          event_level = event_level))
 final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
-last_fit(final, resamples$splits[[i]], metrics = metrics)
+last_fit(final, resamples$splits[[i]], metrics = metrics,
+         control = control_last_fit(event_level = event_level))
 }\if{html}{\out{</div>}}
 
 The caller's RNG state and generator kind are restored on exit, including

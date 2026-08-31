@@ -11,7 +11,7 @@
 # O2 -- type "live" (independent implementation). Source: a `tune::tune_grid()`
 #   the test runs itself under `control_grid(allow_par = FALSE, event_level =
 #   "second")`, seeded by the by-hand recipe documented at
-#   `R/nested-final-fit.R:100-112` -- the object's own `tuning_seed`,
+#   `R/nested-final-fit.R:106-118` -- the object's own `tuning_seed`,
 #   kind-pinned, with the inner rset built inside that seed's scope. Pinned by
 #   "AC4: nested_final_fit() tunes under the caller's event level".
 #

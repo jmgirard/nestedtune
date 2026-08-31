@@ -109,8 +109,8 @@
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
-#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
-#'                    control = control_grid(allow_par = FALSE))
+#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics, control =
+#'   control_grid(allow_par = FALSE, event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
