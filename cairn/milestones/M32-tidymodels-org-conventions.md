@@ -97,7 +97,7 @@ CI workflow change → M33.
 - [x] T2: Switch `_pkgdown.yml`'s `template:` block to
       `package: tidytemplate` with `bootstrap: 5` and the `bslib` colours,
       leaving `.github/workflows/pkgdown.yaml` untouched.
-- [ ] T3: Add `tidyverse/tidytemplate` to `Config/Needs/website` in
+- [x] T3: Add `tidyverse/tidytemplate` to `Config/Needs/website` in
       `DESCRIPTION`; install it locally the way the workflow's
       `setup-r-dependencies` step will (`pak::pak("tidyverse/tidytemplate")`).
 - [ ] T4: Build the site locally, confirm the two new pages exist, and run the
@@ -120,6 +120,8 @@ CI workflow change → M33.
 - 2026-08-30: T1 — survey re-run over the nine repositories. CODE_OF_CONDUCT `3ac34c82` on all nine (rsample, tune, workflows, yardstick, parsnip, recipes, dials, broom, hardhat). CONTRIBUTING mode `23b135bd` at 3 of 9 (rsample, parsnip, recipes), runner-up `34272f04` at 2 of 9 (workflows, hardhat), then `a8bc0ffd` (tune), `a92ca611` (yardstick), `665fb3cf` (dials), `525e9d0d` (broom); mode unmoved. Both texts vendored from their blobs and `git hash-object` returns the two target shas.
 
 - 2026-08-30: T2 — `_pkgdown.yml`'s `template:` block now names `package: tidytemplate` alongside `bootstrap: 5` and `bslib` `primary`/`danger` at `#CA225E`, the block rsample and tune carry (parsnip, recipes and yardstick carry the same without `danger`). `.github/workflows/pkgdown.yaml` untouched.
+
+- 2026-08-30: T3 — `Config/Needs/website` reads `pkgdown, tidyverse/tidytemplate`, the route chosen at the question gate. Installed locally the way the workflow's `setup-r-dependencies` step resolves it: `pak::pak("tidyverse/tidytemplate")` fetched and built tidytemplate 1.0.0 at GitHub `f7bdedf`.
 
 ## Decisions
 
