@@ -75,6 +75,7 @@ BUDGETED_FILES <- c(
   "test-parallel-interrupt.R",
   "test-parallel-metrics.R",
   "test-parallel-payload.R",
+  "test-parallel-required-pkgs.R",
   "helper-parallel.R"
 )
 

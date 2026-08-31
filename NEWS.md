@@ -1,5 +1,13 @@
 # nestedtune 0.0.0.9000
 
+* Fixed a failure where every outer fold errored under parallel processing if
+  the workflow's recipe used unqualified selectors such as
+  `all_numeric_predictors()`. The packages a workflow declares are now attached
+  inside each `mirai` daemon before any fold is dispatched, so a selector that
+  resolves from your own attached packages resolves on a worker too. The same
+  call ran without error when no daemons were running, which is what made the
+  failure look like a parallel-only quirk.
+
 * Breaking: `nested_tune_grid()`, `nested_final_fit()` and `nested_resamples()`
   now take `...` immediately after their required arguments, so `grid`,
   `metrics` and `param_info` must be named. A call that passed them by position

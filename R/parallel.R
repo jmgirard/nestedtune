@@ -214,6 +214,7 @@ dispatch_folds <- function(
   }
 
   check_daemons_can_load(call = call)
+  attach_daemon_pkgs(object, call = call)
   warn_if_not_cancellable(call = call)
 
   record_dispatch("parallel")
@@ -513,6 +514,115 @@ daemons_load_status <- function(
   }
   answers <- lapply(seq_along(probe), function(i) probe[[i]]$data)
   preflight_outcome(answers, timeout = timeout, package = package)
+}
+
+# What the workflow needs on a daemon's SEARCH PATH, and how it gets there.
+#
+# `tune` loads a workflow's `required_pkgs()` as namespaces, and only ATTACHES
+# them on its own parallel path: `attach_pkgs()` is a no-op whenever the
+# strategy is sequential (tune 2.1.0, verified by reading it). The inner tuning
+# run here is sequential by construction -- nested parallelism oversubscribes
+# cores, so `control_grid(allow_par = FALSE)` is forced -- which means nothing
+# attaches anything inside the daemon that runs the fold.
+#
+# That is invisible until a recipe selector is written unqualified.
+# `all_numeric_predictors()` is a quosure, and its environment leads out to the
+# search path; the caller's session has recipes attached, a daemon's has base R
+# and nothing else, so the same call that runs clean serially failed on every
+# outer fold in parallel (issue #37). The daemon pre-flight could not catch it:
+# it asks whether a daemon holds THIS package, never what the workflow needs.
+#
+# `library()` and not requireNamespace(): the name has to be reachable from the
+# search path, not merely loadable, or the quosure still cannot see it.
+# Attaching is left to the worker processes and never done here -- the caller's
+# own search path is not ours to change, and serially it is already whatever the
+# caller made it.
+#
+# Built from text for the reason daemon_probe_expr() is: everywhere() serializes
+# the expression the HOST's function body has been rewritten into, and under
+# covr that rewriting inserts counter calls a daemon's library may not have
+# (M24 review F15). A string is data, so nothing rewrites it.
+daemon_attach_expr <- function() {
+  str2lang(paste(
+    "unlist(lapply(pkgs, function(pkg) {",
+    "  if (paste0('package:', pkg) %in% search()) {",
+    "    return(character())",
+    "  }",
+    "  ok <- tryCatch({",
+    "    suppressPackageStartupMessages(",
+    "      library(pkg, character.only = TRUE)",
+    "    )",
+    "    TRUE",
+    "  }, error = function(cnd) FALSE)",
+    "  if (ok) character() else pkg",
+    "}))",
+    sep = "\n"
+  ))
+}
+
+# The workflow's packages, attached in every daemon before any fold is sent.
+#
+# Bounded exactly as the pre-flight is, and for the same reason: everywhere()
+# carries no `.timeout`, so the bound is a poll to a deadline followed by
+# stop_mirai(). A daemon that never answers is not fatal here -- it is already
+# the pre-flight's business, and this call runs after it.
+#
+# A package that will not attach is reported rather than raised on. The fold
+# that needs it fails with tune's own message naming the function it could not
+# find, which says more than a package name would; what a warning here adds is
+# the reason, at the moment it is still actionable.
+attach_daemon_pkgs <- function(
+  object,
+  timeout = preflight_timeout(call = call),
+  call = rlang::caller_env()
+) {
+  force(timeout)
+  pkgs <- tryCatch(tune::required_pkgs(object), error = function(cnd) {
+    character()
+  })
+  pkgs <- setdiff(unique(pkgs), c("base", "stats", "utils", "methods"))
+  if (length(pkgs) == 0L) {
+    return(invisible(character()))
+  }
+
+  attach_expr <- daemon_attach_expr()
+  sent <- mirai::everywhere(attach_expr, .args = list(pkgs = pkgs))
+  deadline <- Sys.time() + timeout / 1000
+  while (mirai::unresolved(sent) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  if (mirai::unresolved(sent)) {
+    mirai::stop_mirai(sent)
+  }
+
+  # Recognised positively, the discipline daemon_report() sets: a miraiError is
+  # ALSO a length-1 character vector carrying the task's message, so "is it
+  # character" alone would read a daemon's error text as a package name. A real
+  # answer is a character vector every element of which is one of the packages
+  # we asked about, and nothing else is read at all.
+  answers <- lapply(seq_along(sent), function(i) sent[[i]]$data)
+  is_report <- vapply(
+    answers,
+    function(x) is.character(x) && all(x %in% pkgs),
+    logical(1)
+  )
+  failed <- unique(unlist(answers[is_report]))
+  if (length(failed) > 0L) {
+    cli::cli_warn(
+      c(
+        "{length(failed)} package{?s} the workflow needs could not be attached
+         in the mirai daemons: {.pkg {failed}}.",
+        i = "A fold whose recipe or engine calls into {?it/them} will fail and
+             be recorded in {.code x$.notes}.",
+        i = "Install {?it/them} into the daemons' library, then restart the pool
+             with {.code mirai::daemons(0)} followed by
+             {.code mirai::daemons(n)}."
+      ),
+      class = "nestedtune_daemon_pkgs_not_attached",
+      call = call
+    )
+  }
+  invisible(failed)
 }
 
 # One daemon's answer, validated positively.

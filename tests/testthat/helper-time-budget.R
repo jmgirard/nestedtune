@@ -642,6 +642,28 @@ time_budget_ledger <- function() {
       "a daemon receives the payload rehydrated, not the leaned one"
     ),
 
+    # --- test-parallel-required-pkgs.R --------------------------------------
+    # One pool start and one bounded read, the read charged once even though the
+    # test calls `attached()` twice: both calls are the same `collect_bounded()`
+    # site, and the ledger rows sites rather than executions -- the same
+    # convention every helper-side row above follows. The `mirai::daemons(0)`
+    # teardown at :48 gets no row for the reason the metrics block states.
+    tb_row(
+      "test-parallel-required-pkgs.R",
+      49L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a recipe selector the caller left unqualified resolves on a daemon"
+    ),
+    tb_row(
+      "test-parallel-required-pkgs.R",
+      56L,
+      "collect_bounded",
+      30,
+      "a recipe selector the caller left unqualified resolves on a daemon",
+      note = "explicit seconds = 30; one site, called twice"
+    ),
+
     # --- test-parallel-interrupt.R ------------------------------------------
     tb_row(
       "test-parallel-interrupt.R",
