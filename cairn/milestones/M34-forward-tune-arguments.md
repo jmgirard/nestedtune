@@ -1,6 +1,6 @@
 # M34: The arguments a caller can hand through to `tune`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -94,7 +94,7 @@ addressed; R's own matching rule, and no fence sees it.
 - [x] T6 Move `summarize` after `...` in
       [R/nested-results.R:209](R/nested-results.R:209); fix the call sites the
       grep finds.
-- [ ] T7 Roxygen for the new arguments, `document()`, changelog entry,
+- [x] T7 Roxygen for the new arguments, `document()`, changelog entry,
       `devtools::check()`.
 
 ## Work log
@@ -155,6 +155,15 @@ addressed; R's own matching rule, and no fence sees it.
   selects ~0.99. Both checks were shown able to fail — dropping the forward
   from the two `tune_grid()` calls reds AC3's two tests, and blanking
   `param_info` in the daemon `.args` alone reds BC6.
+- 2026-08-31: T7 documented `...` and `param_info` on all three entry points,
+  ran `document()`, and added three NEWS entries — two naming the breaking
+  signature changes, one the new argument.
+- 2026-08-31: implementation gate added `dials` to Suggests (D-029) after
+  `devtools::check()` warned that the new tests reach into an undeclared
+  namespace. Rejected alternative: overwriting the parameter object's `range`
+  field, which needs no declaration and binds the test to a dials internal.
+- 2026-08-31: `devtools::check()` clean — 0 errors, 0 warnings, 0 notes; full
+  suite green (`testthat.R` 64s/100s under check).
 
 ## Decisions
 

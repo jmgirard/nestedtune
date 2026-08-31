@@ -12,7 +12,7 @@ _Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references
 | M31 | Both red CI jobs go green, so a merge is possible again | done | — | high | milestones/archive/M31-ci-back-to-green.md |
 | M32 | The community files and site template the tidymodels organization shares | done | — | normal | milestones/archive/M32-tidymodels-org-conventions.md |
 | M33 | The organization's shared CI workflows, and `air` as this repo's formatter | done | M32 | normal | milestones/archive/M33-org-ci-workflows.md |
-| M34 | The arguments a caller can hand through to `tune` | in-progress | — | normal | milestones/M34-forward-tune-arguments.md |
+| M34 | The arguments a caller can hand through to `tune` | review | — | normal | milestones/M34-forward-tune-arguments.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
