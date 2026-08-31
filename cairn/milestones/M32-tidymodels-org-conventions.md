@@ -100,7 +100,7 @@ CI workflow change → M33.
 - [x] T3: Add `tidyverse/tidytemplate` to `Config/Needs/website` in
       `DESCRIPTION`; install it locally the way the workflow's
       `setup-r-dependencies` step will (`pak::pak("tidyverse/tidytemplate")`).
-- [ ] T4: Build the site locally, confirm the two new pages exist, and run the
+- [x] T4: Build the site locally, confirm the two new pages exist, and run the
       pkgdown workflow's absent-page loop and `pkgdown::check_pkgdown()`
       against that build.
 - [ ] T5: Add the lifecycle badge to `README.md`.
@@ -122,6 +122,8 @@ CI workflow change → M33.
 - 2026-08-30: T2 — `_pkgdown.yml`'s `template:` block now names `package: tidytemplate` alongside `bootstrap: 5` and `bslib` `primary`/`danger` at `#CA225E`, the block rsample and tune carry (parsnip, recipes and yardstick carry the same without `danger`). `.github/workflows/pkgdown.yaml` untouched.
 
 - 2026-08-30: T3 — `Config/Needs/website` reads `pkgdown, tidyverse/tidytemplate`, the route chosen at the question gate. Installed locally the way the workflow's `setup-r-dependencies` step resolves it: `pak::pak("tidyverse/tidytemplate")` fetched and built tidytemplate 1.0.0 at GitHub `f7bdedf`.
+
+- 2026-08-30: T4 — local `pkgdown::build_site(new_process = FALSE, install = FALSE)` completed after installing the package and tidytemplate, mirroring the workflow by moving `CLAUDE.md` and `.github/ci-usage-baseline.md` aside for the build and back afterwards. `docs/CODE_OF_CONDUCT.html` and `docs/CONTRIBUTING.html` both written; the workflow's absent-page loop over `docs/CLAUDE.html` and `docs/ci-usage-baseline.html` exits 0 against that build, and `docs/index.html` and `docs/articles/nested-cv.html` are present. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Decisions
 
