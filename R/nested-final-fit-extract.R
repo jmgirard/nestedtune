@@ -82,7 +82,11 @@ extract_tune_results.default <- function(x, ...) {
   # UseMethod() the former renders the generic's own call --
   # `extract_tune_results(x)` -- while the latter renders the call one frame
   # further out, naming whatever function the user happened to be inside.
-  abort_no_extract_method("extract_tune_results", x, call = rlang::current_env())
+  abort_no_extract_method(
+    "extract_tune_results",
+    x,
+    call = rlang::current_env()
+  )
 }
 
 #' @export
@@ -149,7 +153,8 @@ extract_scored_candidates <- function(x, ...) {
 #' @export
 extract_scored_candidates.default <- function(x, ...) {
   abort_no_extract_method(
-    "extract_scored_candidates", x,
+    "extract_scored_candidates",
+    x,
     call = rlang::current_env()
   )
 }

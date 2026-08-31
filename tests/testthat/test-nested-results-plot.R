@@ -14,11 +14,18 @@ test_that("the parameters view draws one point per completed fold", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   pts <- plot_points(autoplot(res, type = "parameters"))
 
-  selected <- as.numeric(vapply(res$.selected, function(s) s$num_comp, integer(1)))
+  selected <- as.numeric(vapply(
+    res$.selected,
+    function(s) s$num_comp,
+    integer(1)
+  ))
 
   expect_identical(pts$fold, c("Fold1", "Fold2", "Fold3"))
   expect_identical(unique(pts$panel), "num_comp")
@@ -34,8 +41,10 @@ test_that("folds that disagree are drawn at their own values, keyed by fold", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    unstable_workflow(u), det_nested(u, v = 4),
-    grid = unstable_grid(), metrics = reg_metrics()
+    unstable_workflow(u),
+    det_nested(u, v = 4),
+    grid = unstable_grid(),
+    metrics = reg_metrics()
   ))
   pts <- plot_points(autoplot(res))
 
@@ -53,8 +62,10 @@ test_that("a failed fold keeps its place on the axis and draws no point", {
 
   set.seed(2)
   res <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
   p <- autoplot(res)
 
@@ -71,7 +82,10 @@ test_that("a completed fold with no value for a parameter is not imputed", {
 
   set.seed(2)
   res <- drop_selection(memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
   p <- autoplot(res)
 
@@ -87,12 +101,17 @@ test_that("the parameters view states how much of the design ran", {
 
   set.seed(2)
   whole <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   set.seed(2)
   partial <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   # A design fact, true of the whole figure however its panels differ: the
@@ -114,7 +133,10 @@ test_that("a panel says so when fewer folds contributed to it than completed", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # Every completed fold chose, so nothing is qualified: the common plot stays
@@ -129,8 +151,10 @@ test_that("a panel says so when fewer folds contributed to it than completed", {
   # and they agree -- so the flat row must not be readable as three agreeing.
   # print says "all 2 folds that chose it agree; 1 recorded no value"; the panel
   # is where the plot can say the same thing (F2).
-  expect_identical(strip_labels(autoplot(drop_selection(res))),
-                   "num_comp (2 of 3 chose)")
+  expect_identical(
+    strip_labels(autoplot(drop_selection(res))),
+    "num_comp (2 of 3 chose)"
+  )
 
   # A fold that completed but scored NA on one metric only. print puts
   # "(from 2 folds)" on that metric's own line; so does the panel (F1).
@@ -149,7 +173,10 @@ test_that("each panel decides its own breaks", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   # A whole-number parameter beside a continuous one, which is what glmnet,
   # xgboost and svm_rbf all look like. Deciding over the pooled column put the
@@ -188,7 +215,10 @@ test_that("a metric no fold could score keeps its panel", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # roc_auc on a one-class assessment set reaches this routinely. The metric was
@@ -208,13 +238,17 @@ test_that("a metric no fold could score keeps its panel", {
   # return a ggplot that errored from inside ggplot2 when printed, which is
   # neither our own condition nor near the call that caused it.
   nothing <- res
-  for (i in seq_len(nrow(nothing))) nothing$.metrics[[i]]$.estimate <- NA_real_
+  for (i in seq_len(nrow(nothing))) {
+    nothing$.metrics[[i]]$.estimate <- NA_real_
+  }
   empty <- autoplot(nothing, type = "performance")
   expect_s3_class(empty, "ggplot")
   # Laying the figure out is where it used to fail, so the assertion has to go
   # that far -- onto a null device, since letting one open by default writes an
   # Rplots.pdf at the package root and R CMD check NOTEs it.
-  expect_no_error(on_null_device(ggplot2::ggplot_gtable(ggplot2::ggplot_build(empty))))
+  expect_no_error(on_null_device(ggplot2::ggplot_gtable(ggplot2::ggplot_build(
+    empty
+  ))))
 })
 
 test_that("two estimators for one metric get a panel each", {
@@ -223,7 +257,10 @@ test_that("two estimators for one metric get a panel each", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   # Rare, but a metric reported under two estimators would otherwise share one
   # panel and be marked with two rules -- one of them wrong for every point
@@ -251,7 +288,10 @@ test_that("the parameters view is the default and both views are ggplots", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # A bare autoplot() dispatches: the generic is re-exported, so a user who has
@@ -270,7 +310,10 @@ test_that("the performance view draws one point per fold and metric", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   pts <- plot_points(autoplot(res, type = "performance"))
 
@@ -288,7 +331,10 @@ test_that("the marked estimate is the number collect_metrics reports", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   rules <- plot_rules(autoplot(res, type = "performance"))
   summary <- collect_metrics(res)
@@ -305,7 +351,10 @@ test_that("the performance view says the estimate is not a model's score", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   p <- autoplot(res, type = "performance")
 
@@ -325,15 +374,20 @@ test_that("a failed fold keeps its slot and contributes no score", {
 
   set.seed(2)
   res <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
   p <- autoplot(res, type = "performance")
   rules <- plot_rules(p)
 
   expect_identical(axis_labels(p), c("Fold1", "Fold2", "Fold3"))
   expect_identical(plot_points(p)$fold, rep(c("Fold1", "Fold3"), each = 2L))
-  expect_match(plot_label(p, "subtitle"), "3 outer folds requested, 2 completed")
+  expect_match(
+    plot_label(p, "subtitle"),
+    "3 outer folds requested, 2 completed"
+  )
   # The rule averages the folds that ran, which is what the summary reports for
   # the same object -- neither claims the design that was requested (IP4).
   expect_identical(
@@ -348,7 +402,10 @@ test_that("a fold scoring NA on one metric still scores the others", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   # An outer assessment set with one class gives roc_auc = NA, so a fold can
   # complete and score on some metrics but not all. Staged here rather than
@@ -363,7 +420,8 @@ test_that("a fold scoring NA on one metric still scores the others", {
   # The rmse panel carries its own count, since two folds contributed to it
   # where three completed; rsq is unqualified because all three did.
   expect_identical(
-    pts$fold[pts$panel == "rmse (from 2 folds)"], c("Fold1", "Fold3")
+    pts$fold[pts$panel == "rmse (from 2 folds)"],
+    c("Fold1", "Fold3")
   )
   expect_identical(pts$fold[pts$panel == "rsq"], c("Fold1", "Fold2", "Fold3"))
   expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
@@ -375,8 +433,10 @@ test_that("a run where no fold completed is refused, in plotting's own words", {
 
   set.seed(2)
   res <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_every_fold(det_nested(d)),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_every_fold(det_nested(d)),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   # Printing describes such an object without complaint (M04); plotting is a
@@ -394,7 +454,10 @@ test_that("a design with no tuned parameters points at the other view", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   for (i in seq_len(nrow(res))) {
     res$.selected[[i]] <- res$.selected[[i]][, ".config", drop = FALSE]
@@ -412,7 +475,10 @@ test_that("an unrecognized type is refused by name", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   expect_error(autoplot(res, type = "parameter"), "must be one of")
@@ -428,7 +494,10 @@ test_that("a whole-number parameter is not given fractional breaks", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # This fixture's folds are unanimous, which collapses the value range to
@@ -461,17 +530,24 @@ test_that("both views look the way they read", {
 
   set.seed(2)
   agreed <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   set.seed(2)
   split <- memoised(nested_tune_grid(
-    unstable_workflow(u), det_nested(u, v = 4),
-    grid = unstable_grid(), metrics = reg_metrics()
+    unstable_workflow(u),
+    det_nested(u, v = 4),
+    grid = unstable_grid(),
+    metrics = reg_metrics()
   ))
   set.seed(2)
   partial <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   vdiffr::expect_doppelganger("parameters, folds agree", autoplot(agreed))
@@ -491,7 +567,10 @@ test_that("a non-numeric selection is drawn on a discrete axis", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   # A character-valued parameter is ordinary in the ecosystem (`weight_func`,
   # `activation`), and one panel cannot mix a numeric axis with a discrete one.

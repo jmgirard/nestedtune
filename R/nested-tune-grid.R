@@ -393,7 +393,10 @@ nested_fold_fit <- function(split, inner, seeds, object, grid, metrics) {
   # last_fit() does not raise when the fit fails: it returns NULL metrics and
   # files the reason in its notes. Catching only thrown errors would record
   # this fold as a success carrying nothing.
-  fold_metrics <- tryCatch(tune::collect_metrics(fitted), error = function(cnd) NULL)
+  fold_metrics <- tryCatch(
+    tune::collect_metrics(fitted),
+    error = function(cnd) NULL
+  )
   if (is.null(fold_metrics) || nrow(fold_metrics) == 0L) {
     return(failed_fold("outer fit", NULL, fitted, tuned = tuned))
   }
@@ -447,7 +450,9 @@ scored_candidates <- function(tuned) {
   # one that was, and it is worth a line because the trade is asymmetric:
   # failing to an empty record understates one fold, while raising discards
   # every other fold's completed work.
-  tryCatch(scored_candidates_impl(tuned), error = function(cnd) empty_candidates())
+  tryCatch(scored_candidates_impl(tuned), error = function(cnd) {
+    empty_candidates()
+  })
 }
 
 scored_candidates_impl <- function(tuned) {

@@ -244,22 +244,26 @@ selection_params <- function(selected) {
 # counts as a value: collapsing the two would let a missing column read as a
 # selection, and a selection read as a missing column.
 selection_values <- function(selected, param) {
-  vapply(selected, function(s) {
-    if (is.null(s) || !param %in% names(s)) {
-      return(NA_character_)
-    }
-    value <- s[[param]][[1L]]
-    # A list-valued selection is not something select_best() produces, but this
-    # method promises never to raise, and vapply() would abort on a length-2
-    # result rather than print anything at all.
-    if (length(value) != 1L) {
-      return(paste(format(value), collapse = ", "))
-    }
-    if (is.na(value)) {
-      return("NA")
-    }
-    as.character(value)
-  }, character(1))
+  vapply(
+    selected,
+    function(s) {
+      if (is.null(s) || !param %in% names(s)) {
+        return(NA_character_)
+      }
+      value <- s[[param]][[1L]]
+      # A list-valued selection is not something select_best() produces, but this
+      # method promises never to raise, and vapply() would abort on a length-2
+      # result rather than print anything at all.
+      if (length(value) != 1L) {
+        return(paste(format(value), collapse = ", "))
+      }
+      if (is.na(value)) {
+        return("NA")
+      }
+      as.character(value)
+    },
+    character(1)
+  )
 }
 
 # Unanimity collapses to the single value the folds agreed on; disagreement
@@ -292,7 +296,9 @@ print_one_parameter <- function(param, values, n) {
     } else if (n == 1L) {
       cli::cli_bullets(c(v = "{param}: {value} (the only completed fold)"))
     } else {
-      cli::cli_bullets(c(v = "{param}: {value} (all {n} completed folds agree)"))
+      cli::cli_bullets(c(
+        v = "{param}: {value} (all {n} completed folds agree)"
+      ))
     }
     return(invisible(NULL))
   }

@@ -70,7 +70,9 @@ alive <- function(pid) {
 wait_for_content <- function(path, seconds) {
   limit <- Sys.time() + seconds
   while (Sys.time() < limit) {
-    if (file.exists(path) && file.size(path) > 0L) return(TRUE)
+    if (file.exists(path) && file.size(path) > 0L) {
+      return(TRUE)
+    }
     Sys.sleep(0.05)
   }
   FALSE
@@ -85,7 +87,8 @@ cat("installing the package into", lib, "...\n")
 install_status <- system2(
   file.path(R.home("bin"), "R"),
   c("CMD", "INSTALL", "--no-multiarch", "-l", shQuote(lib), shQuote(repo)),
-  stdout = FALSE, stderr = FALSE
+  stdout = FALSE,
+  stderr = FALSE
 )
 if (!identical(install_status, 0L)) {
   stop("R CMD INSTALL failed (status ", install_status, "); nothing to stress")
@@ -107,7 +110,10 @@ run_bounded <- function(seconds) {
       'df <- as.data.frame(res); ',
       'cat(sum(df$passed), sum(df$skipped), sum(df$failed), "\\n", file = "%s")'
     ),
-    lib, pidfile, filter, donefile
+    lib,
+    pidfile,
+    filter,
+    donefile
   )
   started <- Sys.time()
   system2(
@@ -118,18 +124,25 @@ run_bounded <- function(seconds) {
     # clean in three seconds having tested nothing -- which is how the first
     # draft of this harness "passed" (M14 review F4, found by running it).
     env = "NOT_CRAN=true",
-    wait = FALSE, stdout = logfile, stderr = logfile
+    wait = FALSE,
+    stdout = logfile,
+    stderr = logfile
   )
 
   if (!wait_for_content(pidfile, 60)) {
-    return(list(elapsed = as.numeric(difftime(Sys.time(), started, units = "secs")),
-                status = "ERROR", log = logfile,
-                why = "child never wrote its pid"))
+    return(list(
+      elapsed = as.numeric(difftime(Sys.time(), started, units = "secs")),
+      status = "ERROR",
+      log = logfile,
+      why = "child never wrote its pid"
+    ))
   }
   pid <- as.integer(readLines(pidfile, n = 1L, warn = FALSE))
 
   limit <- started + seconds
-  while (alive(pid) && Sys.time() < limit) Sys.sleep(0.25)
+  while (alive(pid) && Sys.time() < limit) {
+    Sys.sleep(0.25)
+  }
   killed <- alive(pid)
   if (killed) {
     tools::pskill(pid)
@@ -139,7 +152,10 @@ run_bounded <- function(seconds) {
   elapsed <- as.numeric(difftime(Sys.time(), started, units = "secs"))
   finished <- file.exists(donefile) && file.size(donefile) > 0L
   counts <- if (finished) {
-    as.integer(strsplit(trimws(readLines(donefile, n = 1L, warn = FALSE)), " +")[[1]])
+    as.integer(strsplit(
+      trimws(readLines(donefile, n = 1L, warn = FALSE)),
+      " +"
+    )[[1]])
   } else {
     c(NA_integer_, NA_integer_, NA_integer_)
   }
@@ -161,41 +177,86 @@ run_bounded <- function(seconds) {
   why <- if (!finished) {
     "child exited without finishing"
   } else if (identical(status, "ERROR")) {
-    sprintf("only %s passing assertions (need >= %d); skipped %s",
-            counts[[1]], MIN_PASSES, counts[[2]])
+    sprintf(
+      "only %s passing assertions (need >= %d); skipped %s",
+      counts[[1]],
+      MIN_PASSES,
+      counts[[2]]
+    )
   } else {
     ""
   }
-  list(elapsed = elapsed, status = status, log = logfile, why = why,
-       passed = counts[[1]], skipped = counts[[2]], failed = counts[[3]])
+  list(
+    elapsed = elapsed,
+    status = status,
+    log = logfile,
+    why = why,
+    passed = counts[[1]],
+    skipped = counts[[2]],
+    failed = counts[[3]]
+  )
 }
 
-cat("stress-daemon-tests --", format(Sys.time(), "%Y-%m-%dT%H:%M:%OS0", tz = "UTC"), "\n")
+cat(
+  "stress-daemon-tests --",
+  format(Sys.time(), "%Y-%m-%dT%H:%M:%OS0", tz = "UTC"),
+  "\n"
+)
 cat("repo:", repo, "\n")
 cat("iterations:", iterations, " deadline:", deadline_s, "s\n")
-cat("shape: all of", filter, "in ONE process per iteration, installed package\n")
-cat("mirai:", as.character(packageVersion("mirai")),
-    " nanonext:", as.character(packageVersion("nanonext")),
-    " R:", as.character(getRversion()), "\n")
+cat(
+  "shape: all of",
+  filter,
+  "in ONE process per iteration, installed package\n"
+)
+cat(
+  "mirai:",
+  as.character(packageVersion("mirai")),
+  " nanonext:",
+  as.character(packageVersion("nanonext")),
+  " R:",
+  as.character(getRversion()),
+  "\n"
+)
 cat("platform:", R.version$platform, "\n\n")
-cat(sprintf("%-5s %10s %8s %7s %7s\n", "iter", "elapsed_s", "status", "passed", "skipped"))
+cat(sprintf(
+  "%-5s %10s %8s %7s %7s\n",
+  "iter",
+  "elapsed_s",
+  "status",
+  "passed",
+  "skipped"
+))
 
 rows <- list()
 for (i in seq_len(iterations)) {
   res <- run_bounded(deadline_s)
-  cat(sprintf("%-5d %10.1f %8s %7s %7s\n", i, res$elapsed, res$status,
-              res$passed, res$skipped))
+  cat(sprintf(
+    "%-5d %10.1f %8s %7s %7s\n",
+    i,
+    res$elapsed,
+    res$status,
+    res$passed,
+    res$skipped
+  ))
   flush(stdout())
   if (!identical(res$status, "ok")) {
     cat("  --- ", res$status, ": ", res$why, "; last output ---\n", sep = "")
-    cat(paste0("  ", utils::tail(readLines(res$log, warn = FALSE), 30)), sep = "\n")
+    cat(
+      paste0("  ", utils::tail(readLines(res$log, warn = FALSE), 30)),
+      sep = "\n"
+    )
     cat("  ------------------------------------------\n")
     flush(stdout())
   }
   unlink(res$log)
   rows[[length(rows) + 1L]] <- data.frame(
-    iteration = i, elapsed = res$elapsed, status = res$status,
-    passed = res$passed, skipped = res$skipped, failed = res$failed
+    iteration = i,
+    elapsed = res$elapsed,
+    status = res$status,
+    passed = res$passed,
+    skipped = res$skipped,
+    failed = res$failed
   )
 }
 
@@ -206,9 +267,14 @@ errors <- sum(ledger$status == "ERROR")
 
 cat("\n--- summary ---\n")
 if (nrow(ok) > 0L) {
-  cat(sprintf("completed  n=%d median=%.1fs min=%.1fs max=%.1fs (%d assertions each)\n",
-              nrow(ok), stats::median(ok$elapsed), min(ok$elapsed), max(ok$elapsed),
-              stats::median(ok$passed)))
+  cat(sprintf(
+    "completed  n=%d median=%.1fs min=%.1fs max=%.1fs (%d assertions each)\n",
+    nrow(ok),
+    stats::median(ok$elapsed),
+    min(ok$elapsed),
+    max(ok$elapsed),
+    stats::median(ok$passed)
+  ))
 } else {
   cat("completed  n=0 -- NOTHING RAN TO COMPLETION\n")
 }
@@ -217,4 +283,6 @@ unlink(lib, recursive = TRUE)
 
 # A run where nothing completed is not a clean run. Exit non-zero so a CI job
 # cannot go green on a hunt that never happened.
-if (hangs > 0L || errors > 0L || nrow(ok) == 0L) quit(status = 1L)
+if (hangs > 0L || errors > 0L || nrow(ok) == 0L) {
+  quit(status = 1L)
+}

@@ -20,7 +20,11 @@ test_that("a prebuilt `outside` rset built on other data is refused (IP1)", {
   # A row-count mismatch used to construct fine and only fail later, on
   # retrieval, with an out-of-range error naming nothing the user typed.
   expect_error(
-    nested_resamples(d1[1:20, ], outside = outer, inside = rsample::vfold_cv(v = 2)),
+    nested_resamples(
+      d1[1:20, ],
+      outside = outer,
+      inside = rsample::vfold_cv(v = 2)
+    ),
     "was built on different data"
   )
 
@@ -36,16 +40,25 @@ test_that("no inner analysis row ever comes from the outer assessment set (IP1)"
   d$tag <- paste0("row", seq_len(nrow(d)))
 
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                           inside = rsample::vfold_cv(v = 4))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
 
   for (i in seq_len(nrow(lean))) {
     # Compare by row content, not by index: indices alone cannot detect a
     # remapping onto the wrong frame.
     outer_assessment <- rsample::assessment(lean$splits[[i]])$tag
     for (split in lean$inner_resamples[[i]]$splits) {
-      expect_length(intersect(rsample::analysis(split)$tag, outer_assessment), 0)
-      expect_length(intersect(rsample::assessment(split)$tag, outer_assessment), 0)
+      expect_length(
+        intersect(rsample::analysis(split)$tag, outer_assessment),
+        0
+      )
+      expect_length(
+        intersect(rsample::assessment(split)$tag, outer_assessment),
+        0
+      )
     }
   }
 })
@@ -62,7 +75,11 @@ test_that("inner rsplit objects match rsample's in class and structure", {
   for (spec in specs) {
     set.seed(1)
     ref <- eval(bquote(
-      rsample::nested_cv(d, outside = rsample::vfold_cv(v = 2), inside = .(spec))
+      rsample::nested_cv(
+        d,
+        outside = rsample::vfold_cv(v = 2),
+        inside = .(spec)
+      )
     ))
     set.seed(1)
     lean <- eval(bquote(
@@ -87,8 +104,11 @@ test_that("inner splits carry resample ids that tidymodels can attach", {
   d <- make_test_data()
 
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 2),
-                           inside = rsample::vfold_cv(v = 2, repeats = 2))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 2, repeats = 2)
+  )
   split <- lean$inner_resamples[[1]]$splits[[3]]
 
   # add_resample_id() is how tidymodels labels per-resample predictions; it

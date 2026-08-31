@@ -42,7 +42,8 @@ blocking_collect_sites <- function(path) {
   nxt_token <- data$token[opens + 1L]
   nxt_text <- data$text[opens + 1L]
   blocking <- opens[
-    nxt_token == "']'" | (nxt_token == "SYMBOL" & nxt_text %in% MIRAI_COLLECT_OPTIONS)
+    nxt_token == "']'" |
+      (nxt_token == "SYMBOL" & nxt_text %in% MIRAI_COLLECT_OPTIONS)
   ]
 
   sort(unique(c(data$line1[named], data$line1[blocking])))
@@ -58,22 +59,36 @@ blocking_collect_sites <- function(path) {
 # 0-second row saying why, and that is the point: adding a new call forces a
 # conscious classification instead of letting it hide among the harmless ones.
 BUDGETED_WAIT_CALLS <- c(
-  "collect_bounded", "daemons_load_status", "setTimeLimit",
-  "check_daemons_can_load", "start_daemons", "start_mixed_daemons",
+  "collect_bounded",
+  "daemons_load_status",
+  "setTimeLimit",
+  "check_daemons_can_load",
+  "start_daemons",
+  "start_mixed_daemons",
   "start_daemons_undispatched"
 )
 
 BUDGETED_FILES <- c(
-  "test-parallel-classify.R", "test-parallel-detection.R",
-  "test-parallel-identity.R", "test-parallel-interrupt.R",
-  "test-parallel-metrics.R", "test-parallel-payload.R", "helper-parallel.R"
+  "test-parallel-classify.R",
+  "test-parallel-detection.R",
+  "test-parallel-identity.R",
+  "test-parallel-interrupt.R",
+  "test-parallel-metrics.R",
+  "test-parallel-payload.R",
+  "helper-parallel.R"
 )
 
 wait_call_sites <- function(path) {
   data <- utils::getParseData(parse(path, keep.source = TRUE))
-  data <- data[data$token == "SYMBOL_FUNCTION_CALL" &
-                 data$text %in% BUDGETED_WAIT_CALLS, , drop = FALSE]
-  if (!nrow(data)) return(character(0))
+  data <- data[
+    data$token == "SYMBOL_FUNCTION_CALL" &
+      data$text %in% BUDGETED_WAIT_CALLS,
+    ,
+    drop = FALSE
+  ]
+  if (!nrow(data)) {
+    return(character(0))
+  }
   paste0(basename(path), ":", data$line1)
 }
 
@@ -81,9 +96,12 @@ test_that("every wait-shaped call in the daemon files carries a budget row", {
   ledger <- time_budget_ledger()
   budgeted <- paste0(ledger$file, ":", ledger$line)
 
-  found <- unlist(lapply(BUDGETED_FILES, function(f) {
-    wait_call_sites(test_path(f))
-  }), use.names = FALSE)
+  found <- unlist(
+    lapply(BUDGETED_FILES, function(f) {
+      wait_call_sites(test_path(f))
+    }),
+    use.names = FALSE
+  )
 
   # The check is only as good as its reaching the files at all -- a typo in a
   # name would otherwise pass by finding nothing (M14's "a run that tested
@@ -92,7 +110,8 @@ test_that("every wait-shaped call in the daemon files carries a budget row", {
 
   unbudgeted <- setdiff(found, budgeted)
   expect_identical(
-    unbudgeted, character(0),
+    unbudgeted,
+    character(0),
     info = paste0(
       "wait-shaped call with no row in helper-time-budget.R at: ",
       paste(unbudgeted, collapse = ", "),
@@ -114,13 +133,17 @@ test_that("the budget ledger has no rows for calls that are gone", {
   ledger <- ledger[ledger$call %in% BUDGETED_WAIT_CALLS, , drop = FALSE]
   budgeted <- paste0(ledger$file, ":", ledger$line)
 
-  found <- unlist(lapply(BUDGETED_FILES, function(f) {
-    wait_call_sites(test_path(f))
-  }), use.names = FALSE)
+  found <- unlist(
+    lapply(BUDGETED_FILES, function(f) {
+      wait_call_sites(test_path(f))
+    }),
+    use.names = FALSE
+  )
 
   stale <- setdiff(budgeted, found)
   expect_identical(
-    stale, character(0),
+    stale,
+    character(0),
     info = paste0(
       "budget row pointing at no wait call (line moved or call removed?): ",
       paste(stale, collapse = ", ")
@@ -151,14 +174,21 @@ test_that("the budget ledger has no rows for calls that are gone", {
 # suit it.
 call_site_expr <- function(path, line) {
   data <- utils::getParseData(parse(path, keep.source = TRUE))
-  token <- data[data$token == "SYMBOL_FUNCTION_CALL" & data$line1 == line, ,
-                drop = FALSE]
-  if (!nrow(token)) return("")
+  token <- data[
+    data$token == "SYMBOL_FUNCTION_CALL" & data$line1 == line,
+    ,
+    drop = FALSE
+  ]
+  if (!nrow(token)) {
+    return("")
+  }
   # The token sits inside an `expr` holding the function position, whose own
   # parent is the call -- so the call is the grandparent.
   fn <- data[data$id == token$parent[[1]], , drop = FALSE]
   call <- data[data$id == fn$parent[[1]], , drop = FALSE]
-  if (!nrow(call)) return("")
+  if (!nrow(call)) {
+    return("")
+  }
   txt <- readLines(path, warn = FALSE)
   paste(txt[seq(call$line1[[1]], call$line2[[1]])], collapse = " ")
 }
@@ -172,9 +202,12 @@ call_site_bound_s <- function(path, line, call) {
   txt <- call_site_expr(path, line)
   keyword <- if (identical(call, "collect_bounded")) "seconds" else "timeout"
   hit <- regmatches(
-    txt, regexpr(paste0(keyword, "[[:space:]]*=[[:space:]]*[0-9.]+"), txt)
+    txt,
+    regexpr(paste0(keyword, "[[:space:]]*=[[:space:]]*[0-9.]+"), txt)
   )
-  if (!length(hit)) return(NA_real_)
+  if (!length(hit)) {
+    return(NA_real_)
+  }
   value <- as.numeric(sub(".*=[[:space:]]*", "", hit))
   if (identical(keyword, "timeout")) value / 1000 else value
 }
@@ -185,11 +218,15 @@ call_site_bound_s <- function(path, line, call) {
 # editing this list and a stale entry cannot quietly excuse a different row.
 DECLARED_UNCHECKABLE_BOUNDS <- c(
   # Bound comes from COLLECT_BOUNDED_DEFAULT_S, which the row reads directly.
-  paste0("test-parallel-classify.R :: ",
-         "a miraiError becomes a recorded worker failure, not an abort"),
+  paste0(
+    "test-parallel-classify.R :: ",
+    "a miraiError becomes a recorded worker failure, not an abort"
+  ),
   # Bound is set through the option at one line and spent at another.
-  paste0("test-parallel-classify.R :: ",
-         "the probe reads its bound from the option, not from the constant")
+  paste0(
+    "test-parallel-classify.R :: ",
+    "the probe reads its bound from the option, not from the constant"
+  )
 )
 
 test_that("a copied bound still matches the argument it was copied from", {
@@ -198,27 +235,43 @@ test_that("a copied bound still matches the argument it was copied from", {
   # explicit bound. A `check_daemons_can_load()` row carrying a fabricated
   # `preflight_outcome(..., timeout = 300000)` on its line waits for nothing --
   # its number is message content, not budget.
-  ledger <- ledger[ledger$call %in% c("daemons_load_status", "collect_bounded") &
-                     ledger$seconds > 0, , drop = FALSE]
+  ledger <- ledger[
+    ledger$call %in%
+      c("daemons_load_status", "collect_bounded") &
+      ledger$seconds > 0,
+    ,
+    drop = FALSE
+  ]
 
   checked <- 0L
   unreadable <- character(0)
   for (i in seq_len(nrow(ledger))) {
     at <- call_site_bound_s(
-      test_path(ledger$file[[i]]), ledger$line[[i]], ledger$call[[i]]
+      test_path(ledger$file[[i]]),
+      ledger$line[[i]],
+      ledger$call[[i]]
     )
     if (is.na(at)) {
       unreadable <- c(
-        unreadable, paste0(ledger$file[[i]], " :: ", ledger$payer[[i]])
+        unreadable,
+        paste0(ledger$file[[i]], " :: ", ledger$payer[[i]])
       )
       next
     }
     checked <- checked + 1L
     expect_equal(
-      ledger$seconds[[i]], at * ledger$times[[i]],
-      info = paste0(ledger$file[[i]], ":", ledger$line[[i]],
-                    " declares ", ledger$seconds[[i]],
-                    " s but the call site says ", at * ledger$times[[i]], " s")
+      ledger$seconds[[i]],
+      at * ledger$times[[i]],
+      info = paste0(
+        ledger$file[[i]],
+        ":",
+        ledger$line[[i]],
+        " declares ",
+        ledger$seconds[[i]],
+        " s but the call site says ",
+        at * ledger$times[[i]],
+        " s"
+      )
     )
   }
   # A skipped row is the failure mode, not an accident of it: F9's row declared a
@@ -226,11 +279,14 @@ test_that("a copied bound still matches the argument it was copied from", {
   # set EQUALS the declared one -- rather than counting the checked rows -- is
   # what makes a fourth unreadable row fail here instead of passing quietly.
   expect_identical(
-    sort(unique(unreadable)), sort(DECLARED_UNCHECKABLE_BOUNDS),
+    sort(unique(unreadable)),
+    sort(DECLARED_UNCHECKABLE_BOUNDS),
     info = paste0(
       "a ledger row declaring a copied bound that this check cannot re-read: ",
-      paste(setdiff(unique(unreadable), DECLARED_UNCHECKABLE_BOUNDS),
-            collapse = ", "),
+      paste(
+        setdiff(unique(unreadable), DECLARED_UNCHECKABLE_BOUNDS),
+        collapse = ", "
+      ),
       " -- give the call an explicit bound, or declare why it has none."
     )
   )
@@ -269,7 +325,10 @@ test_that("no test waits on a mirai result outside collect_bounded()", {
   # NOT the repo root: `R/parallel.R:91` holds the production `collect_mirai()`
   # that M07 put there on purpose, and this rule is about the suite.
   files <- list.files(
-    test_path(".."), pattern = "\\.[Rr]$", full.names = TRUE, recursive = TRUE
+    test_path(".."),
+    pattern = "\\.[Rr]$",
+    full.names = TRUE,
+    recursive = TRUE
   )
   files <- files[!grepl("/_snaps/", files)]
   expect_gt(length(files), 0L)

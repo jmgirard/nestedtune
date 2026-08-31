@@ -109,7 +109,10 @@ test_that("fold results do not depend on the ambient RNG state or kind", {
   )
   seeds <- c(101L, 202L)
   entry_kind <- RNGkind()
-  on.exit(RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]), add = TRUE)
+  on.exit(
+    RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]),
+    add = TRUE
+  )
 
   run_one <- function() {
     nested_fold_fit(

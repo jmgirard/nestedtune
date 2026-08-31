@@ -18,8 +18,17 @@ test_that("the results object retains one row per outer fold with its selection"
 
   expect_s3_class(res, "nested_results")
   expect_identical(nrow(res), 3L)
-  expect_true(all(c("splits", "id", ".metrics", ".selected",
-                    ".tuning_seed", ".outer_fit_seed") %in% names(res)))
+  expect_true(all(
+    c(
+      "splits",
+      "id",
+      ".metrics",
+      ".selected",
+      ".tuning_seed",
+      ".outer_fit_seed"
+    ) %in%
+      names(res)
+  ))
 
   # Selection instability is the thing nothing else in the ecosystem keeps.
   for (sel in res$.selected) {
@@ -37,8 +46,10 @@ test_that("collect_metrics() summarizes across outer folds", {
   res <- example_results()
   summarized <- collect_metrics(res)
 
-  expect_identical(names(summarized),
-                   c(".metric", ".estimator", "mean", "n", "std_err"))
+  expect_identical(
+    names(summarized),
+    c(".metric", ".estimator", "mean", "n", "std_err")
+  )
   expect_setequal(summarized$.metric, c("rmse", "rsq"))
   expect_true(all(summarized$n == 3L))
 
@@ -63,8 +74,10 @@ test_that("collect_metrics(summarize = FALSE) returns one row per fold and metri
   res <- example_results()
   per_fold <- collect_metrics(res, summarize = FALSE)
 
-  expect_identical(names(per_fold),
-                   c("id", ".metric", ".estimator", ".estimate"))
+  expect_identical(
+    names(per_fold),
+    c("id", ".metric", ".estimator", ".estimate")
+  )
   expect_identical(nrow(per_fold), 6L)
   expect_setequal(per_fold$id, res$id)
 })

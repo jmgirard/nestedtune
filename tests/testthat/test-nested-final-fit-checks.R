@@ -201,8 +201,10 @@ test_that("a non-rset element of inner_resamples is refused by the final fit", {
   bad$inner_resamples[[2]] <- "not an rset"
 
   expect_error(nested_final_fit(wf, bad, grid = det_grid()), "inner_resamples")
-  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
-                  error = function(e) e)
+  cnd <- tryCatch(
+    nested_final_fit(wf, bad, grid = det_grid()),
+    error = function(e) e
+  )
   # The position and the type held, asserted here and not only through the
   # loop's suite: a wrong index or a dropped type reddens both drivers or
   # neither, and only the loop's copy would have caught it.
@@ -222,8 +224,10 @@ test_that("a non-rsplit element of splits is refused by the final fit", {
 
   # Before this the final fit reached split_data() and died in base R:
   # "$ operator is invalid for atomic vectors", naming no argument of ours.
-  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
-                  error = function(e) e)
+  cnd <- tryCatch(
+    nested_final_fit(wf, bad, grid = det_grid()),
+    error = function(e) e
+  )
   expect_match(conditionMessage(cnd), "rsplit")
   expect_match(conditionMessage(cnd), "Element 1")
   expect_match(conditionMessage(cnd), "string")

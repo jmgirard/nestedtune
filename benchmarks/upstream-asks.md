@@ -91,7 +91,7 @@ the refusal to — and `.catch_and_log()`, which T-A3 below turns on. A promise
 scoped to the first two blocks would leave both uncovered.
 
 **The engine-package check is reachable too, by another name.**
-`check_installs()` over `is_installed()` (`R/checks.R:234`, `:229`) is indeed
+`check_installs()` over `is_installed()` (`R/checks.R:250`, `:229`) is indeed
 unexported — but `load_pkgs()` (`R/load_ns.R:11`, `NAMESPACE:247`) is exported,
 and its `model_spec` method asks `required_pkgs()` and refuses through
 `.load_namespace()` (`:41`, also exported), which aborts naming the packages that
@@ -210,7 +210,7 @@ for the pieces rather than for a surface tune does not expose at all.
    only as a bundle. These retire three outright. `new_note()`
    is what F075 `own_note()` reimplements, and its own defaults are what F078
    `empty_notes()` hand-builds — those two go outright. F077 `bind_notes()`
-   (`R/nested-tune-grid.R:567`) is the third and the argument for it is weaker,
+   (`R/nested-tune-grid.R:572`) is the third and the argument for it is weaker,
    so state it plainly: it concatenates two note frames column by column into a
    `new_tbl()`, and it exists because this package builds two frames and joins
    them. `append_log_notes()` accumulates notes onto a single frame as results
@@ -338,7 +338,7 @@ a side note:
 **Retires: F005 `check_column_class()`, F008 `check_inside_spec()`, and the
 larger part of F004 `check_nested()`** — 3 functions, ~104 lines, of which
 roughly 30 stay behind. Granting this ask removes F004's element-class checks
-(`R/checks.R:160-175`) and its bootstrap refusal (`:141-152`). Three of its
+(`R/checks.R:162-181`) and its bootstrap refusal (`:141-152`). Three of its
 refusals survive it: a `resamples` that is not a data frame or lacks the two
 columns (`:109-120`), a design with no outer folds (`:121-123`), and a design
 with no `^id` column (`:127-136`) — that last one exists because this package's

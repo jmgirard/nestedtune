@@ -240,17 +240,32 @@ summarize_folds <- function(per_fold) {
     vals[!is.na(vals)]
   }
 
-  mean_of <- vapply(keys[first], function(k) {
-    vals <- estimates_for(k)
-    if (length(vals) == 0L) NA_real_ else mean(vals)
-  }, numeric(1), USE.NAMES = FALSE)
-  n_of <- vapply(keys[first], function(k) {
-    length(estimates_for(k))
-  }, integer(1), USE.NAMES = FALSE)
-  se_of <- vapply(keys[first], function(k) {
-    vals <- estimates_for(k)
-    if (length(vals) < 2L) NA_real_ else stats::sd(vals) / sqrt(length(vals))
-  }, numeric(1), USE.NAMES = FALSE)
+  mean_of <- vapply(
+    keys[first],
+    function(k) {
+      vals <- estimates_for(k)
+      if (length(vals) == 0L) NA_real_ else mean(vals)
+    },
+    numeric(1),
+    USE.NAMES = FALSE
+  )
+  n_of <- vapply(
+    keys[first],
+    function(k) {
+      length(estimates_for(k))
+    },
+    integer(1),
+    USE.NAMES = FALSE
+  )
+  se_of <- vapply(
+    keys[first],
+    function(k) {
+      vals <- estimates_for(k)
+      if (length(vals) < 2L) NA_real_ else stats::sd(vals) / sqrt(length(vals))
+    },
+    numeric(1),
+    USE.NAMES = FALSE
+  )
 
   new_tbl(list(
     .metric = per_fold$.metric[first],
@@ -266,8 +281,11 @@ summarize_folds <- function(per_fold) {
 # treat the absence of a result as a result. `action` names what the caller was
 # asking for -- summarizing or plotting -- so both refusals say the same thing
 # about the same object and cannot drift apart.
-check_any_completed <- function(x, action = "summarize",
-                                call = rlang::caller_env()) {
+check_any_completed <- function(
+  x,
+  action = "summarize",
+  call = rlang::caller_env()
+) {
   # Read from the column, never from the stamped count: the column travels with
   # the rows, so the two can never disagree about the object actually in hand.
   if (any(x$.completed)) {
@@ -313,9 +331,18 @@ per_fold_metrics <- function(x) {
 
   new_tbl(list(
     id = rep(ids, times = n_rows),
-    .metric = unlist(lapply(x$.metrics, function(m) m$.metric), use.names = FALSE),
-    .estimator = unlist(lapply(x$.metrics, function(m) m$.estimator), use.names = FALSE),
-    .estimate = unlist(lapply(x$.metrics, function(m) m$.estimate), use.names = FALSE)
+    .metric = unlist(
+      lapply(x$.metrics, function(m) m$.metric),
+      use.names = FALSE
+    ),
+    .estimator = unlist(
+      lapply(x$.metrics, function(m) m$.estimator),
+      use.names = FALSE
+    ),
+    .estimate = unlist(
+      lapply(x$.metrics, function(m) m$.estimate),
+      use.names = FALSE
+    )
   ))
 }
 

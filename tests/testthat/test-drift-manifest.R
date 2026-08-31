@@ -26,8 +26,11 @@ test_that("every wire figure the documents cite matches the manifest", {
   checked <- 0L
   for (doc in names(docs)) {
     result <- drift_failures(docs[[doc]], figures)
-    expect_identical(result$failures, character(0),
-                     label = sprintf("drift failures in %s", doc))
+    expect_identical(
+      result$failures,
+      character(0),
+      label = sprintf("drift failures in %s", doc)
+    )
     checked <- checked + result$checked
   }
   # A bare Rscript harness that skips everything finishes clean having
@@ -38,7 +41,11 @@ test_that("every wire figure the documents cite matches the manifest", {
 
 test_that("the check goes red when a cited figure drifts", {
   manifest_path <- drift_repo_path("benchmarks", "mori-wire-manifest.json")
-  note_path <- drift_repo_path("cairn", "references", "mori-backend-assessment.md")
+  note_path <- drift_repo_path(
+    "cairn",
+    "references",
+    "mori-backend-assessment.md"
+  )
   skip_if_not(
     file.exists(manifest_path) && file.exists(note_path),
     "repo-only files are absent from a built package"
@@ -50,7 +57,12 @@ test_that("the check goes red when a cited figure drifts", {
   # value-vs-manifest kind rather than a missing rendering.
   scratch <- tempfile(fileext = ".md")
   writeLines(
-    gsub("941,683", "941,999", readLines(note_path, warn = FALSE), fixed = TRUE),
+    gsub(
+      "941,683",
+      "941,999",
+      readLines(note_path, warn = FALSE),
+      fixed = TRUE
+    ),
     scratch
   )
   result <- drift_failures(scratch, figures)
@@ -62,7 +74,12 @@ test_that("the check goes red when a cited figure drifts", {
   scratch2 <- tempfile(fileext = ".md")
   lines <- readLines(note_path, warn = FALSE)
   decl_at <- grepl("<!-- drift-check:", lines)
-  lines[!decl_at] <- gsub("103,109 B", "roughly 100 kB", lines[!decl_at], fixed = TRUE)
+  lines[!decl_at] <- gsub(
+    "103,109 B",
+    "roughly 100 kB",
+    lines[!decl_at],
+    fixed = TRUE
+  )
   writeLines(lines, scratch2)
   result2 <- drift_failures(scratch2, figures)
   expect_length(result2$failures, 1L)
@@ -74,10 +91,16 @@ test_that("a drifted duplicate cannot hide behind its surviving occurrence", {
   # by execution against the substring-presence version of the check; the
   # occurrence-count declarations (@N) are the fix, and these tests keep it.
   manifest_path <- drift_repo_path("benchmarks", "mori-wire-manifest.json")
-  note_path <- drift_repo_path("cairn", "references", "mori-backend-assessment.md")
+  note_path <- drift_repo_path(
+    "cairn",
+    "references",
+    "mori-backend-assessment.md"
+  )
   roadmap_path <- drift_repo_path("cairn", "ROADMAP.md")
   skip_if_not(
-    file.exists(manifest_path) && file.exists(note_path) && file.exists(roadmap_path),
+    file.exists(manifest_path) &&
+      file.exists(note_path) &&
+      file.exists(roadmap_path),
     "repo-only files are absent from a built package"
   )
   figures <- drift_manifest_figures(manifest_path)
@@ -86,13 +109,19 @@ test_that("a drifted duplicate cannot hide behind its surviving occurrence", {
   # once inside the [historical] contrast. Perturb only the current one.
   scratch <- tempfile(fileext = ".md")
   txt <- paste(readLines(note_path, warn = FALSE), collapse = "\n")
-  perturbed <- sub("524 B\ninstalled (`worker_closure_bytes`)",
-                   "999 B\ninstalled (`worker_closure_bytes`)",
-                   txt, fixed = TRUE)
+  perturbed <- sub(
+    "524 B\ninstalled (`worker_closure_bytes`)",
+    "999 B\ninstalled (`worker_closure_bytes`)",
+    txt,
+    fixed = TRUE
+  )
   if (identical(perturbed, txt)) {
-    perturbed <- sub("524 B installed (`worker_closure_bytes`)",
-                     "999 B installed (`worker_closure_bytes`)",
-                     txt, fixed = TRUE)
+    perturbed <- sub(
+      "524 B installed (`worker_closure_bytes`)",
+      "999 B installed (`worker_closure_bytes`)",
+      txt,
+      fixed = TRUE
+    )
   }
   expect_false(identical(perturbed, txt))
   writeLines(perturbed, scratch)
@@ -106,7 +135,12 @@ test_that("a drifted duplicate cannot hide behind its surviving occurrence", {
   rl <- readLines(roadmap_path, warn = FALSE)
   mori_row <- grep("is 524 B and near-negligible", rl)
   expect_length(mori_row, 1L)
-  rl[mori_row] <- sub("is 524 B and", "is 999 B and", rl[mori_row], fixed = TRUE)
+  rl[mori_row] <- sub(
+    "is 524 B and",
+    "is 999 B and",
+    rl[mori_row],
+    fixed = TRUE
+  )
   writeLines(rl, scratch2)
   result2 <- drift_failures(scratch2, figures)
   expect_length(result2$failures, 1L)

@@ -58,14 +58,21 @@ for (i in seq_len(runs)) {
 
 files <- sort(unique(unlist(lapply(passes, function(p) names(p$per_file)))))
 med <- function(f) {
-  stats::median(vapply(passes, function(p) {
-    # Single-bracket, deliberately: `per_file` is a tapply result, and `[[` on a
-    # name it does not carry raises "subscript out of bounds" rather than
-    # returning NULL -- so a run whose file set differs from the union above (a
-    # file that failed to source, a file added between runs) would kill the
-    # profiler after it had already paid for every run.
-    unname(p$per_file[f])
-  }, numeric(1)), na.rm = TRUE)
+  stats::median(
+    vapply(
+      passes,
+      function(p) {
+        # Single-bracket, deliberately: `per_file` is a tapply result, and `[[` on a
+        # name it does not carry raises "subscript out of bounds" rather than
+        # returning NULL -- so a run whose file set differs from the union above (a
+        # file that failed to source, a file added between runs) would kill the
+        # profiler after it had already paid for every run.
+        unname(p$per_file[f])
+      },
+      numeric(1)
+    ),
+    na.rm = TRUE
+  )
 }
 elapsed <- vapply(files, med, numeric(1))
 ord <- order(elapsed, decreasing = TRUE)
@@ -77,28 +84,45 @@ cat("\n")
 cat(sprintf("R:        %s\n", R.version.string))
 cat(sprintf("OS:       %s\n", sessionInfo()$running))
 cat(sprintf("testthat: %s\n", as.character(utils::packageVersion("testthat"))))
-cat(sprintf("commit:   %s\n", system("git rev-parse --short HEAD", intern = TRUE)))
+cat(sprintf(
+  "commit:   %s\n",
+  system("git rev-parse --short HEAD", intern = TRUE)
+))
 cat(sprintf("NOT_CRAN: %s\n", Sys.getenv("NOT_CRAN")))
-cat(sprintf("loading:  package loaded once for all files (pkgload::load_all)\n"))
+cat(sprintf(
+  "loading:  package loaded once for all files (pkgload::load_all)\n"
+))
 cat(sprintf("runs:     %d (all figures are medians)\n\n", runs))
 
 cat(sprintf("%-42s %8s %6s\n", "file", "seconds", "share"))
 for (f in files[ord]) {
-  cat(sprintf("%-42s %8.1f %5.1f%%\n", f, elapsed[[f]], 100 * elapsed[[f]] / total))
+  cat(sprintf(
+    "%-42s %8.1f %5.1f%%\n",
+    f,
+    elapsed[[f]],
+    100 * elapsed[[f]] / total
+  ))
 }
 cat(sprintf("%-42s %8.1f\n", "SUITE TOTAL (sum of test times)", total))
 cat(sprintf("%-42s %8.1f\n", "wall clock for the run", wall))
 
 counts <- passes[[1L]]$counts
-cat(sprintf("\npass %d | fail %d | skip %d\n", counts[["pass"]], counts[["fail"]],
-            counts[["skip"]]))
+cat(sprintf(
+  "\npass %d | fail %d | skip %d\n",
+  counts[["pass"]],
+  counts[["fail"]],
+  counts[["skip"]]
+))
 
 installed <- vapply(
   c("lobstr", "mlbench", "ranger", "vdiffr"),
   function(p) requireNamespace(p, quietly = TRUE),
   logical(1)
 )
-cat(sprintf("optional packages: %s\n", paste(
-  sprintf("%s=%s", names(installed), ifelse(installed, "yes", "no")),
-  collapse = ", "
-)))
+cat(sprintf(
+  "optional packages: %s\n",
+  paste(
+    sprintf("%s=%s", names(installed), ifelse(installed, "yes", "no")),
+    collapse = ", "
+  )
+))

@@ -17,8 +17,11 @@ fake_fold_record <- function(completed = TRUE) {
     # completed fold would put an object with no `.grid` element into a column
     # that must have one.
     grid = data.frame(mtry = 2, .config = "pre0_mod1_post0"),
-    notes = data.frame(location = character(0), type = character(0),
-                       note = character(0))
+    notes = data.frame(
+      location = character(0),
+      type = character(0),
+      note = character(0)
+    )
   )
 }
 
@@ -109,8 +112,14 @@ test_that("a miraiInterrupt aborts instead of being recorded as a failed fold", 
   # classes -- not an integer. An earlier fixture used 20L; classification is
   # inherits()-based so it passed either way, but a fixture that does not match
   # what production sees is not evidence.
-  interrupt <- structure("", class = c("miraiInterrupt", "errorValue", "try-error"))
-  expect_error(classify_fold_result(interrupt), class = "nestedtune_interrupted")
+  interrupt <- structure(
+    "",
+    class = c("miraiInterrupt", "errorValue", "try-error")
+  )
+  expect_error(
+    classify_fold_result(interrupt),
+    class = "nestedtune_interrupted"
+  )
 })
 
 test_that("a cancelled task aborts instead of being recorded as a failed fold", {
@@ -130,14 +139,20 @@ test_that("a cancelled run is caught by a handler for any stopped run", {
   # handled a stopped run keeps working and code that cares can still tell a
   # torn-down pool from someone pressing Ctrl-C.
   cancelled <- structure(20L, class = c("errorValue", "try-error"))
-  expect_error(classify_fold_result(cancelled), class = "nestedtune_interrupted")
+  expect_error(
+    classify_fold_result(cancelled),
+    class = "nestedtune_interrupted"
+  )
 })
 
 test_that("a real interrupt is an interrupt, not a cancellation", {
   # The interrupt fixture is an empty STRING (see the BC4 test above), so
   # as.integer() on it is NA. A cancellation check that reached for the integer
   # before validating the shape would misfire right here.
-  interrupt <- structure("", class = c("miraiInterrupt", "errorValue", "try-error"))
+  interrupt <- structure(
+    "",
+    class = c("miraiInterrupt", "errorValue", "try-error")
+  )
   cnd <- tryCatch(classify_fold_result(interrupt), condition = identity)
   expect_s3_class(cnd, "nestedtune_interrupted")
   expect_false(inherits(cnd, "nestedtune_cancelled"))
@@ -169,7 +184,7 @@ test_that("a worker whose message is the cancel code is not a cancellation", {
   # CRAN's noSuggests flavor among them. The end-to-end miraiError path is
   # already covered above, against a real one, behind the mirai skip.
   err <- structure("20", class = c("miraiError", "errorValue", "try-error"))
-  expect_true(err == cancel_error_value)      # the coercion this guards against
+  expect_true(err == cancel_error_value) # the coercion this guards against
   expect_false(is_cancelled_value(err))
 })
 
@@ -312,7 +327,10 @@ test_that("one loadable daemon no longer passes the check for the whole pool", {
 })
 
 test_that("a load failure keeps the install and prime remedies", {
-  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(FALSE, FALSE))))
+  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(
+    FALSE,
+    FALSE
+  ))))
   msg <- conditionMessage(err)
   expect_match(msg, "Install the package")
   expect_match(msg, "pkgload::load_all")
@@ -339,7 +357,10 @@ test_that("a timeout is not reported as a package that cannot be loaded", {
 })
 
 test_that("the timeout message points at the option that raises the bound", {
-  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(NA, NA), timeout = 250)))
+  err <- expect_error(check_daemons_can_load(preflight_outcome(
+    reports(NA, NA),
+    timeout = 250
+  )))
   expect_match(conditionMessage(err), "nestedtune.preflight_timeout")
 })
 
@@ -347,7 +368,10 @@ test_that("a raised bound is reported as a number, not in scientific notation", 
   # cli renders an interpolated numeric through as.character(), which turns
   # 300000 into "3e+05" -- in the very bullet telling the user to raise that
   # number. Every bound the earlier tests use is small enough to miss this.
-  err <- expect_error(check_daemons_can_load(preflight_outcome(reports(NA), timeout = 300000)))
+  err <- expect_error(check_daemons_can_load(preflight_outcome(
+    reports(NA),
+    timeout = 300000
+  )))
   msg <- conditionMessage(err)
   expect_match(msg, "300000")
   expect_false(grepl("e+0", msg, fixed = TRUE))
@@ -377,7 +401,11 @@ test_that("a pool that cannot load AND holds an old build names both fixes", {
   # so a message naming only the class-carrying fault sends the user to install,
   # restart the pool, and meet the second fault on the next pre-flight.
   status <- preflight_outcome(
-    reports(FALSE, TRUE, missing = list(NULL, c("nested_fold_fit", "rehydrate_payload"))),
+    reports(
+      FALSE,
+      TRUE,
+      missing = list(NULL, c("nested_fold_fit", "rehydrate_payload"))
+    ),
     timeout = 30000
   )
   expect_identical(status$outcome, "cannot_load")
@@ -414,7 +442,8 @@ test_that("the both-fault bullet counts and pluralises on the affected daemons",
     timeout = 30000
   )
   msg <- conditionMessage(expect_error(
-    check_daemons_can_load(status), class = "nestedtune_daemons_cannot_load"
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_cannot_load"
   ))
   expect_match(msg, "2 daemons loaded")
   expect_match(msg, "are running a different build")
@@ -423,7 +452,10 @@ test_that("the both-fault bullet counts and pluralises on the affected daemons",
 test_that("both causes answer to one shared class", {
   # M10-D1: a handler that only cares that the startup check failed catches
   # either, without having to list both names.
-  for (status in list(preflight_outcome(reports(FALSE)), preflight_outcome(reports(NA)))) {
+  for (status in list(
+    preflight_outcome(reports(FALSE)),
+    preflight_outcome(reports(NA))
+  )) {
     expect_error(
       check_daemons_can_load(status),
       class = "nestedtune_daemons_unusable"
@@ -461,8 +493,16 @@ test_that("the probe expression asks the daemon for nothing but base R", {
   }
   expect_identical(
     sort(unique(names_called(daemon_probe_expr()))),
-    sort(c("{", "asNamespace", "character", "if", "list", "ls",
-           "requireNamespace", "setdiff"))
+    sort(c(
+      "{",
+      "asNamespace",
+      "character",
+      "if",
+      "list",
+      "ls",
+      "requireNamespace",
+      "setdiff"
+    ))
   )
 })
 
@@ -501,7 +541,8 @@ test_that("the missing symbols are the union across the pool", {
   )
   expect_identical(status$incompatible, 2L)
   expect_identical(
-    status$missing_symbols, c("nested_fold_fit", "rehydrate_payload")
+    status$missing_symbols,
+    c("nested_fold_fit", "rehydrate_payload")
   )
 })
 
@@ -542,7 +583,8 @@ test_that("every outcome the ladder can produce is reachable and distinct", {
     character(1)
   )
   expect_identical(
-    outcomes, c("ok", "incompatible", "no_response", "cannot_load")
+    outcomes,
+    c("ok", "incompatible", "no_response", "cannot_load")
   )
 })
 
@@ -583,14 +625,19 @@ test_that("the incompatible abort renders at one symbol, two, five, and a mixed 
   # quantity differs from its daemon count.
   expect_snapshot(error = TRUE, {
     check_daemons_can_load(
-      preflight_outcome(reports(TRUE, missing = list("rehydrate_payload")),
-                        timeout = 30000)
+      preflight_outcome(
+        reports(TRUE, missing = list("rehydrate_payload")),
+        timeout = 30000
+      )
     )
     # The headline case: exactly the two names the worker resolves through the
     # daemon's own namespace, which is what a pre-M23 daemon is short of.
     check_daemons_can_load(
       preflight_outcome(
-        reports(TRUE, missing = list(c("nested_fold_fit", "rehydrate_payload"))),
+        reports(
+          TRUE,
+          missing = list(c("nested_fold_fit", "rehydrate_payload"))
+        ),
         timeout = 30000
       )
     )
@@ -629,8 +676,10 @@ test_that("an incompatible pool still reports daemons that said nothing", {
     timeout = 2000
   )
   msg <- conditionMessage(
-    expect_error(check_daemons_can_load(status),
-                 class = "nestedtune_daemons_incompatible")
+    expect_error(
+      check_daemons_can_load(status),
+      class = "nestedtune_daemons_incompatible"
+    )
   )
   expect_match(msg, "did not answer")
 })
@@ -665,7 +714,10 @@ test_that("a bound that is not a single positive finite number is refused", {
   on.exit(options(old), add = TRUE)
   for (bad in list("soon", -1, 0, NA_real_, c(1000, 2000), TRUE)) {
     options(nestedtune.preflight_timeout = bad)
-    expect_error(preflight_timeout(), class = "nestedtune_bad_preflight_timeout")
+    expect_error(
+      preflight_timeout(),
+      class = "nestedtune_bad_preflight_timeout"
+    )
   }
 })
 
@@ -794,7 +846,10 @@ test_that("a report is rejected unless every field has the right shape", {
   expect_null(daemon_report(list(loaded = "yes", missing = character())))
   expect_null(daemon_report(list(loaded = TRUE, missing = 1L)))
   expect_null(daemon_report(list(loaded = TRUE, missing = NA_character_)))
-  expect_null(daemon_report(list(loaded = c(TRUE, TRUE), missing = character())))
+  expect_null(daemon_report(list(
+    loaded = c(TRUE, TRUE),
+    missing = character()
+  )))
   expect_identical(
     daemon_report(list(loaded = TRUE, missing = "fold_task")),
     list(loaded = TRUE, missing = "fold_task")

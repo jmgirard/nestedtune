@@ -87,6 +87,16 @@ naming convention.
   by ID, type, source, and which test pins it — the asserting test is the single
   source of truth, never a restated value. This is the declared location every
   ≥2-types audit reads off. _(added 2026-07-25, M01.)_
+- **`air` is the formatter, and a committed tree is clean under it.** `air.toml`
+  at the root declares the settings (the tidymodels shape: `[format]` with
+  `skip = ["tribble"]`), `air format .` is expected to change nothing on a
+  committed tree, and `.github/workflows/format-suggest.yaml` posts any
+  difference on a pull request as a review suggestion. One consequence to know
+  before reformatting: `tests/testthat/helper-time-budget.R` holds a budget
+  ledger of `file:line` positions in the daemon test files and
+  `test-suite-hygiene.R` fails when a row points at a moved line, so a
+  formatting pass re-points that ledger in the same commit. _(added 2026-08-30,
+  M33 — the first code-style convention recorded here.)_
 - **Pure R — no compiled code.** No `src/`, no `LinkingTo`, no C/C++/Fortran
   toolchain. Adding compiled code later is additive and would be a design
   decision recorded as a D-entry.

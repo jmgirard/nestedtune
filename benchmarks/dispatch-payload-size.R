@@ -29,16 +29,23 @@ suppressMessages({
   library(parsnip)
   library(workflows)
 })
-if (requireNamespace("pkgload", quietly = TRUE) &&
-    !requireNamespace("nestedtune", quietly = TRUE)) {
+if (
+  requireNamespace("pkgload", quietly = TRUE) &&
+    !requireNamespace("nestedtune", quietly = TRUE)
+) {
   pkgload::load_all(".", quiet = TRUE)
 } else {
   suppressMessages(library(nestedtune))
 }
 
 cat(R.version.string, "|", R.version$platform, "\n")
-cat("rsample", as.character(packageVersion("rsample")),
-    "| mirai", as.character(packageVersion("mirai")), "\n\n")
+cat(
+  "rsample",
+  as.character(packageVersion("rsample")),
+  "| mirai",
+  as.character(packageVersion("mirai")),
+  "\n\n"
+)
 
 # The oracles and the fixture are defined ONCE, in the test helper, and sourced
 # here. The header of that file says this happens; it has to actually happen, or
@@ -73,7 +80,11 @@ report <- function(label, design, data) {
   rows <- do.call(rbind, rows)
   print(rows, row.names = FALSE)
 
-  args_bytes <- payload_bytes(list(object = payload_fixture_workflow(), grid = 3, metrics = NULL))
+  args_bytes <- payload_bytes(list(
+    object = payload_fixture_workflow(),
+    grid = 3,
+    metrics = NULL
+  ))
   total <- sum(rows$payload_bytes) + n_folds * args_bytes
   cat("  data serialized      :", payload_bytes(data), "B\n")
   cat("  .args per fold       :", args_bytes, "B\n")
@@ -85,28 +96,47 @@ report <- function(label, design, data) {
   environment(worker) <- globalenv()
   lean <- lapply(rows$fold, function(i) {
     nestedtune:::lean_payload(
-      list(split = design$splits[[i]],
-           inner = design$inner_resamples[[i]], seeds = c(1L, 2L)),
+      list(
+        split = design$splits[[i]],
+        inner = design$inner_resamples[[i]],
+        seeds = c(1L, 2L)
+      ),
       shared = data
     )
   })
   lean_args <- payload_bytes(list(
-    object = payload_fixture_workflow(), grid = 3, metrics = NULL,
-    shared = data, worker = worker
+    object = payload_fixture_workflow(),
+    grid = 3,
+    metrics = NULL,
+    shared = data,
+    worker = worker
   ))
-  lean_total <- sum(vapply(lean, payload_bytes, numeric(1))) + n_folds * lean_args
-  cat("  TOTAL WIRE (leaned)  :", lean_total, "B =",
-      sprintf("%.1f%%", 100 * lean_total / total), "of the above\n\n")
+  lean_total <- sum(vapply(lean, payload_bytes, numeric(1))) +
+    n_folds * lean_args
+  cat(
+    "  TOTAL WIRE (leaned)  :",
+    lean_total,
+    "B =",
+    sprintf("%.1f%%", 100 * lean_total / total),
+    "of the above\n\n"
+  )
   invisible(c(before = total, after = lean_total))
 }
 
 d <- payload_fixture_data()
 
-cat("closed-form prediction for a leaned payload (n=5000, v=5, inner_v=5):",
-    predicted_lean_bytes(5000, 5, 5), "B\n\n")
+cat(
+  "closed-form prediction for a leaned payload (n=5000, v=5, inner_v=5):",
+  predicted_lean_bytes(5000, 5, 5),
+  "B\n\n"
+)
 
 set.seed(2)
-report("nested_resamples", nested_resamples(d, vfold_cv(v = 5), vfold_cv(v = 5)), d)
+report(
+  "nested_resamples",
+  nested_resamples(d, vfold_cv(v = 5), vfold_cv(v = 5)),
+  d
+)
 
 set.seed(2)
 report("rsample::nested_cv", nested_cv(d, vfold_cv(v = 5), vfold_cv(v = 5)), d)

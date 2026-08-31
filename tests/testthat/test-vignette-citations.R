@@ -122,9 +122,15 @@ paragraphs <- function(lines) {
 # alternative is here: without it the scan starts at the second surname and
 # builds a key nobody will ever name a page.
 AUTHORS <- paste0(
-  "(", SURNAME, ")",
+  "(",
+  SURNAME,
+  ")",
   "(?:\\s+et\\s+al\\.",
-  "|(?:\\s*,\\s*", SURNAME, ")*(?:\\s*(?:,\\s*)?(?:&|and)\\s+", SURNAME, ")?",
+  "|(?:\\s*,\\s*",
+  SURNAME,
+  ")*(?:\\s*(?:,\\s*)?(?:&|and)\\s+",
+  SURNAME,
+  ")?",
   ")"
 )
 
@@ -198,12 +204,16 @@ shelf_backs <- function(key, surname, year, dir) {
     tail_lines <- text[seq(at[1], length(text))]
     stop_at <- which(!nzchar(trimws(tail_lines)))
     block <- paste(
-      tail_lines[seq_len(if (length(stop_at)) stop_at[1] - 1L else length(tail_lines))],
+      tail_lines[seq_len(
+        if (length(stop_at)) stop_at[1] - 1L else length(tail_lines)
+      )],
       collapse = " "
     )
     bare <- gsub("[^A-Za-z]", "", surname)
-    if (grepl(bare, gsub("[^A-Za-z]", "", block), ignore.case = TRUE) &&
-        grepl(year, block, fixed = TRUE)) {
+    if (
+      grepl(bare, gsub("[^A-Za-z]", "", block), ignore.case = TRUE) &&
+        grepl(year, block, fixed = TRUE)
+    ) {
       return(TRUE)
     }
   }

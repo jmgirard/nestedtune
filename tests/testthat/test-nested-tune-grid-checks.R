@@ -45,19 +45,25 @@ test_that("a workflow carrying no model spec is refused by nestedtune", {
   )
 
   expect_error(nested_tune_grid(prep_only, folds), "no model specification")
-  expect_error(nested_tune_grid(workflows::workflow(), folds),
-               "no model specification")
+  expect_error(
+    nested_tune_grid(workflows::workflow(), folds),
+    "no model specification"
+  )
 
   # The two shapes get different bullets: an empty workflow carries no
   # preprocessor either, and saying it does would describe the wrong object.
   expect_match(
-    conditionMessage(tryCatch(nested_tune_grid(prep_only, folds),
-                              error = function(e) e)),
+    conditionMessage(tryCatch(
+      nested_tune_grid(prep_only, folds),
+      error = function(e) e
+    )),
     "carries a preprocessor only"
   )
   expect_match(
-    conditionMessage(tryCatch(nested_tune_grid(workflows::workflow(), folds),
-                              error = function(e) e)),
+    conditionMessage(tryCatch(
+      nested_tune_grid(workflows::workflow(), folds),
+      error = function(e) e
+    )),
     "is empty"
   )
 
@@ -149,8 +155,10 @@ test_that("`grid` must be candidates or a positive whole number", {
   wf <- det_workflow(d)
   folds <- valid_folds(d)
 
-  expect_error(nested_tune_grid(wf, folds, grid = det_grid()[0, , drop = FALSE]),
-               "at least one candidate")
+  expect_error(
+    nested_tune_grid(wf, folds, grid = det_grid()[0, , drop = FALSE]),
+    "at least one candidate"
+  )
   expect_error(nested_tune_grid(wf, folds, grid = 0), "whole number")
   expect_error(nested_tune_grid(wf, folds, grid = -1), "whole number")
   expect_error(nested_tune_grid(wf, folds, grid = 2.5), "whole number")
@@ -167,8 +175,10 @@ test_that("`metrics` must be a metric set or NULL", {
   folds <- valid_folds(d)
 
   expect_error(nested_tune_grid(wf, folds, metrics = "rmse"), "metric_set")
-  expect_error(nested_tune_grid(wf, folds, metrics = yardstick::rmse),
-               "metric_set")
+  expect_error(
+    nested_tune_grid(wf, folds, metrics = yardstick::rmse),
+    "metric_set"
+  )
 })
 
 test_that("the checks fire before any fitting happens", {
@@ -256,7 +266,11 @@ test_that("the grid check fires before any fitting happens", {
 
   set.seed(1)
   before <- .Random.seed
-  expect_error(nested_tune_grid(wf, folds, grid = data.frame(not_a_param = 1:2)))
+  expect_error(nested_tune_grid(
+    wf,
+    folds,
+    grid = data.frame(not_a_param = 1:2)
+  ))
   expect_identical(.Random.seed, before)
 })
 
@@ -275,8 +289,10 @@ test_that("a non-rset element of inner_resamples is refused", {
   bad$inner_resamples[[2]] <- "not an rset"
 
   expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "inner_resamples")
-  cnd <- tryCatch(nested_tune_grid(wf, bad, grid = det_grid()),
-                  error = function(e) e)
+  cnd <- tryCatch(
+    nested_tune_grid(wf, bad, grid = det_grid()),
+    error = function(e) e
+  )
   # The position, so a design with many folds says which one to look at.
   expect_match(conditionMessage(cnd), "Element 2")
   expect_match(conditionMessage(cnd), "rset")
@@ -295,8 +311,10 @@ test_that("a non-rsplit element of splits is refused", {
   bad$splits[[1]] <- "not an rsplit"
 
   expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "splits")
-  cnd <- tryCatch(nested_tune_grid(wf, bad, grid = det_grid()),
-                  error = function(e) e)
+  cnd <- tryCatch(
+    nested_tune_grid(wf, bad, grid = det_grid()),
+    error = function(e) e
+  )
   expect_match(conditionMessage(cnd), "rsplit")
   expect_match(conditionMessage(cnd), "Element 1")
   expect_match(conditionMessage(cnd), "`resamples`")
@@ -324,8 +342,10 @@ test_that("an rsample design whose inside produced no rset is refused", {
   # And at the final fit, which used to abort further in -- from
   # eval_inside_spec(), only because re-evaluating `inside` also failed, naming
   # final_fit_worker() rather than the user's call.
-  cnd <- tryCatch(nested_final_fit(wf, bad, grid = det_grid()),
-                  error = function(e) e)
+  cnd <- tryCatch(
+    nested_final_fit(wf, bad, grid = det_grid()),
+    error = function(e) e
+  )
   expect_match(conditionMessage(cnd), "malformed")
   expect_match(conditionMessage(cnd), "inner_resamples")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
@@ -416,13 +436,18 @@ test_that("case weights are not mistaken for a preprocessor", {
   # not a preprocessor, so this workflow is empty of both.
   no_model <- workflows::workflow()
   no_model$pre$actions$case_weights <- TRUE
-  cnd <- tryCatch(nested_tune_grid(no_model, folds, grid = grid),
-                  error = function(e) e)
+  cnd <- tryCatch(
+    nested_tune_grid(no_model, folds, grid = grid),
+    error = function(e) e
+  )
   expect_match(conditionMessage(cnd), "no model specification")
   expect_match(conditionMessage(cnd), "is empty")
 
   # The predicate says yes to each of the three things that really preprocess.
-  expect_true(has_preprocessor(workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)))
+  expect_true(has_preprocessor(workflows::workflow(
+    y ~ x1 + x2 + x3 + x4,
+    spec
+  )))
   expect_true(has_preprocessor(
     workflows::workflow(recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d), spec)
   ))
@@ -464,11 +489,17 @@ test_that("the new refusals fire before the RNG is drawn from", {
       nested_final_fit(wf, bad, grid = det_grid())
     },
     function() {
-      no_pre <- workflows::add_model(workflows::workflow(), parsnip::linear_reg())
+      no_pre <- workflows::add_model(
+        workflows::workflow(),
+        parsnip::linear_reg()
+      )
       nested_tune_grid(no_pre, folds, grid = det_grid())
     },
     function() {
-      no_pre <- workflows::add_model(workflows::workflow(), parsnip::linear_reg())
+      no_pre <- workflows::add_model(
+        workflows::workflow(),
+        parsnip::linear_reg()
+      )
       nested_final_fit(no_pre, folds, grid = det_grid())
     }
   )

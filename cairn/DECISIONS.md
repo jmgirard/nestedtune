@@ -830,6 +830,41 @@ pkgdown floor. The milestone file `cairn/milestones/M32-tidymodels-org-conventio
 holds the sibling survey the choice rests on.
 
 
+### D-028 (2026-08-30): `air` is the repository's formatter, and the organization's `lock`, `pr-commands` and `format-suggest` workflows are vendored at their shared blobs — the first code-style convention `DESIGN.md` records, and it continues the organization convergence D-027 opened
+
+**Context:** M32 took the tidymodels organization's community files and site
+template; the three CI workflows every sibling runs were left for M33. One of
+them, `format-suggest.yaml`, runs `air format .` on a pull request and posts
+every difference as a review suggestion, so it presupposes a formatter this
+repo did not have — `DESIGN.md`'s Conventions recorded no code style at all,
+and nothing in `D-001` through `D-027` touches one.
+
+**Decision:** `air` is the formatter. A root `air.toml` carries the siblings'
+shape, `[format]` with `skip = ["tribble"]` (rsample and dials, minus rsample's
+package-specific `exclude`), and `.Rbuildignore` gains rsample's
+`^[\.]?air\.toml$` entry. `.github/workflows/lock.yaml`, `pr-commands.yaml`
+and `format-suggest.yaml` are vendored byte for byte at the modal blob of the
+nine-repository survey and are not adapted. Considered and rejected at the M33
+question gate: taking `format-suggest.yaml` without adopting a formatter, which
+on an unformatted tree posts a suggestion on nearly every line of every pull
+request; and pinning the vendored files' actions to commit shas, which would
+put each file off its modal blob.
+
+**Consequences:** The user-facing dependency surface is untouched — `air` is a
+standalone binary, declared in no `DESCRIPTION` field, and the three workflows
+add no R package. Three actions now hold write-capable tokens under moving tags
+(`r-lib/actions/pr-push@v2` under `contents: write`; `posit-dev/setup-air@v1`
+and `reviewdog/action-suggester@v1` under `pull-requests: write` on a
+`pull_request_target` trigger), where M17 review F10 pinned the pkgdown deploy
+action by sha on that same reasoning; the divergence is carried as a ROADMAP
+candidate rather than settled here, because vendoring at the shared blob is the
+whole point of the convergence. None of the three files carries a `push` or
+`pull_request` trigger, so `.github/ci-usage.py`'s filter rule does not reach
+them. Adopting the formatter also re-pointed a test helper's `file:line` ledger;
+the milestone file `cairn/milestones/M33-org-ci-workflows.md` holds the survey
+and the reformatting evidence.
+
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

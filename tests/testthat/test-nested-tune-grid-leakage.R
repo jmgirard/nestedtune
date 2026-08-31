@@ -14,7 +14,9 @@ record_handoffs <- function(wf, folds, grid, metrics) {
     list(
       completed = TRUE,
       metrics = data.frame(
-        .metric = "rmse", .estimator = "standard", .estimate = 0
+        .metric = "rmse",
+        .estimator = "standard",
+        .estimate = 0
       ),
       selected = data.frame(.config = "stub"),
       notes = nestedtune:::empty_notes()

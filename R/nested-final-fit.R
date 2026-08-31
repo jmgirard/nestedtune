@@ -193,7 +193,13 @@ nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
   seeds <- sample.int(.Machine$integer.max, 2L)
 
   final_fit_worker(
-    inside, data, env, seeds, object, grid, metrics,
+    inside,
+    data,
+    env,
+    seeds,
+    object,
+    grid,
+    metrics,
     call = rlang::current_env()
   )
 }
@@ -210,8 +216,16 @@ nested_final_fit <- function(object, resamples, grid = 10, metrics = NULL) {
 # specification is re-evaluated here, two frames below the function the user
 # called, so an abort left to name its own caller named this worker -- an
 # internal frame -- where every other check on this path names their call.
-final_fit_worker <- function(inside, data, env, seeds, object, grid, metrics,
-                             call = rlang::caller_env()) {
+final_fit_worker <- function(
+  inside,
+  data,
+  env,
+  seeds,
+  object,
+  grid,
+  metrics,
+  call = rlang::caller_env()
+) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
   # the specification is evaluated *after* the seed is set. Building an rset
   # draws from the RNG, and a draw made outside this scope would leave the run

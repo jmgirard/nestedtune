@@ -58,10 +58,13 @@ prime_daemons <- function() {
   # probe then queues behind it on every daemon and can ride out its whole bound.
   # M07's probe hid this by asking a single daemon, so whichever one was free
   # answered; asking all of them is what surfaced it.
-  collect_bounded(mirai::everywhere(
-    pkgload::load_all(path, quiet = TRUE),
-    .args = list(path = path)
-  ), seconds = PRIME_DAEMONS_BOUND_S)
+  collect_bounded(
+    mirai::everywhere(
+      pkgload::load_all(path, quiet = TRUE),
+      .args = list(path = path)
+    ),
+    seconds = PRIME_DAEMONS_BOUND_S
+  )
   invisible(TRUE)
 }
 
@@ -166,10 +169,14 @@ skip_if_no_daemons <- function() {
 lean_library <- function(keep = c("mirai", "nanonext")) {
   lib <- tempfile("nestedtune-lean-")
   dir.create(lib, recursive = TRUE, showWarnings = FALSE)
-  linked <- vapply(keep, function(pkg) {
-    src <- system.file(package = pkg)
-    nzchar(src) && isTRUE(file.symlink(src, file.path(lib, pkg)))
-  }, logical(1))
+  linked <- vapply(
+    keep,
+    function(pkg) {
+      src <- system.file(package = pkg)
+      nzchar(src) && isTRUE(file.symlink(src, file.path(lib, pkg)))
+    },
+    logical(1)
+  )
   if (!all(linked)) NULL else lib
 }
 
@@ -196,10 +203,13 @@ start_mixed_daemons <- function(lean_lib, timeout = MIXED_DAEMONS_BOUND_S) {
     system2(
       file.path(R.home("bin"), "Rscript"),
       c("--vanilla", "-e", shQuote(sprintf('mirai::daemon("%s")', url))),
-      env = env, wait = FALSE, stdout = FALSE, stderr = FALSE
+      env = env,
+      wait = FALSE,
+      stdout = FALSE,
+      stderr = FALSE
     )
   }
-  spawn(character(0))                                     # the full library
+  spawn(character(0)) # the full library
   spawn(sprintf(c("R_LIBS=%s", "R_LIBS_SITE=%s", "R_LIBS_USER=%s"), lean_lib))
 
   deadline <- Sys.time() + timeout

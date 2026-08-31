@@ -106,8 +106,10 @@ check_model_spec <- function(spec, call = rlang::caller_env()) {
 }
 
 check_nested <- function(resamples, call = rlang::caller_env()) {
-  if (!is.data.frame(resamples) ||
-      !all(c("splits", "inner_resamples") %in% names(resamples))) {
+  if (
+    !is.data.frame(resamples) ||
+      !all(c("splits", "inner_resamples") %in% names(resamples))
+  ) {
     cli::cli_abort(
       c(
         "{.arg resamples} must be a nested resampling design.",
@@ -158,7 +160,9 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
   # come back as tune's per-fold notes rather than as the call error they are
   # -- the same reason check_grid_params() refuses a malformed grid (GP3).
   check_column_class(
-    resamples, "splits", "rsplit",
+    resamples,
+    "splits",
+    "rsplit",
     hint = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
             carry one {.cls rsplit} per outer fold.",
     call = call
@@ -167,7 +171,9 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
   # commonest way of reaching this error: rsample builds the design whatever
   # `inside` returned. Only nestedtune's own constructor refuses it (M18).
   check_column_class(
-    resamples, "inner_resamples", "rset",
+    resamples,
+    "inner_resamples",
+    "rset",
     hint = "{.fn rsample::nested_cv} builds the design whatever its \\
             {.arg inside} argument returned; {.fn nested_resamples} refuses an \\
             {.arg inside} that produces no {.cls rset} when the design is built.",
@@ -182,8 +188,13 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
 # offending element, and a caller who fixes the named one gets told about the
 # next on the following call. Class inspection only -- nothing here evaluates
 # or draws, so it stays safe to run before the seeds are taken.
-check_column_class <- function(resamples, column, class, hint,
-                               call = rlang::caller_env()) {
+check_column_class <- function(
+  resamples,
+  column,
+  class,
+  hint,
+  call = rlang::caller_env()
+) {
   elements <- resamples[[column]]
   ok <- vapply(elements, inherits, logical(1), class)
   if (all(ok)) {
@@ -211,8 +222,13 @@ check_grid <- function(grid, call = rlang::caller_env()) {
     }
     return(invisible(grid))
   }
-  if (!is.numeric(grid) || length(grid) != 1L || is.na(grid) ||
-      grid < 1 || grid != trunc(grid)) {
+  if (
+    !is.numeric(grid) ||
+      length(grid) != 1L ||
+      is.na(grid) ||
+      grid < 1 ||
+      grid != trunc(grid)
+  ) {
     cli::cli_abort(
       c(
         "{.arg grid} must be a data frame of candidates or a single positive \\
@@ -317,7 +333,10 @@ eval_inside_spec <- function(inside, data, env, call = rlang::caller_env()) {
   # message thousands of lines long, which is the opposite of what this wrapper
   # is for. `nested_resamples()` took the same shape at M18 (`eval_spec()`);
   # before that it inlined, and this comment said so.
-  eval_env <- rlang::new_environment(list(.nestedtune_data = data), parent = env)
+  eval_env <- rlang::new_environment(
+    list(.nestedtune_data = data),
+    parent = env
+  )
   out <- tryCatch(
     eval(rlang::call_modify(inside, data = quote(.nestedtune_data)), eval_env),
     error = function(cnd) cnd
@@ -359,8 +378,12 @@ check_plot_type <- function(type, call = rlang::caller_env()) {
   if (identical(type, allowed)) {
     return(allowed[[1L]])
   }
-  if (is.character(type) && length(type) == 1L && !is.na(type) &&
-      type %in% allowed) {
+  if (
+    is.character(type) &&
+      length(type) == 1L &&
+      !is.na(type) &&
+      type %in% allowed
+  ) {
     return(type)
   }
   cli::cli_abort(

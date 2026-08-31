@@ -93,10 +93,16 @@ test_that("the dispatch gate recognises the payloads it must lean", {
   # The shapes that carry the right NAMES but the wrong contents. Each of these
   # would reach further into the payload than it can safely go, so each has to
   # be refused by its own clause rather than by the name check above.
-  real <- fat_payload(fixture_design(v = 3, inner_v = 3, n = 200, p = 3)$design, 1L)
+  real <- fat_payload(
+    fixture_design(v = 3, inner_v = 3, n = 200, p = 3)$design,
+    1L
+  )
   expect_false(is_fold_payload(list(split = "not a split", inner = real$inner)))
   expect_false(is_fold_payload(list(split = real$split, inner = "not an rset")))
-  expect_false(is_fold_payload(list(split = real$split, inner = real$inner[0, ])))
+  expect_false(is_fold_payload(list(
+    split = real$split,
+    inner = real$inner[0, ]
+  )))
   dataless <- real$inner
   dataless$splits <- lapply(dataless$splits, function(sp) {
     sp["data"] <- list(NULL)
@@ -115,8 +121,14 @@ test_that("an inner rset whose splits hold different frames is refused leaning",
   outer <- rsample::make_splits(list(analysis = 1:150, assessment = 151:200), d)
   heterogeneous <- rsample::manual_rset(
     list(
-      rsample::make_splits(list(analysis = 1:60, assessment = 61:100), d[1:100, ]),
-      rsample::make_splits(list(analysis = 1:60, assessment = 61:100), d[51:150, ])
+      rsample::make_splits(
+        list(analysis = 1:60, assessment = 61:100),
+        d[1:100, ]
+      ),
+      rsample::make_splits(
+        list(analysis = 1:60, assessment = 61:100),
+        d[51:150, ]
+      )
     ),
     c("i1", "i2")
   )
@@ -173,20 +185,26 @@ test_that("a leaned run puts under a quarter of the pre-milestone bytes on the w
     seq_len(n_folds),
     function(i) payload_bytes(fat_payload(fx$design, i)),
     numeric(1)
-  )) + n_folds * args_bytes
+  )) +
+    n_folds * args_bytes
 
   # `.args` grows by one copy of the data on the leaned path, and it is charged
   # per fold because mirai serializes `.args` once per task -- counting it once
   # per run would flatter this ratio by exactly the term the milestone added.
   lean_args_bytes <- payload_bytes(
-    list(object = payload_fixture_workflow(), grid = 3, metrics = NULL,
-         data = shared)
+    list(
+      object = payload_fixture_workflow(),
+      grid = 3,
+      metrics = NULL,
+      data = shared
+    )
   )
   lean_total <- sum(vapply(
     seq_len(n_folds),
     function(i) payload_bytes(lean_payload(fat_payload(fx$design, i), shared)),
     numeric(1)
-  )) + n_folds * lean_args_bytes
+  )) +
+    n_folds * lean_args_bytes
 
   expect_lt(lean_total / fat_total, 0.25)
 })
@@ -223,7 +241,8 @@ test_that("a fold whose outer frame is not the shared one carries its own", {
   fold_over <- function(d) {
     list(
       split = rsample::make_splits(
-        list(analysis = 1:150, assessment = 151:200), d
+        list(analysis = 1:150, assessment = 151:200),
+        d
       ),
       inner = rsample::vfold_cv(d[1:150, ], v = 3),
       seeds = c(1L, 2L)
@@ -276,7 +295,8 @@ test_that("a daemon receives the payload the serial branch would have passed", {
       list(
         completed = TRUE,
         metrics = data.frame(
-          .metric = "outer_rows", .estimate = nrow(payload$split$data)
+          .metric = "outer_rows",
+          .estimate = nrow(payload$split$data)
         ),
         selected = data.frame(
           inner_rows = nrow(payload$inner$splits[[1L]]$data),
@@ -284,7 +304,9 @@ test_that("a daemon receives the payload the serial branch would have passed", {
         ),
         grid = data.frame(inner_rows = 1L, .config = "pre0_mod1_post0"),
         notes = data.frame(
-          location = character(0), type = character(0), note = character(0)
+          location = character(0),
+          type = character(0),
+          note = character(0)
         )
       )
     }

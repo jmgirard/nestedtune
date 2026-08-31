@@ -24,7 +24,9 @@ completed_fold_task <- function(payload, object, grid, metrics) {
     selected = data.frame(mtry = 1L),
     grid = data.frame(mtry = 1L, .config = "pre0_mod1_post0"),
     notes = data.frame(
-      location = character(0), type = character(0), note = character(0)
+      location = character(0),
+      type = character(0),
+      note = character(0)
     )
   )
 }
@@ -66,7 +68,11 @@ test_that("an interrupted run leaves no fold executing", {
   # with nothing to connect it to its cause (M15 review F3).
   script <- sprintf(
     'i=0; while [ $i -lt 200 ]; do [ -f "%s" ] && [ -f "%s" ] && break; sleep 0.1; i=$((i+1)); done; if [ -f "%s" ] && [ -f "%s" ]; then sleep 0.5; kill -INT %d; fi',
-    markers[[1]], markers[[2]], markers[[1]], markers[[2]], Sys.getpid()
+    markers[[1]],
+    markers[[2]],
+    markers[[1]],
+    markers[[2]],
+    Sys.getpid()
   )
   system2("sh", c("-c", shQuote(script)), wait = FALSE)
 
@@ -113,7 +119,9 @@ test_that("a run that finished normally is unharmed by the cancel on the way out
   out <- without_pkgload_warning(
     dispatch_folds(
       list(list(value = 1), list(value = 2)),
-      object = NULL, grid = NULL, metrics = NULL
+      object = NULL,
+      grid = NULL,
+      metrics = NULL
     )
   )
 
