@@ -110,7 +110,7 @@ two-class test fixture, and the refusal path for a value outside the two.
       `tune::control_grid()` (`R/nested-tune-grid.R:390`).
 - [x] T3: pass `tune::control_last_fit(event_level = ...)` to the outer
       `last_fit()` (`R/nested-tune-grid.R:411`), which takes no control today.
-- [ ] T4: add `event_level` to `nested_final_fit()` and `final_fit_worker()`,
+- [x] T4: add `event_level` to `nested_final_fit()` and `final_fit_worker()`,
       set on the inner `tune::control_grid()` (`R/nested-final-fit.R:254`).
 - [ ] T5: build the two-class fixture in
       `tests/testthat/helper-orchestration.R` — a binary outcome, outer splits
@@ -146,6 +146,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: T1 — `check_event_level()` added beside `check_param_info()`; refuses a wrong string, a non-character, a length-2 character vector, `NA_character_`, `character(0)` and `NULL`, each with its own diagnosis bullet. `devtools::test()` 1670 pass, 0 fail.
 - 2026-08-31: T2 — `event_level` added to `nested_tune_grid()` after `metrics`, checked at entry, and threaded through `dispatch_folds()`, both dispatch shapes, `fold_task()` and `nested_fold_fit()` onto the inner `tune::control_grid()`. Six test stand-ins for `fold_task`/`nested_fold_fit` widened to the new signature, the two recorded formals vectors updated, and three shifted `helper-time-budget.R` line numbers re-pointed. `air format .` run; `devtools::test()` 1670 pass, 0 fail.
 - 2026-08-31: T3 — the outer `last_fit()` now receives `tune::control_last_fit(event_level = event_level)`; it took no control object before, so outer-fold metrics were computed at tune's default level whatever the inner run had been told. `allow_par` left at tune's default per the implementation gate. `devtools::test()` 1670 pass, 0 fail.
+- 2026-08-31: T4 — `event_level` added to `nested_final_fit()` and threaded through `final_fit_worker()` to its inner `tune::control_grid()`. Its outer step is `parsnip::fit()`, which computes no metrics, so there is no second site here. `devtools::test()` 1670 pass, 0 fail.
 
 ## Decisions
 

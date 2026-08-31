@@ -183,7 +183,8 @@ nested_final_fit <- function(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -192,6 +193,7 @@ nested_final_fit <- function(
   check_grid_params(object, grid)
   check_metrics(metrics)
   check_param_info(param_info)
+  check_event_level(event_level)
   inside <- check_inside_spec(resamples)
 
   env <- rlang::caller_env()
@@ -216,6 +218,7 @@ nested_final_fit <- function(
     grid,
     metrics,
     param_info = param_info,
+    event_level = event_level,
     call = rlang::current_env()
   )
 }
@@ -241,6 +244,7 @@ final_fit_worker <- function(
   grid,
   metrics,
   param_info = NULL,
+  event_level = "first",
   call = rlang::caller_env()
 ) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
@@ -257,7 +261,10 @@ final_fit_worker <- function(
     param_info = param_info,
     grid = grid,
     metrics = metrics,
-    control = tune::control_grid(allow_par = FALSE)
+    control = tune::control_grid(
+      allow_par = FALSE,
+      event_level = event_level
+    )
   )
   # Resolved from the tuned object rather than from `metrics`, so the same code
   # answers whether the caller supplied a metric set or let tune pick.

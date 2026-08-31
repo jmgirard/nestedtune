@@ -26,7 +26,15 @@ test_that("AC1: the three entry points carry `...` after their required argument
   )
   expect_identical(
     names(formals(nested_final_fit)),
-    c("object", "resamples", "...", "param_info", "grid", "metrics")
+    c(
+      "object",
+      "resamples",
+      "...",
+      "param_info",
+      "grid",
+      "metrics",
+      "event_level"
+    )
   )
   # All three of `nested_resamples()`'s arguments are required, so its barrier
   # is last rather than mid-signature.
