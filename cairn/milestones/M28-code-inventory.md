@@ -1104,3 +1104,243 @@ step. The gate authorization named the macOS job alone, so the merge stops here
 for a decision covering this one too.
 
 - 2026-08-30: status review → blocked at the merge gate. Every acceptance criterion is verified with fresh evidence, the consistency gate is clean, and all nine reviewer findings were fixed on the branch and re-verified — nothing about M28's own work is outstanding. The blocker is external: two CI jobs, `macos-latest (release)` and `ubuntu-latest (devel)`, are red on every run of this branch and of `origin/main` at `142aac3`, for reasons no package code reaches, and the user chose to fix both before merging rather than accept them. Captured as a ROADMAP candidate row; PR #38 stays open and no approval marker was written.
+
+---
+
+**Re-review after the M31 merge unblocked CI — evidence gathered 2026-08-30 on
+branch `m028-code-inventory` at `a462a2e`, against `origin/main` (0 behind, 25
+ahead; `main` has no unpushed commits and did not move since the merge).** PR
+https://github.com/tidymodels/nestedtune/pull/38, now out of draft. The branch
+changed since the last pass: `main` was merged in (M31's two CI fixes) and the
+nine fix-now findings of that pass landed on the deliverables. Every criterion
+was re-executed against the artifacts at this commit; nothing is carried forward.
+The pinned upstream trees were re-cloned fresh and their HEADs checked —
+`tidymodels/tune` at tag `v2.1.0` is `4c74638` and `tidymodels/rsample` at tag
+`v1.3.2` is `658545c`, the commits the note names.
+
+**AC1 — verified.** `cairn/references/code-inventory.md` is committed and carries
+the template's sections (Provenance, Scope, Evidence snapshot, "What the
+inventory is", ledger, Disposition, Open questions). The Provenance
+`Extraction:` line reads "read directly from `R/*.R` at `89d8418` … — observed
+2026-08-30" — a verification verb and a date; `cairn_validate`'s `references
+staleness` advisory does not name the page. The note states the extraction
+procedure verbatim as AC1 spells it. `git diff 89d8418..HEAD -- R/ NAMESPACE
+man/ DESCRIPTION` is empty, so the commit the note names still describes the
+tree. Re-running the procedure emits 106 definitions across 10 of the 12 files in
+`R/`; a script parsed the ledger and found 106 rows, no duplicate IDs or names,
+ledger name set equal to the extracted name set, every `file:line` identical to
+the extraction output, and every bucket one of the five (32 core, 38 furniture,
+16 glue, 12 resampling-layer, 8 ambiguous). Line counts were checked
+mechanically, not sampled: a script walked each of the 106 definitions from its
+stated line to the next closing brace at column one — **106 of 106 matched the
+ledger figure exactly**.
+
+**AC2 — verified.** All 16 `glue` row IDs appear in the `glue` section, each
+naming a fact about being inside tune. The section's premise was re-checked
+symbol by symbol against the fresh clone: all 13 tune symbols the page cites as
+exported are exported at exactly the `NAMESPACE` line given — `check_workflow`
+`:191`, `.has_preprocessor` `:157`, `.has_spec` `:161`, `.check_grid` `:136`,
+`check_metrics` `:186`, `check_metrics_arg` `:187`, `choose_framework` `:193`,
+`get_mirai_workers` `:237`, `mirai_installed` `:265`, `.config_key_from_metrics`
+`:138`, `.get_config_key` `:144`, `new_bare_tibble` `:267`, `load_pkgs` `:247` —
+**13 of 13 exact**. Each carries `#' @keywords internal` in its own block or the
+block its `@rdname` joins, confirmed by walking each symbol's roxygen: the
+`empty_ellipses` roster resolves (`.check_grid` `R/checks.R:65`, `check_workflow`
+`:311`, `check_metrics` `:391`, `.has_preprocessor` `R/grid_helpers.R:114`,
+`.has_spec` `:152`, `.config_key_from_metrics` `R/collect.R:615`,
+`.get_config_key` `R/loop_over_all_stages-helpers.R:410`, `new_bare_tibble`
+`R/utils.R:80`), as does `internal-parallel` (`R/parallel.R:49`, `:85`, `:114`),
+`choose_metric` (`check_metrics_arg` `R/metric-selection.R:305`, its topic's
+`@keywords internal` at `:35` and its "developer-facing functions" text), and
+`load_pkgs` on its own block (`R/load_ns.R:9`). The 7 symbols the note treats as
+genuinely unexported are absent from `NAMESPACE`: `check_installs`,
+`is_installed`, `check_extra_tune_parameters`, `new_note`, `append_log_notes`,
+`remove_log_notes`, `has_log_notes`. The claimed export-surface sizes hold — 152
+tune names, 62 rsample. Every one of the 137 non-ledger `file:line` citations in
+the two documents resolves in one of the three trees, and the load-bearing sites
+were read: `.get_config_key`'s two aborts (`:416`, `:425`) are F007's two
+`setdiff()` calls (`R/checks.R:261`, `:248`) and tune's own `check_workflow()`
+(`R/checks.R:314`) carries no already-fitted branch. The fact each entry names is
+the absent stability promise, not absent visibility — a fact about being inside
+tune, inside AC2's domain.
+
+**AC3 — verified.** All 12 `resampling-layer` row IDs appear in that section,
+each naming what rsample's surface would have to accept. Every cited rsample site
+resolves against the fresh clone: `nested_cv` `R/nested_cv.R:50`, the two
+`warn(boot_msg)` lines `:71` and `:77`, the unchecked `map(outside$splits,
+inside_resample, …)` `:88`, `attr(out, "inside") <- cl$inside` `:93`, the
+`as.data.frame(src)` copy in `inside_resample()` `:98-101`, `analysis`
+`R/rsplit.R:113`, `complement` `R/complement.R:22`, both `nested_cv` aborts in
+`R/labels.R` (`:15-17`, `:28-30`) and the repeated-design paste at `:31-36`,
+`pretty.nested_cv` `R/printing.R:112`, and the constructors the sweep declined —
+`make_splits()` `R/misc.R:18`, `new_rset()` `R/rset.R:14`, `populate()`
+`R/complement.R:126` — plus `reshuffle_rset()` `R/reshuffle_rset.R:16`,
+`.get_split_args()` `R/misc.R:142` and `get_rsplit()` `R/misc.R:209`, the three
+the last pass's fixes added.
+
+**AC4 — verified.** All 8 `ambiguous` row IDs (F001, F006, F007, F051, F052,
+F053, F059, F106) appear in the `ambiguous` section, each stating what pulls it
+toward two buckets rather than being forced into one; `[.nested_results` gets the
+same treatment in the addendum. F001's stated residue — the already-fitted
+refusal at `R/checks.R:20-29`, absent from tune's `check_workflow()` — and
+F006/F007's timing residue both re-read here.
+
+**AC5 — verified.** `NAMESPACE` at this commit carries 8 `export()` and 10
+`S3method()` lines; the note accounts for all 18. The 5 exports mapped to ledger
+entries check out by ID and name (F025 `nested_resamples`, F068
+`nested_tune_grid`, F021 `nested_final_fit`, F012 `extract_tune_results`, F015
+`extract_scored_candidates`), and a script confirms those are the only 5 ledger
+rows carrying export status `exported`. The 3 the extraction output does not
+define (`autoplot`, `collect_metrics`, `extract_workflow`) are listed as
+re-exports and excluded — the same three a script derives by subtracting the
+procedure's 106 names from the export list — and `R/reexports.R` holds exactly
+three bare `pkg::generic` statements. The 9 mapped S3 methods check out by ID and
+name; the tenth, `S3method("[",nested_results)`, is reconciled against the
+addendum. The exclusion is written as a subtraction rule, not a name registry.
+
+**AC6 — verified.** The draft exists at `benchmarks/upstream-asks.md`, unposted
+(line 3 says so, and nothing has been opened upstream). Its framing sentence
+"nestedtune continues as a package" is at line 13, ahead of the first ask heading
+(`## T-A1 …`, line 64). A script cross-checked all 28 `glue` and
+`resampling-layer` row IDs against the draft's level-2 sections: every one appears
+under **exactly one** section and none in the preamble — T-A1 4, T-A2 4, T-A3 5,
+T-A4 3, R-A1 3, R-A2 3, R-A3 1, R-A4 4, R-A5 1. No entry takes AC6's
+no-upstream-ask disjunct, F061 having moved under T-A1. Every `Retires: … N
+functions, ~M lines` figure was recomputed from the ledger's own line counts:
+**all 9 correct** for both the function count and the line total (38, 68, 45, 18,
+138, 104, 39, 63, 7).
+
+**Consistency gate — clean.** `cairn_validate.py` exits 0; all 16 PASS checks
+pass, including `scaffold present`, `coverage complete`, `binding criteria` and
+`references index<->disk`. Advisories: 18 `references staleness`, unchanged in
+count and none naming the new page, plus one `sizing` tripwire (16 tasks against
+the 10-task threshold — the rework tasks the two defect returns convened);
+`release window` OK. No `DESIGN.md` principle changed, so `cairn_impact.py` is
+skipped. Toolchain slot (`r-package`): `devtools::document()` leaves no diff
+under `R/`, `man/` or `NAMESPACE`; `devtools::check()` is 0 errors, 0 warnings,
+0 notes in 3m 28.1s; `devtools::test()` is FAIL 0, WARN 0, SKIP 0, PASS 1628;
+`pkgdown::check_pkgdown()` finds no problems; no `README.Rmd` exists; both new
+paths are `.Rbuildignore`d (`^cairn$` line 1, `^benchmarks$` line 11); the
+milestone has no user-visible change, so `NEWS.md` is owed no entry.
+
+**CI — green, all seven checks.** On PR #38 at `a462a2e`: `macos-latest
+(release)` 8m25s, `ubuntu-latest (devel)` 9m12s, `ubuntu-latest (release)`
+8m37s, `ubuntu-latest (oldrel-1)` 8m11s, `windows-latest (release)` 8m20s,
+`test-coverage` 6m7s, pkgdown `build` 2m21s (`deploy` skipped, not the default
+branch). The two jobs that were the merge blocker are green: M31 moved
+`macos-latest (release)` onto a source build of `gower` and raised the devel
+leg's job cap, and both pass here without an accepted-red exception.
+
+**Review routing.** Declared surface tier is internal and
+`git diff origin/main...HEAD --name-only` is markdown-only
+(`benchmarks/upstream-asks.md`, `cairn/ROADMAP.md`, this file,
+`cairn/references/INDEX.md`, `cairn/references/code-inventory.md`) with no
+script, hook or other executable surface — so single-reviewer mode: one
+fresh-context [O] diff-bug lens, the other two skipped.
+
+### Independent review — single [O] diff-bug lens, 8 findings
+
+Every reported finding and its disposition, ranked as the reviewer ranked them.
+Each was re-verified here against the implementation and the pinned clones, not
+against the reviewer's account of it. The reviewer's own mechanical pass agreed
+with the gate's on every count: 106/106 ledger rows correct for name, `file:line`,
+line count, export status and bucket; counts 32/38/16/12/8; the `NAMESPACE`
+reconciliation complete; all 28 draft placements correct; all nine `Retires:`
+sums right; ~45 upstream citations resolving; the kept-function arithmetic
+internally consistent (28 reached, 27 could go whole → 79, less 3 conditional →
+82). It found no repeat of a previously rejected finding.
+
+**I1. `benchmarks/upstream-asks.md:194-195, 197-198` — T-A3's distinguishing
+claim is false: tune exports the entry point onto all four logging helpers.**
+The draft says "the sweep found no exported counterpart for any of this, unlike
+T-A1 and T-A2" and "Neither is in tune's `NAMESPACE`". The two named symbols are
+indeed absent, but `.catch_and_log()` is exported at tune `NAMESPACE:135` and
+defined at `R/logging.R:228`, and its body calls `has_log_notes()`,
+`append_log_notes()` and `remove_log_notes()` — the exported route onto all four
+unexported names both documents cite. Verified here against `4c74638`. No
+criterion fails: AC2 asks each `glue` entry to name a fact about being inside
+tune, and F075–F079's stated fact (tune appends notes through that machinery
+rather than rebuilding them from `collect_notes()` output) is true and untouched;
+AC6's placement of F075–F079 under T-A3 stands, since T-A3's export ask would
+still retire them. But it is the fourth consecutive appearance of the defect
+class both defect returns turned on, this time inside the sweep built to end it.
+
+**I2. `cairn/references/code-inventory.md:290` and
+`benchmarks/upstream-asks.md:85-87` — there is a fourth `@keywords internal`
+topic, and F003's actual refusal lives in it.** The note says the cited symbols
+are documented "in one of three developer-facing topics or on a block of its
+own", and T-A1 scopes the requested promise to `empty_ellipses`, `choose_metric`
+and `load_pkgs`'s own block. tune also has `tune-internal-functions`, headed at
+`R/grid_performance.R:61-62` with `#' @keywords internal`, and `.load_namespace`
+— which `load_pkgs.model_spec()` delegates to and which both documents cite as
+exported — is a member (`R/load_ns.R:40`, `@rdname tune-internal-functions`).
+`.catch_and_log` is in the same topic. Verified here. So the last pass's H7 fix
+widened the remedy by one block and still leaves F003's route uncovered. No
+criterion quantifies over it.
+
+**I3. `cairn/references/code-inventory.md:99` vs `:102` — the sweep
+self-contradicts on its own hit count, and the claim attached to the number is
+wrong too.** Line 99 says a name match "would have missed two of the three hits
+below"; line 102 says the sweep "found four counterparts this page had missed",
+and four are listed. Beyond the count, a name match would have missed all four:
+`scored_candidates_impl` against `.config_key_from_metrics` and
+`check_grid_params` against `.get_config_key` share no substring either. Verified
+by reading both passages. No criterion quantifies over it, but it is an
+arithmetic error inside the instrument's own self-description.
+
+**I4. `cairn/references/code-inventory.md:281` — "Thirteen such symbols are cited
+on this page" undercounts by at least six.** Also cited on the page and exported
+at v2.1.0: `.has_preprocessor_recipe` (`NAMESPACE:159`),
+`.has_preprocessor_formula` (`:158`), `.has_preprocessor_variables` (`:160`),
+`.load_namespace` (`:163`), `estimate_tune_results` (`:209`) and `collect_notes`
+(`:197`) — all six confirmed present here. The true figure is at least 19. This
+is distinct from the last pass's H8, which was about provenance credit for the
+count rather than the count itself. No criterion quantifies over it.
+
+**I5. `cairn/references/code-inventory.md:34-35` vs `:96-97` — the sweep's stated
+domain and its stated count disagree, and the gap drops one bucketed entry.** The
+evidence snapshot says the export lists were read "against every entry this page
+does not bucket `core` or `furniture`"; the sweep section fixes the domain at
+"the 36 entries this page buckets `glue` (16), `resampling-layer` (12) or
+`ambiguous` (8)". The addendum `` `[.nested_results` `` is bucketed `ambiguous`
+and so falls in the snapshot's domain but outside the 36. No criterion
+quantifies over it — AC4 asks only for a stated reason, which the addendum gives.
+
+**I6. `benchmarks/upstream-asks.md:256` — off-by-one, inconsistent with the
+note's own ledger.** The draft cites `pool_is_cancellable()` at `R/parallel.R:47`;
+the definition is at `:46`, which is what ledger row F086 records. Editorial.
+
+**I7. `cairn/references/code-inventory.md:546` — "validates the same triple"
+overstates tune's `.check_grid()` for F006.** `.check_grid()`'s `nrow() == 0L`
+test is on `pset`, not on the grid, so it has no counterpart to F006's zero-row
+refusal (`R/checks.R:206-211`), and it coerces with `as.integer(grid[1])` rather
+than refusing a non-integral numeric, F006's `grid != trunc(grid)` branch. Both
+read here. F006 is `ambiguous` and AC4 asks only for the reason it resists a
+bucket, which the timing argument supplies independently — precision defect, no
+criterion.
+
+**I8. `cairn/references/code-inventory.md` — `add_resample_id()` goes unmentioned
+for F067.** rsample exports `add_resample_id()` (`R/labels.R:92`,
+`NAMESPACE:373`, fully documented, not `@keywords internal`), the neighbour of
+the `labels` machinery F067 is argued against. It cbinds a split's label tibble
+rather than pasting an rset's `^id` columns, so the note's claim survives — the
+same half-counterpart shape as the last pass's H9, which the sweep names for
+`get_rsplit()` and `populate()` but not for this one. No criterion quantifies
+over it.
+
+**Return floor.** No finding demonstrates an acceptance criterion failing inside
+its own quantified domain, and each was checked against the criterion's text
+rather than its gist: I1 leaves AC2's named fact and AC6's placement intact; I2,
+I3, I4, I5, I6 and I8 are statements no criterion quantifies over; I7 falls
+outside AC4's stated-reason requirement. AC1, AC2, AC3, AC4, AC5 and AC6 all hold
+against their own text on this pass's evidence. The remaining question is the
+maintainer's half of the floor — whether I1, taken with I2 through I5, is a
+load-bearing defect in what the two documents do for their readers.
+
+**Thrash rule.** This is the fourth review pass; two defect returns stand on the
+record, so a third would fire trigger (a), whose recommended disposition is
+descope-or-park rather than another retry. Trigger (b) is already recorded as
+fired on AC6. I1–I5 are a fourth instance of the class both returns turned on —
+a claim about an upstream export surface the instrument in hand did not reach —
+this time found inside the stated, re-runnable sweep that was supposed to end it,
+and in prose no acceptance criterion quantifies over.
