@@ -104,7 +104,7 @@ CI workflow change → M33.
       pkgdown workflow's absent-page loop and `pkgdown::check_pkgdown()`
       against that build.
 - [x] T5: Add the lifecycle badge to `README.md`.
-- [ ] T6: Append the D-entry extending D-022 with `tidyverse/tidytemplate` and
+- [x] T6: Append the D-entry extending D-022 with `tidyverse/tidytemplate` and
       recording the template switch; add the `NEWS.md` bullet for the site's
       changed appearance.
 - [ ] T7: Run `devtools::document()`, `devtools::test()` and
@@ -126,6 +126,8 @@ CI workflow change → M33.
 - 2026-08-30: T4 — local `pkgdown::build_site(new_process = FALSE, install = FALSE)` completed after installing the package and tidytemplate, mirroring the workflow by moving `CLAUDE.md` and `.github/ci-usage-baseline.md` aside for the build and back afterwards. `docs/CODE_OF_CONDUCT.html` and `docs/CONTRIBUTING.html` both written; the workflow's absent-page loop over `docs/CLAUDE.html` and `docs/ci-usage-baseline.html` exits 0 against that build, and `docs/index.html` and `docs/articles/nested-cv.html` are present. `pkgdown::check_pkgdown()` reports no problems.
 
 - 2026-08-30: T5 — README's badge block gains the lifecycle badge first, in tune's exact markup (shields.io `lifecycle-experimental-orange`, linking `https://lifecycle.r-lib.org/articles/stages.html` with no fragment). No CRAN or downloads badge added.
+
+- 2026-08-30: T6 — D-027 records the template switch and the `tidyverse/tidytemplate` declaration, extending D-022; NEWS gains one bullet for the site's new look, its two community pages and the README's experimental badge.
 
 ## Decisions
 

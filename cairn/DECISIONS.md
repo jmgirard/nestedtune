@@ -798,6 +798,38 @@ whatever milestone takes the housekeeping row. Nothing here changes release
 timing, which stays user-declared.
 
 
+### D-027 (2026-08-30): `tidyverse/tidytemplate` joins `Config/Needs/website` and builds the site — extends the site-tooling declaration D-022 opened, and is the first dependency named by GitHub repository rather than by package name
+
+**Context:** `_pkgdown.yml` has carried pkgdown's stock `template: bootstrap: 5`
+since M17, where every tidymodels sibling surveyed at M32 sets
+`template: package: tidytemplate` with the organization's `bslib` colour. The
+builder for that theme is not on CRAN; it is installed from
+`tidyverse/tidytemplate`. D-022 settled the analogous question for pkgdown
+itself, declaring it in `DESCRIPTION` rather than in the deploy workflow's
+`extra-packages` line.
+
+**Decision:** `Config/Needs/website` reads `pkgdown, tidyverse/tidytemplate`, and
+`_pkgdown.yml` names `package: tidytemplate` with `bootstrap: 5` and `bslib`
+`primary`/`danger` at `#CA225E`. `.github/workflows/pkgdown.yaml` is unchanged:
+its `setup-r-dependencies` step already names only `local::.` with
+`needs: website`, so the DESCRIPTION field is what the deploy actually resolves.
+Considered and rejected at the M32 question gate, on D-022's reasoning: naming
+the builder in `extra-packages`, which would install it either way and leave the
+DESCRIPTION field decorative. Also rejected: staying on the stock look, which
+would drop the half of M32 that makes the site match the organization.
+
+**Consequences:** The user-facing install weight is unchanged — `Config/Needs/*`
+is read by CI tooling and never by `install.packages()` — and the hard-dependency
+surface is untouched. It is the first entry in that field spelled as an
+`owner/repo` reference rather than a CRAN package name, so the field now depends
+on `pak` resolving GitHub-style entries, which the local install at M32 T3
+exercised and the deploy job exercises on every publish. A theme package outside
+CRAN also means the site's appearance can change under this repo without a
+commit here; nothing pins it, on the same reasoning D-022 gave for declining a
+pkgdown floor. The milestone file `cairn/milestones/M32-tidymodels-org-conventions.md`
+holds the sibling survey the choice rests on.
+
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
