@@ -19,7 +19,8 @@ nested_tune_grid(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 )
 ```
 
@@ -80,6 +81,17 @@ nested_tune_grid(
   [`yardstick::metric_set()`](https://yardstick.tidymodels.org/reference/metric_set.html),
   or `NULL` to use tune's defaults for the model's mode. The first
   metric in the set selects the best inner candidate.
+
+- event_level:
+
+  `"first"` (the default) or `"second"`, naming which level of a
+  two-class outcome factor is the event. It reaches both loops: the
+  inner tuning run, where it decides which candidate is selected, and
+  the outer scoring fit, where it decides what the reported metrics
+  mean. Metrics that do not distinguish the two levels – accuracy,
+  `roc_auc`, `brier_class` – are unaffected by it; `sens`, `spec`,
+  `precision` and their relatives are not. Ignored for a regression
+  model, as it is in tune.
 
 ## Value
 
@@ -144,11 +156,14 @@ This makes any single fold reproducible by hand. Fold `i` is exactly:
     set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
     tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-                       metrics = metrics, control = control_grid(allow_par = FALSE))
+                       metrics = metrics,
+                       control = control_grid(allow_par = FALSE,
+                                              event_level = event_level))
     final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
     set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
-    last_fit(final, resamples$splits[[i]], metrics = metrics)
+    last_fit(final, resamples$splits[[i]], metrics = metrics,
+             control = control_last_fit(event_level = event_level))
 
 The caller's RNG state and generator kind are restored on exit,
 including when the call errors, so a seeded script that draws afterwards
@@ -345,10 +360,26 @@ worker died.
 
 ## Differences from calling tune directly
 
-Inner tuning always runs with `control_grid(allow_par = FALSE)`, forced
-rather than left to chance, and there is deliberately no `control`
-argument to override it. Parallelism belongs over the outer folds, as
-above.
+There is no `control` argument. What tune's control objects settle is
+settled here instead by the arguments above, or forced.
+
+Settable: `event_level`, which reaches the inner `control_grid()` and
+the outer `control_last_fit()` alike.
+
+Forced: both tune calls a fold makes – the inner tuning run and the
+outer scoring fit – run at `allow_par = FALSE`. Parallelism belongs over
+the outer folds, as above, and leaving that to a caller would put two
+pools in contention.
+
+Not offered: the slots that would have nothing to act on here.
+`save_pred`, `extract` and `save_workflow` land on the inner
+`tune_results`, which each fold record discards once the fold succeeds;
+`parallel_over`, `backend_options` and `workflow_size` are inert under
+`allow_par = FALSE`; `pkgs` is redundant serially, and on the parallel
+path the daemon pre-flight has already required this package's namespace
+in every worker; and `verbose` would print from a mirai daemon where
+nothing shows it, and duplicate the progress the outer loop reports
+where the run is serial.
 
 ## See also
 

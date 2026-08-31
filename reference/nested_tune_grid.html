@@ -67,7 +67,8 @@ parameters rather than discarding them.</p>
 <span>  <span class="va">...</span>,</span>
 <span>  param_info <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  grid <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  metrics <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  metrics <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  event_level <span class="op">=</span> <span class="st">"first"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -115,6 +116,16 @@ anything is fitted: every column must name a parameter marked with
 <dd><p>A <code><a href="https://yardstick.tidymodels.org/reference/metric_set.html" class="external-link">yardstick::metric_set()</a></code>, or <code>NULL</code> to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner
 candidate.</p></dd>
+
+
+<dt id="arg-event-level">event_level<a class="anchor" aria-label="anchor" href="#arg-event-level"></a></dt>
+<dd><p><code>"first"</code> (the default) or <code>"second"</code>, naming which level
+of a two-class outcome factor is the event. It reaches both loops: the
+inner tuning run, where it decides which candidate is selected, and the
+outer scoring fit, where it decides what the reported metrics mean.
+Metrics that do not distinguish the two levels – accuracy, <code>roc_auc</code>,
+<code>brier_class</code> – are unaffected by it; <code>sens</code>, <code>spec</code>, <code>precision</code> and
+their relatives are not. Ignored for a regression model, as it is in tune.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -173,11 +184,14 @@ folds are executed in, the result is the same however the loop is scheduled.</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(res<span class="sc">$</span>.tuning_seed[[i]], <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>tuned <span class="ot">&lt;-</span> <span class="fu">tune_grid</span>(object, resamples<span class="sc">$</span>inner_resamples[[i]], <span class="at">grid =</span> grid,</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>                   <span class="at">metrics =</span> metrics, <span class="at">control =</span> <span class="fu">control_grid</span>(<span class="at">allow_par =</span> <span class="cn">FALSE</span>))</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>final <span class="ot">&lt;-</span> <span class="fu">finalize_workflow</span>(object, <span class="fu">select_best</span>(tuned, <span class="at">metric =</span> <span class="sc">&lt;</span>first metric<span class="sc">&gt;</span>))</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">set.seed</span>(res<span class="sc">$</span>.outer_fit_seed[[i]], <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="fu">last_fit</span>(final, resamples<span class="sc">$</span>splits[[i]], <span class="at">metrics =</span> metrics)</span></code></pre><p></p></div>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>                   <span class="at">metrics =</span> metrics,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>                   <span class="at">control =</span> <span class="fu">control_grid</span>(<span class="at">allow_par =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>                                          <span class="at">event_level =</span> event_level))</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>final <span class="ot">&lt;-</span> <span class="fu">finalize_workflow</span>(object, <span class="fu">select_best</span>(tuned, <span class="at">metric =</span> <span class="sc">&lt;</span>first metric<span class="sc">&gt;</span>))</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="fu">set.seed</span>(res<span class="sc">$</span>.outer_fit_seed[[i]], <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="fu">last_fit</span>(final, resamples<span class="sc">$</span>splits[[i]], <span class="at">metrics =</span> metrics,</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>         <span class="at">control =</span> <span class="fu">control_last_fit</span>(<span class="at">event_level =</span> event_level))</span></code></pre><p></p></div>
 <p>The caller's RNG state and generator kind are restored on exit, including
 when the call errors, so a seeded script that draws afterwards is unaffected
 — the same contract <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune::tune_grid()</a></code> gives. One consequence worth knowing:
@@ -339,9 +353,22 @@ discard every completed fold whenever a single worker died.</p>
 
 
 
-<p>Inner tuning always runs with <code>control_grid(allow_par = FALSE)</code>, forced
-rather than left to chance, and there is deliberately no <code>control</code> argument
-to override it. Parallelism belongs over the outer folds, as above.</p>
+<p>There is no <code>control</code> argument. What tune's control objects settle is
+settled here instead by the arguments above, or forced.</p>
+<p>Settable: <code>event_level</code>, which reaches the inner <code>control_grid()</code> and the
+outer <code>control_last_fit()</code> alike.</p>
+<p>Forced: both tune calls a fold makes – the inner tuning run and the outer
+scoring fit – run at <code>allow_par = FALSE</code>. Parallelism belongs over the
+outer folds, as above, and leaving that to a caller would put two pools in
+contention.</p>
+<p>Not offered: the slots that would have nothing to act on here. <code>save_pred</code>,
+<code>extract</code> and <code>save_workflow</code> land on the inner <code>tune_results</code>, which each
+fold record discards once the fold succeeds; <code>parallel_over</code>,
+<code>backend_options</code> and <code>workflow_size</code> are inert under <code>allow_par = FALSE</code>;
+<code>pkgs</code> is redundant serially, and on the parallel path the daemon pre-flight
+has already required this package's namespace in every worker; and <code>verbose</code>
+would print from a mirai daemon where nothing shows it, and duplicate the
+progress the outer loop reports where the run is serial.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

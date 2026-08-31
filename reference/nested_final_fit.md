@@ -16,7 +16,8 @@ nested_final_fit(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 )
 ```
 
@@ -75,6 +76,16 @@ nested_final_fit(
   [`yardstick::metric_set()`](https://yardstick.tidymodels.org/reference/metric_set.html),
   or `NULL` to use tune's defaults for the model's mode. The first
   metric in the set selects the best candidate.
+
+- event_level:
+
+  `"first"` (the default) or `"second"`, naming which level of a
+  two-class outcome factor is the event. It reaches the tuning run,
+  where it decides which candidate is selected; the final fit itself
+  scores nothing, so there is no second place for it to act. Metrics
+  that do not distinguish the two levels – accuracy, `roc_auc`,
+  `brier_class` – are unaffected by it. Ignored for a regression model,
+  as it is in tune.
 
 ## Value
 
@@ -145,8 +156,8 @@ The run is reproducible by hand from those two seeds alone:
     set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
     inner <- <the design's `inside` specification>(data)
-    tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
-                       control = control_grid(allow_par = FALSE))
+    tuned <- tune_grid(object, inner, grid = grid, metrics = metrics, control =
+      control_grid(allow_par = FALSE, event_level = event_level))
     final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
     set.seed(fit$fit_seed, kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
