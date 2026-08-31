@@ -11,7 +11,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/tidymodels/nestedtune,
-    https://nestedtune.tidymodels.org/
+   https://nestedtune.tidymodels.org/
 BugReports: https://github.com/tidymodels/nestedtune/issues
 Depends:
     R (>= 4.1)
@@ -38,6 +38,6 @@ Suggests:
     vdiffr,
     yardstick
 VignetteBuilder: knitr
-Config/Needs/website: pkgdown, tidyverse/tidytemplate
+Config/Needs/website: tidymodels, tidyverse/tidytemplate, pkgdown
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
