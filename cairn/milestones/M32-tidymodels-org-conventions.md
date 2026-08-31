@@ -103,7 +103,7 @@ CI workflow change → M33.
 - [x] T4: Build the site locally, confirm the two new pages exist, and run the
       pkgdown workflow's absent-page loop and `pkgdown::check_pkgdown()`
       against that build.
-- [ ] T5: Add the lifecycle badge to `README.md`.
+- [x] T5: Add the lifecycle badge to `README.md`.
 - [ ] T6: Append the D-entry extending D-022 with `tidyverse/tidytemplate` and
       recording the template switch; add the `NEWS.md` bullet for the site's
       changed appearance.
@@ -124,6 +124,8 @@ CI workflow change → M33.
 - 2026-08-30: T3 — `Config/Needs/website` reads `pkgdown, tidyverse/tidytemplate`, the route chosen at the question gate. Installed locally the way the workflow's `setup-r-dependencies` step resolves it: `pak::pak("tidyverse/tidytemplate")` fetched and built tidytemplate 1.0.0 at GitHub `f7bdedf`.
 
 - 2026-08-30: T4 — local `pkgdown::build_site(new_process = FALSE, install = FALSE)` completed after installing the package and tidytemplate, mirroring the workflow by moving `CLAUDE.md` and `.github/ci-usage-baseline.md` aside for the build and back afterwards. `docs/CODE_OF_CONDUCT.html` and `docs/CONTRIBUTING.html` both written; the workflow's absent-page loop over `docs/CLAUDE.html` and `docs/ci-usage-baseline.html` exits 0 against that build, and `docs/index.html` and `docs/articles/nested-cv.html` are present. `pkgdown::check_pkgdown()` reports no problems.
+
+- 2026-08-30: T5 — README's badge block gains the lifecycle badge first, in tune's exact markup (shields.io `lifecycle-experimental-orange`, linking `https://lifecycle.r-lib.org/articles/stages.html` with no fragment). No CRAN or downloads badge added.
 
 ## Decisions
 
