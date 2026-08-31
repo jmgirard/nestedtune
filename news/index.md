@@ -2,6 +2,36 @@
 
 ## nestedtune 0.0.0.9000
 
+- Breaking: an operation that changes which outer folds a
+  `nested_results` holds now returns a plain tibble instead of a
+  `nested_results`. `slice()`,
+  [`head()`](https://rdrr.io/r/utils/head.html), `x[1, ]`, `x[-1, ]`, a
+  [`filter()`](https://rdrr.io/r/stats/filter.html) that drops a failed
+  fold and `bind_rows()` all take this branch, and so does dropping any
+  of the columns the run is recorded in. Previously `dplyr::slice(x, 1)`
+  returned a one-row object still headed
+  `Outer resamples: 3-fold cross-validation` and still reporting three
+  outer folds attempted, and `x[1, ]` returned a one-row object that
+  went on claiming to be a results object.
+
+  Operations that leave the set of folds alone keep the class and the
+  run’s record: reordering rows with `arrange()`, adding a column with
+  `mutate()` or `bind_cols()`, reordering columns with `relocate()`, and
+  a `left_join()` that matches one row apiece. These are the invariants
+  `tune` declares on its own results objects.
+
+- `dplyr` is now a hard dependency. It was already installed alongside
+  nestedtune, since `tune` requires it.
+
+- Fixed fold labels in `collect_metrics(summarize = FALSE)` and in the
+  partial-run warning, which pasted in any column whose name began with
+  `id`. Adding a column called `id_extra` to a results object reported
+  the folds as `Fold1, x` rather than `Fold1`. Only the columns the
+  resampling design itself names — `id`, and `id2` for a repeated design
+  — are read as fold labels now. A column you add is left out of them
+  unless you name it `id` or `id` followed by digits, which is how the
+  design spells its own.
+
 - Fixed a failure where every outer fold errored under parallel
   processing if the workflow’s recipe used unqualified selectors such as
   `all_numeric_predictors()`. The packages a workflow declares are now

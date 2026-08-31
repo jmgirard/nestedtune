@@ -156,9 +156,30 @@ and is therefore absent from <code>.grid</code> — <code>.notes</code> is where
 recorded. A fold that scored no candidate at all carries a zero-row table,
 never <code>NULL</code>.</p>
 <p><code>attr(x, "metrics")</code> holds the <code>metrics</code> argument, and is absent rather
-than <code>NULL</code> when none was supplied. Subsetting rows carries both
-attributes unchanged, since they describe the call rather than the rows
-kept; <code>.grid</code> is a column, so it travels with the fold it describes.</p>
+than <code>NULL</code> when none was supplied. <code>.grid</code> is a column, so it travels
+with the fold it describes.</p>
+<p><strong>What an operation on the object may and may not do.</strong> The result carries
+the invariants <code>tune</code> declares on its own results objects:</p><ul><li><p>rows may be reordered, but never added or removed;</p></li>
+<li><p>columns may be added or reordered;</p></li>
+<li><p>every column listed above must still be present, holding the values it
+held.</p></li>
+</ul><p>An operation that stays inside those rules — <code>arrange()</code>, <code>mutate()</code>
+adding a column, a join that matches one row apiece — returns a
+<code>nested_results</code> with the call's record intact. Anything else — <code>slice()</code>,
+a <code><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter()</a></code> that drops a fold, <code>bind_rows()</code>, <code>x[1, ]</code>, dropping one of
+the columns above — returns a bare tibble, with the record removed along
+with the class. A three-row object cannot honestly describe itself as the
+ten-fold design it was cut from, so it stops describing itself at all and
+hands back the data.</p>
+<p>The rule is enforced where dplyr asks for it, in a <code>dplyr_reconstruct()</code>
+method, which the verbs above and <code>[</code> all reach. An operation that never
+gets there is outside it, and two do. <code>rename()</code> is implemented as
+<code>set_names()</code> and reaches the object through <strong>vctrs</strong>, so renaming one of
+the columns listed above returns a <code>nested_results</code> that no longer has it.
+<code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code> likewise goes through <strong>vctrs</strong> rather than dplyr, so it adds
+rows and keeps the class, leaving the counts describing the object it was
+built from. Treat both as gaps rather than as further invariants; the
+vctrs methods that would close them are not written yet.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -228,9 +249,10 @@ then failed while selecting from the results. Only a fold that never reached
 a scored candidate at all — tuning itself raised, or every candidate failed —
 holds a zero-row table. No fold is reported as having searched a grid it did
 not.</p>
-<p>Subsetting rows recomputes <code>folds_attempted</code> and <code>folds_completed</code> for the
-rows kept, so the counts always describe the object in hand. Dropping the
-<code>.completed</code> column drops the <code>nested_results</code> class with it.</p>
+<p>Any operation outside the invariants stated under <strong>Value</strong> above returns a
+bare tibble, and both counts go with the class rather than being recomputed
+for whatever rows are left. Dropping the <code>.completed</code> column is one such
+operation.</p>
 <p>The run warns when it finishes with any fold unfinished, and
 <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code> warns again, summarizing only the folds that ran and
 reporting how many those were. It refuses outright when no fold completed:

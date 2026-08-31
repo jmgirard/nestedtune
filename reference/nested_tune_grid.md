@@ -127,9 +127,39 @@ its failure is recorded. A fold that scored no candidate at all carries
 a zero-row table, never `NULL`.
 
 `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
-than `NULL` when none was supplied. Subsetting rows carries both
-attributes unchanged, since they describe the call rather than the rows
-kept; `.grid` is a column, so it travels with the fold it describes.
+than `NULL` when none was supplied. `.grid` is a column, so it travels
+with the fold it describes.
+
+**What an operation on the object may and may not do.** The result
+carries the invariants `tune` declares on its own results objects:
+
+- rows may be reordered, but never added or removed;
+
+- columns may be added or reordered;
+
+- every column listed above must still be present, holding the values it
+  held.
+
+An operation that stays inside those rules — `arrange()`, `mutate()`
+adding a column, a join that matches one row apiece — returns a
+`nested_results` with the call's record intact. Anything else —
+`slice()`, a [`filter()`](https://rdrr.io/r/stats/filter.html) that
+drops a fold, `bind_rows()`, `x[1, ]`, dropping one of the columns above
+— returns a bare tibble, with the record removed along with the class. A
+three-row object cannot honestly describe itself as the ten-fold design
+it was cut from, so it stops describing itself at all and hands back the
+data.
+
+The rule is enforced where dplyr asks for it, in a `dplyr_reconstruct()`
+method, which the verbs above and `[` all reach. An operation that never
+gets there is outside it, and two do. `rename()` is implemented as
+`set_names()` and reaches the object through **vctrs**, so renaming one
+of the columns listed above returns a `nested_results` that no longer
+has it. [`rbind()`](https://rdrr.io/r/base/cbind.html) likewise goes
+through **vctrs** rather than dplyr, so it adds rows and keeps the
+class, leaving the counts describing the object it was built from. Treat
+both as gaps rather than as further invariants; the vctrs methods that
+would close them are not written yet.
 
 ## Details
 
@@ -206,10 +236,10 @@ Only a fold that never reached a scored candidate at all — tuning itself
 raised, or every candidate failed — holds a zero-row table. No fold is
 reported as having searched a grid it did not.
 
-Subsetting rows recomputes `folds_attempted` and `folds_completed` for
-the rows kept, so the counts always describe the object in hand.
-Dropping the `.completed` column drops the `nested_results` class with
-it.
+Any operation outside the invariants stated under **Value** above
+returns a bare tibble, and both counts go with the class rather than
+being recomputed for whatever rows are left. Dropping the `.completed`
+column is one such operation.
 
 The run warns when it finishes with any fold unfinished, and
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
