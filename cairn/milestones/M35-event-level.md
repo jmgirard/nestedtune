@@ -62,29 +62,39 @@ two-class test fixture, and the refusal path for a value outside the two.
       `event_level` — the metric computed by yardstick directly, no `tune`
       scoring function involved. The values reported at `"first"` and
       `"second"` differ.
-- [ ] AC3: on that fixture, whose outer splits are stratified on the outcome so
-      both classes appear in every assessment set, the sensitivity
-      `nested_tune_grid()` reports at `event_level = "second"` equals the
-      specificity it reports at `"first"`, and the specificity at `"second"`
-      equals the sensitivity at `"first"` — both runs at the same seed under
-      `yardstick::metric_set(sens, spec)`.
+- [ ] AC3: on the two-class fixture, the two `nested_tune_grid()` runs at the
+      same seed under `yardstick::metric_set(roc_auc, sens, spec)` complete
+      every outer fold, have `.selected` identical, and on every fold the
+      sensitivity at `event_level = "second"` equals the specificity at
+      `"first"` and the specificity at `"second"` equals the sensitivity at
+      `"first"`. `roc_auc` leads the set so that selection is level-invariant:
+      `select_best()` reads the tuned object's first metric name, and under a
+      `sens`-led set the two runs select different candidates and the identity
+      fails on correct code. The criterion establishes symmetry, not which
+      level is which; AC2 is the absolute anchor.
 - [ ] AC4: `nested_final_fit()` sets the caller's `event_level` on its inner
       `tune::control_grid()`. On the two-class fixture under
-      `yardstick::metric_set(sens, spec)`, the tuning run
+      `yardstick::metric_set(roc_auc, sens, spec)`, the tuning run
       `extract_tune_results()` returns at `"second"` reports the metric values
-      a `tune::tune_grid()` the test runs itself under
-      `control_grid(allow_par = FALSE, event_level = "second")` reports at the
-      same seed, and values differing from the same object built at `"first"`.
-      The metric set is named because tune's default classification metrics —
-      accuracy, brier_class, roc_auc — return byte-identical values at the two
-      levels, so the difference clause is unsatisfiable under them.
-- [ ] AC5: on the two-class fixture under `metric_set(sens, spec)` and
-      `event_level = "second"`, a `nested_tune_grid()` run at 2 mirai daemons
-      and the serial run at the same seed are `identical()` in `.completed`,
-      `.metrics`, `.selected`, `.grid`, `.tuning_seed` and `.outer_fit_seed` —
-      `.grid` included, which `tests/testthat/test-parallel-identity.R`
-      compares nowhere today and which is where the inner run's
-      event-level-dependent scoring lands.
+      a `tune::tune_grid()` the test runs itself reports under
+      `control_grid(allow_par = FALSE, event_level = "second")`, seeded by the
+      by-hand recipe `R/nested-final-fit.R:100-112` documents — the object's
+      own `tuning_seed`, kind-pinned, inner rset built inside that seed's
+      scope — so what is checked is what tune did with the setting, not the
+      seeding. Against the same object at `"first"`, `roc_auc` agrees
+      candidate for candidate while each candidate's `sens` and `spec` are
+      exchanged, at least one candidate's two estimates differing (T5's inner
+      guard). Under tune's classification defaults there is no such
+      difference, which is why the set is named.
+- [ ] AC5: on the two-class fixture under `metric_set(roc_auc, sens, spec)`
+      and `event_level = "second"`, a `nested_tune_grid()` run at 2 mirai
+      daemons and the serial run at the same seed complete every fold, the
+      parallel run reporting `last_dispatch()` as `"parallel"` — the pairing
+      every identity test in `tests/testthat/test-parallel-identity.R` uses,
+      without which the comparison is serial against serial — and the two are
+      `identical()` as whole objects. This establishes mode-independence, not
+      correctness: a level dropped on both paths preserves the identity, and
+      AC2 and AC4 are the anchors for that.
 - [ ] AC6: `devtools::test()` clean, and `devtools::check()` clean — 0 errors,
       0 warnings, any NOTE justified in the review evidence.
 
@@ -113,12 +123,18 @@ two-class test fixture, and the refusal path for a value outside the two.
 - [x] T4: add `event_level` to `nested_final_fit()` and `final_fit_worker()`,
       set on the inner `tune::control_grid()` (`R/nested-final-fit.R:254`).
 - [ ] T5: build the two-class fixture in
-      `tests/testthat/helper-orchestration.R` — a binary outcome, outer splits
-      stratified on it, a ranger classification workflow, a grid, and
-      `yardstick::metric_set(sens, spec)` — with a guard asserting both classes
-      appear in every assessment set and that sensitivity and specificity
-      differ on at least one fold, without which AC2's and AC4's difference
-      clauses are falsifiable by correct code.
+      `tests/testthat/helper-orchestration.R` — a binary outcome whose first
+      factor level is the minority class, outer and inner splits stratified on
+      it at a balance and `v` where `rsample` does not pool strata (measured:
+      n = 120, 32 against 88, v = 3), a ranger classification workflow, a
+      grid, and `yardstick::metric_set(roc_auc, sens, spec)`, which every
+      criterion using the fixture runs under. Its design's `inside` call takes
+      literal arguments, the way `final_nested()`'s does, because AC4 re-runs
+      it. Two guards, measured under that metric set at both levels: both
+      classes appear in every outer assessment set, in every per-fold inner
+      assessment set, and in every assessment set of the rset
+      `nested_final_fit()` builds from the full data; and sensitivity and
+      specificity differ on at least one outer fold and one inner candidate.
 - [ ] T6: write `tests/testthat/test-event-level.R` — AC2's tune-free
       recomputation, AC3's identity, AC4's inner-run comparison, and AC1's
       refusals on both orchestrators — recording both oracles in the file
@@ -147,6 +163,8 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: T2 — `event_level` added to `nested_tune_grid()` after `metrics`, checked at entry, and threaded through `dispatch_folds()`, both dispatch shapes, `fold_task()` and `nested_fold_fit()` onto the inner `tune::control_grid()`. Six test stand-ins for `fold_task`/`nested_fold_fit` widened to the new signature, the two recorded formals vectors updated, and three shifted `helper-time-budget.R` line numbers re-pointed. `air format .` run; `devtools::test()` 1670 pass, 0 fail.
 - 2026-08-31: T3 — the outer `last_fit()` now receives `tune::control_last_fit(event_level = event_level)`; it took no control object before, so outer-fold metrics were computed at tune's default level whatever the inner run had been told. `allow_par` left at tune's default per the implementation gate. `devtools::test()` 1670 pass, 0 fail.
 - 2026-08-31: T4 — `event_level` added to `nested_final_fit()` and threaded through `final_fit_worker()` to its inner `tune::control_grid()`. Its outer step is `parsnip::fit()`, which computes no metrics, so there is no second site here. `devtools::test()` 1670 pass, 0 fail.
+- 2026-08-31: amendment criteria audit ran in FULL mode (user-facing tier), two rounds, each a fresh [O] reader that authored none of the wording. Round 1 returned 10 findings on the first revision of AC3/AC4/AC5/T5; round 2 returned 9 on the second. Fixed across both: AC3 was falsifiable by correct code under a `sens`-led metric set, because `select_best()` resolves its metric from the tuned object's first metric name and the two runs then selected different candidates (measured on the fixture: fold 1, sensitivity 0.9667 at `"second"` against specificity 0.9333 at `"first"`); AC4's difference clause quantified over every value in a whole `tune_results` and a coincident sens/spec row satisfies correct code; AC5 claimed `.grid` was compared nowhere in `test-parallel-identity.R`, which asserts whole-object identity at :47, :78 and :298, and named `.grid` as where event-level scoring lands where `scored_candidates()` strips every metric column; AC3 and AC5 were both vacuous on a run where no fold completed, and AC5 on a parallel run that fell back to serial; AC4 cited `reference_final_fit()` for a seeding independence it deliberately has and this oracle does not; T5's guard enumerated a different rset than the criteria quantify over, and named no metric set or level.
+- 2026-08-31: substantive amendment adopted at the mini gate — AC3, AC4, AC5 and T5 reworded. The fixture's metric set becomes `metric_set(roc_auc, sens, spec)`: `roc_auc` is byte-identical at the two event levels, so it can lead and hold selection invariant while `sens` and `spec` carry the difference. AC3 now requires every outer fold completed and `.selected` identical between the runs; AC4 states the exchange rather than an unbounded difference and names the seeding recipe it actually follows; AC5 requires every fold completed and `last_dispatch()` reporting `"parallel"`, and compares whole objects; T5's guards enumerate the per-fold inner rsets and the final-fit rset as well as the outer assessment sets, and its design's `inside` call takes literal arguments. Plan-owned body 149 lines against the 150 cap, so no compression pass was owed.
 
 ## Decisions
 
