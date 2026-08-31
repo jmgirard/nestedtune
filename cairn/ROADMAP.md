@@ -1,16 +1,15 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references pages record no verification claim, unchanged. Both byte budgets are still over and still need their own pass: ROADMAP.md 26,505 B against 24,000 and LESSONS.md 23,762 B against 20,000; as at the last check the compressible rows are spent, so closing the gap means graduating or dropping candidates, a user call. Since the last check: M31 shipped both CI fixes and is archived, M25's row aged out under terminal-row retention, and the CI-records candidate row absorbed M31's deferred finding about guarding the copied cap numbers)_
+_Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references pages record no verification claim, unchanged. Line caps hold: ROADMAP.md 49, LESSONS.md 49 after pruning the stalest line (M08's `Rplots.pdf` note, the narrowest and the one `R CMD check` names for itself). Both byte budgets are still over and still need their own pass: ROADMAP.md 26,582 B against 24,000 and LESSONS.md 24,579 B against 20,000, the latter now further over; the compressible rows remain spent, so closing the gap means graduating or dropping candidates, a user call. Since the last check: M28 shipped the code inventory and the unposted upstream-asks draft and is archived, M26's row aged out under terminal-row retention, and one lesson was added on verifying claims about another package's export surface)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M26 | The wire figure survives re-derivation | done | — | normal | milestones/archive/M26-mori-backend-assessment.md |
 | M29 | The assessment says only what the manifest measured | done | M26 | normal | milestones/archive/M29-mori-assessment-writeup.md |
 | M27 | What the outer loop needs from the resampling object, in writing | done | — | normal | milestones/archive/M27-resampling-object-requirements.md |
-| M28 | What we keep, what is only glue, and what belongs to rsample | review | — | normal | milestones/M28-code-inventory.md |
+| M28 | What we keep, what is only glue, and what belongs to rsample | done | — | normal | milestones/archive/M28-code-inventory.md |
 | M30 | Every address the package shows names its new home | done | — | high | milestones/archive/M30-address-rename.md |
 | M31 | Both red CI jobs go green, so a merge is possible again | done | — | high | milestones/archive/M31-ci-back-to-green.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
