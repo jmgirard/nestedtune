@@ -135,6 +135,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: T7 — the `@return` gains a paragraph naming `dplyr_reconstruct()` as where the rule is enforced and `rename()` as the operation that never reaches it, told as a gap rather than a fourth invariant; `bare_results()`'s "so a grouped result stays grouped" reason went with T6's restructure, since the promotion it justified now lives in `as_results_tbl()`; and the two overclaiming titles are now "an outer scheme the object does not name is left unprinted" (`test-nested-results-print.R`) and "a results object holding no completed fold refuses to summarize" (`test-nested-tune-grid-failures.R`), each with a comment saying the object is the helper's rather than `[`'s. `devtools::document()` rewrote `man/nested_tune_grid.Rd` only. Suite: FAIL 0, WARN 0, SKIP 0, PASS 1911; 37 fixture signatures over 37 builds, none built twice.
 - 2026-08-31: defect return 1 closed — `devtools::check()` `Status: OK`, 0 errors, 0 warnings, 0 notes, 2m 43.8s. Status → review.
 - 2026-08-31: review — all five criteria passed with fresh evidence and the consistency gate is green, but the [O] lens returned two confirmed behavior defects the criteria do not reach and the maintainer judged load-bearing at the gate: `reconstruct_results()` keeps the class while dropping the tibble classes for the five verbs dplyr hands a bare data frame, and `can_reconstruct_results()`'s set-equality over `^id`-matching names drops the class when a caller adds an `id`-prefixed column, contradicting the "columns may be added" invariant the docs and NEWS both state. Approval withheld; status → in-progress for T6 and T7. Defect return 1. F4 absorbed into the vctrs candidate row, F7 rejected as refuted, the D-030 comment-block finding rejected as pre-existing.
+- 2026-08-31: review round 2 — all five criteria re-verified against T6/T7's code (test 1911 PASS / 0 FAIL, check Status: OK 0/0/0) and the consistency gate is green. Three lenses ran; the [O] lens returned seven findings, all confirmed on re-measurement: a stale `@details` sentence still promising the old subsetting behavior, and a family of four rooted in `record_columns()`'s `^id` grep (a hard `order()` error on a repeated design, an added `^id` column that cannot be removed again, a vacuous check under an id-less template, a divergence from the constructor's own id rule), plus two more paths leaving the record readable and one test-rigor gap. Presented at the merge gate.
 
 ## Decisions
 
@@ -307,3 +308,165 @@ coverage as well as a code change.
 
 Defect returns on M36: 1.
 
+
+### Round 2 (2026-08-31, after defect return 1)
+
+Re-reviewed at 2f7c600 on `m036-dplyr-invariants`, PR
+[#45](https://github.com/tidymodels/nestedtune/pull/45). `origin/main` had still
+not moved (0 behind, 8 ahead), so no merge preceded the evidence below. Round
+1's evidence above is superseded by this pass, which re-ran every criterion
+against the code T6 and T7 changed.
+
+#### Acceptance criteria
+
+- AC1 — `?nested_tune_grid`'s `@return` carries the "What an operation on the
+  object may and may not do" block: three bullets covering the four clauses
+  (rows reorderable, never added or removed; columns addable and reorderable;
+  every listed column present holding the values it held), the bare-tibble
+  branch named with examples, and T7's paragraph naming `dplyr_reconstruct()`
+  as where the rule is enforced and `rename()` as the gap.
+  `grep -rn "Subsetting rows carries" R/ man/ NEWS.md` exits 1, so the obsolete
+  `@return` sentence is gone from roxygen and the generated `.Rd` alike. (A
+  different stale sentence survives in `@details` — finding O1 below; AC1 as
+  written quantifies over the `@return` and passes.)
+- AC2 — `dplyr_compat_table()` in `tests/testthat/test-dplyr-compat.R` names all
+  thirteen verbs literally over seventeen entries, `mutate`, `select` and `[`
+  carried in both directions. `expect_kept()` asserts branch (a) as the
+  criterion words it — class present, `outer_label`/`grid`/`metrics` identical
+  to the source, `folds_attempted` equal to `nrow(out)`, `folds_completed` to
+  `sum(out$.completed)` — and now `tbl_df` besides (T6); branch (b) is the
+  absence of the class. `devtools::test()`: FAIL 0, WARN 0, SKIP 0, PASS 1911,
+  so no entry skipped vacuously.
+- AC3 — all eight row-changing forms are asserted one `test_that()` block
+  apiece, so a failure names its form: `filter(.completed)` on a partial run,
+  `slice(1)`, `slice(-1)`, `head(1)`, `x[1, ]`, `x[c(TRUE, FALSE, FALSE), ]`,
+  `x[-1, ]`, `bind_rows(x, x)`. A ninth block asserts none of the eight prints
+  `Outer resamples: 3-fold cross-validation`, over text captured from both
+  `print()` and the cli stream, each form's text asserted non-empty first and
+  the source object shown as the passing control. Green in the same FAIL 0 /
+  SKIP 0 run.
+- AC4 — `NEWS.md`'s dev section opens with a "Breaking:" bullet naming the
+  `[.nested_results` change by example (`slice()`, `head()`, `x[1, ]`,
+  `x[-1, ]`, a `filter()` dropping a failed fold, `bind_rows()`), states what
+  the old behavior returned, and follows with the verbs that keep the class; a
+  second bullet records `dplyr` becoming a hard dependency. No deprecation
+  warning ships, per D-003's pre-1.0 waiver. No milestone numbers appear.
+- AC5 — `devtools::test()`: FAIL 0, WARN 0, SKIP 0, PASS 1911; fixture cache 37
+  signatures over 37 builds, none built twice. `devtools::check()`:
+  `Status: OK`, 0 errors, 0 warnings, 0 notes, duration 2m 52.3s. No NOTE to
+  justify.
+
+No `Driving RR:` is declared, so the projection-vs-outcome comparison no-ops.
+
+#### Consistency gate
+
+- `cairn_validate.py` exit 0 — every check PASS, `coverage complete`,
+  `binding criteria` and `scaffold present` included. 18 advisory WARNs, all the
+  standing `references staleness` set, unchanged by this milestone. The
+  `release window` advisory did not fire.
+- No `DESIGN.md` principle changed (the file is not in the diff), so
+  `cairn_impact.py --changed` was skipped.
+- `r-package` profile `consistency-gate` slot: `devtools::document()` leaves a
+  clean working tree; `NAMESPACE` and `man/` are regenerated, not hand-edited;
+  `README.Rmd`/`README.md` are untouched by the branch; `pkgdown::check_pkgdown()`
+  — no problems found; `NEWS.md` carries the user-visible changes with no
+  milestone numbers; no new top-level file, so no `.Rbuildignore` entry is owed;
+  no newly exported object, so no `_pkgdown.yml` row is owed
+  (`NAMESPACE` gains only `S3method(dplyr_reconstruct,nested_results)` and its
+  `importFrom`); `devtools::check()` `Status: OK`, 0/0/0.
+
+#### Independent review
+
+Executable surface is touched, so all three lenses ran fresh-context on distinct
+evidence bases.
+
+**[S] blame-history** — no undisclosed conflict. Every removal traces to D-031
+and is disclosed in `NEWS.md`, the `@return` and this file; D-010 is narrowed by
+D-031 rather than contradicted; D-003 covers the break. It flagged as
+completeness observations the two gaps the record already carries — `group_by()`
+still reaching the stale-attribute state (round 1's F4, on the vctrs candidate
+row) and `rename()` bypassing the rule (round 1's F3, now a documented caveat) —
+and noted that `as_fold_subset()` indirects two former `[` tests, which T7's
+title rewrite discloses rather than restores. Nothing new.
+
+**[S] prior-review** — no regression. M34's dots-barrier exemption still holds
+(`[.nested_results` keeps its `...` and its `NextMethod()`; the formals-based
+branch is additive); M20 F1's lesson about `NextMethod()` reaching either `[`
+method is strengthened, not undone, since `reconstruct_results()` re-derives the
+record itself; M22 P1 is on `nested_final_fit`, untouched. It confirmed T6 and
+T7 match round 1's triage exactly. The GitHub probe found one real inline
+comment repo-wide, on a workflow file this branch does not touch, and a walk of
+every PR touching these files found no non-bot inline comments, so there is no
+thread-level surface.
+
+**[O] diff-bug** — seven findings, ranked by the lens most severe first. Each was
+re-measured this session against the implementation on a hand-built 3-fold and a
+hand-built repeated-design object; the verdicts are those measurements, not the
+lens's account.
+
+- O1 (CONFIRMED) — a now-false sentence survives in the shipped help page.
+  `R/nested-tune-grid.R:170-172` and `man/nested_tune_grid.Rd:197` still say
+  "Subsetting rows recomputes `folds_attempted` and `folds_completed` for the
+  rows kept, so the counts always describe the object in hand." That is the
+  pre-M36 behavior; a row subset now sheds the class and all five attributes.
+  AC1 and its grep were both scoped to the `@return` and to the other sentence's
+  exact wording, so neither reached this one. Measured consequence: the same
+  topic promises `attr(res[1:2, ], "folds_attempted")` is `2L` a few paragraphs
+  above the new invariants block, where the code returns `NULL`.
+- O2 (CONFIRMED) — a caller-added `^id`-prefixed list column hard-errors on a
+  repeated design. `record_columns()` finds id columns by `grepl("^id", ...)`,
+  and dplyr calls `dplyr_reconstruct()` a second time with the *modified* frame
+  as template, so the added column joins `id_cols` and becomes an `order()` key.
+  Measured on `id = c("Repeat1", "Repeat1", "Repeat2")`, `id2`:
+  `mutate(x, id_junk = list(c(1, 2)))` raises
+  `unimplemented type 'list' in 'listgreater'` from inside
+  `can_reconstruct_results()`, naming no user-facing function. It needs a tie in
+  the first id column, so it hits repeated designs and not plain v-fold — the
+  same call on a unique-id 3-fold object returns a `nested_results` normally.
+  T6's tests cover only atomic added columns (`id_extra`, `ideal`).
+- O3 (CONFIRMED) — a caller-added `^id`-prefixed column cannot be removed again.
+  Because the record is read off the template and includes anything matching
+  `^id`, the column is protected as if the constructor had written it. Measured:
+  `select(mutate(res, ideal = 1), -ideal)` returns `tbl_df`, while
+  `select(mutate(res, extra = 1), -extra)` returns `nested_results` — the same
+  round trip, class kept for one name and lost for the other. The documented
+  "columns may be added or reordered" invariant implies an added column is the
+  caller's to drop.
+- O4 (CONFIRMED) — two more paths join `group_by()` in leaving the record
+  readable. `bare_results()` is the only place the attributes are stripped, so
+  anything shedding the class without reaching `dplyr_reconstruct()` keeps them.
+  Measured on a 3-fold object: `group_by()`, `rowwise()` and
+  `tibble::as_tibble()` all return an object with `nested_results` gone and
+  `outer_label = "3-fold cross-validation"`, `folds_attempted = 3L` still
+  readable. Round 1 deferred this on `group_by()` alone; the other two widen it.
+  The compat table's `group_by` entry asserts only the class absence, so it
+  passes over the stale attributes.
+- O5 (CONFIRMED, unreachable today) — an id-less template makes the value
+  comparison vacuous. `id_cols` is then `character(0)`,
+  `do.call(order, list())` is `integer(0)`, and both `in_id_order()` results are
+  zero-length and `identical()`. Measured: a template whose id column is named
+  `fold` accepts a `data` with every record value different. `has_results_columns()`
+  is applied to `data`, never `template`, so nothing on this path guarantees an
+  id column. Not reachable through the public API — a `rename()`-broken object
+  fails the `data`-side gate instead — but a one-line `length(id_cols) == 0L`
+  guard closes it.
+- O6 (CONFIRMED, no reachable case found) — `record_columns()` re-derives the id
+  columns by `^id` grep while the constructor takes them as
+  `setdiff(names(resamples), c("splits", "inner_resamples"))`, so an rset
+  carrying a label column not spelled `id*` would be constructor-written and
+  unprotected, diverging from D-031's stated set. No such rset exists in
+  rsample's current conventions.
+- O7 (CONFIRMED, test rigor) — the compat table's `bare` branch asserts only
+  `expect_false(inherits(...))`, where the standalone AC3 blocks use
+  `expect_bare()`, which also asserts `tbl_df`. A table-only bare verb losing its
+  tibble classes — round 1's F1 defect, in the other branch — would pass. The
+  lens also noted the `filter (rows kept)` entry runs against the completed
+  fixture, so it is a no-op filter; the row-dropping direction is covered by
+  AC3's own block.
+
+O2, O3, O5 and O6 share one root cause: `record_columns()` identifies the
+design's id columns by `^id` prefix rather than by what the constructor wrote.
+T6 recorded a gate choice between the template-only read that shipped and
+narrowing that grep, on the ground that the two "measure the same"; O2 and O3
+are residue the narrowing alternative would not have left, since `id_junk`,
+`ideal` and `id_extra` all stop matching `^id$|^id[0-9]+$`.
