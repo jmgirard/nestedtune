@@ -17,6 +17,7 @@ Depends:
     R (>= 4.1)
 Imports:
     cli,
+    dplyr (>= 1.1.0),
     ggplot2,
     parsnip,
     rlang,

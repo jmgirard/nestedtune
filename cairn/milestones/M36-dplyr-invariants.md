@@ -77,7 +77,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
       `dplyr::slice(res, 1)` is known to keep the class with the parent's
       `outer_label`, measured 2026-08-31 — so the file demonstrably fails before
       T3.
-- [ ] T2 Settle the dependency shape and write the `cairn/DECISIONS.md` entry:
+- [x] T2 Settle the dependency shape and write the `cairn/DECISIONS.md` entry:
       `dplyr` into Imports (recommended — it is already installed under `tune`
       and `rsample`, and Suggests plus `vctrs::s3_register()` would let AC2 and
       AC3 skip vacuously on a machine without it), whether the vctrs half comes
@@ -85,9 +85,9 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
       class shape only in what `[` returns.
 - [ ] T3 Factor the invariant rule out of `[.nested_results`
       (`R/nested-results.R:69-105`) into one helper; register
-      `dplyr_reconstruct.nested_results()`, `dplyr_row_slice.nested_results()`
-      and `dplyr_col_modify.nested_results()` against it, and rewrite `[` to
-      delegate. Keep the `has_results_columns()` column gate.
+      `dplyr_reconstruct.nested_results()` against it — T2 measured that
+      dplyr's defaults for the other two generics delegate to it — and rewrite
+      `[` to delegate. Keep the `has_results_columns()` column gate.
 - [ ] T4 Roxygen: the invariants into `?nested_tune_grid`'s `@return`, the
       obsolete row-subset sentence out (`R/nested-tune-grid.R:81-83`); NEWS
       entry; `devtools::document()`.
@@ -102,6 +102,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: plan gate chose dplyr-only over dplyr-plus-vctrs because the reproduced defect is on the dplyr path and the vctrs half roughly doubles the diff; the vctrs methods go to a candidate row. Falsified by a `vec_rbind()` or `vec_ptype2()` path reaching the same stale-attribute state the dplyr methods now block.
 - 2026-08-31: [O] criteria audit ran in **full** mode (declared tier user-facing) and returned six findings, all disposed here: the `?nested_results` topic does not exist (retargeted to `?nested_tune_grid`, AC1); AC2's universal quantified over the test file's own table rather than the class (verbs now named literally, table construction moved to T1); AC2 branch one demanded attributes identical to source, which IP4 forbids for the counts (counts now promised against the rows returned); a vacuous-skip leak if dplyr landed in Suggests (T2 recommends Imports and states the leak); AC3's row-removal family stood on two exemplars (widened to eight forms across index, verb and addition); AC5 named a pre-existing NOTE set `cairn/PROFILE.md` does not record (cut to the profile's own verify and check slots, budget registration moved to T5).
 - 2026-08-31: T1 — `tests/testthat/test-dplyr-compat.R` written and run against the current code: 10+ failures, the named forms being `slice(1)`, `mutate(.completed = FALSE)`, `rename(fold = id)`, `bind_rows(x, x)`, `x[1, ]` and `filter(.completed)` on a partial run (all keep the class), plus `mutate`/`relocate`/`select(everything())` returning a `nested_results` whose `outer_label` is `NULL`. Both fixtures are cache hits off existing signatures (2 builds, 11 requests). The suite is red at this checkpoint by design.
+- 2026-08-31: T2 — implementation gate settled three open choices, all as recommended, and D-031 records them: `dplyr (>= 1.1.0)` into Imports (not Suggests plus load-time registration, which would let the new tests skip vacuously); the invariant set is every column `new_nested_results()` writes, the two per-fold seed columns included; and one method, `dplyr_reconstruct.nested_results()`, rather than the three the plan named — measured that dplyr's default `dplyr_row_slice()` and `dplyr_col_modify()` both route through it, `bind_rows()` included, which is also why tune registers only the one. T3's wording is amended to match. The `vctrs` half stays Out. Suite still red pending T3.
 
 ## Decisions
 

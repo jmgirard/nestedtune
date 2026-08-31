@@ -889,6 +889,47 @@ declared package. `Suggests` remains what it was — used by tests, examples and
 vignettes, never loaded by the package itself.
 
 
+### D-031 (2026-08-31): `nested_results` carries tune's dplyr invariants, `dplyr` joins Imports, and the invariant set is every column the constructor writes — extends the dependency set D-029 last touched, and narrows what D-010's class promises for `[`
+
+**Context:** #32 asks for the invariants tune declares on `tune_results`
+(tune#221): a dplyr verb may reorder rows, and may add or reorder columns, but
+an operation that adds or removes rows returns a bare tibble rather than an
+object still describing the run its rows came from. `[.nested_results` (M04,
+M20) answers half of that already — it sheds the class on a column subset and
+recomputes the fold counts on a row subset — but it keeps the class on a row
+subset, which is the case #32 names. Three things had to be settled before any
+of it could be written: how `dplyr` is depended on, which columns constitute
+the record an operation must leave alone, and how many methods to register.
+
+**Decision:** `dplyr (>= 1.1.0)` joins Imports. The invariant set is every
+column `new_nested_results()` writes — `splits`, the `id` columns, `.metrics`,
+`.selected`, `.grid`, `.notes`, `.completed`, `.tuning_seed`,
+`.outer_fit_seed` — all of which must be present and hold the same values, up
+to a reordering of the rows, for the class to survive; extra columns are free
+to arrive. One method is registered, `dplyr_reconstruct.nested_results()`, and
+`[.nested_results` is rewritten to delegate to the same rule, which is the
+behavior change: a row subset now returns a bare tibble. Considered and
+rejected: `dplyr` in Suggests with the method registered at load time (it
+keeps the hard requirement list shorter, but every test of these invariants
+would skip vacuously on a machine without `dplyr` — and `tune`, already an
+Import, requires `dplyr` anyway, so nobody's install changes); the narrower
+invariant set of the five columns `has_results_columns()` names (it would let
+a caller overwrite a recorded per-fold seed and keep an object still claiming
+to be the run); registering `dplyr_row_slice()` and `dplyr_col_modify()` as
+well (dplyr's defaults for both route through `dplyr_reconstruct()`, which is
+also why `tune` registers only the one). The `vctrs` half of tune#221 stays
+out and keeps its ROADMAP row.
+
+**Consequences:** D-010 fixed `nested_results` as a standalone class so that
+methods answering wrongly would error instead; this narrows the same class's
+promise in the other direction — an object that cannot answer for a run stops
+being one, rather than answering from a record that is no longer true of it
+(IP4). `[` is the breaking part, waived pre-1.0 by D-003 and recorded in
+`NEWS.md`. `dplyr` in Imports means the package may use its verbs internally
+without further argument. Falsified by an invariant-respecting operation that
+still yields an object whose record is untrue of its rows, or by a caller with
+a legitimate need for a row subset that stays a `nested_results`.
+
 <!-- Template:
 
 ### D-030 (2026-08-31): `event_level` is offered as its own argument rather than a `control` argument taking tune's settings object — the first slot of tune's control objects this package exposes, and the shape D-010's "no `control` argument" now takes
