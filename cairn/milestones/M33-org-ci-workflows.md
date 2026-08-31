@@ -81,12 +81,12 @@ none is up for revision here.
 
 ## Tasks
 
-- [ ] T1: Re-run the nine-repository survey for the three workflow files,
+- [x] T1: Re-run the nine-repository survey for the three workflow files,
       record the shas and counts in the work log, and vendor the modal texts.
-- [ ] T2: Run `.github/ci-usage.py` before and after the additions; then add a
+- [x] T2: Run `.github/ci-usage.py` before and after the additions; then add a
       scratch workflow with an unfiltered `push:` trigger, confirm the script
       refuses, and delete it.
-- [ ] T3: Write `air.toml` (start from the siblings' shape — a `[format]`
+- [x] T3: Write `air.toml` (start from the siblings' shape — a `[format]`
       table with `skip` entries — dropping rsample's package-specific
       `exclude`), and install `air` locally by the route
       `posit-dev/setup-air@v1` uses in CI.
@@ -106,6 +106,10 @@ none is up for revision here.
 - 2026-08-30: plan gate chose adopting `air` with a one-commit reformat over taking `format-suggest.yaml` without a formatter, because the workflow runs `air format .` and posts every difference as a PR suggestion — on an unformatted tree that is a review comment on nearly every line of every PR, which is worse than not running it; falsified by evidence that `reviewdog/action-suggester` bounds its output, or that the tree is already `air`-clean.
 - 2026-08-30: plan gate chose leaving the four existing workflows' M11/M12/M14/ M31 divergences untouched over converging them on the organization's stock files, because each divergence has a measured rationale in its milestone — the split hang caps, the `paths-ignore` filter and the non-default-branch `concurrency` block among them — and none of that evidence has been contradicted; falsified by a stock sibling workflow shown to handle the two recorded hangs and the cold-devel cache deadlock.
 - 2026-08-30: checkpoint, tasks not yet ticked. Branch cut; survey re-run and the three workflows vendored at the modal blobs `d55e238e` / `2edd93f2` / `8c4f117d` (`git hash-object` matches all three); `ci-usage.py` run before and after the additions, exit 0 both times naming the same three source workflows; `air.toml` and its `.Rbuildignore` entry written. `devtools::test()` and the fresh-context read of the amended AC5 wording were still running at the checkpoint, so T1-T3 stay unticked.
+- 2026-08-30: T1 done. Survey re-run over the nine siblings on 2026-08-30: `lock.yaml` `d55e238e` 7 of 9 (recipes `3f63a3a8`, broom `1fab65a8`), `pr-commands.yaml` `2edd93f2` 9 of 9, `format-suggest.yaml` `8c4f117d` 6 of 7 carrying it (parsnip `24e4fc16`; yardstick and broom carry none) — the same modes the plan states. All three vendored from rsample; `git hash-object` returns the modal sha for each. `devtools::test()` after the additions: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628.
+- 2026-08-30: T2 done. `.github/ci-usage.py --since 2026-08-01T00:00:00Z --until 2026-08-31T00:00:00Z` exits 0 before and after the three additions and its output is byte-identical across the pair, `Path filter read from R-CMD-check.yaml, pkgdown.yaml, test-coverage.yaml` both times — none of the three carries a `push` or `pull_request` trigger (`schedule`, `issue_comment`, `pull_request_target`). Positive control: a scratch `zz-scratch-probe.yaml` carrying a bare `push:` and no `paths-ignore` made the same invocation exit 1 with `these triggers carry no paths-ignore while others do ... zz-scratch-probe.yaml:push`; the scratch file was deleted and is not committed.
+- 2026-08-30: T3 done. `air.toml` is the siblings' shape, `[format]` with `skip = ["tribble"]` (rsample and dials, minus rsample's package-specific `exclude`); this repo calls `tribble()` nowhere, and the question gate chose the organization's shape over a config carrying only what applies here. `air` 0.11.0 is installed locally and equals `posit-dev/setup-air@v1`'s default, the latest `posit-dev/air` release on 2026-08-30. `.Rbuildignore` gains `^[\.]?air\.toml$`, the entry rsample carries.
+- 2026-08-30: question gate chose vendoring the three files at the organization's blobs over pinning the write-token actions (`r-lib/actions/pr-push@v2` under `contents: write`, `posit-dev/setup-air@v1` and `reviewdog/action-suggester@v1` under `pull-requests: write` on `pull_request_target`) to commit shas, because a pin would put each file off its modal blob and AC1 unsatisfiable; M17 review F10 pinned the pkgdown deploy action on the same write-token reasoning, so the divergence is recorded as a candidate row rather than settled here.
 
 ## Decisions
 
