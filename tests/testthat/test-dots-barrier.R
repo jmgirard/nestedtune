@@ -163,7 +163,8 @@ test_that("AC6: no in-repo call passes `summarize` positionally", {
   # silently-empty domain M14 taught. Skipping says so; the same anchor and the
   # same reasoning are in test-vignette-citations.R.
   skip_if_not(
-    dir.exists(file.path(root, "R")) && dir.exists(file.path(root, "vignettes")),
+    dir.exists(file.path(root, "R")) &&
+      dir.exists(file.path(root, "vignettes")),
     "not the source tree: R/ and vignettes/ are absent, so the scan is partial"
   )
   files <- c(
