@@ -7,7 +7,7 @@ _Last hygiene check: 2026-08-31 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M37 | The vctrs half, so `rbind()` stops claiming a design it never ran | in-progress | — | normal | milestones/M37-vctrs-invariants.md |
+| M37 | The vctrs half, so `rbind()` stops claiming a design it never ran | blocked | — | normal | milestones/M37-vctrs-invariants.md |
 | M36 | Removing an outer fold's row stops producing a `nested_results` | done | — | normal | milestones/archive/M36-dplyr-invariants.md |
 | M35 | The factor level a caller can name as the event | done | — | normal | milestones/archive/M35-event-level.md |
 | M32 | The community files and site template the tidymodels organization shares | done | — | normal | milestones/archive/M32-tidymodels-org-conventions.md |

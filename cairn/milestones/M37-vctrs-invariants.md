@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M37: The vctrs half, so `rbind()` stops claiming a design it never ran
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -130,3 +130,4 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: T3 — `vec_restore.nested_results()`, the five `vec_ptype2` and five `vec_cast` pairs, `vec_cbind_frame_ptype.nested_results()`, `rbind.nested_results()` and `names<-.nested_results()`; `stamp_results()` and `copy_results_attributes()` split out of `reconstruct_results()` so the prototype carriers write the same record. All 11 blocks of `test-vctrs-compat.R` pass; full suite 348 tests, 0 failures, 0 skips.
 - 2026-08-31: T3 measurement, second round: `vec_cbind()` never reaches `vec_ptype2()` or `vec_restore()` on its own — it builds its container by calling `x[0]` through `vec_cbind_frame_ptype()`, and `[.nested_results` sheds the class on a zero-column subset, so the class is gone before either generic is asked. Registering that generic is what AC3 rests on; it is documented `[Experimental]` and keyword `internal`, and no installed package registers a method for it.
 - 2026-08-31: `test-dots-barrier.R`'s AC5 probe (M34) failed on all 14 new methods; they are named in its exemption list with the reason — vctrs passes `x_arg`, `y_arg` and `call` through a `vec_ptype2()`/`vec_cast()` method's `...`, base `rbind()`'s `...` is the data itself, and `names<-` is a replacement function the probe cannot call without a `value`.
+- 2026-08-31: blocked on RB04 — whether AC3 may rest on `vec_cbind_frame_ptype()`, which vctrs marks experimental and internal; raised at the implementation gate and escalated by the maintainer.
