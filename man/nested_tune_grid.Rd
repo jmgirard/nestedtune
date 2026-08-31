@@ -84,9 +84,36 @@ recorded. A fold that scored no candidate at all carries a zero-row table,
 never \code{NULL}.
 
 \code{attr(x, "metrics")} holds the \code{metrics} argument, and is absent rather
-than \code{NULL} when none was supplied. Subsetting rows carries both
-attributes unchanged, since they describe the call rather than the rows
-kept; \code{.grid} is a column, so it travels with the fold it describes.
+than \code{NULL} when none was supplied. \code{.grid} is a column, so it travels
+with the fold it describes.
+
+\strong{What an operation on the object may and may not do.} The result carries
+the invariants \code{tune} declares on its own results objects:
+\itemize{
+\item rows may be reordered, but never added or removed;
+\item columns may be added or reordered;
+\item every column listed above must still be present, holding the values it
+held.
+}
+
+An operation that stays inside those rules — \code{arrange()}, \code{mutate()}
+adding a column, a join that matches one row apiece — returns a
+\code{nested_results} with the call's record intact. Anything else — \code{slice()},
+a \code{filter()} that drops a fold, \code{bind_rows()}, \code{x[1, ]}, dropping one of
+the columns above — returns a bare tibble, with the record removed along
+with the class. A three-row object cannot honestly describe itself as the
+ten-fold design it was cut from, so it stops describing itself at all and
+hands back the data.
+
+The rule is enforced where dplyr asks for it, in a \code{dplyr_reconstruct()}
+method, which the verbs above and \code{[} all reach. An operation that never
+gets there is outside it, and two do. \code{rename()} is implemented as
+\code{set_names()} and reaches the object through \strong{vctrs}, so renaming one of
+the columns listed above returns a \code{nested_results} that no longer has it.
+\code{rbind()} likewise goes through \strong{vctrs} rather than dplyr, so it adds
+rows and keeps the class, leaving the counts describing the object it was
+built from. Treat both as gaps rather than as further invariants; the
+vctrs methods that would close them are not written yet.
 }
 \description{
 \code{nested_tune_grid()} drives the outer loop of nested cross-validation. For
@@ -170,9 +197,10 @@ a scored candidate at all — tuning itself raised, or every candidate failed �
 holds a zero-row table. No fold is reported as having searched a grid it did
 not.
 
-Subsetting rows recomputes \code{folds_attempted} and \code{folds_completed} for the
-rows kept, so the counts always describe the object in hand. Dropping the
-\code{.completed} column drops the \code{nested_results} class with it.
+Any operation outside the invariants stated under \strong{Value} above returns a
+bare tibble, and both counts go with the class rather than being recomputed
+for whatever rows are left. Dropping the \code{.completed} column is one such
+operation.
 
 The run warns when it finishes with any fold unfinished, and
 \code{\link[=collect_metrics]{collect_metrics()}} warns again, summarizing only the folds that ran and

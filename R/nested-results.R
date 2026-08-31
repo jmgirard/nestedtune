@@ -55,62 +55,182 @@ outer_scheme_label <- function(resamples) {
   label
 }
 
-# The counts are attributes, so a row subset carries them along untouched and
-# they go on describing the run the rows came from -- which is how a subset
-# holding no completed fold could still claim its parent's two. Recomputed here
-# so the object's own record of what ran stays true of the object holding it
-# (IP4). A subset that drops any of the columns a results object is defined by
-# is no longer one at all, and says so by shedding the class rather than
-# answering for a run it can no longer describe. The test is the whole set and
-# not `.completed` alone: a column subset keeping `.completed` but dropping
-# `.metrics` used to stay classed, and every method reading the missing columns
-# then failed on an object that still claimed to be a results object.
-#' @export
-`[.nested_results` <- function(x, i, j, ...) {
-  out <- NextMethod()
-  if (!is.data.frame(out) || !has_results_columns(out)) {
-    if (inherits(out, "nested_results")) {
-      class(out) <- setdiff(class(out), "nested_results")
-    }
-    return(out)
+# The invariants, and the one rule every operation on the class goes through.
+#
+# These are tune's, declared on `tune_results` (tune#221) and asked for here in
+# #32: rows may be reordered but never added or removed, and columns may be
+# added or reordered. An operation inside that set gets the class back; anything
+# else gets a bare tibble, because an object holding rows other than the ones
+# the run produced cannot answer for the run and must stop claiming it can
+# (IP4). The alternative -- what this class did until M36 -- is what makes
+# `slice(x, 1)` return a one-row object still headed "3-fold cross-validation".
+#
+# Only `dplyr_reconstruct()` is registered. dplyr's default `dplyr_row_slice()`
+# and `dplyr_col_modify()` both finish by calling it, and so does `bind_rows()`,
+# so one method covers the verbs; `[` is the one door that does not lead here on
+# its own, and is routed here explicitly below.
+
+# Which of these names are the design's own fold labels.
+#
+# The constructor takes whatever the rset carries beside `splits` and
+# `inner_resamples`, and for every design rsample builds that is `id` alone, or
+# `id` and `id2` for a repeated one. Matching those names is therefore the same
+# set, and it is the only place the answer is given -- record_columns(),
+# has_results_columns() and fold_ids() all ask here, so the class cannot hold
+# two ideas of what a label column is.
+#
+# The anchor at both ends is the point. A bare `^id` prefix also matches
+# `ideal`, `id_extra` and anything else a caller joins in to label folds with,
+# and treating one of those as the design's own is what made an added column
+# impossible to remove again, what turned an added list column into an order()
+# key on a repeated design, and what pasted an added column into every fold's
+# printed label (M36 review O2, O3). An rset whose label column is spelled some
+# other way is not matched, and its results object then stops keeping the class
+# through a dplyr verb rather than keeping it on an unchecked record -- the
+# conservative direction (M36 review O6).
+id_columns <- function(nms) {
+  grep("^id[0-9]*$", nms, value = TRUE)
+}
+
+# The run's record: every column new_nested_results() writes. Read off the
+# TEMPLATE only -- see can_reconstruct_results().
+record_columns <- function(nms) {
+  fixed <- c(
+    "splits",
+    ".metrics",
+    ".selected",
+    ".grid",
+    ".notes",
+    ".completed",
+    ".tuning_seed",
+    ".outer_fit_seed"
+  )
+  nms %in% fixed | nms %in% id_columns(nms)
+}
+
+# Whether `data` may wear `template`'s class: every column of the template's
+# record still present, holding the same values, over the same number of rows.
+# Row ORDER is exempt -- the folds are a set, and arrange() rearranging them
+# changes nothing the object claims -- so both sides are put in id order before
+# their values are compared.
+#
+# The record compared is the TEMPLATE's, and a column `data` carries beyond it
+# is simply not looked at. Comparing the two sets for equality instead would
+# read a caller-added column as a record that no longer matches, which is what
+# "columns may be added" forbids (M36 review F2).
+can_reconstruct_results <- function(data, template) {
+  if (!is.data.frame(data) || !has_results_columns(data)) {
+    return(FALSE)
   }
+  cols <- sort(names(template)[record_columns(names(template))])
+  if (!all(cols %in% names(data))) {
+    return(FALSE)
+  }
+  if (!identical(nrow(data), nrow(template))) {
+    return(FALSE)
+  }
+  # Without an id column there is no ordering to compare under: the
+  # permutation is empty, every compared column comes out zero-length, and any
+  # two objects are identical(). Refusing is the honest answer -- the record
+  # cannot be checked, so it cannot be vouched for (M36 review O5).
+  id_cols <- id_columns(cols)
+  if (length(id_cols) == 0L) {
+    return(FALSE)
+  }
+  in_id_order <- function(x) {
+    ord <- do.call(order, lapply(id_cols, function(nm) x[[nm]]))
+    lapply(cols, function(nm) x[[nm]][ord])
+  }
+  identical(in_id_order(data), in_id_order(template))
+}
+
+# The rule. `template` supplies what describes the call; the rows in hand supply
+# what describes themselves.
+reconstruct_results <- function(data, template) {
+  if (!can_reconstruct_results(data, template)) {
+    return(bare_results(data))
+  }
+  # Promoted before the class goes on, for the reason as_results_tbl() gives:
+  # the class is documented as a tibble subclass, and dplyr hands this function
+  # a bare data frame often enough that only the bare branch promoting would
+  # make it one for some verbs and not others (M36 review F1).
+  out <- as_results_tbl(data)
   if (!inherits(out, "nested_results")) {
     class(out) <- c("nested_results", class(out))
   }
-  # Which of these two lines is doing work depends on what NextMethod() reached,
-  # and the two answers differ (measured at M20 review).
-  #
-  # `[.tbl_df` -- the method that actually runs, tibble being loaded whenever
-  # this package is -- carries arbitrary attributes through every subset shape:
-  # row, column, logical and negative alike. Against that method these lines are
-  # a duplicate.
-  #
-  # `[.data.frame` does NOT: it carries them through a row subset and DROPS them
-  # on a column subset. So against that method these lines are the guarantee,
-  # not a duplicate of one, and they are what makes the `@return` promise
-  # ("subsetting rows carries both unchanged") true of the class rather than of
-  # whichever `[` happened to be reached. Keep them.
-  #
-  # The two below are load-bearing under either method, since the counts
-  # describe the rows and would otherwise survive as the parent's.
-  attr(out, "grid") <- attr(x, "grid")
-  attr(out, "metrics") <- attr(x, "metrics")
-  # The scheme label is not recomputable from the rows, and the rows kept are
-  # no longer the design it names -- "10-fold cross-validation" over three rows
-  # is exactly the claim IP4 forbids. It goes rather than travels.
-  attr(out, "outer_label") <- NULL
+  # `metrics` is absent rather than NULL when none was supplied, and assigning
+  # NULL to an attribute removes it, so this preserves the distinction.
+  attr(out, "grid") <- attr(template, "grid")
+  attr(out, "metrics") <- attr(template, "metrics")
+  attr(out, "outer_label") <- attr(template, "outer_label")
+  # Read off the rows rather than copied from the template. Under the invariants
+  # the two agree, so this corrects nothing today; it is the object's own record
+  # of what ran, and IP4 asks that it be true of the object holding it however
+  # the object was reached.
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
   out
 }
 
+# Shedding the class also sheds the run's record. Leaving `outer_label` on a
+# bare tibble would leave the stale claim readable by anyone who looks for it,
+# which is the same fault one layer down.
+#
+# The class is removed by subtraction rather than replaced with tibble's three,
+# which leaves whatever else the object was carrying alone.
+bare_results <- function(data) {
+  for (nm in results_attributes()) {
+    attr(data, nm) <- NULL
+  }
+  class(data) <- setdiff(class(data), "nested_results")
+  as_results_tbl(data)
+}
+
+# What both branches return is a tibble. `nested_results` is a tibble subclass
+# (DESIGN: "a plain tibble carrying class `nested_results`"), and dplyr hands
+# `dplyr_reconstruct()` a bare data frame for a good half of the verbs --
+# `filter()`, `mutate()`, `arrange()`, `bind_cols()`, `left_join()`, `slice()`
+# and `bind_rows()` all do, measured 2026-08-31 -- so leaving the classes off
+# would make the result a tibble after `select()` and not after `mutate()`,
+# and drop `x[, "id"]` to a bare vector for the second. Neither branch is a
+# downgrade the caller asked for.
+as_results_tbl <- function(data) {
+  if (!inherits(data, "tbl_df")) {
+    class(data) <- c("tbl_df", "tbl", class(data))
+  }
+  data
+}
+
+results_attributes <- function() {
+  c("grid", "metrics", "outer_label", "folds_attempted", "folds_completed")
+}
+
+#' @importFrom dplyr dplyr_reconstruct
+#' @export
+dplyr_reconstruct.nested_results <- function(data, template) {
+  reconstruct_results(data, template)
+}
+
+# `[` reaches tibble's method, which carries every attribute through every
+# subset shape and would hand back a classed object for any of them. Routing its
+# result through the same rule is what makes the invariants a property of the
+# class rather than of whichever `[` NextMethod() happened to reach.
+#' @export
+`[.nested_results` <- function(x, i, j, ...) {
+  out <- NextMethod()
+  if (!is.data.frame(out)) {
+    return(out)
+  }
+  reconstruct_results(out, x)
+}
+
 # The columns every `nested_results` method reads: the per-fold record, plus at
-# least one id column to label the folds with. `fold_ids()` greps for the id
-# column rather than naming it, because a repeated design carries `id` and
-# `id2`, so the check greps too.
+# least one id column to label the folds with. A subset of `record_columns()`,
+# and the weaker test -- it asks only that the methods will work, while
+# `can_reconstruct_results()` asks that the record be whole.
 has_results_columns <- function(x) {
   required <- c(".metrics", ".selected", ".grid", ".notes", ".completed")
-  all(required %in% names(x)) && any(grepl("^id", names(x)))
+  all(required %in% names(x)) && length(id_columns(names(x))) > 0L
 }
 
 # A tibble is a data frame with three classes and compact row names. Building
@@ -350,8 +470,10 @@ per_fold_metrics <- function(x) {
 
 # The outer fold labels. A repeated design carries id and id2; pasting them
 # keeps each row's label unique without assuming which columns are present.
+# Asking id_columns() rather than grepping `^id` here is what stops a column the
+# caller added from being pasted in with them (M36 T9).
 fold_ids <- function(x) {
-  id_cols <- grep("^id", names(x), value = TRUE)
+  id_cols <- id_columns(names(x))
   if (length(id_cols) == 1L) {
     return(x[[id_cols]])
   }

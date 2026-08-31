@@ -23,7 +23,7 @@ test_that("printing reports the outer design and how much of it ran", {
   expect_match(txt, "3 completed")
 })
 
-test_that("the outer scheme is dropped rather than misreported after subsetting", {
+test_that("an outer scheme the object does not name is left unprinted", {
   skip_if_no_engines()
   d <- make_reg_data()
 
@@ -34,9 +34,13 @@ test_that("the outer scheme is dropped rather than misreported after subsetting"
     grid = det_grid(),
     metrics = reg_metrics()
   ))
-  txt <- print_text(res[1:2, ])
+  txt <- print_text(as_fold_subset(res, 1:2))
 
-  # The rows kept are not the design the label describes (IP4).
+  # Since M36 `[` sheds the class outright on a row subset, so this object is
+  # built by the helper rather than by `[` and the test no longer exercises
+  # subsetting -- the title says so. What it does assert is unchanged and still
+  # worth asserting: a results object carrying no scheme label prints without
+  # one rather than reaching for the design it came from (IP4).
   expect_no_match(txt, "3-fold cross-validation")
   expect_match(txt, "2 requested")
 })
@@ -240,7 +244,7 @@ test_that("a single completed fold reads in the singular", {
   ))
 
   expect_match(
-    print_text(res[1L, ]),
+    print_text(as_fold_subset(res, 1L)),
     "Estimate (1 of 1 outer fold)",
     fixed = TRUE
   )

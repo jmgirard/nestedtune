@@ -189,27 +189,25 @@ test_that("the object carries the grid and metrics it was asked to run", {
   expect_identical(attr(res, "grid"), grid)
   expect_identical(attr(res, "metrics"), metrics)
 
-  # Both describe the call, not the rows, so a subset keeps them as they are --
-  # unlike folds_attempted/folds_completed, which are recomputed because they
-  # DO describe the rows. Note this survival is supplied by NextMethod() rather
-  # than by the explicit re-assignments in `[.nested_results`; see the comment
-  # there.
-  subset <- res[1:2, ]
-  expect_identical(attr(subset, "grid"), grid)
-  expect_identical(attr(subset, "metrics"), metrics)
+  # Both describe the call rather than the rows, so an operation the invariants
+  # allow keeps them as they are. Reordering the folds is such an operation:
+  # the folds are a set, and rearranging them changes nothing the object claims.
+  reordered <- res[rev(seq_len(nrow(res))), ]
+  expect_s3_class(reordered, "nested_results")
+  expect_identical(attr(reordered, "grid"), grid)
+  expect_identical(attr(reordered, "metrics"), metrics)
+  expect_identical(reordered$id, rev(res$id))
 
-  # A column subset too, and not because it is symmetry. `[.data.frame` drops
-  # arbitrary attributes on a column subset while `[.tbl_df` keeps them
-  # (measured at M20 review), so this is the one subset shape whose outcome
-  # depends on which method `[.nested_results`'s NextMethod() reaches. Pinning
-  # it here holds the documented promise to the class rather than to tibble's
-  # current `[`. Dropping the two seed columns keeps every column
-  # has_results_columns() requires, so the result is still a nested_results.
+  # Dropping the two seed columns used to keep the class, on the ground that
+  # has_results_columns() does not name them. M36 widened the set an operation
+  # must leave alone to every column the constructor writes, so it no longer
+  # does -- and the call's record goes with the class rather than staying
+  # readable on the tibble that comes back.
   cols <- setdiff(names(res), c(".tuning_seed", ".outer_fit_seed"))
   narrowed <- res[, cols]
-  expect_s3_class(narrowed, "nested_results")
-  expect_identical(attr(narrowed, "grid"), grid)
-  expect_identical(attr(narrowed, "metrics"), metrics)
+  expect_false(inherits(narrowed, "nested_results"))
+  expect_null(attr(narrowed, "grid"))
+  expect_null(attr(narrowed, "metrics"))
 })
 
 test_that("each fold records the candidates its inner tuning actually scored", {

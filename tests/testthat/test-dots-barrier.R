@@ -109,6 +109,17 @@ test_that("AC5: every registered method whose `...` is unused fences it", {
     # and an unfenced method reaches its own body and fails some other way,
     # which is the difference the class assertion detects.
     cnd <- rlang::catch_cnd(method(list(), nonesuch = 1))
+
+    # A method whose generic has no `...` -- dplyr_reconstruct(data, template)
+    # is the first -- has no barrier to put up and needs none: R refuses the
+    # argument at the call itself. Read from the formals rather than from an
+    # exemption list, so such a method is classified the day it is registered.
+    # Still asserted to refuse, so "no `...`" can never become "accepts it".
+    if (!"..." %in% names(formals(method))) {
+      expect_s3_class(cnd, "error")
+      expect_match(conditionMessage(cnd), "unused argument")
+      next
+    }
     expect_s3_class(cnd, "rlib_error_dots_nonempty")
   }
 })
