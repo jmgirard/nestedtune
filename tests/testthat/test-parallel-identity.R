@@ -397,3 +397,56 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
   )
   expect_identical(anyDuplicated(ran), 0L)
 })
+
+test_that("BC6: the identity holds with param_info supplied (M34, AC4)", {
+  skip_if_no_daemons()
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("dials")
+
+  data <- make_reg_data()
+  nested <- det_nested(data)
+  wf <- stoch_workflow(data)
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  # An integer grid, so `param_info` is what the candidates are generated from.
+  # With `stoch_grid()` the candidates travel in the grid itself and
+  # `param_info` would ride along inert -- an identity that held whether or not
+  # the argument reached a daemon at all.
+  narrow <- update(
+    tune::extract_parameter_set_dials(wf),
+    min_n = dials::min_n(c(2L, 8L))
+  )
+
+  mirai::daemons(0)
+  set.seed(2026L)
+  serial <- nested_tune_grid(
+    wf,
+    nested,
+    param_info = narrow,
+    grid = 3,
+    metrics = reg_metrics()
+  )
+  expect_identical(last_dispatch(), "serial")
+
+  start_daemons(2)
+  set.seed(2026L)
+  parallel <- without_pkgload_warning(
+    nested_tune_grid(
+      wf,
+      nested,
+      param_info = narrow,
+      grid = 3,
+      metrics = reg_metrics()
+    )
+  )
+
+  expect_identical(last_dispatch(), "parallel")
+  expect_identical(parallel, serial)
+
+  # The restriction really is the one being carried across the boundary: a
+  # `param_info` the daemons never saw would leave them generating candidates
+  # from the default range, which reaches 40.
+  expect_true(all(
+    vapply(parallel$.selected, function(x) x$min_n, integer(1)) <= 8L
+  ))
+})

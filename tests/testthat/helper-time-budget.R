@@ -604,6 +604,13 @@ time_budget_ledger <- function() {
       START_DAEMONS_BOUND_S(),
       "the parallel branch really ran"
     ),
+    tb_row(
+      "test-parallel-identity.R",
+      431L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the identity holds with param_info supplied"
+    ),
 
     # --- test-parallel-metrics.R --------------------------------------------
     # One pool start, and that is the whole file's declared waiting. The two

@@ -86,7 +86,7 @@ addressed; R's own matching rule, and no fence sees it.
 - [x] T3 Update every in-repo positional call site the new barrier breaks —
       `R/`, `tests/`, roxygen examples, `vignettes/` — found by grep, not by
       recall.
-- [ ] T4 Carry `param_info` through `dispatch_folds()`
+- [x] T4 Carry `param_info` through `dispatch_folds()`
       ([R/parallel.R:194](R/parallel.R:194)) and `nested_fold_fit()` to the
       daemon path; write the serial/2-worker identity test.
 - [x] T5 Fence the nine "Not used" methods; write the NAMESPACE-enumerated
@@ -148,6 +148,13 @@ addressed; R's own matching rule, and no fence sees it.
   `param_info` argument, and `test-parallel-classify.R`'s recorded formals
   literal was updated; the three time-budget ledger rows for that file moved
   three lines with it.
+- 2026-08-30: T4 wrote AC3's behavioural test (`test-param-info.R`) and AC4's
+  identity test (`test-parallel-identity.R` BC6, with its time-budget ledger
+  row). AC3's fixture is the continuous `threshold` tunable on an integer grid:
+  restricted to [0.05, 0.15] every fold selects ~0.05, unrestricted every fold
+  selects ~0.99. Both checks were shown able to fail — dropping the forward
+  from the two `tune_grid()` calls reds AC3's two tests, and blanking
+  `param_info` in the daemon `.args` alone reds BC6.
 
 ## Decisions
 
