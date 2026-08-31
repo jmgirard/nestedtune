@@ -415,7 +415,19 @@ nested_fold_fit <- function(
     {
       final_wf <- tune::finalize_workflow(object, selected)
       set_fold_seed(seeds[[2L]])
-      tune::last_fit(final_wf, split = split, metrics = metrics)
+      # The outer fit had no control object at all until M35, so its metrics
+      # were computed at tune's default event level whatever the inner run had
+      # been told -- the one place the setting had to reach for a reported
+      # number to move. Only `event_level` is set: `allow_par` is left at
+      # tune's own default rather than forced off the way the inner run's is,
+      # because this fits one workflow on one split and there is no inner
+      # parallelism here to displace (plan gate, 2026-08-31).
+      tune::last_fit(
+        final_wf,
+        split = split,
+        metrics = metrics,
+        control = tune::control_last_fit(event_level = event_level)
+      )
     },
     error = function(cnd) cnd
   )

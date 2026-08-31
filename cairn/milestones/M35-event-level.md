@@ -108,7 +108,7 @@ two-class test fixture, and the refusal path for a value outside the two.
       through `dispatch_folds()` (`R/parallel.R:194-306`) and `fold_task()`
       (`R/parallel.R:917`) to `nested_fold_fit()`, and set it on the inner
       `tune::control_grid()` (`R/nested-tune-grid.R:390`).
-- [ ] T3: pass `tune::control_last_fit(event_level = ...)` to the outer
+- [x] T3: pass `tune::control_last_fit(event_level = ...)` to the outer
       `last_fit()` (`R/nested-tune-grid.R:411`), which takes no control today.
 - [ ] T4: add `event_level` to `nested_final_fit()` and `final_fit_worker()`,
       set on the inner `tune::control_grid()` (`R/nested-final-fit.R:254`).
@@ -145,6 +145,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: minor amendment — added discovered task T0. `devtools::test()` was red on the default branch at `e10a8e5` (3 failures, all in `test-drift-manifest.R`): the drift check counted a rendering by plain substring, so `524 B` matched inside the hygiene stamp's unrelated `31,524 B` and, once a real occurrence was perturbed away, the accidental match restored the declared count and the checker's own planted-defect self-test went green. `rendering_pattern()` now anchors each rendering with a lookbehind. Suite green on that file, self-test red on the perturbation again.
 - 2026-08-31: T1 — `check_event_level()` added beside `check_param_info()`; refuses a wrong string, a non-character, a length-2 character vector, `NA_character_`, `character(0)` and `NULL`, each with its own diagnosis bullet. `devtools::test()` 1670 pass, 0 fail.
 - 2026-08-31: T2 — `event_level` added to `nested_tune_grid()` after `metrics`, checked at entry, and threaded through `dispatch_folds()`, both dispatch shapes, `fold_task()` and `nested_fold_fit()` onto the inner `tune::control_grid()`. Six test stand-ins for `fold_task`/`nested_fold_fit` widened to the new signature, the two recorded formals vectors updated, and three shifted `helper-time-budget.R` line numbers re-pointed. `air format .` run; `devtools::test()` 1670 pass, 0 fail.
+- 2026-08-31: T3 — the outer `last_fit()` now receives `tune::control_last_fit(event_level = event_level)`; it took no control object before, so outer-fold metrics were computed at tune's default level whatever the inner run had been told. `allow_par` left at tune's default per the implementation gate. `devtools::test()` 1670 pass, 0 fail.
 
 ## Decisions
 
