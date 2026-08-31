@@ -100,7 +100,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
       `rsample`, and Suggests plus `vctrs::s3_register()` would let AC1–AC5 skip
       vacuously), and the `rbind` divergence from rsample and tune, which is an
       IP4 call rather than a compatibility one.
-- [ ] T3 Register `vec_restore.nested_results()` against
+- [x] T3 Register `vec_restore.nested_results()` against
       `reconstruct_results()`. **Measure before registering the rest**: which
       vctrs entry points reach `vec_restore` and which reach `vec_ptype2` —
       `vec_ptype2(f, f)` on an rsample `rset` returns a bare tibble, measured
@@ -127,3 +127,6 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: implementation gate chose `vctrs (>= 0.6.1)` in Imports, matching tune's declared minimum; `dplyr`, already an Import, requires 0.7.1, so no install changes.
 - 2026-08-31: T1 — `tests/testthat/test-vctrs-compat.R`, 11 blocks, on the same fixture signature `test-dplyr-compat.R` builds (cache report: 1 build, 11 requests). Against the current code 7 fail and 4 pass: AC1's five forms all fail, AC3's `vec_cbind` fails (it drops the class where `bind_cols()` keeps it) and AC4's refusal fails (a tibble casts up silently); AC2's reorder, AC4's downward cast, AC5's five pairs and AC6's three paths pass, the reorder only because nothing intercepts it yet.
 - 2026-08-31: T2 — `vctrs (>= 0.6.1)` joins Imports and D-032 records it, together with the `rbind()` and `rename()` divergences from rsample and tune.
+- 2026-08-31: T3 — `vec_restore.nested_results()`, the five `vec_ptype2` and five `vec_cast` pairs, `vec_cbind_frame_ptype.nested_results()`, `rbind.nested_results()` and `names<-.nested_results()`; `stamp_results()` and `copy_results_attributes()` split out of `reconstruct_results()` so the prototype carriers write the same record. All 11 blocks of `test-vctrs-compat.R` pass; full suite 348 tests, 0 failures, 0 skips.
+- 2026-08-31: T3 measurement, second round: `vec_cbind()` never reaches `vec_ptype2()` or `vec_restore()` on its own — it builds its container by calling `x[0]` through `vec_cbind_frame_ptype()`, and `[.nested_results` sheds the class on a zero-column subset, so the class is gone before either generic is asked. Registering that generic is what AC3 rests on; it is documented `[Experimental]` and keyword `internal`, and no installed package registers a method for it.
+- 2026-08-31: `test-dots-barrier.R`'s AC5 probe (M34) failed on all 14 new methods; they are named in its exemption list with the reason — vctrs passes `x_arg`, `y_arg` and `call` through a `vec_ptype2()`/`vec_cast()` method's `...`, base `rbind()`'s `...` is the data itself, and `names<-` is a replacement function the probe cannot call without a `value`.
