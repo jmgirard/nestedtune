@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M36: Removing an outer fold's row stops producing a `nested_results`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -133,6 +133,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: status → review.
 - 2026-08-31: T6 — both defects reproduced first on a hand-built 3-fold object (`filter`, `mutate`, `arrange`, `bind_cols`, `left_join` all returned `nested_results,data.frame`; `mutate(id_extra = 1)` and `mutate(ideal = 1)` both shed the class), then fixed. The tibble promotion moved out of `bare_results()` into `as_results_tbl()` and both branches call it. `can_reconstruct_results()` now reads the record off the **template** only and asks that every one of those columns be present in `data` holding the same values, so a caller-added column is not looked at — chosen at a gate over narrowing `record_columns()`'s `^id` grep, which measures the same but keeps two symmetric sets. Tests first, red at 31 failures: `expect_kept()` and `expect_bare()` both assert `tbl_df`, a block names the five bare-data-frame verbs and asserts `mutate(res, extra = 1)[, "id"]` is a tibble rather than a bare vector, and a block asserts `id_extra`, `ideal` and `extra` all keep the class. `test-dplyr-compat.R` FAIL 0 / PASS 156; `devtools::test()` over the suite exits clean.
 - 2026-08-31: T7 — the `@return` gains a paragraph naming `dplyr_reconstruct()` as where the rule is enforced and `rename()` as the operation that never reaches it, told as a gap rather than a fourth invariant; `bare_results()`'s "so a grouped result stays grouped" reason went with T6's restructure, since the promotion it justified now lives in `as_results_tbl()`; and the two overclaiming titles are now "an outer scheme the object does not name is left unprinted" (`test-nested-results-print.R`) and "a results object holding no completed fold refuses to summarize" (`test-nested-tune-grid-failures.R`), each with a comment saying the object is the helper's rather than `[`'s. `devtools::document()` rewrote `man/nested_tune_grid.Rd` only. Suite: FAIL 0, WARN 0, SKIP 0, PASS 1911; 37 fixture signatures over 37 builds, none built twice.
+- 2026-08-31: defect return 1 closed — `devtools::check()` `Status: OK`, 0 errors, 0 warnings, 0 notes, 2m 43.8s. Status → review.
 - 2026-08-31: review — all five criteria passed with fresh evidence and the consistency gate is green, but the [O] lens returned two confirmed behavior defects the criteria do not reach and the maintainer judged load-bearing at the gate: `reconstruct_results()` keeps the class while dropping the tibble classes for the five verbs dplyr hands a bare data frame, and `can_reconstruct_results()`'s set-equality over `^id`-matching names drops the class when a caller adds an `id`-prefixed column, contradicting the "columns may be added" invariant the docs and NEWS both state. Approval withheld; status → in-progress for T6 and T7. Defect return 1. F4 absorbed into the vctrs candidate row, F7 rejected as refuted, the D-030 comment-block finding rejected as pre-existing.
 
 ## Decisions
