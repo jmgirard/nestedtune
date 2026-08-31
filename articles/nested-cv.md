@@ -132,7 +132,7 @@ res <- nested_tune_grid(wf, folds, grid = grid)
 
 res
 #> 
-#> ── Nested cross-validation results ─────────────────────────────────────────────
+#> ── Nested cross-validation results ────────────────────────────────────
 #> Outer resamples: 5-fold cross-validation
 #> Outer folds: 5 requested, 5 completed
 #> 
@@ -146,9 +146,9 @@ res
 #> rmse (standard): 2.49
 #> rsq (standard): 0.842
 #> 
-#> ℹ A nested estimate describes the tune-and-fit procedure, not a model you can
-#>   deploy. Build that with `nested_final_fit()`, and report this estimate as
-#>   what its procedure achieves.
+#> ℹ A nested estimate describes the tune-and-fit procedure, not a model
+#>   you can deploy. Build that with `nested_final_fit()`, and report
+#>   this estimate as what its procedure achieves.
 ```
 
 ## What to report, and why
@@ -393,19 +393,19 @@ final <- nested_final_fit(wf, folds, grid = grid)
 
 final
 #> 
-#> ── Nested cross-validation final fit ───────────────────────────────────────────
+#> ── Nested cross-validation final fit ──────────────────────────────────
 #> Selected: mtry = 2, min_n = 2
 #> 
-#> ℹ This model has no performance estimate of its own. Report the nested estimate
-#>   from `collect_metrics()` on the `nested_tune_grid()` result, which describes
-#>   the procedure that produced it.
-#> ℹ Compare the parameters above with `.selected` from that run. Outer folds
-#>   choosing differently is selection instability, and it is information about
-#>   the procedure rather than noise.
-#> ℹ `extract_tune_results()` returns the tuning run selection came from, and
-#>   `extract_scored_candidates()` the candidates it scored. Any metric reachable
-#>   through the first is a selection-time quantity, optimistically biased as a
-#>   claim about this model.
+#> ℹ This model has no performance estimate of its own. Report the nested
+#>   estimate from `collect_metrics()` on the `nested_tune_grid()`
+#>   result, which describes the procedure that produced it.
+#> ℹ Compare the parameters above with `.selected` from that run. Outer
+#>   folds choosing differently is selection instability, and it is
+#>   information about the procedure rather than noise.
+#> ℹ `extract_tune_results()` returns the tuning run selection came from,
+#>   and `extract_scored_candidates()` the candidates it scored. Any
+#>   metric reachable through the first is a selection-time quantity,
+#>   optimistically biased as a claim about this model.
 ```
 
 The outer folds play no part here. Their selections are not pooled or

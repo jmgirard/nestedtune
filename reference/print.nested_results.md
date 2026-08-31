@@ -67,7 +67,7 @@ res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 
 res
 #> 
-#> ── Nested cross-validation results ─────────────────────────────────────────────
+#> ── Nested cross-validation results ────────────────────────────────────
 #> Outer resamples: 3-fold cross-validation
 #> Outer folds: 3 requested, 3 completed
 #> 
@@ -80,7 +80,7 @@ res
 #> rmse (standard): 3.23
 #> rsq (standard): 0.722
 #> 
-#> ℹ A nested estimate describes the tune-and-fit procedure, not a model you can
-#>   deploy. Build that with `nested_final_fit()`, and report this estimate as
-#>   what its procedure achieves.
+#> ℹ A nested estimate describes the tune-and-fit procedure, not a model
+#>   you can deploy. Build that with `nested_final_fit()`, and report
+#>   this estimate as what its procedure achieves.
 ```

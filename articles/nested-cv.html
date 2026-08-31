@@ -8,15 +8,17 @@
 <title>Nested cross-validation • nestedtune</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Nested cross-validation">
 </head>
 <body>
-    <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
+    <a href="#container" class="visually-hidden-focusable">Skip to content</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">nestedtune</a>
 
@@ -48,7 +50,7 @@
 
 
   </div>
-</nav><div class="container template-article">
+</nav><div class="container template-article" id="container">
 
 
 
@@ -182,7 +184,7 @@ chose.</p>
 <span></span>
 <span><span class="va">res</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Nested cross-validation results</span> <span style="color: #00BBBB;">─────────────────────────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Nested cross-validation results</span> <span style="color: #00BBBB;">────────────────────────────────────</span></span></span>
 <span><span class="co">#&gt; Outer resamples: 5-fold cross-validation</span></span>
 <span><span class="co">#&gt; Outer folds: 5 requested, 5 completed</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -196,9 +198,9 @@ chose.</p>
 <span><span class="co">#&gt; rmse (standard): 2.49</span></span>
 <span><span class="co">#&gt; rsq (standard): 0.842</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A nested estimate describes the tune-and-fit procedure, not a model you can</span></span>
-<span><span class="co">#&gt;   deploy. Build that with `nested_final_fit()`, and report this estimate as</span></span>
-<span><span class="co">#&gt;   what its procedure achieves.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A nested estimate describes the tune-and-fit procedure, not a model</span></span>
+<span><span class="co">#&gt;   you can deploy. Build that with `nested_final_fit()`, and report</span></span>
+<span><span class="co">#&gt;   this estimate as what its procedure achieves.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="what-to-report-and-why">What to report, and why<a class="anchor" aria-label="anchor" href="#what-to-report-and-why"></a>
@@ -406,19 +408,19 @@ whole dataset in hand.</p>
 <span></span>
 <span><span class="va">final</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Nested cross-validation final fit</span> <span style="color: #00BBBB;">───────────────────────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Nested cross-validation final fit</span> <span style="color: #00BBBB;">──────────────────────────────────</span></span></span>
 <span><span class="co">#&gt; Selected: mtry = 2, min_n = 2</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This model has no performance estimate of its own. Report the nested estimate</span></span>
-<span><span class="co">#&gt;   from `collect_metrics()` on the `nested_tune_grid()` result, which describes</span></span>
-<span><span class="co">#&gt;   the procedure that produced it.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Compare the parameters above with `.selected` from that run. Outer folds</span></span>
-<span><span class="co">#&gt;   choosing differently is selection instability, and it is information about</span></span>
-<span><span class="co">#&gt;   the procedure rather than noise.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `extract_tune_results()` returns the tuning run selection came from, and</span></span>
-<span><span class="co">#&gt;   `extract_scored_candidates()` the candidates it scored. Any metric reachable</span></span>
-<span><span class="co">#&gt;   through the first is a selection-time quantity, optimistically biased as a</span></span>
-<span><span class="co">#&gt;   claim about this model.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This model has no performance estimate of its own. Report the nested</span></span>
+<span><span class="co">#&gt;   estimate from `collect_metrics()` on the `nested_tune_grid()`</span></span>
+<span><span class="co">#&gt;   result, which describes the procedure that produced it.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Compare the parameters above with `.selected` from that run. Outer</span></span>
+<span><span class="co">#&gt;   folds choosing differently is selection instability, and it is</span></span>
+<span><span class="co">#&gt;   information about the procedure rather than noise.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `extract_tune_results()` returns the tuning run selection came from,</span></span>
+<span><span class="co">#&gt;   and `extract_scored_candidates()` the candidates it scored. Any</span></span>
+<span><span class="co">#&gt;   metric reachable through the first is a selection-time quantity,</span></span>
+<span><span class="co">#&gt;   optimistically biased as a claim about this model.</span></span></code></pre></div>
 <p>The outer folds play no part here. Their selections are not pooled or
 voted on — they belong to the estimate, which describes the procedure
 across the instability they reveal.</p>
@@ -610,7 +612,9 @@ evaluation in health care: Tutorial. <em>JMIR AI</em>, 2, e49023.</p>
 
 
 
-    <footer><div class="pkgdown-footer-left">
+   </div>
+  <footer><div class="container">
+  <div class="pkgdown-footer-left">
   <p>Developed by Jeffrey Girard.</p>
 </div>
 
@@ -618,12 +622,6 @@ evaluation in health care: Tutorial. <em>JMIR AI</em>, 2, e49023.</p>
   <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
-    </footer>
-</div>
-
-
-
-
-
-  </body>
+  </div></footer>
+</body>
 </html>

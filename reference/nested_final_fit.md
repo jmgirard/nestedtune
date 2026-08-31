@@ -207,19 +207,19 @@ set.seed(3)
 final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
 final
 #> 
-#> ── Nested cross-validation final fit ───────────────────────────────────────────
+#> ── Nested cross-validation final fit ──────────────────────────────────
 #> Selected: num_comp = 1
 #> 
-#> ℹ This model has no performance estimate of its own. Report the nested estimate
-#>   from `collect_metrics()` on the `nested_tune_grid()` result, which describes
-#>   the procedure that produced it.
-#> ℹ Compare the parameters above with `.selected` from that run. Outer folds
-#>   choosing differently is selection instability, and it is information about
-#>   the procedure rather than noise.
-#> ℹ `extract_tune_results()` returns the tuning run selection came from, and
-#>   `extract_scored_candidates()` the candidates it scored. Any metric reachable
-#>   through the first is a selection-time quantity, optimistically biased as a
-#>   claim about this model.
+#> ℹ This model has no performance estimate of its own. Report the nested
+#>   estimate from `collect_metrics()` on the `nested_tune_grid()`
+#>   result, which describes the procedure that produced it.
+#> ℹ Compare the parameters above with `.selected` from that run. Outer
+#>   folds choosing differently is selection instability, and it is
+#>   information about the procedure rather than noise.
+#> ℹ `extract_tune_results()` returns the tuning run selection came from,
+#>   and `extract_scored_candidates()` the candidates it scored. Any
+#>   metric reachable through the first is a selection-time quantity,
+#>   optimistically biased as a claim about this model.
 
 predict(extract_workflow(final), new_data = mtcars[1:3, ])
 #> # A tibble: 3 × 1
