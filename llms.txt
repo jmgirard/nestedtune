@@ -3,7 +3,7 @@
 Nested cross-validation for the tidymodels ecosystem.
 
 Start with [Nested
-cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.html)
+cross-validation](https://jmgirard.github.io/nestedtune/articles/nested-cv.html)
 — what the estimate means, what to report instead of your model’s own
 score, and how to read disagreement between outer folds.
 
@@ -110,11 +110,22 @@ folds <- nested_resamples(
 set.seed(2)
 res <- nested_tune_grid(wf, folds, grid = grid)
 collect_metrics(res)
+#> # A tibble: 2 × 5
+#>   .metric .estimator  mean     n std_err
+#>   <chr>   <chr>      <dbl> <int>   <dbl>
+#> 1 rmse    standard   2.46      5  0.445 
+#> 2 rsq     standard   0.844     5  0.0267
 
 # The model: what you deploy. It has no performance number of its own.
 set.seed(3)
 final <- nested_final_fit(wf, folds, grid = grid)
 predict(extract_workflow(final), new_data = mtcars[1:3, ])
+#> # A tibble: 3 × 1
+#>   .pred
+#>   <dbl>
+#> 1  20.9
+#> 2  20.9
+#> 3  23.8
 ```
 
 Why the estimate belongs to the procedure rather than to the model, and

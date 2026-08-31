@@ -15,6 +15,7 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Nested Cross-Validation for Tidymodels">
 <meta name="description" content="Builds and orchestrates nested cross-validation designs for the tidymodels ecosystem. Provides a memory-lean nested resampling constructor whose object size does not grow with the outer fold count, producing the same splits as rsample.">
 <meta property="og:description" content="Builds and orchestrates nested cross-validation designs for the tidymodels ecosystem. Provides a memory-lean nested resampling constructor whose object size does not grow with the outer fold count, producing the same splits as rsample.">
+<script src="https://cdn.jsdelivr.net/gh/posit-dev/supported-by-posit/js/badge.min.js" data-max-height="43" data-hide-below="1200" data-light-bg="#666f76" data-light-fg="#f9f9f9"></script><script defer data-domain="nestedtune.tidymodels.org,all.tidymodels.org" src="https://plausible.io/js/plausible.js"></script>
 </head>
 <body>
     <a href="#container" class="visually-hidden-focusable">Skip to content</a>
@@ -60,7 +61,7 @@
 <!-- badges: start -->
 
 <p>Nested cross-validation for the tidymodels ecosystem.</p>
-<p>Start with <a href="https://nestedtune.tidymodels.org/articles/nested-cv.html">Nested cross-validation</a> — what the estimate means, what to report instead of your model’s own score, and how to read disagreement between outer folds.</p>
+<p>Start with <a href="https://jmgirard.github.io/nestedtune/articles/nested-cv.html" class="external-link">Nested cross-validation</a> — what the estimate means, what to report instead of your model’s own score, and how to read disagreement between outer folds.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -150,11 +151,22 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nested_tune_grid.html">nested_tune_grid</a></span><span class="op">(</span><span class="va">wf</span>, <span class="va">folds</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 5</span></span>
+<span><span class="co">#&gt;   .metric .estimator  mean     n std_err</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 rmse    standard   2.46      5  0.445 </span></span>
+<span><span class="co">#&gt; 2 rsq     standard   0.844     5  0.0267</span></span>
 <span></span>
 <span><span class="co"># The model: what you deploy. It has no performance number of its own.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">final</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nested_final_fit.html">nested_final_fit</a></span><span class="op">(</span><span class="va">wf</span>, <span class="va">folds</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final</span><span class="op">)</span>, new_data <span class="op">=</span> <span class="va">mtcars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final</span><span class="op">)</span>, new_data <span class="op">=</span> <span class="va">mtcars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 1</span></span>
+<span><span class="co">#&gt;   .pred</span></span>
+<span><span class="co">#&gt;   &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1  20.9</span></span>
+<span><span class="co">#&gt; 2  20.9</span></span>
+<span><span class="co">#&gt; 3  23.8</span></span></code></pre></div>
 <p>Why the estimate belongs to the procedure rather than to the model, and what to write up, is the subject of <a href="https://nestedtune.tidymodels.org/articles/nested-cv.html">the guide</a>.</p>
 </div>
 </div>
@@ -199,7 +211,6 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://lifecycle.r-lib.org/articles/stages.html" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://github.com/tidymodels/nestedtune/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/tidymodels/nestedtune/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://app.codecov.io/gh/tidymodels/nestedtune" class="external-link"><img src="https://codecov.io/gh/tidymodels/nestedtune/graph/badge.svg" alt="Codecov test coverage"></a></li>
 </ul>
