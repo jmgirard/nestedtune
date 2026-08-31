@@ -1,0 +1,200 @@
+# The `...` barrier on the exported surface (M34).
+#
+# Three exports and every registered method now take `...` and refuse anything
+# that lands in it. What the tests below have to distinguish is a fence from an
+# accident: a method handed `nonesuch = 1` and a stand-in object errors either
+# way, so every probe asserts the *class* of the condition -- rlang's
+# `rlib_error_dots_nonempty` -- and never merely that something went wrong.
+
+# AC1 -------------------------------------------------------------------
+
+test_that("AC1: the three entry points carry `...` after their required arguments", {
+  # Written out rather than derived, so a signature that drifts has to be
+  # re-agreed here. `param_info`, `grid` and `metrics` all sit behind the
+  # barrier and therefore match by name only.
+  expect_identical(
+    names(formals(nested_tune_grid)),
+    c("object", "resamples", "...", "param_info", "grid", "metrics")
+  )
+  expect_identical(
+    names(formals(nested_final_fit)),
+    c("object", "resamples", "...", "param_info", "grid", "metrics")
+  )
+  # All three of `nested_resamples()`'s arguments are required, so its barrier
+  # is last rather than mid-signature.
+  expect_identical(
+    names(formals(nested_resamples)),
+    c("data", "outside", "inside", "...")
+  )
+})
+
+# AC2 -------------------------------------------------------------------
+
+# The three entry points are checked one at a time rather than in a loop: a
+# loop over three names would report "one of them" on a failure, and the point
+# of the criterion is that each names its own call.
+
+test_that("AC2: nested_tune_grid() refuses an argument it does not know", {
+  cnd <- rlang::catch_cnd(nested_tune_grid(1, 2, nonesuch = 1))
+  expect_s3_class(cnd, "rlib_error_dots_nonempty")
+  expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_grid")
+})
+
+test_that("AC2: nested_final_fit() refuses an argument it does not know", {
+  cnd <- rlang::catch_cnd(nested_final_fit(1, 2, nonesuch = 1))
+  expect_s3_class(cnd, "rlib_error_dots_nonempty")
+  expect_identical(rlang::call_name(conditionCall(cnd)), "nested_final_fit")
+})
+
+test_that("AC2: nested_resamples() refuses an argument it does not know", {
+  cnd <- rlang::catch_cnd(nested_resamples(1, 2, 3, nonesuch = 1))
+  expect_s3_class(cnd, "rlib_error_dots_nonempty")
+  expect_identical(rlang::call_name(conditionCall(cnd)), "nested_resamples")
+})
+
+# AC5 -------------------------------------------------------------------
+
+# The domain is read from what the package actually registers, not from a list
+# kept here: a tenth method added next year is in the probe the day it is
+# registered, and the only way out is to name it as an exemption below.
+DOTS_EXEMPT_METHODS <- "[.nested_results"
+
+# The registry the package's own NAMESPACE writes, read back from the loaded
+# namespace: one row per `S3method()` directive, generic and class.
+registered_s3_methods <- function() {
+  reg <- getNamespaceInfo(asNamespace("nestedtune"), "S3methods")
+  sort(paste0(reg[, 1L], ".", reg[, 2L]))
+}
+
+test_that("AC5: every registered method whose `...` is unused fences it", {
+  methods <- registered_s3_methods()
+
+  # The exemption has to still exist for the subtraction to mean anything --
+  # a renamed `[` method would otherwise silently shrink to no exemption at all
+  # while this test went on passing.
+  expect_true(all(DOTS_EXEMPT_METHODS %in% methods))
+
+  probed <- setdiff(methods, DOTS_EXEMPT_METHODS)
+  expect_gt(length(probed), 0L)
+
+  reg <- getNamespaceInfo(asNamespace("nestedtune"), "S3methods")
+  for (i in seq_len(nrow(reg))) {
+    name <- paste0(reg[[i, 1L]], ".", reg[[i, 2L]])
+    if (name %in% DOTS_EXEMPT_METHODS) {
+      next
+    }
+    method <- getS3method(
+      reg[[i, 1L]],
+      reg[[i, 2L]],
+      envir = asNamespace("nestedtune")
+    )
+    # A bare list stands in for the object. Every fence runs before the method
+    # touches `x`, so the stand-in never reaches anything that would care --
+    # and an unfenced method reaches its own body and fails some other way,
+    # which is the difference the class assertion detects.
+    cnd <- rlang::catch_cnd(method(list(), nonesuch = 1))
+    expect_s3_class(cnd, "rlib_error_dots_nonempty")
+  }
+})
+
+# AC6 -------------------------------------------------------------------
+
+test_that("AC6: collect_metrics() puts `summarize` behind the barrier", {
+  expect_identical(
+    names(formals(getS3method("collect_metrics", "nested_results"))),
+    c("x", "...", "summarize")
+  )
+})
+
+# Every argument text of every `collect_metrics(` call in a file, one string
+# per argument. Text, not parsed code, because the corpus includes roxygen
+# examples and vignette chunks -- the call sites a parser of `R/` alone would
+# walk straight past.
+collect_metrics_call_args <- function(path) {
+  text <- paste(readLines(path, warn = FALSE), collapse = "\n")
+  starts <- gregexpr("collect_metrics\\(", text, perl = TRUE)[[1]]
+  if (identical(as.integer(starts), -1L)) {
+    return(list())
+  }
+  chars <- strsplit(text, "")[[1]]
+  out <- list()
+  for (s in starts) {
+    open <- s + attr(starts, "match.length")[which(starts == s)] - 1L
+    depth <- 1L
+    args <- character()
+    current <- ""
+    i <- open + 1L
+    while (i <= length(chars) && depth > 0L) {
+      ch <- chars[[i]]
+      if (ch == "(") depth <- depth + 1L
+      if (ch == ")") depth <- depth - 1L
+      if (depth == 0L) break
+      if (ch == "," && depth == 1L) {
+        args <- c(args, current)
+        current <- ""
+      } else {
+        current <- paste0(current, ch)
+      }
+      i <- i + 1L
+    }
+    args <- c(args, current)
+    args <- trimws(args)
+    out[[length(out) + 1L]] <- args[nzchar(args)]
+  }
+  out
+}
+
+test_that("AC6: no in-repo call passes `summarize` positionally", {
+  root <- test_path("..", "..")
+  files <- c(
+    list.files(file.path(root, "R"), pattern = "[.]R$", full.names = TRUE),
+    list.files(
+      file.path(root, "tests"),
+      pattern = "[.]R$",
+      full.names = TRUE,
+      recursive = TRUE
+    ),
+    list.files(
+      file.path(root, "vignettes"),
+      pattern = "[.]Rmd$",
+      full.names = TRUE
+    )
+  )
+  files <- files[file.exists(files)]
+
+  # The scan is worthless if it reads nothing, and a `test_path()` that lands
+  # somewhere unexpected reads nothing while passing (M14's lesson).
+  expect_gt(length(files), 20L)
+
+  calls <- unlist(lapply(files, collect_metrics_call_args), recursive = FALSE)
+  expect_gt(length(calls), 10L)
+
+  positional <- Filter(
+    function(args) length(args) > 1L && !any(grepl("=", args[-1L])),
+    calls
+  )
+  expect_identical(
+    lapply(positional, paste, collapse = ", "),
+    list()
+  )
+})
+
+test_that("AC6: the positional-argument scan can see a positional argument", {
+  # Discrimination: the scan above reports nothing, which is also what a broken
+  # scan reports. Planting the defect in a temporary file proves it is the
+  # absence of positional calls being reported and not the absence of a scan.
+  path <- tempfile(fileext = ".R")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(
+    c("collect_metrics(res, FALSE)", "collect_metrics(res, summarize = FALSE)"),
+    path
+  )
+  calls <- collect_metrics_call_args(path)
+  expect_length(calls, 2L)
+  positional <- Filter(
+    function(args) length(args) > 1L && !any(grepl("=", args[-1L])),
+    calls
+  )
+  expect_length(positional, 1L)
+  expect_identical(positional[[1L]], c("res", "FALSE"))
+})

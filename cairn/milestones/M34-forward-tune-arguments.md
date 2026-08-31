@@ -1,11 +1,11 @@
 # M34: The arguments a caller can hand through to `tune`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP1, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m034-forward-tune-arguments`
 
 ## Goal
 
@@ -74,7 +74,7 @@ addressed; R's own matching rule, and no fence sees it.
 
 ## Tasks
 
-- [ ] T1 Test-first: assert the three formals vectors and the three
+- [x] T1 Test-first: assert the three formals vectors and the three
       `nonesuch = 1` errors; they fail against today's signatures.
 - [ ] T2 Add `...` + `check_dots_empty()` and `param_info` to
       `nested_tune_grid()` ([R/nested-tune-grid.R:300](R/nested-tune-grid.R:300))
@@ -120,6 +120,17 @@ addressed; R's own matching rule, and no fence sees it.
   deliverable and testthat binding-mocks do not reach a mirai daemon;
   falsified by no parameter range being narrowable enough to separate the two
   grids on a fixture the suite can afford.
+- 2026-08-30: implementation gate chose `param_info` ahead of `grid` and
+  `metrics` in both orchestrator signatures, mirroring `tune::tune_grid()`'s own
+  order, over appending it last; all three sit behind `...` and match by name
+  only, so the choice is what the signature reads like.
+- 2026-08-30: implementation gate chose a local `check_param_info()` beside the
+  existing checks over letting `tune` reject a bad `param_info`, so a mistyped
+  argument fails before the first fold rather than after it.
+- 2026-08-30: T1 wrote `tests/testthat/test-dots-barrier.R` — the three formals
+  vectors, the three `nonesuch = 1` errors asserted by condition class, the
+  NAMESPACE-registry method probe, and the `collect_metrics()` positional scan
+  with its planted-defect control. Ten failures against today's signatures.
 
 ## Decisions
 
