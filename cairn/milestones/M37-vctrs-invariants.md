@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M37: The vctrs half, so `rbind()` stops claiming a design it never ran
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** —
+- **Branch/PR:** `m037-vctrs-invariants`
 
 ## Goal
 
@@ -116,3 +116,4 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: plan gate chose to write `rbind.nested_results()` over leaving base `rbind()` as rsample and tune both leave it, because a six-row object reporting three folds attempted is the untrue record IP4 forbids, and a `@return` sentence is not how an inviolable principle is traded away; the cost is a divergence from upstream on a method neither registers. Falsified by base `rbind()` reaching a path the method cannot control, or by a downstream package depending on `rbind()` returning a `nested_results`.
 - 2026-08-31: plan gate chose one rule through both doors — `vec_cbind()` keeping the class exactly as `dplyr::bind_cols()` does — over copying tune's recipe verbatim, which drops it, because a caller cannot predict which door a verb uses and M36 documented the invariant without qualifying it by entry point. The divergence from tune is flagged to topepo on #32. Falsified by a vctrs coherence requirement that forbids the ptype2 lattice AC3 implies, which T3 measures before registering.
 - 2026-08-31: plan gate chose to leave `group_by()`, `rowwise()` and `tibble::as_tibble()` carrying the run's attributes over intercepting all three, because each returns an object that no longer claims to be a results object and rsample behaves identically; it goes to DESIGN.md Known issues rather than a candidate row. Falsified by any of the three producing something a `nested_results` method will dispatch on.
+- 2026-08-31: /milestone-implement started on `m037-vctrs-invariants`, cut from `main` at `b26eb77`.
