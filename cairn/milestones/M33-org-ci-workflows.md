@@ -123,6 +123,7 @@ none is up for revision here.
 - 2026-08-30: T5 done. `cairn/DESIGN.md` gains an `air` Conventions bullet, the first code-style convention it records, naming the ledger re-point a reformatting pass forces. `D-028` records adopting `air` and vendoring the three workflows unmodified, with the two gate rejections (taking `format-suggest.yaml` without a formatter; pinning the vendored files' actions). `PROFILE.md`'s `test-doctrine` slot names the three added workflows and that none carries a filtered trigger; the slot's divergences bullet was re-wrapped at 98 columns with no wording change, reclaiming two lines to keep the file under its 120-line cap (119). The write-token action-pin question was absorbed into the standing pkgdown-pin candidate row rather than opened as a new one. The wider CI-records refresh the standing candidate row owns is untouched.
 - 2026-08-30: T6 done, milestone to review. `devtools::document()` produced no diff; `devtools::test()` on the branch tip: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes in 3m 20.9s, so `air.toml`'s `.Rbuildignore` entry holds. `air format --check .` prints nothing on the committed tree. Reproduction check for AC5: `git archive HEAD~1` into a scratch tree, `air format .` there, `diff -r` against `git archive HEAD` — the only two differing paths are `tests/testthat/helper-time-budget.R` and this file, the two the criterion names; within the helper the difference is 56 `NNNL,` ledger lines and nothing else.
 - 2026-08-30: review — every criterion re-executed with fresh evidence, all six met; PR #41 opened as a draft; `cairn_validate` all 16 PASS; three fresh-context reviewers returned five findings, none meeting the return floor.
+- 2026-08-30: review gate — maintainer chose to repair the reformat's broken line references before merging; F1, F2 and F4 fixed on the branch and re-verified, F3 and F5 accepted for the Known issues entry.
 
 ## Decisions
 
@@ -157,3 +158,14 @@ The prior-review lens found no regression: it confirmed the write-token pin dive
 
 No finding demonstrates an acceptance criterion failing, and none is a defect in what the package does for its users, so none meets the return floor; dispositions are the maintainer's at the merge gate.
 
+### Triage and fixes
+
+The maintainer chose at the gate to repair the broken references before merging.
+
+- F1 — **fixed on the branch.** 124 citations re-pointed by a line map built with `difflib` over the reformat commit's before/after text of each touched file, applied only where the cited position's content actually moved. Three sites were then corrected by hand: `code-inventory.md:365` and `:576` cite tune's `R/checks.R`, not this package's, and were restored to `391` and `361`; `ROADMAP.md:32` was already wrong before the reformat (`R/parallel.R:361-362` pointed at a comment marker on `main`) and now names the real wall-clock deadline at `R/parallel.R:477-478`. Verification: all 106 in-repo rows of `code-inventory.md`'s function table resolve to a line containing their own function's name (0 mismatches), and a sweep of every remaining citation of a reformatted file finds 226 landing on substantive lines and 6 not — five of those cite tune's files and one, `R/nested-results-plot.R:225`'s pointer at `R/nested-results-print.R:229`, was already wrong on `main` and is left as the pre-existing defect it is.
+- F2 — **fixed on the branch.** `tests/testthat/helper-time-budget.R:44` and `:332` now read `classify:745` and `:751`, the lines that set and spend the option.
+- F3 — **accepted, recorded.** The `/style` command's `styler` run stays as vendored; the collision with `air` goes to `DESIGN.md`'s Known issues at the hygiene pass, since holding the file at the organization's blob is AC1.
+- F4 — **fixed on the branch.** `cairn/PROFILE.md:46` now reads "Five divergences … (M11 ×2, M12 rev. M31, M14, M33)".
+- F5 — **accepted, recorded.** Not editable without leaving the shared blob. The moving-tag half is already carried by the standing pkgdown-pin candidate row, which this milestone extended; the permissions half joins the Known issues entry with F3.
+
+Re-verification after the fixes: `air format --check .` silent, `.github/ci-usage.py` exit 0, `cairn_validate.py` all 16 PASS, `devtools::test()` `FAIL 0 | WARN 0 | SKIP 0 | PASS 1628`, `devtools::check()` `Status: OK` in 3m 16.2s.

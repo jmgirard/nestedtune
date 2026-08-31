@@ -128,7 +128,7 @@ arguments are the outer call's, and nothing recovers the inner one. `get_rsplit(
 half of F028 that reaches the split; it returns no frame, which is the half F028
 exists for. The two constructors that came closest — `make_splits()`
 (`R/misc.R:18`) and `new_rset()` (`R/rset.R:14`) — are declined for a stated
-reason in this repo's own comment at `R/nested-resamples.R:160-164`: rebuilding
+reason in this repo's own comment at `R/nested-resamples.R:162-166`: rebuilding
 the splits from scratch drops the split subclass and the per-split `id` tibble
 that `labels()` reads. `populate()` (`R/complement.R:126`) fills a split's
 `out_id`, but in that split's own index space, not the outer-fold space F026
@@ -157,46 +157,46 @@ things a per-entry check had missed.
 | F002 | `has_preprocessor()` | `R/checks.R:82` | internal | ~3 | glue |
 | F003 | `check_model_spec()` | `R/checks.R:91` | internal | ~16 | glue |
 | F004 | `check_nested()` | `R/checks.R:108` | internal | ~70 | resampling-layer |
-| F005 | `check_column_class()` | `R/checks.R:185` | internal | ~18 | resampling-layer |
-| F006 | `check_grid()` | `R/checks.R:204` | internal | ~23 | ambiguous |
-| F007 | `check_grid_params()` | `R/checks.R:234` | internal | ~41 | ambiguous |
-| F008 | `check_inside_spec()` | `R/checks.R:285` | internal | ~16 | resampling-layer |
-| F009 | `eval_inside_spec()` | `R/checks.R:312` | internal | ~39 | resampling-layer |
-| F010 | `check_plot_type()` | `R/checks.R:357` | internal | ~21 | furniture |
-| F011 | `check_metrics()` | `R/checks.R:379` | internal | ~12 | glue |
+| F005 | `check_column_class()` | `R/checks.R:191` | internal | ~18 | resampling-layer |
+| F006 | `check_grid()` | `R/checks.R:215` | internal | ~23 | ambiguous |
+| F007 | `check_grid_params()` | `R/checks.R:250` | internal | ~41 | ambiguous |
+| F008 | `check_inside_spec()` | `R/checks.R:301` | internal | ~16 | resampling-layer |
+| F009 | `eval_inside_spec()` | `R/checks.R:328` | internal | ~39 | resampling-layer |
+| F010 | `check_plot_type()` | `R/checks.R:376` | internal | ~21 | furniture |
+| F011 | `check_metrics()` | `R/checks.R:402` | internal | ~12 | glue |
 | F012 | `extract_tune_results()` | `R/nested-final-fit-extract.R:75` | exported | ~3 | furniture |
 | F013 | `extract_tune_results.default()` | `R/nested-final-fit-extract.R:80` | S3 method (registered) | ~7 | furniture |
-| F014 | `extract_tune_results.nested_final_fit()` | `R/nested-final-fit-extract.R:89` | S3 method (registered) | ~3 | furniture |
-| F015 | `extract_scored_candidates()` | `R/nested-final-fit-extract.R:145` | exported | ~3 | furniture |
-| F016 | `extract_scored_candidates.default()` | `R/nested-final-fit-extract.R:150` | S3 method (registered) | ~6 | furniture |
-| F017 | `extract_scored_candidates.nested_final_fit()` | `R/nested-final-fit-extract.R:158` | S3 method (registered) | ~6 | furniture |
-| F018 | `abort_no_extract_method()` | `R/nested-final-fit-extract.R:170` | internal | ~11 | furniture |
+| F014 | `extract_tune_results.nested_final_fit()` | `R/nested-final-fit-extract.R:93` | S3 method (registered) | ~3 | furniture |
+| F015 | `extract_scored_candidates()` | `R/nested-final-fit-extract.R:149` | exported | ~3 | furniture |
+| F016 | `extract_scored_candidates.default()` | `R/nested-final-fit-extract.R:154` | S3 method (registered) | ~6 | furniture |
+| F017 | `extract_scored_candidates.nested_final_fit()` | `R/nested-final-fit-extract.R:163` | S3 method (registered) | ~6 | furniture |
+| F018 | `abort_no_extract_method()` | `R/nested-final-fit-extract.R:175` | internal | ~11 | furniture |
 | F019 | `print.nested_final_fit()` | `R/nested-final-fit-print.R:30` | S3 method (registered) | ~21 | furniture |
 | F020 | `selected_label()` | `R/nested-final-fit-print.R:56` | internal | ~9 | furniture |
 | F021 | `nested_final_fit()` | `R/nested-final-fit.R:174` | exported | ~26 | core |
-| F022 | `final_fit_worker()` | `R/nested-final-fit.R:213` | internal | ~28 | core |
-| F023 | `new_nested_final_fit()` | `R/nested-final-fit.R:251` | internal | ~12 | core |
-| F024 | `extract_workflow.nested_final_fit()` | `R/nested-final-fit.R:266` | S3 method (registered) | ~3 | furniture |
+| F022 | `final_fit_worker()` | `R/nested-final-fit.R:219` | internal | ~28 | core |
+| F023 | `new_nested_final_fit()` | `R/nested-final-fit.R:265` | internal | ~12 | core |
+| F024 | `extract_workflow.nested_final_fit()` | `R/nested-final-fit.R:280` | S3 method (registered) | ~3 | furniture |
 | F025 | `nested_resamples()` | `R/nested-resamples.R:60` | exported | ~71 | resampling-layer |
-| F026 | `inner_resamples_from_split()` | `R/nested-resamples.R:138` | internal | ~49 | resampling-layer |
-| F027 | `eval_spec()` | `R/nested-resamples.R:197` | internal | ~18 | resampling-layer |
-| F028 | `split_data()` | `R/nested-resamples.R:218` | internal | ~3 | resampling-layer |
+| F026 | `inner_resamples_from_split()` | `R/nested-resamples.R:140` | internal | ~49 | resampling-layer |
+| F027 | `eval_spec()` | `R/nested-resamples.R:199` | internal | ~18 | resampling-layer |
+| F028 | `split_data()` | `R/nested-resamples.R:223` | internal | ~3 | resampling-layer |
 | F029 | `autoplot.nested_results()` | `R/nested-results-plot.R:81` | S3 method (registered) | ~12 | furniture |
-| F030 | `plot_selection()` | `R/nested-results-plot.R:94` | internal | ~31 | furniture |
-| F031 | `value_scale()` | `R/nested-results-plot.R:141` | internal | ~15 | furniture |
-| F032 | `panel_breaks()` | `R/nested-results-plot.R:157` | internal | ~13 | furniture |
-| F033 | `panel_owner()` | `R/nested-results-plot.R:187` | internal | ~20 | furniture |
-| F034 | `whole_number_breaks()` | `R/nested-results-plot.R:208` | internal | ~5 | furniture |
-| F035 | `plot_performance()` | `R/nested-results-plot.R:214` | internal | ~65 | furniture |
-| F036 | `design_line()` | `R/nested-results-plot.R:286` | internal | ~7 | furniture |
-| F037 | `qualify_panels()` | `R/nested-results-plot.R:297` | internal | ~8 | furniture |
-| F038 | `from_folds()` | `R/nested-results-plot.R:309` | internal | ~3 | furniture |
-| F039 | `chose_value()` | `R/nested-results-plot.R:313` | internal | ~3 | furniture |
-| F040 | `metric_panel()` | `R/nested-results-plot.R:320` | internal | ~7 | furniture |
-| F041 | `ambiguous_metrics()` | `R/nested-results-plot.R:328` | internal | ~4 | furniture |
-| F042 | `selection_frame()` | `R/nested-results-plot.R:340` | internal | ~36 | furniture |
-| F043 | `selection_raw()` | `R/nested-results-plot.R:386` | internal | ~12 | furniture |
-| F044 | `selection_axis()` | `R/nested-results-plot.R:407` | internal | ~22 | furniture |
+| F030 | `plot_selection()` | `R/nested-results-plot.R:96` | internal | ~31 | furniture |
+| F031 | `value_scale()` | `R/nested-results-plot.R:143` | internal | ~15 | furniture |
+| F032 | `panel_breaks()` | `R/nested-results-plot.R:159` | internal | ~13 | furniture |
+| F033 | `panel_owner()` | `R/nested-results-plot.R:189` | internal | ~20 | furniture |
+| F034 | `whole_number_breaks()` | `R/nested-results-plot.R:210` | internal | ~5 | furniture |
+| F035 | `plot_performance()` | `R/nested-results-plot.R:218` | internal | ~65 | furniture |
+| F036 | `design_line()` | `R/nested-results-plot.R:296` | internal | ~7 | furniture |
+| F037 | `qualify_panels()` | `R/nested-results-plot.R:311` | internal | ~8 | furniture |
+| F038 | `from_folds()` | `R/nested-results-plot.R:326` | internal | ~3 | furniture |
+| F039 | `chose_value()` | `R/nested-results-plot.R:330` | internal | ~3 | furniture |
+| F040 | `metric_panel()` | `R/nested-results-plot.R:337` | internal | ~7 | furniture |
+| F041 | `ambiguous_metrics()` | `R/nested-results-plot.R:345` | internal | ~4 | furniture |
+| F042 | `selection_frame()` | `R/nested-results-plot.R:357` | internal | ~36 | furniture |
+| F043 | `selection_raw()` | `R/nested-results-plot.R:403` | internal | ~12 | furniture |
+| F044 | `selection_axis()` | `R/nested-results-plot.R:424` | internal | ~22 | furniture |
 | F045 | `print.nested_results()` | `R/nested-results-print.R:59` | S3 method (registered) | ~18 | furniture |
 | F046 | `print_design()` | `R/nested-results-print.R:78` | internal | ~10 | furniture |
 | F047 | `print_failures()` | `R/nested-results-print.R:89` | internal | ~14 | furniture |
@@ -208,33 +208,33 @@ things a per-entry check had missed.
 | F053 | `rendered_rows()` | `R/nested-results-print.R:215` | internal | ~14 | ambiguous |
 | F054 | `selection_params()` | `R/nested-results-print.R:233` | internal | ~4 | furniture |
 | F055 | `selection_values()` | `R/nested-results-print.R:246` | internal | ~18 | furniture |
-| F056 | `print_one_parameter()` | `R/nested-results-print.R:275` | internal | ~32 | furniture |
-| F057 | `print_estimate()` | `R/nested-results-print.R:308` | internal | ~32 | furniture |
+| F056 | `print_one_parameter()` | `R/nested-results-print.R:279` | internal | ~32 | furniture |
+| F057 | `print_estimate()` | `R/nested-results-print.R:314` | internal | ~32 | furniture |
 | F058 | `new_nested_results()` | `R/nested-results.R:8` | internal | ~32 | core |
 | F059 | `outer_scheme_label()` | `R/nested-results.R:48` | internal | ~9 | ambiguous |
 | F060 | `has_results_columns()` | `R/nested-results.R:111` | internal | ~4 | core |
 | F061 | `new_tbl()` | `R/nested-results.R:119` | internal | ~7 | glue |
 | F062 | `collect_metrics.nested_results()` | `R/nested-results.R:209` | S3 method (registered) | ~10 | furniture |
 | F063 | `summarize_folds()` | `R/nested-results.R:228` | internal | ~35 | core |
-| F064 | `check_any_completed()` | `R/nested-results.R:269` | internal | ~17 | core |
-| F065 | `warn_partial_summary()` | `R/nested-results.R:290` | internal | ~17 | core |
-| F066 | `per_fold_metrics()` | `R/nested-results.R:310` | internal | ~11 | core |
-| F067 | `fold_ids()` | `R/nested-results.R:324` | internal | ~7 | resampling-layer |
+| F064 | `check_any_completed()` | `R/nested-results.R:284` | internal | ~17 | core |
+| F065 | `warn_partial_summary()` | `R/nested-results.R:308` | internal | ~17 | core |
+| F066 | `per_fold_metrics()` | `R/nested-results.R:328` | internal | ~11 | core |
+| F067 | `fold_ids()` | `R/nested-results.R:351` | internal | ~7 | resampling-layer |
 | F068 | `nested_tune_grid()` | `R/nested-tune-grid.R:300` | exported | ~42 | core |
 | F069 | `nested_fold_fit()` | `R/nested-tune-grid.R:350` | internal | ~67 | core |
-| F070 | `scored_candidates()` | `R/nested-tune-grid.R:432` | internal | ~20 | glue |
-| F071 | `scored_candidates_impl()` | `R/nested-tune-grid.R:453` | internal | ~33 | glue |
-| F072 | `scored_metric_frames()` | `R/nested-tune-grid.R:491` | internal | ~7 | glue |
-| F073 | `empty_candidates()` | `R/nested-tune-grid.R:503` | internal | ~8 | glue |
-| F074 | `failed_fold()` | `R/nested-tune-grid.R:521` | internal | ~19 | core |
-| F075 | `own_note()` | `R/nested-tune-grid.R:541` | internal | ~8 | glue |
-| F076 | `tune_notes()` | `R/nested-tune-grid.R:553` | internal | ~13 | glue |
-| F077 | `bind_notes()` | `R/nested-tune-grid.R:567` | internal | ~8 | glue |
-| F078 | `empty_notes()` | `R/nested-tune-grid.R:576` | internal | ~8 | glue |
-| F079 | `empty_metrics()` | `R/nested-tune-grid.R:587` | internal | ~8 | glue |
-| F080 | `warn_failed_folds()` | `R/nested-tune-grid.R:598` | internal | ~17 | core |
-| F081 | `set_fold_seed()` | `R/nested-tune-grid.R:620` | internal | ~8 | core |
-| F082 | `restore_rng()` | `R/nested-tune-grid.R:634` | internal | ~8 | core |
+| F070 | `scored_candidates()` | `R/nested-tune-grid.R:435` | internal | ~20 | glue |
+| F071 | `scored_candidates_impl()` | `R/nested-tune-grid.R:458` | internal | ~33 | glue |
+| F072 | `scored_metric_frames()` | `R/nested-tune-grid.R:496` | internal | ~7 | glue |
+| F073 | `empty_candidates()` | `R/nested-tune-grid.R:508` | internal | ~8 | glue |
+| F074 | `failed_fold()` | `R/nested-tune-grid.R:526` | internal | ~19 | core |
+| F075 | `own_note()` | `R/nested-tune-grid.R:546` | internal | ~8 | glue |
+| F076 | `tune_notes()` | `R/nested-tune-grid.R:558` | internal | ~13 | glue |
+| F077 | `bind_notes()` | `R/nested-tune-grid.R:572` | internal | ~8 | glue |
+| F078 | `empty_notes()` | `R/nested-tune-grid.R:581` | internal | ~8 | glue |
+| F079 | `empty_metrics()` | `R/nested-tune-grid.R:592` | internal | ~8 | glue |
+| F080 | `warn_failed_folds()` | `R/nested-tune-grid.R:603` | internal | ~17 | core |
+| F081 | `set_fold_seed()` | `R/nested-tune-grid.R:625` | internal | ~8 | core |
+| F082 | `restore_rng()` | `R/nested-tune-grid.R:639` | internal | ~8 | core |
 | F083 | `is_mirai_installed()` | `R/parallel.R:11` | internal | ~3 | glue |
 | F084 | `mirai_workers()` | `R/parallel.R:15` | internal | ~12 | glue |
 | F085 | `use_parallel()` | `R/parallel.R:28` | internal | ~3 | glue |
@@ -243,22 +243,22 @@ things a per-entry check had missed.
 | F088 | `last_dispatch()` | `R/parallel.R:67` | internal | ~3 | core |
 | F089 | `reset_dispatch_record()` | `R/parallel.R:71` | internal | ~4 | core |
 | F090 | `is_fold_payload()` | `R/parallel.R:118` | internal | ~21 | resampling-layer |
-| F091 | `lean_payload()` | `R/parallel.R:140` | internal | ~18 | resampling-layer |
-| F092 | `rehydrate_payload()` | `R/parallel.R:159` | internal | ~21 | resampling-layer |
-| F093 | `dispatch_folds()` | `R/parallel.R:190` | internal | ~106 | core |
-| F094 | `preflight_timeout()` | `R/parallel.R:320` | internal | ~21 | core |
-| F095 | `daemon_symbol_manifest()` | `R/parallel.R:391` | internal | ~6 | core |
-| F096 | `daemon_probe_expr()` | `R/parallel.R:420` | internal | ~11 | core |
-| F097 | `daemons_load_status()` | `R/parallel.R:432` | internal | ~27 | core |
-| F098 | `daemon_report()` | `R/parallel.R:478` | internal | ~12 | core |
-| F099 | `preflight_outcome()` | `R/parallel.R:497` | internal | ~39 | core |
-| F100 | `check_daemons_can_load()` | `R/parallel.R:543` | internal | ~137 | core |
-| F101 | `warn_if_not_cancellable()` | `R/parallel.R:697` | internal | ~19 | core |
-| F102 | `classify_fold_result()` | `R/parallel.R:726` | internal | ~33 | core |
-| F103 | `is_cancelled_value()` | `R/parallel.R:772` | internal | ~11 | core |
-| F104 | `is_fold_record()` | `R/parallel.R:784` | internal | ~6 | core |
-| F105 | `worker_failure_message()` | `R/parallel.R:791` | internal | ~23 | core |
-| F106 | `fold_task()` | `R/parallel.R:823` | internal | ~11 | ambiguous |
+| F091 | `lean_payload()` | `R/parallel.R:144` | internal | ~18 | resampling-layer |
+| F092 | `rehydrate_payload()` | `R/parallel.R:163` | internal | ~21 | resampling-layer |
+| F093 | `dispatch_folds()` | `R/parallel.R:194` | internal | ~106 | core |
+| F094 | `preflight_timeout()` | `R/parallel.R:340` | internal | ~21 | core |
+| F095 | `daemon_symbol_manifest()` | `R/parallel.R:417` | internal | ~6 | core |
+| F096 | `daemon_probe_expr()` | `R/parallel.R:446` | internal | ~11 | core |
+| F097 | `daemons_load_status()` | `R/parallel.R:458` | internal | ~27 | core |
+| F098 | `daemon_report()` | `R/parallel.R:506` | internal | ~12 | core |
+| F099 | `preflight_outcome()` | `R/parallel.R:530` | internal | ~39 | core |
+| F100 | `check_daemons_can_load()` | `R/parallel.R:585` | internal | ~137 | core |
+| F101 | `warn_if_not_cancellable()` | `R/parallel.R:765` | internal | ~19 | core |
+| F102 | `classify_fold_result()` | `R/parallel.R:796` | internal | ~33 | core |
+| F103 | `is_cancelled_value()` | `R/parallel.R:842` | internal | ~11 | core |
+| F104 | `is_fold_record()` | `R/parallel.R:854` | internal | ~6 | core |
+| F105 | `worker_failure_message()` | `R/parallel.R:861` | internal | ~23 | core |
+| F106 | `fold_task()` | `R/parallel.R:894` | internal | ~11 | ambiguous |
 
 Counts: 32 `core`, 38 `furniture`, 16 `glue`, 12 `resampling-layer`,
 8 `ambiguous`.
@@ -343,7 +343,7 @@ the same object.
   would have to bet on.
 - **F003 `check_model_spec()`** — asks whether the engine's packages are
   installed and refuses, naming the missing ones. tune does this twice. Its
-  `check_installs()` (`R/checks.R:234`, over `is_installed()` at `:229`) is
+  `check_installs()` (`R/checks.R:250`, over `is_installed()` at `:229`) is
   unexported; but `load_pkgs()` (`R/load_ns.R:11`, `NAMESPACE:247`) is exported,
   and its `model_spec` method takes `required_pkgs(x)` — the same question this
   entry asks `parsnip::required_pkgs()` — through `.load_namespace()`
@@ -371,7 +371,7 @@ the same object.
 tuning run evaluated by pooling the per-resample metric frames and de-duplicating
 on `.config`. They exist because a returned `tune_results` carries no record of
 its own expansion — the fact stated in this repo's comment at
-`R/nested-tune-grid.R:418-427` and measured at M21's plan gate against tune 2.1.0.
+`R/nested-tune-grid.R:421-430` and measured at M21's plan gate against tune 2.1.0.
 Inside tune the expansion is a local variable and never has to be recovered: the
 grid is expanded by `.check_grid()` (`R/checks.R:67`, calling
 `dials::grid_space_filling()` at `:145`) and bound at `R/tune_grid.R:375`, in hand
@@ -510,7 +510,7 @@ rsample exports `analysis()` (`R/rsplit.R:113`), `assessment()`
 where the gap is: it returns an `rsplit`, and there is still no accessor from
 there to the frame. rsample
 would have to accept a data accessor on an `rset` or `rsplit`, and with it the
-invariant this package depends on and states at `R/nested-resamples.R:216-217`:
+invariant this package depends on and states at `R/nested-resamples.R:221-222`:
 every split in an rset shares one data frame, so the first split answers for all
 of them.
 
@@ -550,7 +550,7 @@ would tune on the wrong rows.
 Eight entries in the ledger, plus the addendum.
 
 - **F001 `check_workflow()`** (`R/checks.R:7`, ~65 lines). tune exports a
-  `check_workflow()` of its own (`R/checks.R:314`, `NAMESPACE:191`), and three of
+  `check_workflow()` of its own (`R/checks.R:330`, `NAMESPACE:191`), and three of
   this one's four refusals have a counterpart there: not a `workflow`, no
   preprocessor, no model specification. By that overlap it is `glue`. The fourth
   has no counterpart at all — this one refuses a workflow that is already fitted
@@ -562,17 +562,17 @@ Eight entries in the ledger, plus the addendum.
   `extract_spec_parsnip()`. That residue is `core`: it is GP3's refuse-a-provably-
   invalid-design rule, stated at the head of the file. Bucketing it `glue` would
   also carry a "~65 lines retired" figure that no upstream change reaches.
-- **F006 `check_grid()`, F007 `check_grid_params()`** (`R/checks.R:204`, `:234`,
+- **F006 `check_grid()`, F007 `check_grid_params()`** (`R/checks.R:215`, `:234`,
   ~23 and ~41 lines). tune's `.check_grid()` (`R/checks.R:67`, `NAMESPACE:136`)
   validates most of the same triple and returns the expanded grid — though not
   all of it: its `nrow() == 0L` test is on the parameter set, not on the grid, so
-  it has no counterpart to F006's zero-row refusal (`R/checks.R:206-211`), and it
+  it has no counterpart to F006's zero-row refusal (`R/checks.R:217-222`), and it
   coerces a numeric with `as.integer(grid[1])` rather than refusing a non-integral
   one, F006's `grid != trunc(grid)` branch. `.get_config_key()`
   (`R/loop_over_all_stages-helpers.R:412`, `NAMESPACE:144`) makes F007's check
   exactly: its two aborts are the same two `setdiff()` calls, `setdiff(info$id,
-  names(grid))` at `:416` against `R/checks.R:261` and `setdiff(names(grid),
-  info$id)` at `:425` against `R/checks.R:248`. (`check_extra_tune_parameters()`
+  names(grid))` at `:416` against `R/checks.R:277` and `setdiff(names(grid),
+  info$id)` at `:425` against `R/checks.R:264`. (`check_extra_tune_parameters()`
   at `R/checks.R:361` is *not* the counterpart, though an earlier draft of this
   page said so: it takes only a workflow and compares `generics::tune_args()`
   against `extract_parameter_set_dials()`, never receiving a grid at all.) By
@@ -580,7 +580,7 @@ Eight entries in the ledger, plus the addendum.
   *when*. tune raises per fold, and this
   package tunes once per outer fold, so a malformed grid tune would reject
   surfaces here as every fold in the design failing alike after the whole cost has
-  been paid — the comment at `R/checks.R:228-233` states exactly that, and M03's
+  been paid — the comment at `R/checks.R:244-249` states exactly that, and M03's
   rule of recording fold failures rather than re-raising them is why the per-fold
   raise is not available as a check. Deciding what a loop refuses before it starts
   is this package's own question about its own loop, which is `core`; the content
@@ -609,12 +609,12 @@ Eight entries in the ledger, plus the addendum.
   computed once at construction (`R/nested-results.R:33`) and stored as an
   attribute, so it is not print-path code either. rsample offering a
   single-level scheme label would delete it; so would dropping the header line.
-- **F106 `fold_task()`** (`R/parallel.R:823`). The one-fold worker. Its body is
+- **F106 `fold_task()`** (`R/parallel.R:894`). The one-fold worker. Its body is
   `core`: it unpacks the payload and calls `nested_fold_fit()`, which is the loop.
   Its first line is not: `ns <- asNamespace("nestedtune")`, a name-based namespace
   lookup that exists because a closure carrying this package's namespace loses it
   when a daemon cannot reconstruct it, silently falling back to the global
-  environment (recorded at `R/parallel.R:817-822`). That indirection, the
+  environment (recorded at `R/parallel.R:888-893`). That indirection, the
   environment-stripping at the dispatch site, and the symbol pre-flight that makes
   its failure loud are all consequences of a third package shipping code to
   daemons that must load it from an installed library. Inside tune the lookup

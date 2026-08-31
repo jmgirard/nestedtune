@@ -43,7 +43,7 @@ rules in tracking-rules:
 - CI starts from the usethis pair: `check-standard` runs `R CMD check` across
   platforms (a normal CI check — see the merge clause below), `test-coverage` runs
   `covr` to Codecov, annotating a PR but never gating it; `.github/` is `.Rbuildignore`d.
-- Four divergences from that stock shape (M11 ×2, M12 rev. M31, M14). **A `concurrency` block**
+- Five divergences from that stock shape (M11 ×2, M12 rev. M31, M14, M33). **A `concurrency` block**
   cancels a superseded run on every ref but the default branch, a distribution channel that keeps
   a completed check instead. **A `paths-ignore` filter** on both triggers of both gating workflows
   skips `cairn/**`, `CLAUDE.md`, `.claude/**`, which cannot change what `R CMD check` sees — that

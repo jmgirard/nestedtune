@@ -41,7 +41,7 @@
 # because an unstated exemption is how the first version of this comment came to
 # overclaim. Three kinds escape it: a bound read from a named constant, which
 # cannot drift and needs no re-read; a bound set through the OPTION at one line
-# and spent at another (classify:693 sets it, :699 spends it); and a wait that is
+# and spent at another (classify:745 sets it, :751 spends it); and a wait that is
 # no function call at all (the deadline poll in interrupt). None carries an
 # explicit bound argument in the call itself, which is exactly how the
 # cross-check recognises them.
@@ -329,7 +329,7 @@ time_budget_ledger <- function() {
       "daemons_load_status",
       45.678,
       "the probe reads its bound from the option, not from the constant",
-      note = "the test sets the option to 45678 ms at :693"
+      note = "the test sets the option to 45678 ms at :745"
     ),
     tb_row(
       "test-parallel-classify.R",

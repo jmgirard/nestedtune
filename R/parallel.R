@@ -109,7 +109,7 @@ reset_dispatch_record <- function() {
 # frame for the fold's inner splits and rehydrate_payload() writes it back onto
 # all of them, which is only sound if they shared it to begin with.
 # `nested_resamples()` guarantees that and validates it at construction
-# (R/nested-resamples.R:84), but check_nested() admits any object whose
+# (R/nested-resamples.R:86), but check_nested() admits any object whose
 # `inner_resamples` elements are `rset`s -- including a `manual_rset()` of splits
 # over different frames. Such a design would otherwise be tuned on the wrong rows
 # in parallel and the right ones serially: a silent IP2 breach, and an IP1

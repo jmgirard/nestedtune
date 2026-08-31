@@ -392,7 +392,7 @@ dispatch_via_mori <- function(payloads, shared, original) {
     .f = task,
     .args = list(object = wf, grid = grid, metrics = metrics)
   )
-  # The same collect the real dispatcher uses (R/parallel.R:291-293): a plain
+  # The same collect the real dispatcher uses (R/parallel.R:311-313): a plain
   # blocking collect with an unconditional cancelling on.exit, so leaving this
   # function never leaves folds running.
   on.exit(mirai::stop_mirai(mapped), add = TRUE)
@@ -722,7 +722,7 @@ assert_oracle(O_WORKER_SRC, !any(srcref_state))
 # over untouched, including `._expr_.`, `._globals_.` and `.mirai_within_map`.
 #
 # The three substitutions are exactly what dropping the leaning branch does
-# (R/parallel.R:250-259): with nothing to rehydrate, `.f` collapses from the
+# (R/parallel.R:265-279): with nothing to rehydrate, `.f` collapses from the
 # rehydrating wrapper back to the worker itself, and `.args` loses both `shared`
 # (the frame) and `worker` (now `.f`). That is the shape the non-leaning branch
 # already has, with `.x` pointing at a shared region instead of a whole frame.

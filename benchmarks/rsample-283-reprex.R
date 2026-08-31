@@ -25,7 +25,7 @@
 #
 # The closed-form model is anchored to a third, already-committed measurement:
 # 11.373x at v = 10 / inner v = 5, recorded at
-# tests/testthat/test-nested-resamples-memory.R:86 by the oracle that backs
+# tests/testthat/test-nested-resamples-memory.R:94 by the oracle that backs
 # nestedtune's own lean constructor.
 
 stopifnot(
