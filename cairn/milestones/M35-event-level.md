@@ -1,11 +1,11 @@
 # M35: The factor level a caller can name as the event
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, GP1, GP2, GP3
-- **Branch/PR:** `m035-event-level`
+- **Branch/PR:** `m035-event-level` / https://github.com/tidymodels/nestedtune/pull/43
 
 ## Goal
 
@@ -171,6 +171,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: T8 — `event_level` documented on both orchestrators; the "Differences from calling tune directly" section rewritten from "there is deliberately no `control` argument" to three lists — settable (`event_level`, reaching both control objects), forced (`allow_par = FALSE` on inner tuning), and not offered, naming why each remaining `control_grid()` slot would have nothing to act on here. NEWS entry added, `devtools::document()` run, `air format .` clean. `devtools::test()` 1737 pass, 0 fail.
 - 2026-08-31: T9 — `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 34.1s, tests `[71s/112s]`. No NOTE to justify. That test leg is the figure M34 recorded (`64s/100s`), not the 561s standalone / `[341s/599s]` the ROADMAP's slow-suite candidate row records for 2026-08-31; the row's phenomenon did not reproduce here.
 - 2026-08-31: all tasks done, suite and check clean; status set to review.
+- 2026-08-31: /milestone-review returned M35 to in-progress at step 1: AC6 fails. `origin/main` had moved 6 commits since the branch was cut (external PR #30, merged on GitHub); after merging it in, `devtools::test()` is 5 FAIL / 1730 PASS, all in `test-ci-workflows.R:54,64,65,66,78` — commit 72c3be2 replaced the two-job pkgdown workflow (`build` + `deploy`) with a single `pkgdown` job and left the test asserting the old job names, so `main` itself is red. Nothing in M35's own diff is implicated; the fix is a discovered task in the T0 class. Draft PR opened: https://github.com/tidymodels/nestedtune/pull/43.
 
 ## Decisions
 
