@@ -1,6 +1,6 @@
 # M35: The factor level a caller can name as the event
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -183,7 +183,72 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: minor amendment — added discovered task T11. After the T10 repair, `devtools::check()` was Status 1 NOTE: `Non-standard file/directory found at top level: 'README.Rmd'`. `origin/main`'s commit 72c3be2 added `README.Rmd` and three `.Rbuildignore` entries but not its own; the profile's consistency gate requires a new top-level file to have one.
 - 2026-08-31: T11 — `^README\.Rmd$` appended to `.Rbuildignore`. `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 53.7s, tests `[82s/125s]`. No NOTE to justify.
 - 2026-08-31: all tasks done, suite and check clean on the merged branch; status set to review again.
+- 2026-08-31: /milestone-review returned M35 to in-progress at step 4: the consistency gate FAILs `weight caps` — 155 plan-owned lines against the <150 cap, Acceptance criteria 54 and Tasks 46 the heaviest, pushed over by the T10 and T11 amendments; both sections are plan-owned so the compression is an implement-side amendment. Everything else gathered fresh passed: `devtools::test()` 1736 pass 0 fail, `devtools::check()` Status OK 0/0/0, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entry present, branch level with `origin/main`. The three review lenses ran; the [O] lens returned 11 ranked findings, of which the documented by-hand recipes on both orchestrators (`R/nested-tune-grid.R:93-104`, `R/nested-final-fit.R:106-118`) and `DESIGN.md`'s architecture paragraph state a pre-M35 shape the change falsified. All 11 are recorded in the Review section. Second defect return on this milestone.
 
 ## Decisions
 
 ## Review
+
+### 2026-08-31 — returned to in-progress at the consistency gate
+
+**Gate failure.** `cairn_validate.py` exits 1 on `weight caps`: the milestone's
+plan-owned body is 155 lines against the <150 cap (heaviest first: Acceptance
+criteria 54, Tasks 46, Scope 31). The two amendments that added T10 and T11 took
+it past the 149 lines the AC3/AC4/AC5 rewrite left. Both over-cap sections are
+plan-owned, so the compression is `/milestone-implement`'s under the amendment
+protocol, not a review-side edit. Advisory alongside it, not a failure: the
+sizing tripwire at 12 tasks.
+
+**What did pass, gathered fresh on the merged branch.** `devtools::test()` FAIL
+0 / PASS 1736. `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes,
+duration 2m 49.4s, tests `[80s/123s]`. `devtools::document()` leaves no diff.
+`pkgdown::check_pkgdown()` reports no problems. NEWS.md carries the
+`event_level` entry. README.Rmd and README.md are both at the default branch's
+own commit and in sync. No `DESIGN.md` principle changed, so `cairn_impact.py`
+was not owed. The branch is level with `origin/main`. No acceptance-criterion
+checkbox was ticked: the gate failed before per-criterion evidence was recorded,
+and AC fencing gives no tick without its evidence line.
+
+**Review fan-out.** Three fresh-context lenses, distinct evidence bases. The [S]
+blame-history lens reports no finding: the RNG contract holds because
+`check_event_level()` runs before the seed draw on both orchestrators, the
+`...` barrier extension matches how `param_info` was added, the parallel
+threading is positionally consistent, and the T10 relocation of the CI-workflow
+boundary guard keeps its discriminating power. The [S] prior-review lens reports
+no finding: no archived `## Review` finding on the touched files is
+reintroduced, and the one PR carrying real inline comments touches no file in
+this diff. The [O] diff-bug lens confirms `event_level` reaches every hop on
+both orchestrators and both dispatch shapes, and reports 11 findings, ranked:
+
+1. `R/nested-tune-grid.R:93-104` — the documented "Fold `i` is exactly:" recipe
+   still shows `last_fit()` with no control and `control_grid(allow_par =
+   FALSE)` with no `event_level`, so it no longer reproduces a fold. Confirmed
+   by execution on the milestone's fixture at `"second"`, fold 1: the package
+   reports sens 0.967 / spec 0.0909, the documented recipe returns the pair
+   transposed.
+2. `R/nested-final-fit.R:106-118` — the same omission in the final-fit
+   by-hand recipe; AC4's own test had to add `event_level` to make the
+   reconstruction agree, so the test follows a recipe the docs do not state.
+3. `cairn/DESIGN.md:237-239` — the Architecture description still names a
+   `last_fit()` with no control, i.e. the pre-M35 shape.
+4. `R/nested-tune-grid.R:435-450` — the outer `control_last_fit()` now asserts
+   `allow_par = TRUE`, and the roxygen "Forced:" paragraph says only that inner
+   tuning is serial; the justification sits in a code comment. Inert today.
+5. `tests/testthat/test-fixture-cache.R:230+` — the signature list that claims
+   to enumerate every fixture signature gained none of M35's four `cls_*`
+   entries, and no listed signature varies `event_level`.
+6. The milestone's `## Decisions` is empty and no D-entry records choosing a
+   narrow `event_level` argument over tune's `control` object.
+7. Every internal hop defaults `event_level = "first"`, so a dropped argument
+   degrades silently rather than erroring; matches `param_info`'s style.
+8. `tests/testthat/helper-drift-manifest.R:85-88` — the T0 lookbehind guards
+   only the left side of a rendering, though its comment claims both sides.
+9. `tests/testthat/test-event-level.R:145-160` — `NULL` and `character(0)` are
+   refused but never exercised, and T1's work-log line overstates the bullets.
+10. `tests/testthat/test-event-level.R:66` — `cls_runs()` takes `d` unused.
+11. AC3 and AC5 are non-vacuous only by reference to the fixture guard and to
+    AC2/AC4; the criteria disclose this themselves.
+
+Disposition of the findings goes to the maintainer at the next review's gate.
+Findings 1, 2 and 3 are the ones an implement pass should carry: 1 and 2 are
+user-facing prose that the milestone's own change falsified.
