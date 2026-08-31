@@ -26,7 +26,12 @@ exported class that callers reach through ordinary vctrs and base verbs.
 joins Imports on the same argument D-031 used for `dplyr`. `rbind.nested_results()`
 is written too: base `rbind()` consults neither dplyr nor vctrs, so rsample and
 tune both leave it returning a six-row object still reporting three folds, and
-IP4 does not let this package do the same. The `@return`'s gap paragraph is
+IP4 does not let this package do the same. `names<-.nested_results()` is
+written for the same reason: `dplyr::rename()` is `set_names()`, which reaches
+neither dplyr's `dplyr_reconstruct()` nor any vctrs generic — measured
+2026-08-31 on a subclass carrying each method set in turn — so rsample closes
+it with `names<-.rset`, and AC1's rename form cannot be met any other way.
+The `@return`'s gap paragraph is
 corrected — it currently implies the vctrs methods would close `rbind()`, which
 is measured false against rsample, which ships them. Reopens and closes
 [#32](https://github.com/tidymodels/nestedtune/issues/32).
@@ -117,3 +122,6 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: plan gate chose one rule through both doors — `vec_cbind()` keeping the class exactly as `dplyr::bind_cols()` does — over copying tune's recipe verbatim, which drops it, because a caller cannot predict which door a verb uses and M36 documented the invariant without qualifying it by entry point. The divergence from tune is flagged to topepo on #32. Falsified by a vctrs coherence requirement that forbids the ptype2 lattice AC3 implies, which T3 measures before registering.
 - 2026-08-31: plan gate chose to leave `group_by()`, `rowwise()` and `tibble::as_tibble()` carrying the run's attributes over intercepting all three, because each returns an object that no longer claims to be a results object and rsample behaves identically; it goes to DESIGN.md Known issues rather than a candidate row. Falsified by any of the three producing something a `nested_results` method will dispatch on.
 - 2026-08-31: /milestone-implement started on `m037-vctrs-invariants`, cut from `main` at `b26eb77`.
+- 2026-08-31: amendment (substantive, Scope In) — `names<-.nested_results()` added to the method set at the implementation gate; the plan's premise that `rename()` reaches the class through vctrs is measured false, `dplyr:::rename.data.frame` being `set_names()`, and rsample closes it with `names<-.rset`. AC1 is unchanged.
+- 2026-08-31: T3 measurement, ahead of registering: `vec_slice`, `vec_rbind`, `vec_c`, `vec_cbind`, `vec_ptype` and `vec_cast` all reach `vec_restore`; `rbind()` and `rename()` reach no vctrs or dplyr generic; a plain tibble subclass keeps its class through every form but `vec_cbind`, which drops it, and an rsample `rset` sheds on all but `rbind()` and a reorder.
+- 2026-08-31: implementation gate chose `vctrs (>= 0.6.1)` in Imports, matching tune's declared minimum; `dplyr`, already an Import, requires 0.7.1, so no install changes.
