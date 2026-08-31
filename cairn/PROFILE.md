@@ -43,25 +43,26 @@ rules in tracking-rules:
 - CI starts from the usethis pair: `check-standard` runs `R CMD check` across
   platforms (a normal CI check — see the merge clause below), `test-coverage` runs
   `covr` to Codecov, annotating a PR but never gating it; `.github/` is `.Rbuildignore`d.
-- Four divergences from that stock shape (M11 ×2, M12 rev. M31, M14). **A `concurrency`
-  block** cancels a superseded run on every ref but the default branch, a
-  distribution channel that keeps a completed check instead. **A `paths-ignore`
-  filter** on both triggers of both gating workflows skips `cairn/**`,
-  `CLAUDE.md`, `.claude/**`, which cannot change what `R CMD check` sees — that
-  is the test a fourth path must meet; it bites on `push` only, GitHub
-  evaluating it on a `pull_request` against the whole PR diff. **Hang caps at
-  two scopes** turn a hang into a failed job with a timestamp: `R-CMD-check` bounds its
-  job at 60 minutes and its `check-r-package` step at 20, `test-coverage` its job at 20;
-  re-read them before trusting them with `grep -n timeout-minutes .github/workflows/*.yaml`,
-  whose six hits span four workflows — those three are the audited ones. 20 is the
-  guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 minutes under
-  `R CMD check` and 40 under `covr` — one per gating workflow, which is why the scopes
-  differ), and not free headroom: 1 of 394 jobs passed 20 minutes and still finished, a
-  job-level figure bounding how often the step cap can bite rather than settling it. 60 is
-  the devel leg's from-source build of 129 dependencies, which a 20-minute job cap killed
-  before cache-save; it leaves every non-check step bounded only by the job. **A
-  `workflow_dispatch`-only stress workflow** (`stress-daemon-tests.yaml`) hunts the
-  hang on demand, invisible to `ci-usage.py` for carrying neither trigger.
+- Four divergences from that stock shape (M11 ×2, M12 rev. M31, M14). **A `concurrency` block**
+  cancels a superseded run on every ref but the default branch, a distribution channel that keeps
+  a completed check instead. **A `paths-ignore` filter** on both triggers of both gating workflows
+  skips `cairn/**`, `CLAUDE.md`, `.claude/**`, which cannot change what `R CMD check` sees — that
+  is the test a fourth path must meet; it bites on `push` only, GitHub evaluating it on a
+  `pull_request` against the whole PR diff. **Hang caps at two scopes** turn a hang into a failed
+  job with a timestamp: `R-CMD-check` bounds its job at 60 minutes and its `check-r-package` step
+  at 20, `test-coverage` its job at 20; re-read them with `grep -n timeout-minutes
+  .github/workflows/*.yaml` (six hits, four workflows; those three are the audited ones). 20 is
+  the guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 minutes under `R
+  CMD check` and 40 under `covr` — one per gating workflow, which is why the scopes differ), and
+  not free headroom: 1 of 394 jobs passed 20 minutes and still finished, a job-level figure
+  bounding how often the step cap can bite rather than settling it. 60 is the devel leg's
+  from-source build of 129 dependencies, which a 20-minute job cap killed before cache-save; it
+  leaves every non-check step bounded only by the job. **A `workflow_dispatch`-only stress
+  workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand, invisible to `ci-usage.py` for
+  carrying neither trigger. **Three organization workflows** ride unedited at tidymodels' shared
+  blobs (`lock.yaml`, `pr-commands.yaml`, `format-suggest.yaml`, M33): no `push`/`pull_request`
+  trigger, so neither the filter nor `ci-usage.py` sees them; `format-suggest.yaml` runs `air
+  format .` (see DESIGN).
 - Locating a hang, since the cap only ends one: `HangTraceReporter`
   (`tests/testthat/helper-hang-trace.R`) writes a timestamped start/end line per
   test file and per `test_that()` block to unbuffered `stderr()`, so a killed
