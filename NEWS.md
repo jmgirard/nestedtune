@@ -22,8 +22,9 @@
   partial-run warning, which pasted in any column whose name began with `id`.
   Adding a column called `id_extra` to a results object reported the folds as
   `Fold1, x` rather than `Fold1`. Only the columns the resampling design itself
-  names — `id`, and `id2` for a repeated design — are read as fold labels now,
-  and a column you add is left out of them whatever it is called.
+  names — `id`, and `id2` for a repeated design — are read as fold labels now.
+  A column you add is left out of them unless you name it `id` or `id` followed
+  by digits, which is how the design spells its own.
 
 * Fixed a failure where every outer fold errored under parallel processing if
   the workflow's recipe used unqualified selectors such as

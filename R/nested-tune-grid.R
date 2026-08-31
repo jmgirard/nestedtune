@@ -98,10 +98,13 @@
 #'
 #'   The rule is enforced where dplyr asks for it, in a `dplyr_reconstruct()`
 #'   method, which the verbs above and `[` all reach. An operation that never
-#'   gets there is outside it: `rename()` is implemented as `set_names()` and
-#'   reaches the object through **vctrs**, so renaming one of the columns
-#'   listed above returns a `nested_results` that no longer has it. Treat that
-#'   as a gap rather than a fourth invariant.
+#'   gets there is outside it, and two do. `rename()` is implemented as
+#'   `set_names()` and reaches the object through **vctrs**, so renaming one of
+#'   the columns listed above returns a `nested_results` that no longer has it.
+#'   `rbind()` likewise goes through **vctrs** rather than dplyr, so it adds
+#'   rows and keeps the class, leaving the counts describing the object it was
+#'   built from. Treat both as gaps rather than as further invariants; the
+#'   vctrs methods that would close them are not written yet.
 #'
 #' @section Reproducibility:
 #'

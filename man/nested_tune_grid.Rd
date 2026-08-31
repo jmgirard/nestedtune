@@ -107,10 +107,13 @@ hands back the data.
 
 The rule is enforced where dplyr asks for it, in a \code{dplyr_reconstruct()}
 method, which the verbs above and \code{[} all reach. An operation that never
-gets there is outside it: \code{rename()} is implemented as \code{set_names()} and
-reaches the object through \strong{vctrs}, so renaming one of the columns
-listed above returns a \code{nested_results} that no longer has it. Treat that
-as a gap rather than a fourth invariant.
+gets there is outside it, and two do. \code{rename()} is implemented as
+\code{set_names()} and reaches the object through \strong{vctrs}, so renaming one of
+the columns listed above returns a \code{nested_results} that no longer has it.
+\code{rbind()} likewise goes through \strong{vctrs} rather than dplyr, so it adds
+rows and keeps the class, leaving the counts describing the object it was
+built from. Treat both as gaps rather than as further invariants; the
+vctrs methods that would close them are not written yet.
 }
 \description{
 \code{nested_tune_grid()} drives the outer loop of nested cross-validation. For

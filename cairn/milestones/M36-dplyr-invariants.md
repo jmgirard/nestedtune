@@ -704,3 +704,43 @@ lens's account.
   limitation rather than a defect. Its second half — that the `group_by` and
   `ungroup` table entries would pass unchanged against `main` — is unmeasured
   and concerns dplyr internals rather than this diff.
+
+#### Triage (round 3)
+
+Presented at the merge-approval gate 2026-08-31; approval given, on the option
+that trims what the branch claims and merges. No acceptance criterion failed.
+The maintainer chose not to return the milestone a third time: two rounds of
+narrowing the name pattern each bought the next name rather than a fix, so the
+id-column family exits to a candidate row that takes the alternative T9 recorded
+against — recording the design's own label columns on the object instead of
+matching names. The gate-directed fixes below were committed on the branch and
+re-pushed before the approval marker.
+
+- R1 — split. The behavior half (a caller-added `id2` corrupting fold labels)
+  goes to the candidate row. The record half is fixed here: `NEWS.md`'s
+  "whatever it is called" clause now says a column is left out unless it is
+  named `id` or `id` followed by digits, which is what the code does.
+- R2 — follow-up, to the same candidate row. The hard error is unreachable
+  except by adding a list column literally named `id0`/`id1`/`id02` to a
+  repeated design; the structural fix is the one that also closes R1 and R4.
+- R3 — fix now. The `@return` no longer names `rename()` as the only escape: it
+  names `rbind()` beside it, says both reach the object through vctrs, and says
+  the vctrs methods that would close them are not written yet.
+  `devtools::document()` rewrote `man/nested_tune_grid.Rd`.
+- R4 — follow-up, to the same candidate row as R1 and R2.
+- R5 — rejected as already dispositioned: round 2 sent the identical measurement
+  to the vctrs candidate row, and this round adds nothing to it.
+- R6 — fix now. The four artifacts are deleted from the tree and the index, and
+  `.gitignore` gains `tests/testthat/testthat-problems.rds` and
+  `tests/testthat/_problems/` with the reason, beside the existing rule for
+  testthat's `*.new.*` files.
+- R7 — fix now. `air format .` run; `air format --check .` is now silent.
+- R8 — fix now. The four comments say what `id_columns()` matches today and name
+  the surviving gap instead of describing the old bare `^id` grep as current.
+- R9 — rejected. See the finding.
+
+Re-verified after the gate fixes: `devtools::test()` FAIL 0, WARN 0, SKIP 0,
+PASS 1973; `devtools::check()` `Status: OK`, 0 errors, 0 warnings, 0 notes,
+2m 38.6s; `air format --check .` silent.
+
+Defect returns on M36: 2.

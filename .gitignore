@@ -13,6 +13,12 @@ Rplots.pdf
 # removes it on the next clean run. Transient by construction, so it is never
 # committed -- a committed one reads as a second approved snapshot.
 tests/testthat/_snaps/**/*.new.*
+# testthat writes `testthat-problems.rds` and a `_problems/` directory of
+# extracted repro scripts after a failing run, and leaves them there. They
+# are a debugging aid for the run that produced them, and `tests/` ships in
+# the tarball, so a committed one is dead weight inside the built package.
+tests/testthat/testthat-problems.rds
+tests/testthat/_problems/
 .Rproj.user
 .Rhistory
 .RData

@@ -97,12 +97,17 @@ dplyr_compat_table <- function() {
       dplyr::mutate(x, extra = 1)
     }),
     # An id-prefixed name is what a caller joins in to label folds with, and
-    # the record's own id columns are found by grepping `^id`, so an added one
-    # lands in the same set. "Columns may be added" has to hold for it too
-    # (M36 review F2).
-    list(name = "mutate (id-prefixed column added)", branch = "kept", f = function(x) {
-      dplyr::mutate(x, id_extra = 1)
-    }),
+    # the record's own id columns used to be found by a bare `^id` grep, so an
+    # added one landed in the same set. `id_columns()` now matches
+    # `^id[0-9]*$`, which leaves this one out. "Columns may be added" has to
+    # hold for it either way (M36 review F2).
+    list(
+      name = "mutate (id-prefixed column added)",
+      branch = "kept",
+      f = function(x) {
+        dplyr::mutate(x, id_extra = 1)
+      }
+    ),
     list(
       name = "mutate (record column overwritten)",
       branch = "bare",
@@ -214,7 +219,9 @@ test_that("a verb that keeps the class returns a tibble, not a bare data frame",
 })
 
 # An added column is the caller's, whatever it is named. `id_extra` and `ideal`
-# both match the `^id` grep the record's own id columns are found with.
+# both matched the bare `^id` grep the record's own id columns were once found
+# with; neither matches `id_columns()`'s `^id[0-9]*$` today. A name that still
+# does -- `id2` on a plain v-fold design -- is a known gap, filed separately.
 test_that("an id-prefixed column added by the caller keeps the class", {
   skip_if_no_engines()
   res <- compat_results()
@@ -386,11 +393,14 @@ repeated_shape <- function(res) {
 }
 
 # dplyr calls `dplyr_reconstruct()` a second time with the modified frame as
-# the template, so an added `^id`-prefixed column joined the id columns and
-# became a key in the `order()` call that puts both sides in id order before
-# their values are compared. A list column is not orderable: the call died with
-# `unimplemented type 'list' in 'listgreater'`, raised from inside the rule and
-# naming no function the caller had heard of (M36 review O2).
+# the template, so an added column matching the id pattern joins the id columns
+# and becomes a key in the `order()` call that puts both sides in id order
+# before their values are compared. A list column is not orderable: the call
+# died with `unimplemented type 'list' in 'listgreater'`, raised from inside the
+# rule and naming no function the caller had heard of (M36 review O2). Narrowing
+# the pattern to `^id[0-9]*$` closes it for the name below; a caller who adds a
+# list column actually named `id0` still reaches it, which is the known gap
+# filed separately.
 #
 # The key is only reached where it is actually compared -- `id` has to tie, and
 # the added column has to sort ahead of `id2` -- and that second condition is a
@@ -413,9 +423,11 @@ test_that("an added id-prefixed list column survives two verbs on a repeated des
 })
 
 # "Columns may be added" implies the caller may take one away again. The record
-# is read off the template, so an added `^id`-prefixed column was protected as
-# if the constructor had written it: the same round trip kept the class for
-# `extra` and lost it for `ideal`.
+# is read off the template, so an added column matching the id pattern is
+# protected as if the constructor had written it: the same round trip kept the
+# class for `extra` and lost it for `ideal`, until `id_columns()` narrowed to
+# `^id[0-9]*$`. A name still inside that pattern -- `id2` -- is the known gap
+# filed separately.
 test_that("a column the caller added can be removed again, whatever it is named", {
   skip_if_no_engines()
   res <- compat_results()
