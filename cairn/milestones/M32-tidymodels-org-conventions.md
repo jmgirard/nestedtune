@@ -107,7 +107,7 @@ CI workflow change → M33.
 - [x] T6: Append the D-entry extending D-022 with `tidyverse/tidytemplate` and
       recording the template switch; add the `NEWS.md` bullet for the site's
       changed appearance.
-- [ ] T7: Run `devtools::document()`, `devtools::test()` and
+- [x] T7: Run `devtools::document()`, `devtools::test()` and
       `devtools::check()`.
 
 ## Work log
@@ -128,6 +128,8 @@ CI workflow change → M33.
 - 2026-08-30: T5 — README's badge block gains the lifecycle badge first, in tune's exact markup (shields.io `lifecycle-experimental-orange`, linking `https://lifecycle.r-lib.org/articles/stages.html` with no fragment). No CRAN or downloads badge added.
 
 - 2026-08-30: T6 — D-027 records the template switch and the `tidyverse/tidytemplate` declaration, extending D-022; NEWS gains one bullet for the site's new look, its two community pages and the README's experimental badge.
+
+- 2026-08-30: T7 — `devtools::document()` leaves no diff; `devtools::test()` reports FAIL 0 | WARN 0 | SKIP 0 | PASS 1628; `devtools::check()` returns `Status: OK` (0 errors, 0 warnings, 0 notes).
 
 ## Decisions
 
