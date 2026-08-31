@@ -309,7 +309,7 @@ test_that("a row subset carries no record of the run at all", {
   }
 })
 
-test_that("a subset holding no completed fold refuses to summarize", {
+test_that("a results object holding no completed fold refuses to summarize", {
   skip_if_no_engines()
   d <- make_reg_data()
   nested <- break_fold(det_nested(d), fold = 1L, stage = "inner tuning")
@@ -326,6 +326,8 @@ test_that("a subset holding no completed fold refuses to summarize", {
 
   # Before the fix this passed the guard on the parent's stale count and
   # returned a 0-row tibble, reporting "2 of 3" for an object covering none.
+  # The object is built by the helper, not by `[`, which since M36 returns a
+  # bare tibble -- so this is about the guard, not about subsetting.
   expect_error(
     collect_metrics(as_fold_subset(res, 1L)),
     "no outer fold completed"

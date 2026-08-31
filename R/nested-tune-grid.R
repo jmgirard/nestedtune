@@ -96,6 +96,13 @@
 #'   ten-fold design it was cut from, so it stops describing itself at all and
 #'   hands back the data.
 #'
+#'   The rule is enforced where dplyr asks for it, in a `dplyr_reconstruct()`
+#'   method, which the verbs above and `[` all reach. An operation that never
+#'   gets there is outside it: `rename()` is implemented as `set_names()` and
+#'   reaches the object through **vctrs**, so renaming one of the columns
+#'   listed above returns a `nested_results` that no longer has it. Treat that
+#'   as a gap rather than a fourth invariant.
+#'
 #' @section Reproducibility:
 #'
 #' Seed the session before the call, as elsewhere in tidymodels; there is no
