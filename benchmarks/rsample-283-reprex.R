@@ -28,9 +28,11 @@
 # tests/testthat/test-nested-resamples-memory.R:86 by the oracle that backs
 # nestedtune's own lean constructor.
 
-stopifnot(requireNamespace("rsample", quietly = TRUE),
-          requireNamespace("mlbench", quietly = TRUE),
-          requireNamespace("lobstr", quietly = TRUE))
+stopifnot(
+  requireNamespace("rsample", quietly = TRUE),
+  requireNamespace("mlbench", quietly = TRUE),
+  requireNamespace("lobstr", quietly = TRUE)
+)
 
 SEED <- 35222 # the seed the issue's own reprex fixes
 
@@ -41,10 +43,17 @@ COMMITTED_10x5 <- 11.373
 ISSUE_BYTES <- 34434200
 
 cat(R.version.string, "|", R.version$platform, "\n")
-cat("rsample", as.character(packageVersion("rsample")),
-    "| mlbench", as.character(packageVersion("mlbench")),
-    "| lobstr", as.character(packageVersion("lobstr")),
-    "| seed", SEED, "\n\n")
+cat(
+  "rsample",
+  as.character(packageVersion("rsample")),
+  "| mlbench",
+  as.character(packageVersion("mlbench")),
+  "| lobstr",
+  as.character(packageVersion("lobstr")),
+  "| seed",
+  SEED,
+  "\n\n"
+)
 
 env <- new.env(parent = emptyenv())
 utils::data("LetterRecognition", package = "mlbench", envir = env)
@@ -52,8 +61,12 @@ d <- env$LetterRecognition
 n <- nrow(d)
 data_bytes <- as.numeric(lobstr::obj_size(d))
 
-cat(sprintf("LetterRecognition: %d x %d, %s B\n\n",
-            n, ncol(d), format(data_bytes, big.mark = ",")))
+cat(sprintf(
+  "LetterRecognition: %d x %d, %s B\n\n",
+  n,
+  ncol(d),
+  format(data_bytes, big.mark = ",")
+))
 
 # ---- the closed-form storage model ------------------------------------------
 #
@@ -104,27 +117,34 @@ lean_size <- function(data_bytes, n, v, inner_v) {
 # `times` did with it.
 
 original <- tryCatch(
-  rsample::nested_cv(d,
-                     outside = rsample::vfold_cv(times = 5),
-                     inside = rsample::vfold_cv(times = 2)),
+  rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(times = 5),
+    inside = rsample::vfold_cv(times = 2)
+  ),
   error = function(e) e
 )
-cat("the issue's original call, under rsample",
-    as.character(packageVersion("rsample")), "->\n  ",
-    if (inherits(original, "error")) {
-      paste0(class(original)[1], ": ", conditionMessage(original))
-    } else {
-      sprintf("no error; %d outer folds", nrow(original))
-    },
-    "\n\n")
+cat(
+  "the issue's original call, under rsample",
+  as.character(packageVersion("rsample")),
+  "->\n  ",
+  if (inherits(original, "error")) {
+    paste0(class(original)[1], ": ", conditionMessage(original))
+  } else {
+    sprintf("no error; %d outer folds", nrow(original))
+  },
+  "\n\n"
+)
 
 # ---- measurement against the model ------------------------------------------
 
 measure <- function(v, inner_v, note) {
   set.seed(SEED)
-  nested <- rsample::nested_cv(d,
-                               outside = rsample::vfold_cv(v = v),
-                               inside = rsample::vfold_cv(v = inner_v))
+  nested <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = v),
+    inside = rsample::vfold_cv(v = inner_v)
+  )
   bytes <- as.numeric(lobstr::obj_size(nested))
   model <- rsample_size(data_bytes, n, v, inner_v)
   data.frame(
@@ -149,21 +169,32 @@ schemes <- rbind(
 cat("scheme  outer        bytes     x data   model   resid    lean model\n")
 for (i in seq_len(nrow(schemes))) {
   r <- schemes[i, ]
-  cat(sprintf("%-6s  %5d  %11s  %9.3f %7.3f %+6.2f%%  %9.3f   %s\n",
-              r$scheme, r$outer_folds,
-              format(round(r$bytes), big.mark = ","),
-              r$ratio, r$model_ratio, r$resid_pct, r$lean_ratio, r$note))
+  cat(sprintf(
+    "%-6s  %5d  %11s  %9.3f %7.3f %+6.2f%%  %9.3f   %s\n",
+    r$scheme,
+    r$outer_folds,
+    format(round(r$bytes), big.mark = ","),
+    r$ratio,
+    r$model_ratio,
+    r$resid_pct,
+    r$lean_ratio,
+    r$note
+  ))
 }
 
 anchor <- schemes[schemes$scheme == "10x5", ]
 cat(sprintf(
-  paste0("\nanchor: this run measures %.3fx at 10x5; the committed figure is ",
-         "%.3fx (%+.2f%%),\n        and the model predicts %.3fx (%+.2f%% ",
-         "against the committed figure).\n"),
-  anchor$ratio, COMMITTED_10x5,
+  paste0(
+    "\nanchor: this run measures %.3fx at 10x5; the committed figure is ",
+    "%.3fx (%+.2f%%),\n        and the model predicts %.3fx (%+.2f%% ",
+    "against the committed figure).\n"
+  ),
+  anchor$ratio,
+  COMMITTED_10x5,
   100 * (anchor$ratio / COMMITTED_10x5 - 1),
   anchor$model_ratio,
-  100 * (anchor$model_ratio / COMMITTED_10x5 - 1)))
+  100 * (anchor$model_ratio / COMMITTED_10x5 - 1)
+))
 
 # ---- the issue's 2022 figure against today's --------------------------------
 #
@@ -176,21 +207,29 @@ reprex_row <- schemes[schemes$scheme == "10x10", ]
 rownames_cost <- 4 * (n * 9 / 10) * 10
 set.seed(SEED)
 one_frame <- as.data.frame(
-  rsample::nested_cv(d,
-                     outside = rsample::vfold_cv(v = 10),
-                     inside = rsample::vfold_cv(v = 10))$splits[[1]]
+  rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 10),
+    inside = rsample::vfold_cv(v = 10)
+  )$splits[[1]]
 )
 cat(sprintf(
-  paste0("\ndrift: issue %s B - this run %s B = %s B;\n",
-         "       %d explicit row-names vectors would cost %s B.\n",
-         "       .row_names_info() on an analysis frame today: %d ",
-         "(negative = compact).\n"),
+  paste0(
+    "\ndrift: issue %s B - this run %s B = %s B;\n",
+    "       %d explicit row-names vectors would cost %s B.\n",
+    "       .row_names_info() on an analysis frame today: %d ",
+    "(negative = compact).\n"
+  ),
   format(ISSUE_BYTES, big.mark = ","),
   format(round(reprex_row$bytes), big.mark = ","),
   format(round(ISSUE_BYTES - reprex_row$bytes), big.mark = ","),
-  10, format(rownames_cost, big.mark = ","),
-  .row_names_info(one_frame)))
+  10,
+  format(rownames_cost, big.mark = ","),
+  .row_names_info(one_frame)
+))
 
-cat("\nissue #283 reports 3,443,420 B per resample, from",
-    "`obj_size(nested) / nrow(nested)`;\nthe divisor it used is the outer",
-    "fold count printed above.\n")
+cat(
+  "\nissue #283 reports 3,443,420 B per resample, from",
+  "`obj_size(nested) / nrow(nested)`;\nthe divisor it used is the outer",
+  "fold count printed above.\n"
+)

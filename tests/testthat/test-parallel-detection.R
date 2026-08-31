@@ -143,7 +143,8 @@ test_that("a symbol no build defines is reported by every daemon that loaded", {
 
   absent <- "nestedtune_symbol_no_build_defines"
   status <- daemons_load_status(
-    symbols = c(daemon_symbol_manifest(), absent), timeout = 30000
+    symbols = c(daemon_symbol_manifest(), absent),
+    timeout = 30000
   )
 
   # Every daemon loaded the package -- this is not the cannot_load path -- and
@@ -251,8 +252,12 @@ test_that("a dispatcher-backed run warns not at all", {
 
   expect_no_condition(
     without_pkgload_warning(
-      nested_tune_grid(wf, det_nested(d), grid = det_grid(),
-                       metrics = reg_metrics())
+      nested_tune_grid(
+        wf,
+        det_nested(d),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     ),
     class = "nestedtune_pool_not_cancellable"
   )
@@ -276,7 +281,9 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
       selected = data.frame(seed = payload$seed),
       grid = data.frame(.config = "pre0_mod1_post0"),
       notes = data.frame(
-        location = character(0), type = character(0), note = character(0)
+        location = character(0),
+        type = character(0),
+        note = character(0)
       )
     )
   }
@@ -297,6 +304,7 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
   expect_length(warnings, 1L)
   expect_identical(last_dispatch(), "parallel")
   expect_identical(
-    vapply(out, function(x) x$selected$seed, numeric(1)), c(1, 2, 3)
+    vapply(out, function(x) x$selected$seed, numeric(1)),
+    c(1, 2, 3)
   )
 })

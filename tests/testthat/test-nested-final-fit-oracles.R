@@ -40,8 +40,14 @@ test_that("the final fit matches a hand-rolled reference pipeline", {
   set.seed(99)
   final <- nested_final_fit(wf, folds, grid = grid, metrics = metrics)
 
-  ref <- reference_final_fit(wf, d, grid, metrics, seed = 99,
-                             metric_name = "rmse")
+  ref <- reference_final_fit(
+    wf,
+    d,
+    grid,
+    metrics,
+    seed = 99,
+    metric_name = "rmse"
+  )
 
   # The seed layout itself, derived independently from the documented contract.
   expect_identical(c(final$tuning_seed, final$fit_seed), ref$seeds)
@@ -99,13 +105,23 @@ test_that("the final fit matches tune::fit_best() on the same tuning run", {
   set.seed(99)
   final <- nested_final_fit(wf, folds, grid = grid, metrics = metrics)
 
-  ref <- reference_final_fit(wf, d, grid, metrics, seed = 99,
-                             metric_name = "rmse")
+  ref <- reference_final_fit(
+    wf,
+    d,
+    grid,
+    metrics,
+    seed = 99,
+    metric_name = "rmse"
+  )
 
   # The tail routed through upstream's own implementation rather than ours:
   # fit_best() selects, finalizes, and fits on the full training set itself.
-  set.seed(ref$seeds[[2L]], kind = "Mersenne-Twister",
-           normal.kind = "Inversion", sample.kind = "Rejection")
+  set.seed(
+    ref$seeds[[2L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
   best_fit <- tune::fit_best(ref$tuned, metric = "rmse")
 
   expect_identical(

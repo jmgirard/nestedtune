@@ -78,9 +78,11 @@
 #' @seealso [nested_tune_grid()], [print.nested_results()], [collect_metrics()]
 #' @importFrom rlang .data
 #' @export
-autoplot.nested_results <- function(object,
-                                    type = c("parameters", "performance"),
-                                    ...) {
+autoplot.nested_results <- function(
+  object,
+  type = c("parameters", "performance"),
+  ...
+) {
   type <- check_plot_type(type)
   check_any_completed(object, action = "plot")
 
@@ -207,8 +209,10 @@ panel_owner <- function(by_param, limits) {
 
 whole_number_breaks <- function(limits) {
   candidates <- unique(round(pretty(limits)))
-  candidates[candidates >= floor(limits[[1L]]) &
-               candidates <= ceiling(limits[[2L]])]
+  candidates[
+    candidates >= floor(limits[[1L]]) &
+      candidates <= ceiling(limits[[2L]])
+  ]
 }
 
 plot_performance <- function(x) {
@@ -230,7 +234,11 @@ plot_performance <- function(x) {
   # metric's own rule already averages only the folds that did contribute.
   scored <- !is.na(per_fold$.estimate)
   scored_panels <- panels[match(
-    metric_panel(per_fold$.metric[scored], per_fold$.estimator[scored], ambiguous),
+    metric_panel(
+      per_fold$.metric[scored],
+      per_fold$.estimator[scored],
+      ambiguous
+    ),
     bases
   )]
   points <- new_tbl(list(
@@ -259,7 +267,9 @@ plot_performance <- function(x) {
     # makes the nothing-scored-anywhere figure build instead of failing inside
     # ggplot2 on an empty faceting variable (M08 review F4).
     ggplot2::facet_wrap(
-      ggplot2::vars(.data$metric), scales = "free_y", drop = FALSE
+      ggplot2::vars(.data$metric),
+      scales = "free_y",
+      drop = FALSE
     ) +
     ggplot2::labs(
       title = "Nested cross-validation estimate",
@@ -286,8 +296,12 @@ plot_performance <- function(x) {
 design_line <- function(x) {
   requested <- nrow(x)
   paste0(
-    requested, " outer fold", if (requested == 1L) "" else "s",
-    " requested, ", sum(x$.completed), " completed."
+    requested,
+    " outer fold",
+    if (requested == 1L) "" else "s",
+    " requested, ",
+    sum(x$.completed),
+    " completed."
   )
 }
 
@@ -298,7 +312,10 @@ qualify_panels <- function(bases, contributed, completed, qualifier) {
   short <- contributed != completed
   out <- bases
   out[short] <- paste0(
-    bases[short], " (", qualifier(contributed[short], completed), ")"
+    bases[short],
+    " (",
+    qualifier(contributed[short], completed),
+    ")"
   )
   out
 }

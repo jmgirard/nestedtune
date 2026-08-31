@@ -85,7 +85,11 @@ panel_labels <- function(b) {
 # out, so an assertion on one that was never set fails instead of erroring.
 plot_label <- function(p, which) {
   value <- p$labels[[which]]
-  if (is.null(value)) NA_character_ else paste(as.character(value), collapse = "\n")
+  if (is.null(value)) {
+    NA_character_
+  } else {
+    paste(as.character(value), collapse = "\n")
+  }
 }
 
 # A results object whose second fold completed but carries no value for the

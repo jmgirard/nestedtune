@@ -71,7 +71,10 @@ test_that("the fit does not depend on the ambient RNG state or kind", {
   seeds <- c(101L, 202L)
   inside <- attr(folds, "inside")
   entry_kind <- RNGkind()
-  on.exit(RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]), add = TRUE)
+  on.exit(
+    RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]),
+    add = TRUE
+  )
 
   run_one <- function() {
     final_fit_worker(inside, d, environment(), seeds, wf, stoch_grid(), ms)
@@ -181,7 +184,10 @@ test_that("the kind is restored on the error path from a non-default kind", {
   })
 
   entry_kind <- RNGkind()
-  on.exit(RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]), add = TRUE)
+  on.exit(
+    RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]),
+    add = TRUE
+  )
 
   # The failure path sets the kind before it errors, so a caller who had
   # chosen another generator would be left on ours without the restore.

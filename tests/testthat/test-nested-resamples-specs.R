@@ -7,11 +7,17 @@ test_that("a stratified inner spec matches rsample::nested_cv()", {
   d <- make_test_data()
 
   set.seed(1)
-  ref <- rsample::nested_cv(d, outside = rsample::vfold_cv(v = 3),
-                            inside = rsample::vfold_cv(v = 4, strata = strat))
+  ref <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4, strata = strat)
+  )
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                           inside = rsample::vfold_cv(v = 4, strata = strat))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4, strata = strat)
+  )
 
   expect_inner_identical(lean, ref)
 })
@@ -60,20 +66,32 @@ test_that("stratified and grouped outer specs match rsample::nested_cv()", {
   d <- make_test_data()
 
   set.seed(1)
-  ref <- rsample::nested_cv(d, outside = rsample::vfold_cv(v = 3, strata = strat),
-                            inside = rsample::vfold_cv(v = 4))
+  ref <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 3, strata = strat),
+    inside = rsample::vfold_cv(v = 4)
+  )
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 3, strata = strat),
-                           inside = rsample::vfold_cv(v = 4))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3, strata = strat),
+    inside = rsample::vfold_cv(v = 4)
+  )
   expect_outer_identical(lean, ref)
   expect_inner_identical(lean, ref)
 
   set.seed(1)
-  ref <- rsample::nested_cv(d, outside = rsample::group_vfold_cv(group = grp, v = 3),
-                            inside = rsample::vfold_cv(v = 4))
+  ref <- rsample::nested_cv(
+    d,
+    outside = rsample::group_vfold_cv(group = grp, v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::group_vfold_cv(group = grp, v = 3),
-                           inside = rsample::vfold_cv(v = 4))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::group_vfold_cv(group = grp, v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
   expect_outer_identical(lean, ref)
   expect_inner_identical(lean, ref)
 })
@@ -83,11 +101,17 @@ test_that("character and factor stratification behave the same", {
   d$strat_chr <- as.character(d$strat)
 
   set.seed(1)
-  by_factor <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                                inside = rsample::vfold_cv(v = 4, strata = strat))
+  by_factor <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4, strata = strat)
+  )
   set.seed(1)
-  by_character <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                                   inside = rsample::vfold_cv(v = 4, strata = strat_chr))
+  by_character <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4, strata = strat_chr)
+  )
 
   expect_identical(
     by_factor$inner_resamples[[1]]$splits[[1]]$in_id,
@@ -100,11 +124,17 @@ test_that("rows carrying NA are resampled, not dropped", {
   d$x[c(3, 17, 88)] <- NA_real_
 
   set.seed(1)
-  ref <- rsample::nested_cv(d, outside = rsample::vfold_cv(v = 3),
-                            inside = rsample::vfold_cv(v = 4))
+  ref <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                           inside = rsample::vfold_cv(v = 4))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
 
   expect_inner_identical(lean, ref)
   seen <- sort(unique(unlist(lapply(
@@ -119,8 +149,11 @@ test_that("rows carrying NA are resampled, not dropped", {
 
 test_that("`data` must be a data frame", {
   expect_error(
-    nested_resamples(1:10, outside = rsample::vfold_cv(v = 2),
-                     inside = rsample::vfold_cv(v = 2)),
+    nested_resamples(
+      1:10,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = 2)
+    ),
     "must be a data frame"
   )
 })
@@ -130,7 +163,11 @@ test_that("`outside` must be a spec or an rset", {
   not_an_rset <- 42
 
   expect_error(
-    nested_resamples(d, outside = not_an_rset, inside = rsample::vfold_cv(v = 2)),
+    nested_resamples(
+      d,
+      outside = not_an_rset,
+      inside = rsample::vfold_cv(v = 2)
+    ),
     "must be a resampling specification or an"
   )
 })
@@ -139,8 +176,11 @@ test_that("an outer bootstrap is refused, as a call and as an object", {
   d <- make_test_data()
 
   expect_error(
-    nested_resamples(d, outside = rsample::bootstraps(times = 3),
-                     inside = rsample::vfold_cv(v = 2)),
+    nested_resamples(
+      d,
+      outside = rsample::bootstraps(times = 3),
+      inside = rsample::vfold_cv(v = 2)
+    ),
     "cannot be a bootstrap"
   )
 
@@ -193,7 +233,11 @@ test_that("the `inside` guard covers every outer fold, not just the first", {
   }
 
   expect_error(
-    nested_resamples(d, outside = rsample::vfold_cv(v = 3), inside = flaky_inner()),
+    nested_resamples(
+      d,
+      outside = rsample::vfold_cv(v = 3),
+      inside = flaky_inner()
+    ),
     "did not produce an"
   )
   # The first two folds evaluated cleanly, so the refusal came from the third.
@@ -230,9 +274,17 @@ test_that("a failing spec reports a message that does not carry the data", {
   msg <- function(data, which) {
     cnd <- tryCatch(
       if (identical(which, "outside")) {
-        nested_resamples(data, outside = nrow(), inside = rsample::vfold_cv(v = 2))
+        nested_resamples(
+          data,
+          outside = nrow(),
+          inside = rsample::vfold_cv(v = 2)
+        )
       } else {
-        nested_resamples(data, outside = rsample::vfold_cv(v = 2), inside = nrow())
+        nested_resamples(
+          data,
+          outside = rsample::vfold_cv(v = 2),
+          inside = nrow()
+        )
       },
       error = function(e) e
     )
@@ -250,8 +302,11 @@ test_that("a zero-row data frame is refused by the underlying spec", {
   empty <- make_test_data()[0, , drop = FALSE]
 
   expect_error(
-    nested_resamples(empty, outside = rsample::vfold_cv(v = 2),
-                     inside = rsample::vfold_cv(v = 2)),
+    nested_resamples(
+      empty,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = 2)
+    ),
     "number of rows is less than"
   )
 })
@@ -260,8 +315,11 @@ test_that("a single-row data frame is refused by the underlying spec", {
   one <- make_test_data()[1, , drop = FALSE]
 
   expect_error(
-    nested_resamples(one, outside = rsample::vfold_cv(v = 2),
-                     inside = rsample::vfold_cv(v = 2)),
+    nested_resamples(
+      one,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = 2)
+    ),
     "number of rows is less than"
   )
 })

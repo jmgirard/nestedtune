@@ -86,8 +86,10 @@ drift_failures <- function(doc_path, figures) {
   if (is.null(decl)) {
     return(list(failures = "no drift-check declaration", checked = 0L))
   }
-  body <- paste(grep("<!-- drift-check:", lines, value = TRUE, invert = TRUE),
-                collapse = "\n")
+  body <- paste(
+    grep("<!-- drift-check:", lines, value = TRUE, invert = TRUE),
+    collapse = "\n"
+  )
   failures <- character()
   checked <- 0L
   for (nm in names(decl)) {
@@ -103,18 +105,29 @@ drift_failures <- function(doc_path, figures) {
       hits <- gregexpr(rendering, body, fixed = TRUE)[[1]]
       found <- if (hits[[1]] == -1L) 0L else length(hits)
       if (found != expected) {
-        failures <- c(failures, sprintf(
-          "%s: rendering '%s' printed %d time(s) against %d declared",
-          nm, rendering, found, expected
-        ))
+        failures <- c(
+          failures,
+          sprintf(
+            "%s: rendering '%s' printed %d time(s) against %d declared",
+            nm,
+            rendering,
+            found,
+            expected
+          )
+        )
         next
       }
       rv <- drift_rendering_value(rendering)
       if (abs(rv[["printed"]] - figures[[nm]]) > rv[["tol"]]) {
-        failures <- c(failures, sprintf(
-          "%s: '%s' misses the manifest value %s at its printed precision",
-          nm, rendering, format(figures[[nm]])
-        ))
+        failures <- c(
+          failures,
+          sprintf(
+            "%s: '%s' misses the manifest value %s at its printed precision",
+            nm,
+            rendering,
+            format(figures[[nm]])
+          )
+        )
       }
     }
   }

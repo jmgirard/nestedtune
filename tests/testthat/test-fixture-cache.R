@@ -35,8 +35,13 @@ fake_fit <- function(object, resamples, grid = 10, metrics = NULL) {
   draw <- sample.int(.Machine$integer.max, 1L)
   rlang::warn("fake fold failed", class = "fake_failure")
   rlang::inform("fake progress note")
-  list(object = object, resamples = resamples, grid = grid,
-       metrics = metrics, draw = draw)
+  list(
+    object = object,
+    resamples = resamples,
+    grid = grid,
+    metrics = metrics,
+    draw = draw
+  )
 }
 
 quiet <- function(expr) suppressMessages(suppressWarnings(expr))
@@ -154,22 +159,29 @@ test_that("the key separates what the design's inner spec resolves in the caller
   parameterised <- local({
     v <- 3
     set.seed(11)
-    nested_resamples(d, outside = rsample::vfold_cv(v = 2),
-                     inside = rsample::vfold_cv(v = v))
+    nested_resamples(
+      d,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = v)
+    )
   })
 
   with_v <- local({
     v <- 3
     set.seed(2)
-    fixture_key(nested_final_fit, list(object = det_workflow(d),
-                                       resamples = parameterised),
-                env = environment())
+    fixture_key(
+      nested_final_fit,
+      list(object = det_workflow(d), resamples = parameterised),
+      env = environment()
+    )
   })
   without_v <- local({
     set.seed(2)
-    fixture_key(nested_final_fit, list(object = det_workflow(d),
-                                       resamples = parameterised),
-                env = environment())
+    fixture_key(
+      nested_final_fit,
+      list(object = det_workflow(d), resamples = parameterised),
+      env = environment()
+    )
   })
 
   expect_false(identical(without_v, with_v))
@@ -227,69 +239,121 @@ test_that("the key separates every fixture signature this suite asks for", {
   # of these collided, the cache would serve one test the other's run.
   signatures <- list(
     det = function() {
-      list(object = det_workflow(d), resamples = det_nested(d),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = det_nested(d),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     det_no_metrics = function() {
-      list(object = det_workflow(d), resamples = det_nested(d),
-           grid = det_grid(), metrics = NULL)
+      list(
+        object = det_workflow(d),
+        resamples = det_nested(d),
+        grid = det_grid(),
+        metrics = NULL
+      )
     },
     unstable = function() {
-      list(object = unstable_workflow(u), resamples = det_nested(u, v = 4),
-           grid = unstable_grid(), metrics = reg_metrics())
+      list(
+        object = unstable_workflow(u),
+        resamples = det_nested(u, v = 4),
+        grid = unstable_grid(),
+        metrics = reg_metrics()
+      )
     },
     stochastic = function() {
-      list(object = stoch_workflow(d), resamples = det_nested(d),
-           grid = stoch_grid(), metrics = reg_metrics())
+      list(
+        object = stoch_workflow(d),
+        resamples = det_nested(d),
+        grid = stoch_grid(),
+        metrics = reg_metrics()
+      )
     },
     break_inner_2 = function() {
-      list(object = det_workflow(d),
-           resamples = break_fold(det_nested(d), 2L, "inner tuning"),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = break_fold(det_nested(d), 2L, "inner tuning"),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     break_outer_2 = function() {
-      list(object = det_workflow(d),
-           resamples = break_fold(det_nested(d), 2L, "outer fit"),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = break_fold(det_nested(d), 2L, "outer fit"),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     break_outer_3 = function() {
-      list(object = det_workflow(d),
-           resamples = break_fold(det_nested(d), 3L, "outer fit"),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = break_fold(det_nested(d), 3L, "outer fit"),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     break_every = function() {
-      list(object = det_workflow(d), resamples = break_every_fold(det_nested(d)),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = break_every_fold(det_nested(d)),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     break_inner_split = function() {
-      list(object = det_workflow(d),
-           resamples = break_inner_split(det_nested(d), 2L),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = break_inner_split(det_nested(d), 2L),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     final = function() {
-      list(object = det_workflow(d), resamples = final_nested(d),
-           grid = det_grid(), metrics = reg_metrics())
+      list(
+        object = det_workflow(d),
+        resamples = final_nested(d),
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     },
     final_no_metrics = function() {
-      list(object = det_workflow(d), resamples = final_nested(d),
-           grid = det_grid(), metrics = NULL)
+      list(
+        object = det_workflow(d),
+        resamples = final_nested(d),
+        grid = det_grid(),
+        metrics = NULL
+      )
     },
     sep = function() {
       s <- sep_data()
-      list(object = sep_workflow(s), resamples = sep_nested(s),
-           grid = sep_grid(), metrics = sep_metrics())
+      list(
+        object = sep_workflow(s),
+        resamples = sep_nested(s),
+        grid = sep_grid(),
+        metrics = sep_metrics()
+      )
     },
     sep_no_metrics = function() {
       s <- sep_data()
-      list(object = sep_workflow(s), resamples = sep_nested(s),
-           grid = sep_grid(), metrics = NULL)
+      list(
+        object = sep_workflow(s),
+        resamples = sep_nested(s),
+        grid = sep_grid(),
+        metrics = NULL
+      )
     }
   )
 
-  keys <- vapply(signatures, function(build) {
-    set.seed(2)
-    fixture_key(nested_tune_grid, build())
-  }, character(1))
+  keys <- vapply(
+    signatures,
+    function(build) {
+      set.seed(2)
+      fixture_key(nested_tune_grid, build())
+    },
+    character(1)
+  )
 
   expect_identical(anyDuplicated(keys), 0L)
 })
@@ -298,13 +362,22 @@ test_that("the same signature keys the same way twice, so it is built once", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  twice <- vapply(1:2, function(i) {
-    set.seed(2)
-    fixture_key(nested_tune_grid, list(
-      object = det_workflow(d), resamples = det_nested(d),
-      grid = det_grid(), metrics = reg_metrics()
-    ))
-  }, character(1))
+  twice <- vapply(
+    1:2,
+    function(i) {
+      set.seed(2)
+      fixture_key(
+        nested_tune_grid,
+        list(
+          object = det_workflow(d),
+          resamples = det_nested(d),
+          grid = det_grid(),
+          metrics = reg_metrics()
+        )
+      )
+    },
+    character(1)
+  )
 
   # `rlang::hash()` on these objects alone would fail here: a recipe's `terms`
   # quosures capture the frame holding the recipe itself, and `metric_set()`'s
@@ -312,7 +385,8 @@ test_that("the same signature keys the same way twice, so it is built once", {
   # differently each construction. canonical_form() is what makes the two equal.
   expect_identical(twice[[2L]], twice[[1L]])
   expect_false(identical(
-    rlang::hash(det_workflow(d)), rlang::hash(det_workflow(d))
+    rlang::hash(det_workflow(d)),
+    rlang::hash(det_workflow(d))
   ))
 })
 
@@ -373,9 +447,14 @@ test_that("the scaffolding above leaves the shared cache as it found it", {
   # including -- deliberately -- one fixture built twice. Left there, the
   # run-wide report would carry a finding that is really this file's test data.
   # The assertions above have already read these entries; nothing needs them now.
-  removed <- fixture_cache_forget("^(fake_fit|caller_probe|g|no_args|signaller)\\(")
+  removed <- fixture_cache_forget(
+    "^(fake_fit|caller_probe|g|no_args|signaller)\\("
+  )
   expect_gt(removed, 0L)
 
   remaining <- fixture_cache_report()$signature
-  expect_false(any(grepl("^(fake_fit|caller_probe|g|no_args|signaller)\\(", remaining)))
+  expect_false(any(grepl(
+    "^(fake_fit|caller_probe|g|no_args|signaller)\\(",
+    remaining
+  )))
 })

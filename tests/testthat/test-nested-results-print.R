@@ -11,7 +11,10 @@ test_that("printing reports the outer design and how much of it ran", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   txt <- print_text(res)
 
@@ -26,7 +29,10 @@ test_that("the outer scheme is dropped rather than misreported after subsetting"
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   txt <- print_text(res[1:2, ])
 
@@ -41,8 +47,10 @@ test_that("a failed fold is named along with the stage it failed at", {
 
   set.seed(2)
   res <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
   txt <- print_text(res)
 
@@ -53,8 +61,10 @@ test_that("a failed fold is named along with the stage it failed at", {
 
   set.seed(2)
   inner <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 1L, "inner tuning"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 1L, "inner tuning"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   expect_match(print_text(inner), "inner tuning")
@@ -66,7 +76,10 @@ test_that("unanimous selection is distinguished from disagreement", {
   d <- make_reg_data()
   set.seed(2)
   agreed <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   agreed_txt <- print_text(agreed)
 
@@ -77,8 +90,10 @@ test_that("unanimous selection is distinguished from disagreement", {
   u <- unstable_data()
   set.seed(2)
   split <- memoised(nested_tune_grid(
-    unstable_workflow(u), det_nested(u, v = 4),
-    grid = unstable_grid(), metrics = reg_metrics()
+    unstable_workflow(u),
+    det_nested(u, v = 4),
+    grid = unstable_grid(),
+    metrics = reg_metrics()
   ))
   split_txt <- print_text(split)
 
@@ -98,7 +113,10 @@ test_that("printing says the estimate describes the procedure, not a model", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   txt <- print_text(res)
 
@@ -112,7 +130,10 @@ test_that("printing shows the estimate over the folds that contributed", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   summarized <- collect_metrics(res)
   txt <- print_text(res)
@@ -129,8 +150,10 @@ test_that("printing a partial run neither warns nor errors", {
 
   set.seed(2)
   res <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   # collect_metrics() warns here by design; printing is not a summary request,
@@ -146,8 +169,10 @@ test_that("printing a run where nothing completed neither warns nor errors", {
 
   set.seed(2)
   res <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_every_fold(det_nested(d)),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_every_fold(det_nested(d)),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   # collect_metrics() refuses outright; printing still has to describe the run.
@@ -166,7 +191,10 @@ test_that("print returns its input invisibly and is registered for S3 dispatch",
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   cli::cli_fmt(returned <- withVisible(print(res)))
@@ -184,7 +212,10 @@ test_that("a subset missing the per-fold record prints as a plain tibble", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # Keeping .completed alone once kept the class, and print() then read
@@ -202,10 +233,17 @@ test_that("a single completed fold reads in the singular", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
-  expect_match(print_text(res[1L, ]), "Estimate (1 of 1 outer fold)", fixed = TRUE)
+  expect_match(
+    print_text(res[1L, ]),
+    "Estimate (1 of 1 outer fold)",
+    fixed = TRUE
+  )
 })
 
 test_that("a parameter only some folds chose is not reported as disagreement", {
@@ -214,7 +252,10 @@ test_that("a parameter only some folds chose is not reported as disagreement", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # One fold carries no value for num_comp. The folds that did choose agree,
@@ -236,7 +277,10 @@ test_that("a fold that selected NA is a value, not an absent one", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   na_selected <- res
@@ -254,7 +298,10 @@ test_that("a list-valued selection prints instead of aborting", {
 
   set.seed(2)
   res <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
 
   # Not something select_best() produces, but the method promises never to
@@ -284,7 +331,10 @@ test_that("folds that searched different candidate sets are said to have", {
   # recording a valid-looking snapshot of a line it no longer earns.
   set.seed(20)
   differing <- nested_tune_grid(
-    cont_workflow(d), folds, grid = 5, metrics = reg_metrics()
+    cont_workflow(d),
+    folds,
+    grid = 5,
+    metrics = reg_metrics()
   )
   expect_false(same_candidates(differing$.grid))
 
@@ -303,7 +353,10 @@ test_that("folds that searched different candidate sets are said to have", {
   # unconditionally would look identical in the snapshot above.
   set.seed(20)
   agreeing <- nested_tune_grid(
-    det_workflow(d), folds, grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    folds,
+    grid = det_grid(),
+    metrics = reg_metrics()
   )
   expect_true(same_candidates(agreeing$.grid))
   expect_no_match(print_text(agreeing), "Candidates searched")
@@ -319,7 +372,10 @@ test_that("the candidate-set comparison ignores order and tune's config labels",
 
   # And a difference below print precision is still a difference: the comparison
   # runs on the values, not on what they format to.
-  c1 <- data.frame(cost = c(1, 2, 3 + 1e-12), .config = c("pre1", "pre2", "pre3"))
+  c1 <- data.frame(
+    cost = c(1, 2, 3 + 1e-12),
+    .config = c("pre1", "pre2", "pre3")
+  )
   expect_false(same_candidates(list(a, c1)))
 
   # A fold carrying a different parameter entirely is a difference too, rather
@@ -366,12 +422,17 @@ test_that("printed output holds its shape", {
 
   set.seed(2)
   complete <- memoised(nested_tune_grid(
-    det_workflow(d), det_nested(d), grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
   ))
   set.seed(2)
   partial <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_fold(det_nested(d), 2L, "outer fit"),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
   # Unanimity has to be checked, not assumed: the same design on the smaller
   # frame splits 3, 3, 2, 3, 3, so a fixture labelled unanimous that quietly
@@ -379,7 +440,9 @@ test_that("printed output holds its shape", {
   big <- make_reg_data(n = 150)
   set.seed(2)
   unanimous <- memoised(nested_tune_grid(
-    det_workflow(big), det_nested(big, v = 5), grid = det_grid(),
+    det_workflow(big),
+    det_nested(big, v = 5),
+    grid = det_grid(),
     metrics = reg_metrics()
   ))
   expect_identical(
@@ -388,13 +451,17 @@ test_that("printed output holds its shape", {
   )
   set.seed(2)
   divergent <- memoised(nested_tune_grid(
-    unstable_workflow(u), det_nested(u, v = 4), grid = unstable_grid(),
+    unstable_workflow(u),
+    det_nested(u, v = 4),
+    grid = unstable_grid(),
     metrics = reg_metrics()
   ))
   set.seed(2)
   nothing <- suppressWarnings(memoised(nested_tune_grid(
-    det_workflow(d), break_every_fold(det_nested(d)),
-    grid = det_grid(), metrics = reg_metrics()
+    det_workflow(d),
+    break_every_fold(det_nested(d)),
+    grid = det_grid(),
+    metrics = reg_metrics()
   )))
 
   # The candidate-set line's own shape, snapshot beside the rest (M21). Built
@@ -408,7 +475,10 @@ test_that("printed output holds its shape", {
   )
   set.seed(20)
   differing <- nested_tune_grid(
-    cont_workflow(d), folds, grid = 5, metrics = reg_metrics()
+    cont_workflow(d),
+    folds,
+    grid = 5,
+    metrics = reg_metrics()
   )
 
   expect_snapshot(print(complete))

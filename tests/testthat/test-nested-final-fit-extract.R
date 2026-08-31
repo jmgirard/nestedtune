@@ -11,7 +11,12 @@ final_for_extract <- function() {
   folds <- final_nested(d)
   wf <- det_workflow(d)
   set.seed(21)
-  memoised(nested_final_fit(wf, folds, grid = det_grid(), metrics = reg_metrics()))
+  memoised(nested_final_fit(
+    wf,
+    folds,
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
 }
 
 test_that("the tuning-run accessor returns the stored run, unreduced", {
@@ -66,7 +71,12 @@ test_that("the candidate accessor holds up past nine candidates", {
   grid <- data.frame(threshold = seq(0.05, 0.95, length.out = 11L))
 
   set.seed(4)
-  final <- memoised(nested_final_fit(wf, folds, grid = grid, metrics = reg_metrics()))
+  final <- memoised(nested_final_fit(
+    wf,
+    folds,
+    grid = grid,
+    metrics = reg_metrics()
+  ))
   cand <- extract_scored_candidates(final)
 
   expect_identical(nrow(cand), nrow(grid))
@@ -86,9 +96,19 @@ test_that("what the accessors return agrees with what the loop records", {
   wf <- det_workflow(d)
 
   set.seed(21)
-  final <- memoised(nested_final_fit(wf, folds, grid = det_grid(), metrics = reg_metrics()))
+  final <- memoised(nested_final_fit(
+    wf,
+    folds,
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
   set.seed(22)
-  res <- memoised(nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics()))
+  res <- memoised(nested_tune_grid(
+    wf,
+    folds,
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
 
   from_fit <- extract_scored_candidates(final)
   from_loop <- res$.grid[[1L]]
@@ -112,7 +132,12 @@ test_that("both accessors refuse an object they cannot answer for", {
   folds <- final_nested(d)
   wf <- det_workflow(d)
   set.seed(22)
-  res <- memoised(nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics()))
+  res <- memoised(nested_tune_grid(
+    wf,
+    folds,
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
 
   # A results object is the near miss worth firing: it is this package's own
   # class, it holds candidates, and it is the thing a user reaching for these

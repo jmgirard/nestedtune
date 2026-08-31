@@ -58,7 +58,16 @@ selected_label <- function(selected) {
   if (length(keep) == 0L) {
     return("nothing to select")
   }
-  paste0(keep, " = ", vapply(keep, function(nm) {
-    format(selected[[nm]][[1L]])
-  }, character(1)), collapse = ", ")
+  paste0(
+    keep,
+    " = ",
+    vapply(
+      keep,
+      function(nm) {
+        format(selected[[nm]][[1L]])
+      },
+      character(1)
+    ),
+    collapse = ", "
+  )
 }

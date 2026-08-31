@@ -91,10 +91,17 @@ cat("installing the working tree to a temporary library...\n")
 install_log <- tempfile("nestedtune-install-", fileext = ".log")
 install_status <- system2(
   file.path(R.home("bin"), "R"),
-  c("CMD", "INSTALL", "--no-multiarch", "--with-keep.source=no",
-    paste0("--library=", shQuote(PKG_LIB)), "."),
+  c(
+    "CMD",
+    "INSTALL",
+    "--no-multiarch",
+    "--with-keep.source=no",
+    paste0("--library=", shQuote(PKG_LIB)),
+    "."
+  ),
   env = "R_KEEP_PKG_SOURCE=no",
-  stdout = install_log, stderr = install_log
+  stdout = install_log,
+  stderr = install_log
 )
 if (!identical(install_status, 0L)) {
   cat(readLines(install_log), sep = "\n")
@@ -106,14 +113,22 @@ if (!identical(install_status, 0L)) {
 # so nothing would put the temp library in front of them. R_LIBS prepends, which
 # is the right verb here -- the daemons still need mirai and the whole tidymodels
 # stack from the real library, and only nestedtune is being redirected.
-Sys.setenv(R_LIBS = paste(c(PKG_LIB, Sys.getenv("R_LIBS")), collapse = .Platform$path.sep))
+Sys.setenv(
+  R_LIBS = paste(
+    c(PKG_LIB, Sys.getenv("R_LIBS")),
+    collapse = .Platform$path.sep
+  )
+)
 .libPaths(c(PKG_LIB, .libPaths()))
 suppressMessages(library(nestedtune, lib.loc = PKG_LIB))
 # normalizePath on both sides: on macOS `tempfile()` hands back a /var path that
 # resolves to /private/var, so the raw strings differ for a namespace that did
 # load from exactly here.
 stopifnot(identical(
-  normalizePath(dirname(getNamespaceInfo("nestedtune", "path")), mustWork = TRUE),
+  normalizePath(
+    dirname(getNamespaceInfo("nestedtune", "path")),
+    mustWork = TRUE
+  ),
   normalizePath(PKG_LIB, mustWork = TRUE)
 ))
 cat("package: installed to a temporary library (the state a user runs)\n")
@@ -150,10 +165,17 @@ for (pkg in c("mori", "mirai", "ranger", "yardstick")) {
 }
 
 cat(R.version.string, "|", R.version$platform, "\n")
-cat("mori", as.character(packageVersion("mori")),
-    "| mirai", as.character(packageVersion("mirai")),
-    "| tune", as.character(packageVersion("tune")),
-    "| rsample", as.character(packageVersion("rsample")), "\n\n")
+cat(
+  "mori",
+  as.character(packageVersion("mori")),
+  "| mirai",
+  as.character(packageVersion("mirai")),
+  "| tune",
+  as.character(packageVersion("tune")),
+  "| rsample",
+  as.character(packageVersion("rsample")),
+  "\n\n"
+)
 
 # The fixture and the byte oracles are defined once, in the test helpers, and
 # sourced here rather than copied -- the same discipline
@@ -164,8 +186,11 @@ cat("mori", as.character(packageVersion("mori")),
 # sourcing every helper (M26 review D6). Sourcing them is unaffected by the
 # install above -- they are plain files read from the working tree, and the
 # package functions they call resolve to the installed copy now attached.
-for (helper in c("helper-orchestration.R", "helper-payload-size.R",
-                 "helper-parallel.R")) {
+for (helper in c(
+  "helper-orchestration.R",
+  "helper-payload-size.R",
+  "helper-parallel.R"
+)) {
   path <- file.path("tests", "testthat", helper)
   if (!file.exists(path)) {
     stop("run this from the repository root: ", path, " not found")
@@ -195,13 +220,24 @@ PUBLISHED <- list()
 # mechanism for `a / b` or `a - b` would read the same arithmetic that produced
 # it. A document may not rest a claim on a derived figure alone; the manifest
 # says which they are, and the two-oracle assertion below exempts exactly these.
-publish <- function(name, value, fixture, oracles = character(),
-                    install_dependent = FALSE, derived = FALSE, derived_from = character()) {
+publish <- function(
+  name,
+  value,
+  fixture,
+  oracles = character(),
+  install_dependent = FALSE,
+  derived = FALSE,
+  derived_from = character()
+) {
   stopifnot(derived || length(derived_from) == 0L)
   PUBLISHED[[name]] <<- list(
-    name = name, value = value, fixture = fixture,
-    oracles = oracles, install_dependent = install_dependent,
-    derived = derived, derived_from = derived_from
+    name = name,
+    value = value,
+    fixture = fixture,
+    oracles = oracles,
+    install_dependent = install_dependent,
+    derived = derived,
+    derived_from = derived_from
   )
   invisible(value)
 }
@@ -222,18 +258,18 @@ assert_oracle <- function(oracle, expr) {
   invisible(TRUE)
 }
 
-O_LEAN_COPY    <- "copy-count: exactly 1 copy of the frame in the stream"
-O_MORI_COPY    <- "copy-count: exactly 0 copies of the frame in the stream"
-O_PAYLOAD_CF   <- "closed-form: predicted_lean_bytes() from the design's scalars, within M23's 5% band"
+O_LEAN_COPY <- "copy-count: exactly 1 copy of the frame in the stream"
+O_MORI_COPY <- "copy-count: exactly 0 copies of the frame in the stream"
+O_PAYLOAD_CF <- "closed-form: predicted_lean_bytes() from the design's scalars, within M23's 5% band"
 O_PAYLOAD_COPY <- "copy-count: the payload alone carries 0 copies; the frame rides in .args"
-O_RUNG_FRAME   <- "frame cross-check: the .args rung equals the frame serialized alone, within 5%"
-O_MORI_INDEP   <- "independent-reconstruction: a bundle assembled member-by-member in mirai's order serializes to the same bytes"
-O_GAP_INDEP    <- "independent-reconstruction: the gap re-derives to the byte from the member-by-member bundle"
-O_REF_COPY     <- "copy-count: 0 copies of the frame in the shared object's stream"
-O_MARG_COPY    <- "copy-count: 0 copies across four references"
-O_REF_INV      <- "invariance: a 4x frame shares for the same bytes, within 5%"
-O_MARG_INV     <- "invariance: a 4x frame's marginal reference cost matches, within 5%"
-O_WORKER_SRC   <- "srcref-state: asserted absent by walking the closure's language tree"
+O_RUNG_FRAME <- "frame cross-check: the .args rung equals the frame serialized alone, within 5%"
+O_MORI_INDEP <- "independent-reconstruction: a bundle assembled member-by-member in mirai's order serializes to the same bytes"
+O_GAP_INDEP <- "independent-reconstruction: the gap re-derives to the byte from the member-by-member bundle"
+O_REF_COPY <- "copy-count: 0 copies of the frame in the shared object's stream"
+O_MARG_COPY <- "copy-count: 0 copies across four references"
+O_REF_INV <- "invariance: a 4x frame shares for the same bytes, within 5%"
+O_MARG_INV <- "invariance: a 4x frame's marginal reference cost matches, within 5%"
+O_WORKER_SRC <- "srcref-state: asserted absent by walking the closure's language tree"
 O_WORKER_STRIP <- "strip-invariance: removeSource() leaves the byte count identical"
 
 # Pin the full generator triple and restore the caller's on exit. `set.seed(s)`
@@ -343,8 +379,12 @@ mori_transport_check <- function(shared) {
 }
 
 dispatch_via_mori <- function(payloads, shared, original) {
-  payloads <- lapply(payloads, morify_payload, shared = shared,
-                     original = original)
+  payloads <- lapply(
+    payloads,
+    morify_payload,
+    shared = shared,
+    original = original
+  )
   task <- mori_task
   environment(task) <- globalenv()
   mapped <- mirai::mirai_map(
@@ -362,19 +402,28 @@ dispatch_via_mori <- function(payloads, shared, original) {
 # ---- identity ----------------------------------------------------------------
 
 cat("== identity: does the dispatch route change the fold records? ==\n")
-cat("engine ranger (stochastic through R's RNG); seed", SEED,
-    "; ambient kind pinned to Mersenne-Twister/Inversion/Rejection\n\n")
+cat(
+  "engine ranger (stochastic through R's RNG); seed",
+  SEED,
+  "; ambient kind pinned to Mersenne-Twister/Inversion/Rejection\n\n"
+)
 
 mirai::daemons(0)
 reference <- nestedtune:::dispatch_folds(
-  build_payloads(), object = wf, grid = grid, metrics = metrics
+  build_payloads(),
+  object = wf,
+  grid = grid,
+  metrics = metrics
 )
 stopifnot(identical(nestedtune:::last_dispatch(), "serial"))
 # Not decoration: three arms in which every fold FAILED would also compare
 # identical(), and the ranger engine would never have been reached.
 stopifnot(completed_count(reference) == n_folds)
-cat(sprintf("serial reference: %d fold records, %d completed\n\n",
-            length(reference), completed_count(reference)))
+cat(sprintf(
+  "serial reference: %d fold records, %d completed\n\n",
+  length(reference),
+  completed_count(reference)
+))
 
 results <- list()
 for (n_workers in WORKER_COUNTS) {
@@ -382,7 +431,10 @@ for (n_workers in WORKER_COUNTS) {
 
   by_value <- without_pkgload_warning(
     nestedtune:::dispatch_folds(
-      build_payloads(), object = wf, grid = grid, metrics = metrics
+      build_payloads(),
+      object = wf,
+      grid = grid,
+      metrics = metrics
     )
   )
   stopifnot(identical(nestedtune:::last_dispatch(), "parallel"))
@@ -406,7 +458,8 @@ for (n_workers in WORKER_COUNTS) {
     n_workers,
     results[[as.character(n_workers)]]$by_value,
     results[[as.character(n_workers)]]$mori,
-    transport$shared_in_daemon && transport$name_matches))
+    transport$shared_in_daemon && transport$name_matches
+  ))
   mirai::daemons(0)
 }
 
@@ -414,8 +467,14 @@ for (n_workers in WORKER_COUNTS) {
 # let a divergence pass unnoticed by anything reading the exit status.
 stopifnot(all(vapply(results, function(r) r$by_value, logical(1))))
 stopifnot(all(vapply(results, function(r) r$mori, logical(1))))
-stopifnot(all(vapply(results, function(r) r$transport$shared_in_daemon &&
-                       r$transport$name_matches, logical(1))))
+stopifnot(all(vapply(
+  results,
+  function(r) {
+    r$transport$shared_in_daemon &&
+      r$transport$name_matches
+  },
+  logical(1)
+)))
 
 cat("\n")
 
@@ -430,27 +489,42 @@ ref_frame <- payload_fixture_data(n = 10000, p = 1)
 ref_sentinel <- sentinel_of(ref_frame)
 ref_shared <- mori::share(ref_frame)
 one_ref <- length(serialize(ref_shared, NULL))
-four_refs <- length(serialize(list(ref_shared, ref_shared, ref_shared, ref_shared), NULL))
+four_refs <- length(serialize(
+  list(ref_shared, ref_shared, ref_shared, ref_shared),
+  NULL
+))
 # The copy-count oracles these two figures publish, asserted rather than only
 # named in the manifest: a shared object's stream carries the region reference,
 # never the frame's data -- once for one reference and still zero across four.
 assert_oracle(O_REF_COPY, count_data_copies(ref_shared, ref_sentinel) == 0)
-assert_oracle(O_MARG_COPY,
-              count_data_copies(list(ref_shared, ref_shared, ref_shared, ref_shared),
-                                ref_sentinel) == 0)
+assert_oracle(
+  O_MARG_COPY,
+  count_data_copies(
+    list(ref_shared, ref_shared, ref_shared, ref_shared),
+    ref_sentinel
+  ) ==
+    0
+)
 # NOT fixed width, against what an earlier pass asserted: the name embeds the
 # creating process id in hex, so its length follows the pid. Measured 19
 # characters and 20 characters in two consecutive runs of this script. The width
 # is not what carries any claim here -- the serialized cost below is -- but a
 # stated constant that varies between runs is the exact failure this milestone
 # was re-cut over, so it is measured and reported rather than asserted.
-cat(sprintf("region name: %s (%d characters, pid-dependent)\n",
-            mori::shared_name(ref_shared), nchar(mori::shared_name(ref_shared))))
+cat(sprintf(
+  "region name: %s (%d characters, pid-dependent)\n",
+  mori::shared_name(ref_shared),
+  nchar(mori::shared_name(ref_shared))
+))
 cat(sprintf("one shared object serialized: %d B\n", one_ref))
-cat(sprintf("marginal cost per additional reference: %.0f B\n",
-            (four_refs - one_ref) / 3))
-cat(sprintf("against the same frame by value: %d B\n",
-            length(serialize(ref_frame, NULL))))
+cat(sprintf(
+  "marginal cost per additional reference: %.0f B\n",
+  (four_refs - one_ref) / 3
+))
+cat(sprintf(
+  "against the same frame by value: %d B\n",
+  length(serialize(ref_frame, NULL))
+))
 
 # Second oracle for the two figures above, sharing no arithmetic with the copy
 # count: INVARIANCE UNDER FRAME SIZE. What a shared reference costs is the claim
@@ -460,22 +534,33 @@ cat(sprintf("against the same frame by value: %d B\n",
 big_ref_frame <- payload_fixture_data(n = 40000, p = 1)
 big_ref_shared <- mori::share(big_ref_frame)
 one_ref_big <- length(serialize(big_ref_shared, NULL))
-four_refs_big <- length(serialize(list(big_ref_shared, big_ref_shared,
-                                       big_ref_shared, big_ref_shared), NULL))
+four_refs_big <- length(serialize(
+  list(big_ref_shared, big_ref_shared, big_ref_shared, big_ref_shared),
+  NULL
+))
 marginal_ref <- (four_refs - one_ref) / 3
 marginal_ref_big <- (four_refs_big - one_ref_big) / 3
-cat(sprintf("invariance oracle: a 4x frame shares for %d B against %d B (%.1f%%), while by value it is %d B\n",
-            one_ref_big, one_ref, 100 * abs(one_ref_big - one_ref) / one_ref,
-            length(serialize(big_ref_frame, NULL))))
-cat(sprintf("marginal invariance oracle: %.1f B per extra reference on the 4x frame against %.1f B (%.1f%%)\n\n",
-            marginal_ref_big, marginal_ref,
-            100 * abs(marginal_ref_big - marginal_ref) / marginal_ref))
+cat(sprintf(
+  "invariance oracle: a 4x frame shares for %d B against %d B (%.1f%%), while by value it is %d B\n",
+  one_ref_big,
+  one_ref,
+  100 * abs(one_ref_big - one_ref) / one_ref,
+  length(serialize(big_ref_frame, NULL))
+))
+cat(sprintf(
+  "marginal invariance oracle: %.1f B per extra reference on the 4x frame against %.1f B (%.1f%%)\n\n",
+  marginal_ref_big,
+  marginal_ref,
+  100 * abs(marginal_ref_big - marginal_ref) / marginal_ref
+))
 assert_oracle(O_REF_INV, abs(one_ref_big - one_ref) / one_ref < 0.05)
 # The marginal figure's OWN invariance, on the marginal quantity itself. Pass 5
 # found the earlier manifest crediting this figure with the single-reference
 # invariance above, an assertion that never touched the marginal cost.
-assert_oracle(O_MARG_INV,
-              abs(marginal_ref_big - marginal_ref) / marginal_ref < 0.05)
+assert_oracle(
+  O_MARG_INV,
+  abs(marginal_ref_big - marginal_ref) / marginal_ref < 0.05
+)
 
 # ---- wire cost, measured off the REAL dispatch --------------------------------
 #
@@ -541,8 +626,10 @@ capture_dispatch <- function(payloads, object, grid, metrics) {
       return(real_request(con, data, ...))
     }
     captured <<- data
-    stop(structure(class = c("dispatch_captured", "error", "condition"),
-                   list(message = "captured", call = NULL)))
+    stop(structure(
+      class = c("dispatch_captured", "error", "condition"),
+      list(message = "captured", call = NULL)
+    ))
   }
   patched <- orig
   environment(patched) <- shim
@@ -553,8 +640,12 @@ capture_dispatch <- function(payloads, object, grid, metrics) {
   utils::assignInNamespace("do_mirai", patched, ns = "mirai")
   on.exit(utils::assignInNamespace("do_mirai", orig, ns = "mirai"), add = TRUE)
   tryCatch(
-    nestedtune:::dispatch_folds(payloads, object = object, grid = grid,
-                                metrics = metrics),
+    nestedtune:::dispatch_folds(
+      payloads,
+      object = object,
+      grid = grid,
+      metrics = metrics
+    ),
     dispatch_captured = function(cnd) NULL
   )
   captured
@@ -588,8 +679,11 @@ big_design <- big_fixture$design
 big_wf <- payload_fixture_workflow()
 big_sentinel <- sentinel_of(big_data)
 big_payloads <- lapply(seq_len(nrow(big_design)), function(i) {
-  list(split = big_design$splits[[i]],
-       inner = big_design$inner_resamples[[i]], seeds = c(1L, 2L))
+  list(
+    split = big_design$splits[[i]],
+    inner = big_design$inner_resamples[[i]],
+    seeds = c(1L, 2L)
+  )
 })
 
 start_daemons(2L)
@@ -598,20 +692,29 @@ mirai::daemons(0)
 lean_bundle <- bundle
 stopifnot(
   !is.null(lean_bundle),
-  identical(names(lean_bundle),
-            c(".f", ".x", ".args", ".mirai_within_map", "._expr_.", "._globals_.")),
-  identical(sort(names(lean_bundle$.args)),
-            sort(c("object", "grid", "metrics", "shared", "worker")))
+  identical(
+    names(lean_bundle),
+    c(".f", ".x", ".args", ".mirai_within_map", "._expr_.", "._globals_.")
+  ),
+  identical(
+    sort(names(lean_bundle$.args)),
+    sort(c("object", "grid", "metrics", "shared", "worker"))
+  )
 )
 
 # AC2's gate. A run that silently measured the development state fails here
 # rather than publishing a figure many times the installed one. Both captured
 # closures are checked: the `.f` wrapper mirai is handed, and the package's own
 # worker inside `.args`.
-srcref_state <- c(.f = has_srcref(lean_bundle$.f),
-                  worker = has_srcref(lean_bundle$.args$worker))
-cat(sprintf("source references in the captured closures: .f %s, .args$worker %s\n\n",
-            srcref_state[[".f"]], srcref_state[["worker"]]))
+srcref_state <- c(
+  .f = has_srcref(lean_bundle$.f),
+  worker = has_srcref(lean_bundle$.args$worker)
+)
+cat(sprintf(
+  "source references in the captured closures: .f %s, .args$worker %s\n\n",
+  srcref_state[[".f"]],
+  srcref_state[["worker"]]
+))
 assert_oracle(O_WORKER_SRC, !any(srcref_state))
 
 # The modelled mori bundle, built by SUBSTITUTION into the captured one rather
@@ -626,17 +729,32 @@ assert_oracle(O_WORKER_SRC, !any(srcref_state))
 mori_shared <- mori::share(big_data)
 mori_bundle <- lean_bundle
 mori_bundle$.f <- lean_bundle$.args$worker
-mori_bundle$.x <- morify_payload(big_payloads[[1L]], shared = mori_shared,
-                                 original = big_data)
+mori_bundle$.x <- morify_payload(
+  big_payloads[[1L]],
+  shared = mori_shared,
+  original = big_data
+)
 mori_bundle$.args <- lean_bundle$.args[c("object", "grid", "metrics")]
 
-cat("== wire cost per fold: ONE serialization of what mirai hands request() ==\n\n")
-cat(sprintf("%-6s %16s %16s %10s\n",
-            "route", "single stream", "sum of parts", "copies"))
+cat(
+  "== wire cost per fold: ONE serialization of what mirai hands request() ==\n\n"
+)
+cat(sprintf(
+  "%-6s %16s %16s %10s\n",
+  "route",
+  "single stream",
+  "sum of parts",
+  "copies"
+))
 report_bundle <- function(label, b, sentinel) {
   single <- wire_bytes(b)
-  cat(sprintf("%-6s %16.0f %16.0f %10.0f\n",
-              label, single, sum_of_parts(b), count_data_copies(b, sentinel)))
+  cat(sprintf(
+    "%-6s %16.0f %16.0f %10.0f\n",
+    label,
+    single,
+    sum_of_parts(b),
+    count_data_copies(b, sentinel)
+  ))
   invisible(single)
 }
 lean_total <- report_bundle("lean", lean_bundle, big_sentinel)
@@ -651,11 +769,15 @@ mori_total <- report_bundle("mori", mori_bundle, big_sentinel)
 # registry is populated (see "AC1 publishing guard" below): the value a
 # document cites must equal the single stream and must differ from the sum of
 # parts, so an edit that publishes the sum aborts the run.
-cat(sprintf("\nsum-of-parts overstates the lean bundle by %.0f B (%.1f%%); it is not a wire cost\n",
-            sum_of_parts(lean_bundle) - lean_total,
-            100 * (sum_of_parts(lean_bundle) - lean_total) / lean_total))
-cat(sprintf("ratio (lean / mori), single stream both sides: %.2fx\n\n",
-            lean_total / mori_total))
+cat(sprintf(
+  "\nsum-of-parts overstates the lean bundle by %.0f B (%.1f%%); it is not a wire cost\n",
+  sum_of_parts(lean_bundle) - lean_total,
+  100 * (sum_of_parts(lean_bundle) - lean_total) / lean_total
+))
+cat(sprintf(
+  "ratio (lean / mori), single stream both sides: %.2fx\n\n",
+  lean_total / mori_total
+))
 
 # ---- AC3: the gap identity, closing to the byte --------------------------------
 #
@@ -676,13 +798,27 @@ cat(sprintf("ratio (lean / mori), single stream both sides: %.2fx\n\n",
 ladder <- list()
 step <- lean_bundle
 for (rung in list(
-  list(name = ".f: rehydrating wrapper -> the worker itself", apply = function(b) {
-    b$.f <- lean_bundle$.args$worker; b
-  }),
-  list(name = ".x: blanked payload -> payload pointing at the shared region",
-       apply = function(b) { b$.x <- mori_bundle$.x; b }),
-  list(name = ".args: drop `shared` (the frame) and `worker` (now .f)",
-       apply = function(b) { b$.args <- mori_bundle$.args; b })
+  list(
+    name = ".f: rehydrating wrapper -> the worker itself",
+    apply = function(b) {
+      b$.f <- lean_bundle$.args$worker
+      b
+    }
+  ),
+  list(
+    name = ".x: blanked payload -> payload pointing at the shared region",
+    apply = function(b) {
+      b$.x <- mori_bundle$.x
+      b
+    }
+  ),
+  list(
+    name = ".args: drop `shared` (the frame) and `worker` (now .f)",
+    apply = function(b) {
+      b$.args <- mori_bundle$.args
+      b
+    }
+  )
 )) {
   before <- wire_bytes(step)
   step <- rung$apply(step)
@@ -704,10 +840,16 @@ for (rung in list(
 # difference; against a bundle derived from the same substitutions it could not.
 mori_bundle_independent <- list(
   .f = lean_bundle$.args$worker,
-  .x = morify_payload(big_payloads[[1L]], shared = mori_shared, original = big_data),
-  .args = list(object = lean_bundle$.args$object,
-               grid = lean_bundle$.args$grid,
-               metrics = lean_bundle$.args$metrics),
+  .x = morify_payload(
+    big_payloads[[1L]],
+    shared = mori_shared,
+    original = big_data
+  ),
+  .args = list(
+    object = lean_bundle$.args$object,
+    grid = lean_bundle$.args$grid,
+    metrics = lean_bundle$.args$metrics
+  ),
   .mirai_within_map = lean_bundle$.mirai_within_map,
   ._expr_. = lean_bundle$._expr_.,
   ._globals_. = lean_bundle$._globals_.
@@ -719,18 +861,29 @@ stopifnot(
 # The falsifiable checks the manifest credits, recorded as oracles at their
 # assertion site. Both rest on the member-by-member bundle: a dropped member, a
 # reordering, or a substitution that kept `shared` alive diverges here.
-assert_oracle(O_MORI_INDEP, identical(wire_bytes(mori_bundle_independent), mori_total))
-assert_oracle(O_GAP_INDEP,
-              identical(lean_total - wire_bytes(mori_bundle_independent),
-                        lean_total - mori_total))
+assert_oracle(
+  O_MORI_INDEP,
+  identical(wire_bytes(mori_bundle_independent), mori_total)
+)
+assert_oracle(
+  O_GAP_INDEP,
+  identical(
+    lean_total - wire_bytes(mori_bundle_independent),
+    lean_total - mori_total
+  )
+)
 
 cat("== how the gap decomposes (one substitution per rung, in this order) ==\n")
 for (nm in names(ladder)) {
   cat(sprintf("  %+12.0f B   %s\n", -ladder[[nm]], nm))
 }
 cat(sprintf("  %12s\n", "------------"))
-cat(sprintf("  %+12.0f B   lean %.0f -> mori %.0f\n\n",
-            mori_total - lean_total, lean_total, mori_total))
+cat(sprintf(
+  "  %+12.0f B   lean %.0f -> mori %.0f\n\n",
+  mori_total - lean_total,
+  lean_total,
+  mori_total
+))
 
 # AC3's stated identity: to the byte, tolerance zero. Kept because the criterion
 # asks for it and because it catches a printing bug, but see above -- it is the
@@ -744,9 +897,12 @@ stopifnot(identical(lean_total - mori_total, sum(unlist(ladder))))
 # here and in context there -- so the band is stated and checked.
 frame_alone <- length(serialize(big_data, NULL))
 args_rung <- ladder[[".args: drop `shared` (the frame) and `worker` (now .f)"]]
-cat(sprintf("the `.args` rung against the frame measured alone: %.0f B vs %d B (%.1f%%)\n\n",
-            args_rung, frame_alone,
-            100 * abs(args_rung - frame_alone) / frame_alone))
+cat(sprintf(
+  "the `.args` rung against the frame measured alone: %.0f B vs %d B (%.1f%%)\n\n",
+  args_rung,
+  frame_alone,
+  100 * abs(args_rung - frame_alone) / frame_alone
+))
 assert_oracle(O_RUNG_FRAME, abs(args_rung - frame_alone) / frame_alone < 0.05)
 
 
@@ -757,10 +913,16 @@ assert_oracle(O_RUNG_FRAME, abs(args_rung - frame_alone) / frame_alone < 0.05)
 # hardcoded 5000 predicting for a design no longer measured.
 predicted <- predicted_lean_bytes(nrow(big_data), WIRE_V, WIRE_INNER_V)
 measured_payload <- length(serialize(lean_bundle$.x, NULL))
-cat(sprintf("closed-form oracle for the lean payload: %d B predicted, %d B measured (%.1f%%)\n",
-            predicted, measured_payload,
-            100 * abs(measured_payload - predicted) / predicted))
-assert_oracle(O_PAYLOAD_CF, abs(measured_payload - predicted) / predicted < 0.05)
+cat(sprintf(
+  "closed-form oracle for the lean payload: %d B predicted, %d B measured (%.1f%%)\n",
+  predicted,
+  measured_payload,
+  100 * abs(measured_payload - predicted) / predicted
+))
+assert_oracle(
+  O_PAYLOAD_CF,
+  abs(measured_payload - predicted) / predicted < 0.05
+)
 
 # The copy counts are the claim; assert them rather than printing them. Counted
 # over the WHOLE bundle, so a copy hiding in a member the table does not break
@@ -769,7 +931,10 @@ assert_oracle(O_PAYLOAD_CF, abs(measured_payload - predicted) / predicted < 0.05
 # too, not merely implied by the bundle-wide count of 1.
 assert_oracle(O_LEAN_COPY, count_data_copies(lean_bundle, big_sentinel) == 1)
 assert_oracle(O_MORI_COPY, count_data_copies(mori_bundle, big_sentinel) == 0)
-assert_oracle(O_PAYLOAD_COPY, count_data_copies(lean_bundle$.x, big_sentinel) == 0)
+assert_oracle(
+  O_PAYLOAD_COPY,
+  count_data_copies(lean_bundle$.x, big_sentinel) == 0
+)
 stopifnot(count_data_copies(lean_bundle$.args$shared, big_sentinel) == 1)
 
 # ---- register every published figure with its oracles and its fixture ---------
@@ -783,47 +948,95 @@ stopifnot(count_data_copies(lean_bundle$.args$shared, big_sentinel) == 1)
 # task, and fold sizes need not be identical when n %% v != 0.
 WIRE_FIXTURE <- sprintf(
   "fixture_design(v=%d, inner_v=%d): %dx%d frame, set.seed(2); payload_fixture_workflow(); captured on fold 1",
-  WIRE_V, WIRE_INNER_V, nrow(big_data), ncol(big_data))
-REF_FIXTURE <- sprintf("payload_fixture_data(n=%d, p=%d, seed=1)",
-                       nrow(ref_frame), ncol(ref_frame) - 1L)
+  WIRE_V,
+  WIRE_INNER_V,
+  nrow(big_data),
+  ncol(big_data)
+)
+REF_FIXTURE <- sprintf(
+  "payload_fixture_data(n=%d, p=%d, seed=1)",
+  nrow(ref_frame),
+  ncol(ref_frame) - 1L
+)
 
 # The four headline figures embed the worker closure -- the quantity this
 # milestone measured at 524 B installed against 291,491 B under `load_all()` --
 # so their values follow how the package was built and they are marked
 # install-dependent. The manifest's `package_state` says which state they were
 # taken in; a drift check must reproduce that state or exclude them.
-publish("lean_bundle_bytes", lean_total, WIRE_FIXTURE,
-        c(O_LEAN_COPY, O_RUNG_FRAME),
-        install_dependent = TRUE)
-publish("mori_bundle_bytes", mori_total, WIRE_FIXTURE,
-        c(O_MORI_COPY, O_MORI_INDEP),
-        install_dependent = TRUE)
-publish("lean_payload_bytes", measured_payload, WIRE_FIXTURE,
-        c(O_PAYLOAD_CF, O_PAYLOAD_COPY))
-publish("ratio_lean_over_mori", lean_total / mori_total, WIRE_FIXTURE,
-        install_dependent = TRUE,
-        derived = TRUE, derived_from = c("lean_bundle_bytes", "mori_bundle_bytes"))
-publish("gap_bytes", lean_total - mori_total, WIRE_FIXTURE,
-        c(O_GAP_INDEP, O_RUNG_FRAME),
-        install_dependent = TRUE)
-publish("shared_reference_bytes", one_ref, REF_FIXTURE,
-        c(O_REF_COPY, O_REF_INV))
-publish("shared_marginal_bytes", marginal_ref, REF_FIXTURE,
-        c(O_MARG_COPY, O_MARG_INV))
+publish(
+  "lean_bundle_bytes",
+  lean_total,
+  WIRE_FIXTURE,
+  c(O_LEAN_COPY, O_RUNG_FRAME),
+  install_dependent = TRUE
+)
+publish(
+  "mori_bundle_bytes",
+  mori_total,
+  WIRE_FIXTURE,
+  c(O_MORI_COPY, O_MORI_INDEP),
+  install_dependent = TRUE
+)
+publish(
+  "lean_payload_bytes",
+  measured_payload,
+  WIRE_FIXTURE,
+  c(O_PAYLOAD_CF, O_PAYLOAD_COPY)
+)
+publish(
+  "ratio_lean_over_mori",
+  lean_total / mori_total,
+  WIRE_FIXTURE,
+  install_dependent = TRUE,
+  derived = TRUE,
+  derived_from = c("lean_bundle_bytes", "mori_bundle_bytes")
+)
+publish(
+  "gap_bytes",
+  lean_total - mori_total,
+  WIRE_FIXTURE,
+  c(O_GAP_INDEP, O_RUNG_FRAME),
+  install_dependent = TRUE
+)
+publish(
+  "shared_reference_bytes",
+  one_ref,
+  REF_FIXTURE,
+  c(O_REF_COPY, O_REF_INV)
+)
+publish(
+  "shared_marginal_bytes",
+  marginal_ref,
+  REF_FIXTURE,
+  c(O_MARG_COPY, O_MARG_INV)
+)
 
 # Second oracle for the closure figure, again sharing no arithmetic with the
 # srcref-state walk: stripping source references must not change the byte count,
 # because there are none to strip. A closure that still carried them would shrink
 # here while the state walk missed them in a corner of the language tree.
-worker_stripped <- length(serialize(utils::removeSource(lean_bundle$.args$worker), NULL))
+worker_stripped <- length(serialize(
+  utils::removeSource(lean_bundle$.args$worker),
+  NULL
+))
 worker_bytes <- length(serialize(lean_bundle$.args$worker, NULL))
 assert_oracle(O_WORKER_STRIP, identical(worker_stripped, worker_bytes))
-publish("worker_closure_bytes", worker_bytes, WIRE_FIXTURE,
-        c(O_WORKER_SRC, O_WORKER_STRIP),
-        install_dependent = TRUE)
-publish("sum_of_parts_overstatement_bytes", sum_of_parts(lean_bundle) - lean_total,
-        WIRE_FIXTURE, install_dependent = TRUE, derived = TRUE,
-        derived_from = c("lean_bundle_bytes"))
+publish(
+  "worker_closure_bytes",
+  worker_bytes,
+  WIRE_FIXTURE,
+  c(O_WORKER_SRC, O_WORKER_STRIP),
+  install_dependent = TRUE
+)
+publish(
+  "sum_of_parts_overstatement_bytes",
+  sum_of_parts(lean_bundle) - lean_total,
+  WIRE_FIXTURE,
+  install_dependent = TRUE,
+  derived = TRUE,
+  derived_from = c("lean_bundle_bytes")
+)
 
 # AC1 publishing guard -- the value a document will cite is the single stream,
 # never the sum of parts. `==`/`!=` compare on value (integer coerces against
@@ -851,14 +1064,28 @@ for (p in PUBLISHED) {
   stopifnot(all(p$oracles %in% ORACLES_ASSERTED))
 }
 for (p in PUBLISHED[is_derived]) {
-  stopifnot(length(p$derived_from) > 0L,
-            all(p$derived_from %in% names(PUBLISHED)),
-            !any(vapply(PUBLISHED[p$derived_from], function(q) isTRUE(q$derived), logical(1))))
+  stopifnot(
+    length(p$derived_from) > 0L,
+    all(p$derived_from %in% names(PUBLISHED)),
+    !any(vapply(
+      PUBLISHED[p$derived_from],
+      function(q) isTRUE(q$derived),
+      logical(1)
+    ))
+  )
 }
-cat(sprintf("published figures: %d (%d measured, %d derived); every measured figure carries >= 2 independent oracles\n",
-            length(PUBLISHED), sum(!is_derived), sum(is_derived)))
+cat(sprintf(
+  "published figures: %d (%d measured, %d derived); every measured figure carries >= 2 independent oracles\n",
+  length(PUBLISHED),
+  sum(!is_derived),
+  sum(is_derived)
+))
 for (p in PUBLISHED[is_derived]) {
-  cat(sprintf("  derived: %s <- %s\n", p$name, paste(p$derived_from, collapse = ", ")))
+  cat(sprintf(
+    "  derived: %s <- %s\n",
+    p$name,
+    paste(p$derived_from, collapse = ", ")
+  ))
 }
 cat("\n")
 
@@ -885,15 +1112,38 @@ figure_json <- function(p) {
   paste0(
     "    {\n      ",
     paste(
-      c(json_kv("name", json_string(p$name)),
+      c(
+        json_kv("name", json_string(p$name)),
         json_kv("value", json_num(p$value)),
         json_kv("fixture", json_string(p$fixture)),
-        json_kv("install_dependent", if (p$install_dependent) "true" else "false"),
+        json_kv(
+          "install_dependent",
+          if (p$install_dependent) "true" else "false"
+        ),
         json_kv("derived", if (p$derived) "true" else "false"),
-        json_kv("derived_from", paste0("[", paste(vapply(p$derived_from, json_string, character(1)),
-                                                  collapse = ", "), "]")),
-        json_kv("oracles", paste0("[", paste(vapply(p$oracles, json_string, character(1)),
-                                             collapse = ", "), "]"))),
+        json_kv(
+          "derived_from",
+          paste0(
+            "[",
+            paste(
+              vapply(p$derived_from, json_string, character(1)),
+              collapse = ", "
+            ),
+            "]"
+          )
+        ),
+        json_kv(
+          "oracles",
+          paste0(
+            "[",
+            paste(
+              vapply(p$oracles, json_string, character(1)),
+              collapse = ", "
+            ),
+            "]"
+          )
+        )
+      ),
       collapse = ",\n      "
     ),
     "\n    }"
@@ -902,39 +1152,81 @@ figure_json <- function(p) {
 
 manifest_lines <- c(
   "{",
-  paste0("  ", json_kv("generated_by", json_string("benchmarks/probe-mori-dispatch.R")), ","),
+  paste0(
+    "  ",
+    json_kv("generated_by", json_string("benchmarks/probe-mori-dispatch.R")),
+    ","
+  ),
   paste0("  ", json_kv("milestone", json_string("M26")), ","),
-  paste0("  ", json_kv("package_state", json_string("installed to a temporary library, keep.source=no")), ","),
-  paste0("  ", json_kv("reproducibility", json_string(paste0(
-    "byte-identical within a process; across processes the wire totals move ",
-    "by the pid's hex-string length, which serializes inside the captured ",
-    "bundle (four occurrences, payload included) plus once per shared ",
-    "reference in the mori figures -- lean measured 941,683-941,687 B across ",
-    "three pids. A drift check should compare wire figures within ~20 B, ",
-    "never to the byte across processes"))), ","),
-  paste0("  ", json_kv("environment", paste0("{",
-    paste(c(json_kv("r", json_string(R.version.string)),
+  paste0(
+    "  ",
+    json_kv(
+      "package_state",
+      json_string("installed to a temporary library, keep.source=no")
+    ),
+    ","
+  ),
+  paste0(
+    "  ",
+    json_kv(
+      "reproducibility",
+      json_string(paste0(
+        "byte-identical within a process; across processes the wire totals move ",
+        "by the pid's hex-string length, which serializes inside the captured ",
+        "bundle (four occurrences, payload included) plus once per shared ",
+        "reference in the mori figures -- lean measured 941,683-941,687 B across ",
+        "three pids. A drift check should compare wire figures within ~20 B, ",
+        "never to the byte across processes"
+      ))
+    ),
+    ","
+  ),
+  paste0(
+    "  ",
+    json_kv(
+      "environment",
+      paste0(
+        "{",
+        paste(
+          c(
+            json_kv("r", json_string(R.version.string)),
             json_kv("platform", json_string(R.version$platform)),
             json_kv("mori", json_string(packageVersion("mori"))),
             json_kv("mirai", json_string(packageVersion("mirai"))),
             json_kv("tune", json_string(packageVersion("tune"))),
-            json_kv("rsample", json_string(packageVersion("rsample")))),
-          collapse = ", "), "}")), ","),
+            json_kv("rsample", json_string(packageVersion("rsample")))
+          ),
+          collapse = ", "
+        ),
+        "}"
+      )
+    ),
+    ","
+  ),
   paste0("  ", json_kv("figures", "[")),
   paste(vapply(PUBLISHED, figure_json, character(1)), collapse = ",\n"),
   "  ]",
   "}"
 )
 writeLines(manifest_lines, MANIFEST)
-cat(sprintf("manifest written: %s (%d figures)\n\n", MANIFEST, length(PUBLISHED)))
+cat(sprintf(
+  "manifest written: %s (%d figures)\n\n",
+  MANIFEST,
+  length(PUBLISHED)
+))
 
 cat("== summary ==\n")
 for (n_workers in names(results)) {
   r <- results[[n_workers]]
-  cat(sprintf("%s workers: by-value %s, mori %s, daemon mapped the region %s\n",
-              n_workers,
-              if (r$by_value) "identical to serial" else "DIVERGED",
-              if (r$mori) "identical to serial" else "DIVERGED",
-              if (r$transport$shared_in_daemon && r$transport$name_matches) "yes" else "NO"))
+  cat(sprintf(
+    "%s workers: by-value %s, mori %s, daemon mapped the region %s\n",
+    n_workers,
+    if (r$by_value) "identical to serial" else "DIVERGED",
+    if (r$mori) "identical to serial" else "DIVERGED",
+    if (r$transport$shared_in_daemon && r$transport$name_matches) {
+      "yes"
+    } else {
+      "NO"
+    }
+  ))
 }
-

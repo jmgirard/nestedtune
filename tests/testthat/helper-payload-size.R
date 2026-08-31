@@ -73,13 +73,22 @@ payload_fixture_data <- function(n = 5000, p = 20, seed = 1) {
 # `fixture_design()` by name. The two copies agreed when M26 checked, and
 # nothing would have said so had they stopped agreeing; a mislabelled fixture is
 # what failed M26's first review pass. Here, both consumers call one definition.
-fixture_design <- function(constructor = nested_resamples, v = 5, inner_v = 5,
-                           n = 5000, p = 20) {
+fixture_design <- function(
+  constructor = nested_resamples,
+  v = 5,
+  inner_v = 5,
+  n = 5000,
+  p = 20
+) {
   d <- payload_fixture_data(n = n, p = p)
   set.seed(2)
   list(
     data = d,
-    design = constructor(d, rsample::vfold_cv(v = v), rsample::vfold_cv(v = inner_v))
+    design = constructor(
+      d,
+      rsample::vfold_cv(v = v),
+      rsample::vfold_cv(v = inner_v)
+    )
   )
 }
 
@@ -94,7 +103,10 @@ fixture_design <- function(constructor = nested_resamples, v = 5, inner_v = 5,
 payload_fixture_workflow <- function() {
   env <- new.env(parent = baseenv())
   workflows::add_model(
-    workflows::add_formula(workflows::workflow(), stats::as.formula("y ~ .", env = env)),
+    workflows::add_formula(
+      workflows::workflow(),
+      stats::as.formula("y ~ .", env = env)
+    ),
     parsnip::linear_reg()
   )
 }

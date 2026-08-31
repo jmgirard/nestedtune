@@ -69,7 +69,14 @@ reg_metrics <- function() {
 # `sample.int(.Machine$integer.max, 2 * n_folds)`, fold i taking elements
 # 2i-1 and 2i -- and never from the driver's output, so a driver that
 # misassigns seeds *and* misreports the assignment consistently still fails.
-reference_nested_loop <- function(wf, nested, grid, metrics, seed, metric_name) {
+reference_nested_loop <- function(
+  wf,
+  nested,
+  grid,
+  metrics,
+  seed,
+  metric_name
+) {
   set.seed(seed)
   n <- nrow(nested)
   seeds <- sample.int(.Machine$integer.max, 2L * n)
@@ -78,8 +85,12 @@ reference_nested_loop <- function(wf, nested, grid, metrics, seed, metric_name) 
     tuning_seed <- seeds[[2L * i - 1L]]
     outer_seed <- seeds[[2L * i]]
 
-    set.seed(tuning_seed, kind = "Mersenne-Twister",
-             normal.kind = "Inversion", sample.kind = "Rejection")
+    set.seed(
+      tuning_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
     tuned <- tune::tune_grid(
       wf,
       resamples = nested$inner_resamples[[i]],
@@ -90,10 +101,17 @@ reference_nested_loop <- function(wf, nested, grid, metrics, seed, metric_name) 
     best <- tune::select_best(tuned, metric = metric_name)
     final_wf <- tune::finalize_workflow(wf, best)
 
-    set.seed(outer_seed, kind = "Mersenne-Twister",
-             normal.kind = "Inversion", sample.kind = "Rejection")
-    fitted <- tune::last_fit(final_wf, split = nested$splits[[i]],
-                             metrics = metrics)
+    set.seed(
+      outer_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    fitted <- tune::last_fit(
+      final_wf,
+      split = nested$splits[[i]],
+      metrics = metrics
+    )
 
     list(
       metrics = tune::collect_metrics(fitted),
@@ -116,13 +134,24 @@ reference_nested_loop <- function(wf, nested, grid, metrics, seed, metric_name) 
 # The rset is built after the tuning seed is set, which is the ordering D-016
 # fixed: building an rset draws from the RNG, so a reference that built it
 # earlier would disagree with a correct implementation.
-reference_final_fit <- function(wf, data, grid, metrics, seed, metric_name,
-                                v = 3) {
+reference_final_fit <- function(
+  wf,
+  data,
+  grid,
+  metrics,
+  seed,
+  metric_name,
+  v = 3
+) {
   set.seed(seed)
   seeds <- sample.int(.Machine$integer.max, 2L)
 
-  set.seed(seeds[[1L]], kind = "Mersenne-Twister",
-           normal.kind = "Inversion", sample.kind = "Rejection")
+  set.seed(
+    seeds[[1L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
   inner <- rsample::vfold_cv(data, v = v)
   tuned <- tune::tune_grid(
     wf,
@@ -134,8 +163,12 @@ reference_final_fit <- function(wf, data, grid, metrics, seed, metric_name,
   best <- tune::select_best(tuned, metric = metric_name)
   final_wf <- tune::finalize_workflow(wf, best)
 
-  set.seed(seeds[[2L]], kind = "Mersenne-Twister",
-           normal.kind = "Inversion", sample.kind = "Rejection")
+  set.seed(
+    seeds[[2L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
   fitted <- parsnip::fit(final_wf, data = data)
 
   list(seeds = seeds, selected = best, workflow = fitted, tuned = tuned)
@@ -265,8 +298,12 @@ unstable_grid <- function() data.frame(num_comp = 1:4)
 sep_data <- function(n = 80, seed = 10, k = 6, df = 1.2) {
   old <- RNGkind()
   on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
-  set.seed(seed, kind = "Mersenne-Twister",
-           normal.kind = "Inversion", sample.kind = "Rejection")
+  set.seed(
+    seed,
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
   d <- as.data.frame(matrix(rnorm(n * k), nrow = n, ncol = k))
   names(d) <- paste0("x", seq_len(k))
   d$y <- 2 * d$x1 - d$x2 + rt(n, df = df) * 3
@@ -288,8 +325,12 @@ sep_metrics <- function() {
 sep_nested <- function(data, seed = 21) {
   old <- RNGkind()
   on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
-  set.seed(seed, kind = "Mersenne-Twister",
-           normal.kind = "Inversion", sample.kind = "Rejection")
+  set.seed(
+    seed,
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
   nested_resamples(
     data,
     outside = rsample::vfold_cv(v = 3),
@@ -372,7 +413,9 @@ canonical_form <- function(x, depth = 0L, seen = list()) {
       if (identical(e, x)) return("<cycle>")
     }
     nm <- environmentName(x)
-    if (nzchar(nm)) return(list("<env>", nm))
+    if (nzchar(nm)) {
+      return(list("<env>", nm))
+    }
     seen <- c(seen, list(x))
     vars <- sort(ls(x, all.names = TRUE))
     vals <- lapply(vars, function(v) {
@@ -431,9 +474,13 @@ fixture_cache_reset <- function() {
 # purpose. Left in place they would surface in the run-wide report as findings.
 fixture_cache_forget <- function(pattern) {
   keys <- ls(fixture_cache, all.names = TRUE)
-  drop <- keys[vapply(keys, function(k) {
-    grepl(pattern, fixture_cache[[k]]$label)
-  }, logical(1))]
+  drop <- keys[vapply(
+    keys,
+    function(k) {
+      grepl(pattern, fixture_cache[[k]]$label)
+    },
+    logical(1)
+  )]
   rm(list = drop, envir = fixture_cache)
   length(drop)
 }
@@ -489,9 +536,16 @@ inside_spec_bindings <- function(args, env) {
     return("<no inside spec>")
   }
   names <- setdiff(all.vars(inside), c("data", ".nestedtune_data"))
-  stats::setNames(lapply(names, function(nm) {
-    if (exists(nm, envir = env)) canonical_form(get(nm, envir = env)) else "<unbound>"
-  }), names)
+  stats::setNames(
+    lapply(names, function(nm) {
+      if (exists(nm, envir = env)) {
+        canonical_form(get(nm, envir = env))
+      } else {
+        "<unbound>"
+      }
+    }),
+    names
+  )
 }
 
 # The key for one request: which function, under which arguments, resolving
@@ -559,7 +613,9 @@ memoised <- function(expr) {
       requests = 0L
     )
   } else {
-    for (cnd in hit$conditions) replay_condition(cnd)
+    for (cnd in hit$conditions) {
+      replay_condition(cnd)
+    }
   }
   hit$requests <- hit$requests + 1L
   assign(key, hit, envir = fixture_cache)
@@ -586,23 +642,32 @@ fixture_cache_report <- function() {
   keys <- ls(fixture_cache, all.names = TRUE)
   if (length(keys) == 0L) {
     return(data.frame(
-      signature = character(0), builds = integer(0), requests = integer(0),
+      signature = character(0),
+      builds = integer(0),
+      requests = integer(0),
       stringsAsFactors = FALSE
     ))
   }
   entries <- lapply(keys, function(k) fixture_cache[[k]])
   labels <- vapply(entries, function(e) e$label, character(1))
   requests <- vapply(entries, function(e) e$requests, integer(1))
-  built <- vapply(entries, function(e) {
-    rlang::hash(canonical_form(e$value))
-  }, character(1))
+  built <- vapply(
+    entries,
+    function(e) {
+      rlang::hash(canonical_form(e$value))
+    },
+    character(1)
+  )
 
   first <- !duplicated(built)
   out <- data.frame(
     signature = labels[first],
     builds = vapply(built[first], function(b) sum(built == b), integer(1)),
-    requests = vapply(built[first], function(b) sum(requests[built == b]),
-                      integer(1)),
+    requests = vapply(
+      built[first],
+      function(b) sum(requests[built == b]),
+      integer(1)
+    ),
     stringsAsFactors = FALSE
   )
   out <- out[order(-out$requests, out$signature), ]

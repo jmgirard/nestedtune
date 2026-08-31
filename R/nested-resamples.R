@@ -62,7 +62,9 @@ nested_resamples <- function(data, outside, inside) {
   env <- rlang::caller_env()
 
   if (!is.data.frame(data)) {
-    cli::cli_abort("{.arg data} must be a data frame, not {.obj_type_friendly {data}}.")
+    cli::cli_abort(
+      "{.arg data} must be a data frame, not {.obj_type_friendly {data}}."
+    )
   }
 
   outer_cl <- cl[["outside"]]
@@ -195,7 +197,10 @@ inner_resamples_from_split <- function(split, cl, env, data, call) {
 # it. `eval_inside_spec()` (R/checks.R) already takes this shape on the
 # final-fit path for the same reason; construction did not.
 eval_spec <- function(cl, data, env, arg, call) {
-  eval_env <- rlang::new_environment(list(.nestedtune_data = data), parent = env)
+  eval_env <- rlang::new_environment(
+    list(.nestedtune_data = data),
+    parent = env
+  )
   out <- tryCatch(
     eval(rlang::call_modify(cl, data = quote(.nestedtune_data)), eval_env),
     error = function(cnd) cnd

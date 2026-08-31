@@ -62,10 +62,18 @@ none is up for revision here.
       repository. Evidence: the command run on a clean tree, followed by
       `git status --porcelain` printing nothing.
 - [ ] The reformatting is separable from everything else in the branch: one
-      commit performs it, `git show --stat` on that commit lists only files
-      under `R/` and `tests/` plus `air.toml`, and `devtools::test()` reports
-      the same PASS and FAIL counts on its parent commit and on it. Evidence:
-      both test summaries and the `--stat` output.
+      commit performs it, and re-running `air format .` over that commit's
+      parent tree reproduces the commit's tree byte for byte apart from two
+      named files — `tests/testthat/helper-time-budget.R`, whose `file:line`
+      ledger rows the reformatting may move and which is re-pointed by hand in
+      the same commit with `test-suite-hygiene.R` passing on it, and this
+      milestone's own tracking file. `git show --stat` on that commit lists
+      only files under `R/`, `tests/` and `benchmarks/` plus that tracking
+      file; `devtools::test()` reports the same PASS and FAIL counts and the
+      same set of failing test names on the parent commit and on it; and every
+      file the commit touches under `benchmarks/` still `parse()`s. Evidence:
+      the reproduction diff, both test summaries, the `--stat` output, and the
+      `parse()` results.
 - [ ] The profile's `verify` slot is clean and the fuller pre-review check
       passes: `devtools::test()` clean, `devtools::document()` no diff,
       `devtools::check()` clean (0 errors, 0 warnings; NOTEs justified).
@@ -90,7 +98,7 @@ none is up for revision here.
       table with `skip` entries — dropping rsample's package-specific
       `exclude`), and install `air` locally by the route
       `posit-dev/setup-air@v1` uses in CI.
-- [ ] T4: Run `devtools::test()` and record its counts; make the reformatting
+- [x] T4: Run `devtools::test()` and record its counts; make the reformatting
       pass its own commit; run `devtools::test()` again and compare.
 - [ ] T5: Add the DESIGN.md Conventions line naming `air` as the formatter and
       the `cairn/DECISIONS.md` entry adopting it; extend `PROFILE.md`'s
@@ -110,6 +118,8 @@ none is up for revision here.
 - 2026-08-30: T2 done. `.github/ci-usage.py --since 2026-08-01T00:00:00Z --until 2026-08-31T00:00:00Z` exits 0 before and after the three additions and its output is byte-identical across the pair, `Path filter read from R-CMD-check.yaml, pkgdown.yaml, test-coverage.yaml` both times — none of the three carries a `push` or `pull_request` trigger (`schedule`, `issue_comment`, `pull_request_target`). Positive control: a scratch `zz-scratch-probe.yaml` carrying a bare `push:` and no `paths-ignore` made the same invocation exit 1 with `these triggers carry no paths-ignore while others do ... zz-scratch-probe.yaml:push`; the scratch file was deleted and is not committed.
 - 2026-08-30: T3 done. `air.toml` is the siblings' shape, `[format]` with `skip = ["tribble"]` (rsample and dials, minus rsample's package-specific `exclude`); this repo calls `tribble()` nowhere, and the question gate chose the organization's shape over a config carrying only what applies here. `air` 0.11.0 is installed locally and equals `posit-dev/setup-air@v1`'s default, the latest `posit-dev/air` release on 2026-08-30. `.Rbuildignore` gains `^[\.]?air\.toml$`, the entry rsample carries.
 - 2026-08-30: question gate chose vendoring the three files at the organization's blobs over pinning the write-token actions (`r-lib/actions/pr-push@v2` under `contents: write`, `posit-dev/setup-air@v1` and `reviewdog/action-suggester@v1` under `pull-requests: write` on `pull_request_target`) to commit shas, because a pin would put each file off its modal blob and AC1 unsatisfiable; M17 review F10 pinned the pkgdown deploy action on the same write-token reasoning, so the divergence is recorded as a candidate row rather than settled here.
+- 2026-08-30: AC5 amended at a mini gate, user-selected. `air format .` reaches 60 files — 10 under `R/`, 39 under `tests/`, 11 under `benchmarks/` — so the planned `R/`-and-`tests/` path list was unsatisfiable; the commit must also carry this file under tracking-travels-with-code; and `tests/testthat/helper-time-budget.R`'s 71 `file:line` ledger rows point into six files the formatter moves, which `test-suite-hygiene.R` fails on, so they are re-pointed by hand in the same commit. Two fresh-context [O] readers audited the wording in full mode before it was written, neither having authored it. The first returned four findings (the separability claim enumerated by no named procedure; the ledger edit admitted silently; reformatted `benchmarks/` files exercised by nothing; an instrument-property flag on the path-scope clause, raised and deliberately kept) and corrected the file split, which this session had recorded as 10/40/10. The second, reading the repair, found the exception list incomplete — the tracking file cannot be reproduced by the formatter — and that equal PASS/FAIL counts admit a compensating pair of flips; both are fixed in the text above. AC5 is the only criterion amended.
+- 2026-08-30: T4 done in one commit. `devtools::test()` on the parent `1d351cc`: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628, no failing tests; on the reformat commit: the same, so both the counts and the (empty) failing-test set match. `air format .` (air 0.11.0) rewrote 60 files — 10 under `R/`, 39 under `tests/`, 11 under `benchmarks/`. `tests/testthat/helper-time-budget.R`'s 71 ledger rows were then re-pointed: 68 by matching each file's `SYMBOL_FUNCTION_CALL` sequence from `utils::getParseData()` before and after, which was element-wise identical in call order so only line numbers moved, and the 3 rows naming no budgeted call (`test-parallel-detection.R` 183→184 and 188→189, `test-parallel-interrupt.R` 92→98) by a `difflib` line map over the file's own before/after text. A second `air format .` left the re-pointed helper unchanged and `air format --check .` is silent. All 11 reformatted files under `benchmarks/` `parse()` without error.
 
 ## Decisions
 

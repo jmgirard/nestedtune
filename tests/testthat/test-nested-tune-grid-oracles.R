@@ -71,8 +71,14 @@ test_that("per-fold metrics and selections match a hand-rolled reference loop", 
   set.seed(20)
   res <- nested_tune_grid(wf, folds, grid = grid, metrics = ms)
 
-  ref <- reference_nested_loop(wf, folds, grid, ms, seed = 20,
-                               metric_name = "rmse")
+  ref <- reference_nested_loop(
+    wf,
+    folds,
+    grid,
+    ms,
+    seed = 20,
+    metric_name = "rmse"
+  )
 
   # The seeds the driver reports must be the ones the documented contract
   # derives -- checked before the metrics, because a driver that both
@@ -105,8 +111,14 @@ test_that("the reference loop also matches with a stochastic engine", {
   set.seed(21)
   res <- nested_tune_grid(wf, folds, grid = grid, metrics = ms)
 
-  ref <- reference_nested_loop(wf, folds, grid, ms, seed = 21,
-                               metric_name = "rmse")
+  ref <- reference_nested_loop(
+    wf,
+    folds,
+    grid,
+    ms,
+    seed = 21,
+    metric_name = "rmse"
+  )
 
   expect_identical(res$.tuning_seed, ref_field(ref, "tuning_seed"))
   expect_identical(res$.outer_fit_seed, ref_field(ref, "outer_fit_seed"))
@@ -185,7 +197,8 @@ test_that("an integer grid records the candidates that fold actually expanded", 
   for (i in seq_len(nrow(res))) {
     set.seed(
       res$.tuning_seed[[i]],
-      kind = "Mersenne-Twister", normal.kind = "Inversion",
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
       sample.kind = "Rejection"
     )
     tuned <- tune::tune_grid(
@@ -217,7 +230,12 @@ test_that("a grid size larger than the reachable candidates records what ran", {
   )
 
   set.seed(20)
-  res <- nested_tune_grid(det_workflow(d), folds, grid = 20L, metrics = reg_metrics())
+  res <- nested_tune_grid(
+    det_workflow(d),
+    folds,
+    grid = 20L,
+    metrics = reg_metrics()
+  )
 
   expect_identical(attr(res, "grid"), 20L)
   for (g in res$.grid) {
