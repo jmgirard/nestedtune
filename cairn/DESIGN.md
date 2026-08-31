@@ -270,4 +270,12 @@ execution in RR01, and tune 1.x seeded differently (D-012).
 
 ## Known issues
 
-_(none yet.)_
+- The two vendored community pages carry defects inherited verbatim from the
+  organization's shared texts, accepted at M32's review because repairing them
+  locally would fork the texts this repo adopted for being byte-identical
+  across the organization. `.github/CODE_OF_CONDUCT.md` has a reference-style
+  Markdown link with a URL where its label belongs and no matching definition,
+  so it renders as literal bracketed text on the published page; and
+  `.github/CONTRIBUTING.md` links Contributor Covenant 2.0 while the code of
+  conduct beside it on the site is 2.1. Both are upstream problems; fixing
+  either means fixing it upstream first.
