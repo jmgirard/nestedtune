@@ -89,7 +89,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 
 ## Tasks
 
-- [ ] T1 Write `tests/testthat/test-vctrs-compat.R`: AC1's five forms one block
+- [x] T1 Write `tests/testthat/test-vctrs-compat.R`: AC1's five forms one block
       apiece, AC2–AC5's assertions, and AC6's three leftover paths asserted on a
       `nested_results`. Reuse `test-dplyr-compat.R`'s completed-3-fold fixture
       builder rather than keying a new signature (M36 paid for that once). Record
@@ -125,3 +125,4 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: amendment (substantive, Scope In) — `names<-.nested_results()` added to the method set at the implementation gate; the plan's premise that `rename()` reaches the class through vctrs is measured false, `dplyr:::rename.data.frame` being `set_names()`, and rsample closes it with `names<-.rset`. AC1 is unchanged.
 - 2026-08-31: T3 measurement, ahead of registering: `vec_slice`, `vec_rbind`, `vec_c`, `vec_cbind`, `vec_ptype` and `vec_cast` all reach `vec_restore`; `rbind()` and `rename()` reach no vctrs or dplyr generic; a plain tibble subclass keeps its class through every form but `vec_cbind`, which drops it, and an rsample `rset` sheds on all but `rbind()` and a reorder.
 - 2026-08-31: implementation gate chose `vctrs (>= 0.6.1)` in Imports, matching tune's declared minimum; `dplyr`, already an Import, requires 0.7.1, so no install changes.
+- 2026-08-31: T1 — `tests/testthat/test-vctrs-compat.R`, 11 blocks, on the same fixture signature `test-dplyr-compat.R` builds (cache report: 1 build, 11 requests). Against the current code 7 fail and 4 pass: AC1's five forms all fail, AC3's `vec_cbind` fails (it drops the class where `bind_cols()` keeps it) and AC4's refusal fails (a tibble casts up silently); AC2's reorder, AC4's downward cast, AC5's five pairs and AC6's three paths pass, the reorder only because nothing intercepts it yet.

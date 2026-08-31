@@ -1,0 +1,218 @@
+# What a vctrs verb, and base `rbind()`, may and may not do to a
+# `nested_results` (#32).
+#
+# The invariants are the ones M36 wrote for dplyr, and they are the same
+# invariants: rows may be reordered but never added or removed, columns may be
+# added and reordered. What is different here is the door. `vec_slice()`,
+# `vec_rbind()`, `vec_c()`, `vec_cbind()`, `vec_ptype()` and `vec_cast()` all
+# reach `vec_restore()` and never `dplyr_reconstruct()`; `rbind()` and
+# `rename()` reach neither generic and need methods of their own (measured
+# 2026-08-31, on a tibble subclass carrying each method set in turn).
+#
+# A caller cannot see which door a verb uses, so the answer has to be the same
+# through all of them, and the assertions below are written per form rather
+# than in one loop so a failure says which form regressed.
+
+# The completed fixture, written exactly as test-dplyr-compat.R writes it: same
+# function, same arguments, same RNG state, so `memoised()` serves this file
+# from that one's build rather than fitting a second time.
+compat_results <- function() {
+  d <- make_reg_data()
+  set.seed(2)
+  memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+}
+
+# Shedding the class sheds the run's record with it. Asserting only the class
+# would leave `outer_label` readable on the returned object, which is the
+# stale claim one layer down (M36's `bare_results()`).
+expect_no_record <- function(out, name) {
+  testthat::expect_false(
+    inherits(out, "nested_results"),
+    label = paste0(name, " keeps the class")
+  )
+  for (nm in results_attributes()) {
+    testthat::expect_null(attr(out, nm), label = paste0(name, " attr ", nm))
+  }
+  invisible(out)
+}
+
+# The run's record, carried across unchanged. `folds_attempted` and
+# `folds_completed` are read off the rows rather than compared to the source,
+# because they describe the object in hand.
+expect_record_kept <- function(out, src) {
+  testthat::expect_s3_class(out, "nested_results")
+  testthat::expect_s3_class(out, "tbl_df")
+  testthat::expect_identical(attr(out, "outer_label"), attr(src, "outer_label"))
+  testthat::expect_identical(attr(out, "grid"), attr(src, "grid"))
+  testthat::expect_identical(attr(out, "metrics"), attr(src, "metrics"))
+  testthat::expect_identical(attr(out, "folds_attempted"), nrow(out))
+  testthat::expect_identical(attr(out, "folds_completed"), sum(out$.completed))
+  invisible(out)
+}
+
+# AC1. Each form one block apiece.
+
+test_that("vec_slice() taking one row keeps neither the class nor the record", {
+  skip_if_no_engines()
+  expect_no_record(vctrs::vec_slice(compat_results(), 1), "vec_slice(x, 1)")
+})
+
+test_that("vec_rbind() doubling the rows keeps neither the class nor the record", {
+  skip_if_no_engines()
+  res <- compat_results()
+  out <- vctrs::vec_rbind(res, res)
+  expect_identical(nrow(out), 6L)
+  expect_no_record(out, "vec_rbind(x, x)")
+})
+
+test_that("vec_c() doubling the rows keeps neither the class nor the record", {
+  skip_if_no_engines()
+  res <- compat_results()
+  out <- vctrs::vec_c(res, res)
+  expect_identical(nrow(out), 6L)
+  expect_no_record(out, "vec_c(x, x)")
+})
+
+test_that("rbind() doubling the rows keeps neither the class nor the record", {
+  skip_if_no_engines()
+  res <- compat_results()
+  out <- rbind(res, res)
+  # The gap this milestone closes: six rows still reporting three folds
+  # attempted is the untrue record IP4 forbids, and it is what rsample and tune
+  # both return here (measured 2026-08-31 on an `rset`).
+  expect_identical(nrow(out), 6L)
+  expect_no_record(out, "rbind(x, x)")
+})
+
+test_that("rename() moving a record column keeps neither the class nor the record", {
+  skip_if_no_engines()
+  res <- compat_results()
+  out <- dplyr::rename(res, fold = "id")
+  expect_true("fold" %in% names(out))
+  expect_false("id" %in% names(out))
+  expect_no_record(out, "rename(x, fold = id)")
+})
+
+# AC2. Reordering rows is inside the invariants: the folds are a set, and an
+# object holding all of them still answers for the run whatever order they sit
+# in.
+
+test_that("vec_slice() reordering the rows keeps the class and the record", {
+  skip_if_no_engines()
+  res <- compat_results()
+  out <- vctrs::vec_slice(res, c(2, 1, 3))
+
+  expect_record_kept(out, res)
+  expect_identical(out$id, res$id[c(2, 1, 3)])
+  # The passing control for the assertion above: the source's own order is not
+  # the order asked for, so an implementation that ignored the index and handed
+  # back `res` would fail it.
+  expect_false(identical(res$id[c(2, 1, 3)], res$id))
+})
+
+# AC3. The same operation through either door.
+
+test_that("vec_cbind() and bind_cols() adding a column answer the same way", {
+  skip_if_no_engines()
+  res <- compat_results()
+  extra <- tibble::tibble(extra = 1:3)
+
+  through_vctrs <- vctrs::vec_cbind(res, extra)
+  through_dplyr <- dplyr::bind_cols(res, extra)
+
+  expect_record_kept(through_vctrs, res)
+  expect_record_kept(through_dplyr, res)
+  expect_identical(class(through_vctrs), class(through_dplyr))
+  expect_true("extra" %in% names(through_vctrs))
+  expect_true("extra" %in% names(through_dplyr))
+})
+
+# AC4. A results object casts down to a table; a table does not cast up to a
+# results object. The refusal is asserted by the condition class vctrs assigns
+# it, not by its message, and `vctrs_error_cast_lossy` is excluded so the
+# refusal is distinguished from an ordinary lossy cast.
+
+test_that("a nested_results casts to its own tibble prototype", {
+  skip_if_no_engines()
+  res <- compat_results()
+  proto <- tibble::as_tibble(vctrs::vec_ptype(res))
+
+  out <- vctrs::vec_cast(res, proto)
+  expect_no_record(out, "vec_cast(x, prototype)")
+  expect_identical(names(out), names(res))
+})
+
+test_that("a tibble does not cast to a nested_results", {
+  skip_if_no_engines()
+  res <- compat_results()
+  proto <- tibble::as_tibble(vctrs::vec_ptype(res))
+
+  cnd <- expect_error(vctrs::vec_cast(proto, res), class = "vctrs_error_cast")
+  expect_false(inherits(cnd, "vctrs_error_cast_lossy"))
+})
+
+# AC5. `vec_ptype2()` answers rather than aborting, on every ordered pair of
+# the three types a caller can combine here. The common type is asserted only
+# as "a prototype" -- what the class of that prototype should be is settled by
+# AC3's behavior, not restated here.
+
+test_that("vec_ptype2() returns a prototype for every pair of the three types", {
+  skip_if_no_engines()
+  res <- compat_results()
+  tbl <- tibble::as_tibble(vctrs::vec_ptype(res))
+  df <- as.data.frame(tbl)
+
+  pairs <- list(
+    "nested_results, nested_results" = list(res, res),
+    "nested_results, tbl_df" = list(res, tbl),
+    "tbl_df, nested_results" = list(tbl, res),
+    "nested_results, data.frame" = list(res, df),
+    "data.frame, nested_results" = list(df, res)
+  )
+
+  for (nm in names(pairs)) {
+    out <- vctrs::vec_ptype2(pairs[[nm]][[1L]], pairs[[nm]][[2L]])
+    expect_true(is.data.frame(out), label = paste0(nm, " is a data frame"))
+    expect_identical(nrow(out), 0L, label = paste0(nm, " row count"))
+  }
+})
+
+# AC6. The three verbs this milestone deliberately leaves alone. Each returns
+# an object that no longer claims to be a results object, and the run's
+# recorded attributes stay readable on it -- which is what the help page says,
+# and what rsample does with its own.
+
+test_that("group_by(), rowwise() and as_tibble() leave the recorded attributes readable", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  forms <- list(
+    group_by = dplyr::group_by(res, id),
+    rowwise = dplyr::rowwise(res),
+    as_tibble = tibble::as_tibble(res)
+  )
+
+  for (nm in names(forms)) {
+    out <- forms[[nm]]
+    expect_identical(
+      attr(out, "outer_label"),
+      attr(res, "outer_label"),
+      label = paste0(nm, " outer_label")
+    )
+    expect_identical(
+      attr(out, "folds_attempted"),
+      attr(res, "folds_attempted"),
+      label = paste0(nm, " folds_attempted")
+    )
+  }
+
+  # The passing control for the assertions above: the source really does carry
+  # the label they compare against, so a run where every attribute was NULL
+  # could not pass them for the wrong reason.
+  expect_identical(attr(res, "outer_label"), "3-fold cross-validation")
+})
