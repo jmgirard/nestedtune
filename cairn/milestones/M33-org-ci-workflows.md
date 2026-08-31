@@ -1,11 +1,11 @@
 # M33: The organization's shared CI workflows, and `air` as this repo's formatter
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M32
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m033-org-ci-workflows`
 
 ## Goal
 
@@ -105,6 +105,7 @@ none is up for revision here.
 - 2026-08-30: plan-gate criteria audit ran in **full** mode (declared surface tier user-facing), in-session rather than by a fresh-context [O] reader, under the harness instruction restricting subagent spawns. Three findings, all fixed before the criteria above were written. (1) A draft criterion promised the reformat "changed no package behavior" — a universal over behaviour whose only named procedure is the test suite, which does not enumerate it (bounded-promise rule); narrowed to the counts and the diff scope the suite and `git show --stat` do settle. (2) Draft criteria requiring a DESIGN.md Conventions line, a D-entry and a PROFILE.md slot edit are recording acts, instrument properties rather than properties of the deliverable (D-118, D-120); moved to T5. (3) A draft AC2 asked only that `ci-usage.py` exit zero, which a broken script also satisfies; AC3 was added as its positive control.
 - 2026-08-30: plan gate chose adopting `air` with a one-commit reformat over taking `format-suggest.yaml` without a formatter, because the workflow runs `air format .` and posts every difference as a PR suggestion — on an unformatted tree that is a review comment on nearly every line of every PR, which is worse than not running it; falsified by evidence that `reviewdog/action-suggester` bounds its output, or that the tree is already `air`-clean.
 - 2026-08-30: plan gate chose leaving the four existing workflows' M11/M12/M14/ M31 divergences untouched over converging them on the organization's stock files, because each divergence has a measured rationale in its milestone — the split hang caps, the `paths-ignore` filter and the non-default-branch `concurrency` block among them — and none of that evidence has been contradicted; falsified by a stock sibling workflow shown to handle the two recorded hangs and the cold-devel cache deadlock.
+- 2026-08-30: checkpoint, tasks not yet ticked. Branch cut; survey re-run and the three workflows vendored at the modal blobs `d55e238e` / `2edd93f2` / `8c4f117d` (`git hash-object` matches all three); `ci-usage.py` run before and after the additions, exit 0 both times naming the same three source workflows; `air.toml` and its `.Rbuildignore` entry written. `devtools::test()` and the fresh-context read of the amended AC5 wording were still running at the checkpoint, so T1-T3 stay unticked.
 
 ## Decisions
 
