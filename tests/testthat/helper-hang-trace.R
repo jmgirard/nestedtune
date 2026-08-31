@@ -32,7 +32,9 @@ hang_trace_line <- function(event, target) {
   cat(
     sprintf(
       "[hang-trace] %s %-5s %s\n",
-      format(Sys.time(), "%Y-%m-%dT%H:%M:%OS3", tz = "UTC"), event, target
+      format(Sys.time(), "%Y-%m-%dT%H:%M:%OS3", tz = "UTC"),
+      event,
+      target
     ),
     file = stderr()
   )
@@ -43,8 +45,12 @@ hang_trace_line <- function(event, target) {
 # target says which level it is -- a bare filename, or `<file> :: <test>`. A
 # killed job's last unmatched `start` is therefore the exact block it died in.
 hang_trace_target <- function(file, test) {
-  if (is.null(file)) file <- "<unknown>"
-  if (is.null(test)) return(file)
+  if (is.null(file)) {
+    file <- "<unknown>"
+  }
+  if (is.null(test)) {
+    return(file)
+  }
   paste0(file, " :: ", test)
 }
 

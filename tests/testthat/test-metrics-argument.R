@@ -31,9 +31,19 @@ test_that("the fixture separates the caller's metric set from tune's default", {
   nested <- sep_nested(d)
 
   set.seed(20)
-  mine <- memoised(nested_tune_grid(wf, nested, grid = sep_grid(), metrics = sep_metrics()))
+  mine <- memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = sep_grid(),
+    metrics = sep_metrics()
+  ))
   set.seed(20)
-  theirs <- memoised(nested_tune_grid(wf, nested, grid = sep_grid(), metrics = NULL))
+  theirs <- memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = sep_grid(),
+    metrics = NULL
+  ))
 
   # Different metric names, so the outer .metrics column can tell them apart.
   expect_false(setequal(
@@ -55,7 +65,12 @@ test_that("nested_tune_grid() scores the metrics it was given", {
   nested <- sep_nested(d)
 
   set.seed(20)
-  res <- memoised(nested_tune_grid(wf, nested, grid = sep_grid(), metrics = sep_metrics()))
+  res <- memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = sep_grid(),
+    metrics = sep_metrics()
+  ))
 
   expect_equal(nrow(res), 3L)
   for (i in seq_len(nrow(res))) {
@@ -71,13 +86,23 @@ test_that("nested_tune_grid() selects under the metrics it was given", {
   nested <- sep_nested(d)
 
   set.seed(20)
-  res <- memoised(nested_tune_grid(wf, nested, grid = sep_grid(), metrics = sep_metrics()))
+  res <- memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = sep_grid(),
+    metrics = sep_metrics()
+  ))
 
   # The reference resolves the first metric of the caller's set, exactly as the
   # driver does off its own tuned object -- so this fails if the inner
   # tune_grid() ever stops receiving `metrics` and falls back to `rmse`.
   ref <- reference_nested_loop(
-    wf, nested, sep_grid(), sep_metrics(), seed = 20, metric_name = "mae"
+    wf,
+    nested,
+    sep_grid(),
+    sep_metrics(),
+    seed = 20,
+    metric_name = "mae"
   )
   expect_equal(nrow(res), 3L)
   for (i in seq_len(nrow(res))) {
@@ -93,7 +118,12 @@ test_that("nested_final_fit() tunes under the metrics it was given", {
   nested <- sep_nested(d)
 
   set.seed(30)
-  final <- memoised(nested_final_fit(wf, nested, grid = sep_grid(), metrics = sep_metrics()))
+  final <- memoised(nested_final_fit(
+    wf,
+    nested,
+    grid = sep_grid(),
+    metrics = sep_metrics()
+  ))
 
   expect_identical(
     sort(unique(tune::collect_metrics(final$tuning)$.metric)),

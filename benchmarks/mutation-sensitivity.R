@@ -74,7 +74,8 @@ mutations <- list(
 # source, and load_all() into this one would leave the mutation live for the
 # next mutation's control run.
 run_files <- function(files) {
-  script <- sprintf('
+  script <- sprintf(
+    '
     Sys.setenv(NOT_CRAN = "true")
     suppressMessages(pkgload::load_all(".", quiet = TRUE))
     for (f in c(%s)) {
@@ -85,8 +86,15 @@ run_files <- function(files) {
       broke <- df$test[df$failed > 0 | df$error > 0]
       cat(sprintf("RESULT\t%%s\t%%s\t%%d\t%%s\n", f, if (bad > 0) "FAIL" else "PASS",
                   bad, if (length(broke)) broke[[1L]] else "-"))
-    }', paste(sprintf('"%s"', files), collapse = ", "))
-  out <- system2("Rscript", c("-e", shQuote(script)), stdout = TRUE, stderr = FALSE)
+    }',
+    paste(sprintf('"%s"', files), collapse = ", ")
+  )
+  out <- system2(
+    "Rscript",
+    c("-e", shQuote(script)),
+    stdout = TRUE,
+    stderr = FALSE
+  )
   lines <- grep("^RESULT\t", out, value = TRUE)
   parsed <- do.call(rbind, strsplit(lines, "\t", fixed = TRUE))
   # Keyed by file, one row each. Not `split()` + `setNames()`: split() returns
@@ -109,31 +117,49 @@ for (m in mutations) {
   control <- got[[m$control]]
   results[[length(results) + 1L]] <- data.frame(
     file = m$target,
-    mutation = sprintf("%s in %s: `%s` -> `%s`", m$fn, m$source,
-                       trimws(m$old), trimws(m$new)),
+    mutation = sprintf(
+      "%s in %s: `%s` -> `%s`",
+      m$fn,
+      m$source,
+      trimws(m$old),
+      trimws(m$new)
+    ),
     verdict = target[[1L]],
     failures = target[[2L]],
     first_failing_test = target[[3L]],
     control = sprintf("%s: %s", m$control, control[[1L]]),
     stringsAsFactors = FALSE
   )
-  cat(sprintf("%-38s %s (%s failures) | control %s: %s\n", m$target,
-              target[[1L]], target[[2L]], m$control, control[[1L]]))
+  cat(sprintf(
+    "%-38s %s (%s failures) | control %s: %s\n",
+    m$target,
+    target[[1L]],
+    target[[2L]],
+    m$control,
+    control[[1L]]
+  ))
 }
 
 report <- do.call(rbind, results)
 cat("\n")
 for (i in seq_len(nrow(report))) {
-  cat(sprintf("%s\n  mutation: %s\n  verdict: %s, %s failure(s), first: %s\n  %s\n\n",
-              report$file[[i]], report$mutation[[i]], report$verdict[[i]],
-              report$failures[[i]], report$first_failing_test[[i]],
-              report$control[[i]]))
+  cat(sprintf(
+    "%s\n  mutation: %s\n  verdict: %s, %s failure(s), first: %s\n  %s\n\n",
+    report$file[[i]],
+    report$mutation[[i]],
+    report$verdict[[i]],
+    report$failures[[i]],
+    report$first_failing_test[[i]],
+    report$control[[i]]
+  ))
 }
 
 passed <- all(report$verdict == "FAIL") &&
   all(grepl("PASS$", report$control))
-cat(if (passed) {
-  "ALL SENSITIVE: every converted file failed its own mutation; every control passed.\n"
-} else {
-  "NOT SENSITIVE: see the rows above.\n"
-})
+cat(
+  if (passed) {
+    "ALL SENSITIVE: every converted file failed its own mutation; every control passed.\n"
+  } else {
+    "NOT SENSITIVE: see the rows above.\n"
+  }
+)

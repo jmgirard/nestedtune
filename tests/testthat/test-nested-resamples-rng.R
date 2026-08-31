@@ -8,11 +8,17 @@ test_that("the same seed produces the same object", {
   d <- make_test_data()
 
   set.seed(99)
-  first <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                            inside = rsample::vfold_cv(v = 4))
+  first <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
   set.seed(99)
-  second <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                             inside = rsample::vfold_cv(v = 4))
+  second <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
 
   expect_identical(first, second)
 })
@@ -21,11 +27,17 @@ test_that("a different seed produces different splits", {
   d <- make_test_data()
 
   set.seed(99)
-  first <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                            inside = rsample::vfold_cv(v = 4))
+  first <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
   set.seed(100)
-  other <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                            inside = rsample::vfold_cv(v = 4))
+  other <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
 
   expect_false(identical(
     first$inner_resamples[[1]]$splits[[1]]$in_id,
@@ -37,13 +49,19 @@ test_that("the same amount of randomness is consumed as rsample::nested_cv()", {
   d <- make_test_data()
 
   set.seed(1)
-  invisible(rsample::nested_cv(d, outside = rsample::vfold_cv(v = 3),
-                               inside = rsample::vfold_cv(v = 4)))
+  invisible(rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  ))
   after_ref <- .Random.seed
 
   set.seed(1)
-  invisible(nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                             inside = rsample::vfold_cv(v = 4)))
+  invisible(nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  ))
   after_lean <- .Random.seed
 
   # Not just the same splits: the RNG stream is left in the same place, so a
@@ -56,8 +74,11 @@ test_that("no analysis frame is retained -- every split shares the caller's data
   d <- make_test_data()
 
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                           inside = rsample::vfold_cv(v = 4))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
 
   # identical() would be satisfied by a copy; the address is what distinguishes
   # a shared reference from one more materialized frame per fold.
@@ -73,8 +94,11 @@ test_that("indices land on the original data, not on a per-fold renumbering", {
   d <- make_test_data()
 
   set.seed(1)
-  lean <- nested_resamples(d, outside = rsample::vfold_cv(v = 3),
-                           inside = rsample::vfold_cv(v = 4))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 4)
+  )
 
   for (i in seq_len(nrow(lean))) {
     outer_idx <- as.integer(lean$splits[[i]]$in_id)

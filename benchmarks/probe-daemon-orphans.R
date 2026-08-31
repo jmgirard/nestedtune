@@ -41,19 +41,25 @@ alive <- function(pid) {
 recorded_pids <- function() {
   files <- list.files(ledger, full.names = TRUE)
   files <- files[file.size(files) > 0L]
-  if (!length(files)) return(integer(0))
+  if (!length(files)) {
+    return(integer(0))
+  }
   as.integer(vapply(files, readLines, character(1), n = 1L, USE.NAMES = FALSE))
 }
 
 spawn <- function(tag, env) {
   expr <- sprintf(
     'cat(Sys.getpid(), "\\n", file = "%s"); mirai::daemon("%s")',
-    file.path(ledger, tag), url
+    file.path(ledger, tag),
+    url
   )
   system2(
     file.path(R.home("bin"), "Rscript"),
     c("--vanilla", "-e", shQuote(expr)),
-    env = env, wait = FALSE, stdout = FALSE, stderr = FALSE
+    env = env,
+    wait = FALSE,
+    stdout = FALSE,
+    stderr = FALSE
   )
 }
 
@@ -87,8 +93,11 @@ spawn("lean", sprintf(c("R_LIBS=%s", "R_LIBS_SITE=%s", "R_LIBS_USER=%s"), lean))
 # it), so that is the state this probe has to reach before its answer means
 # anything.
 deadline <- Sys.time() + 30
-while ((length(recorded_pids()) < 2L ||
-        mirai::status()$connections < 2L) && Sys.time() < deadline) {
+while (
+  (length(recorded_pids()) < 2L ||
+    mirai::status()$connections < 2L) &&
+    Sys.time() < deadline
+) {
   Sys.sleep(0.1)
 }
 pids <- recorded_pids()
@@ -104,15 +113,26 @@ cat("host torn down\n")
 # Give autoexit its chance before judging.
 deadline <- Sys.time() + 15
 still_alive <- function() pids[vapply(pids, alive, logical(1))]
-while (length(still_alive()) && Sys.time() < deadline) Sys.sleep(0.25)
+while (length(still_alive()) && Sys.time() < deadline) {
+  Sys.sleep(0.25)
+}
 
 survivors <- still_alive()
 cat("\n--- result ---\n")
 cat("mirai:", as.character(packageVersion("mirai")), "\n")
 cat("nanonext:", as.character(packageVersion("nanonext")), "\n")
-cat("daemons spawned:", length(pids), " connections reached:", connections, "\n")
-cat("survivors after teardown:",
-    if (length(survivors)) paste(survivors, collapse = ", ") else "none", "\n")
+cat(
+  "daemons spawned:",
+  length(pids),
+  " connections reached:",
+  connections,
+  "\n"
+)
+cat(
+  "survivors after teardown:",
+  if (length(survivors)) paste(survivors, collapse = ", ") else "none",
+  "\n"
+)
 
 # The verdict is gated on having actually measured what it claims to measure.
 # `any(logical(0))` is FALSE, so an unguarded version prints "no orphan" just as
@@ -120,16 +140,23 @@ cat("survivors after teardown:",
 # (M14 review F5).
 cat("verdict: ", sep = "")
 if (length(pids) < 2L || connections < 2L) {
-  cat("INCONCLUSIVE -- needed 2 spawned daemons and 2 connections, got ",
-      length(pids), " and ", connections,
-      ". A daemon that never joined the pool says nothing about whether a ",
-      "connected one is reaped; re-run, and check the lean library really ",
-      "carries mirai and nanonext.\n", sep = "")
+  cat(
+    "INCONCLUSIVE -- needed 2 spawned daemons and 2 connections, got ",
+    length(pids),
+    " and ",
+    connections,
+    ". A daemon that never joined the pool says nothing about whether a ",
+    "connected one is reaped; re-run, and check the lean library really ",
+    "carries mirai and nanonext.\n",
+    sep = ""
+  )
 } else if (length(survivors)) {
   cat("ORPHANS -- the fixture must record and kill its pids\n")
 } else {
   cat("no orphan -- autoexit reaps them, fixture unchanged\n")
 }
 
-for (pid in survivors) tools::pskill(pid)
+for (pid in survivors) {
+  tools::pskill(pid)
+}
 unlink(c(ledger, lean), recursive = TRUE)

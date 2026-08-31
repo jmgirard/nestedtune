@@ -45,7 +45,10 @@ job_uses <- function(path, job) {
 
 test_that("the pkgdown deploy job checks out before it deploys", {
   path <- workflow_path("pkgdown.yaml")
-  skip_if_not(file.exists(path), "workflow sources are not in the built package")
+  skip_if_not(
+    file.exists(path),
+    "workflow sources are not in the built package"
+  )
 
   uses <- job_uses(path, "deploy")
   expect_false(is.null(uses))
@@ -65,7 +68,10 @@ test_that("the pkgdown deploy job checks out before it deploys", {
 
 test_that("job_uses() reads a job's steps in order", {
   path <- workflow_path("pkgdown.yaml")
-  skip_if_not(file.exists(path), "workflow sources are not in the built package")
+  skip_if_not(
+    file.exists(path),
+    "workflow sources are not in the built package"
+  )
 
   uses <- job_uses(path, "build")
 

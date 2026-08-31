@@ -109,7 +109,9 @@ test_that("BC4: an aborted parallel run still restores the caller's RNG state", 
   # The abort is induced by mocking the probe, not by breaking the library path:
   # real daemons with no library cannot load mirai either, so they die at
   # startup and the probe hangs (M07-D6).
-  local_mocked_bindings(daemons_load_status = function(...) preflight_outcome(reports(FALSE)))
+  local_mocked_bindings(daemons_load_status = function(...) {
+    preflight_outcome(reports(FALSE))
+  })
   on.exit(mirai::daemons(0), add = TRUE)
   start_daemons(2)
 
@@ -173,8 +175,12 @@ test_that("a cancelled parallel run returns nothing and restores the RNG state",
   # against the very behaviour this test exists to reject.
   cnd <- tryCatch(
     without_pkgload_warning(
-      result <- nested_tune_grid(wf, nested, grid = det_grid(),
-                                 metrics = reg_metrics())
+      result <- nested_tune_grid(
+        wf,
+        nested,
+        grid = det_grid(),
+        metrics = reg_metrics()
+      )
     ),
     error = identity
   )
@@ -207,8 +213,12 @@ test_that("BC6: a failed fold matches serially in every field but its traces", {
   # only the outer one leaves it to surface as an uncaught warning in the run.
   suppressWarnings(
     expect_warning(
-      serial <- nested_tune_grid(wf, nested, grid = stoch_grid(),
-                                 metrics = reg_metrics()),
+      serial <- nested_tune_grid(
+        wf,
+        nested,
+        grid = stoch_grid(),
+        metrics = reg_metrics()
+      ),
       class = "nestedtune_failed_folds"
     )
   )
@@ -316,29 +326,42 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
   seeds <- sample.int(.Machine$integer.max, 2L * nrow(nested))
   kill_seed <- seeds[[2L * 2L - 1L]]
 
-  old <- Sys.getenv(c("NESTEDTUNE_LEDGER", "NESTEDTUNE_KILL_SEED"), names = TRUE)
+  old <- Sys.getenv(
+    c("NESTEDTUNE_LEDGER", "NESTEDTUNE_KILL_SEED"),
+    names = TRUE
+  )
   Sys.setenv(NESTEDTUNE_LEDGER = ledger, NESTEDTUNE_KILL_SEED = kill_seed)
   on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
   on.exit(mirai::daemons(0), add = TRUE)
 
   mirai::daemons(0)
   set.seed(2026L)
-  serial <- nested_tune_grid(wf, nested, grid = stoch_grid(),
-                             metrics = reg_metrics())
+  serial <- nested_tune_grid(
+    wf,
+    nested,
+    grid = stoch_grid(),
+    metrics = reg_metrics()
+  )
 
   start_daemons(2)
   local_mocked_bindings(
     fold_task = function(payload, object, grid, metrics) {
       seed <- payload$seeds[[1L]]
-      file.create(file.path(Sys.getenv("NESTEDTUNE_LEDGER"),
-                            paste0(seed, "-", Sys.getpid())))
+      file.create(file.path(
+        Sys.getenv("NESTEDTUNE_LEDGER"),
+        paste0(seed, "-", Sys.getpid())
+      ))
       if (identical(as.character(seed), Sys.getenv("NESTEDTUNE_KILL_SEED"))) {
         tools::pskill(Sys.getpid())
         Sys.sleep(30)
       }
       asNamespace("nestedtune")$nested_fold_fit(
-        split = payload$split, inner = payload$inner, seeds = payload$seeds,
-        object = object, grid = grid, metrics = metrics
+        split = payload$split,
+        inner = payload$inner,
+        seeds = payload$seeds,
+        object = object,
+        grid = grid,
+        metrics = metrics
       )
     }
   )
@@ -367,6 +390,9 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
   # One file per fold, and exactly one: a retried fold would leave two, since
   # the replacement daemon has a different pid.
   ran <- sub("-.*$", "", list.files(ledger))
-  expect_identical(sort(as.numeric(ran)), sort(as.numeric(seeds[c(TRUE, FALSE)])))
+  expect_identical(
+    sort(as.numeric(ran)),
+    sort(as.numeric(seeds[c(TRUE, FALSE)]))
+  )
   expect_identical(anyDuplicated(ran), 0L)
 })

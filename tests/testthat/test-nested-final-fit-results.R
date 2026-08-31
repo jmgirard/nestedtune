@@ -8,7 +8,12 @@ test_that("the final fit returns a trained workflow inside its own object", {
   wf <- det_workflow(d)
 
   set.seed(3)
-  final <- memoised(nested_final_fit(wf, folds, grid = det_grid(), metrics = reg_metrics()))
+  final <- memoised(nested_final_fit(
+    wf,
+    folds,
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
 
   expect_s3_class(final, "nested_final_fit")
   expect_named(

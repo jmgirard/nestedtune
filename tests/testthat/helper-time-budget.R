@@ -41,7 +41,7 @@
 # because an unstated exemption is how the first version of this comment came to
 # overclaim. Three kinds escape it: a bound read from a named constant, which
 # cannot drift and needs no re-read; a bound set through the OPTION at one line
-# and spent at another (classify:693 sets it, :699 spends it); and a wait that is
+# and spent at another (classify:745 sets it, :751 spends it); and a wait that is
 # no function call at all (the deadline poll in interrupt). None carries an
 # explicit bound argument in the call itself, which is exactly how the
 # cross-check recognises them.
@@ -60,8 +60,14 @@
 # `for (n in c(2L, 3L))` and is therefore paid twice.
 tb_row <- function(file, line, call, seconds, payer, times = 1L, note = "") {
   data.frame(
-    file = file, line = line, call = call, seconds = seconds * times,
-    times = times, payer = payer, note = note, stringsAsFactors = FALSE
+    file = file,
+    line = line,
+    call = call,
+    seconds = seconds * times,
+    times = times,
+    payer = payer,
+    note = note,
+    stringsAsFactors = FALSE
   )
 }
 
@@ -79,156 +85,407 @@ START_DAEMONS_BOUND_S <- function() PRIME_DAEMONS_BOUND_S + WARM_DAEMONS_BOUND_S
 time_budget_ledger <- function() {
   rbind(
     # --- test-parallel-classify.R -------------------------------------------
-    tb_row("test-parallel-classify.R", 69L, "collect_bounded",
-           COLLECT_BOUNDED_DEFAULT_S,
-           "a miraiError becomes a recorded worker failure, not an abort"),
-    tb_row("test-parallel-classify.R", 186L, "check_daemons_can_load", 0,
-           "dispatch refuses daemons that cannot load the package",
-           note = "fabricated status; classifies, never dispatches"),
-    tb_row("test-parallel-classify.R", 214L, "setTimeLimit", 0,
-           "a connected daemon that cannot answer in time is bounded",
-           note = "not a bound on a blocked mirai wait (M14)"),
-    tb_row("test-parallel-classify.R", 215L, "setTimeLimit", 0,
-           "a connected daemon that cannot answer in time is bounded",
-           note = "restore"),
-    tb_row("test-parallel-classify.R", 232L, "daemons_load_status", 1,
-           "a connected daemon that cannot answer in time is bounded",
-           note = "explicit timeout = 1000L"),
-    tb_row("test-parallel-classify.R", 270L, "setTimeLimit", 0,
-           "a pool with no daemon at all is a non-response, not a load failure",
-           note = "not a bound on a blocked mirai wait (M14)"),
-    tb_row("test-parallel-classify.R", 271L, "setTimeLimit", 0,
-           "a pool with no daemon at all is a non-response, not a load failure",
-           note = "restore"),
-    tb_row("test-parallel-classify.R", 273L, "daemons_load_status", 2,
-           "a pool with no daemon at all is a non-response, not a load failure",
-           note = "explicit timeout = 2000L"),
-    tb_row("test-parallel-classify.R", 278L, "check_daemons_can_load", 0,
-           "a pool with no daemon at all is a non-response, not a load failure",
-           note = "status already in hand"),
-    tb_row("test-parallel-classify.R", 296L, "check_daemons_can_load", 0,
-           "a pool where every daemon loaded passes", note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 308L, "check_daemons_can_load", 0,
-           "one loadable daemon no longer passes the check for the whole pool",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 315L, "check_daemons_can_load", 0,
-           "a load failure keeps the install and prime remedies",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 330L, "check_daemons_can_load", 0,
-           "a timeout is not reported as a package that cannot be loaded",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 342L, "check_daemons_can_load", 0,
-           "the timeout message points at the option that raises the bound",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 350L, "check_daemons_can_load", 0,
-           "a raised bound is reported as a number, not in scientific notation",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 366L, "check_daemons_can_load", 0,
-           "a pool failing both ways names both facts", note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 388L, "check_daemons_can_load", 0,
-           "a pool that cannot load AND holds an old build names both fixes",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 402L, "check_daemons_can_load", 0,
-           "a pool that cannot load AND holds an old build names both fixes",
-           note = "fabricated status; the bullet's absence"),
-    tb_row("test-parallel-classify.R", 417L, "check_daemons_can_load", 0,
-           "the both-fault bullet counts and pluralises on the affected daemons",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 428L, "check_daemons_can_load", 0,
-           "both causes answer to one shared class", note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 555L, "check_daemons_can_load", 0,
-           "the incompatible abort names the symbols, the count, and the restart",
-           note = "fabricated status; classifies, never dispatches"),
-    tb_row("test-parallel-classify.R", 585L, "check_daemons_can_load", 0,
-           "the incompatible abort renders at one, two, five, and a mixed pool",
-           note = "fabricated status; snapshot, one symbol"),
-    tb_row("test-parallel-classify.R", 591L, "check_daemons_can_load", 0,
-           "the incompatible abort renders at one, two, five, and a mixed pool",
-           note = "fabricated status; snapshot, two symbols"),
-    tb_row("test-parallel-classify.R", 597L, "check_daemons_can_load", 0,
-           "the incompatible abort renders at one, two, five, and a mixed pool",
-           note = "fabricated status; snapshot, truncated case"),
-    tb_row("test-parallel-classify.R", 605L, "check_daemons_can_load", 0,
-           "the incompatible abort renders at one, two, five, and a mixed pool",
-           note = "fabricated status; snapshot, mixed pool"),
-    tb_row("test-parallel-classify.R", 619L, "check_daemons_can_load", 0,
-           "an incompatible pool answers to the shared unusable class",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 632L, "check_daemons_can_load", 0,
-           "an incompatible pool still reports daemons that said nothing",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 691L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "the probe reads its bound from the option, not from the constant"),
-    tb_row("test-parallel-classify.R", 696L, "setTimeLimit", 0,
-           "the probe reads its bound from the option, not from the constant",
-           note = "not a bound on a blocked mirai wait (M14)"),
-    tb_row("test-parallel-classify.R", 697L, "setTimeLimit", 0,
-           "the probe reads its bound from the option, not from the constant",
-           note = "restore"),
-    tb_row("test-parallel-classify.R", 699L, "daemons_load_status", 45.678,
-           "the probe reads its bound from the option, not from the constant",
-           note = "the test sets the option to 45678 ms at :693"),
-    tb_row("test-parallel-classify.R", 716L, "daemons_load_status", 0,
-           "a bad bound is refused before any daemon is asked",
-           note = "the option is invalid, so it aborts before dispatching"),
-    tb_row("test-parallel-classify.R", 730L, "check_daemons_can_load", 0,
-           "a probe that reached no daemon at all is not a pass",
-           note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 740L, "check_daemons_can_load", 0,
-           "the abort names the package actually probed", note = "fabricated status"),
-    tb_row("test-parallel-classify.R", 810L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "dispatch accepts daemons primed with the package"),
-    tb_row("test-parallel-classify.R", 817L, "daemons_load_status", 60,
-           "dispatch accepts daemons primed with the package",
-           note = "explicit timeout = 60000; was the option's 300 s before M16"),
-    tb_row("test-parallel-classify.R", 818L, "check_daemons_can_load", 0,
-           "dispatch accepts daemons primed with the package",
-           note = "status already in hand"),
+    tb_row(
+      "test-parallel-classify.R",
+      72L,
+      "collect_bounded",
+      COLLECT_BOUNDED_DEFAULT_S,
+      "a miraiError becomes a recorded worker failure, not an abort"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      201L,
+      "check_daemons_can_load",
+      0,
+      "dispatch refuses daemons that cannot load the package",
+      note = "fabricated status; classifies, never dispatches"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      229L,
+      "setTimeLimit",
+      0,
+      "a connected daemon that cannot answer in time is bounded",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      230L,
+      "setTimeLimit",
+      0,
+      "a connected daemon that cannot answer in time is bounded",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      247L,
+      "daemons_load_status",
+      1,
+      "a connected daemon that cannot answer in time is bounded",
+      note = "explicit timeout = 1000L"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      285L,
+      "setTimeLimit",
+      0,
+      "a pool with no daemon at all is a non-response, not a load failure",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      286L,
+      "setTimeLimit",
+      0,
+      "a pool with no daemon at all is a non-response, not a load failure",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      288L,
+      "daemons_load_status",
+      2,
+      "a pool with no daemon at all is a non-response, not a load failure",
+      note = "explicit timeout = 2000L"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      293L,
+      "check_daemons_can_load",
+      0,
+      "a pool with no daemon at all is a non-response, not a load failure",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      311L,
+      "check_daemons_can_load",
+      0,
+      "a pool where every daemon loaded passes",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      323L,
+      "check_daemons_can_load",
+      0,
+      "one loadable daemon no longer passes the check for the whole pool",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      330L,
+      "check_daemons_can_load",
+      0,
+      "a load failure keeps the install and prime remedies",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      348L,
+      "check_daemons_can_load",
+      0,
+      "a timeout is not reported as a package that cannot be loaded",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      360L,
+      "check_daemons_can_load",
+      0,
+      "the timeout message points at the option that raises the bound",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      371L,
+      "check_daemons_can_load",
+      0,
+      "a raised bound is reported as a number, not in scientific notation",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      390L,
+      "check_daemons_can_load",
+      0,
+      "a pool failing both ways names both facts",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      416L,
+      "check_daemons_can_load",
+      0,
+      "a pool that cannot load AND holds an old build names both fixes",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      430L,
+      "check_daemons_can_load",
+      0,
+      "a pool that cannot load AND holds an old build names both fixes",
+      note = "fabricated status; the bullet's absence"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      445L,
+      "check_daemons_can_load",
+      0,
+      "the both-fault bullet counts and pluralises on the affected daemons",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      460L,
+      "check_daemons_can_load",
+      0,
+      "both causes answer to one shared class",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      597L,
+      "check_daemons_can_load",
+      0,
+      "the incompatible abort names the symbols, the count, and the restart",
+      note = "fabricated status; classifies, never dispatches"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      627L,
+      "check_daemons_can_load",
+      0,
+      "the incompatible abort renders at one, two, five, and a mixed pool",
+      note = "fabricated status; snapshot, one symbol"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      635L,
+      "check_daemons_can_load",
+      0,
+      "the incompatible abort renders at one, two, five, and a mixed pool",
+      note = "fabricated status; snapshot, two symbols"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      644L,
+      "check_daemons_can_load",
+      0,
+      "the incompatible abort renders at one, two, five, and a mixed pool",
+      note = "fabricated status; snapshot, truncated case"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      652L,
+      "check_daemons_can_load",
+      0,
+      "the incompatible abort renders at one, two, five, and a mixed pool",
+      note = "fabricated status; snapshot, mixed pool"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      666L,
+      "check_daemons_can_load",
+      0,
+      "an incompatible pool answers to the shared unusable class",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      680L,
+      "check_daemons_can_load",
+      0,
+      "an incompatible pool still reports daemons that said nothing",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      743L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the probe reads its bound from the option, not from the constant"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      748L,
+      "setTimeLimit",
+      0,
+      "the probe reads its bound from the option, not from the constant",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      749L,
+      "setTimeLimit",
+      0,
+      "the probe reads its bound from the option, not from the constant",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      751L,
+      "daemons_load_status",
+      45.678,
+      "the probe reads its bound from the option, not from the constant",
+      note = "the test sets the option to 45678 ms at :745"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      768L,
+      "daemons_load_status",
+      0,
+      "a bad bound is refused before any daemon is asked",
+      note = "the option is invalid, so it aborts before dispatching"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      782L,
+      "check_daemons_can_load",
+      0,
+      "a probe that reached no daemon at all is not a pass",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      792L,
+      "check_daemons_can_load",
+      0,
+      "the abort names the package actually probed",
+      note = "fabricated status"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      865L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "dispatch accepts daemons primed with the package"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      872L,
+      "daemons_load_status",
+      60,
+      "dispatch accepts daemons primed with the package",
+      note = "explicit timeout = 60000; was the option's 300 s before M16"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      873L,
+      "check_daemons_can_load",
+      0,
+      "dispatch accepts daemons primed with the package",
+      note = "status already in hand"
+    ),
 
     # --- test-parallel-detection.R ------------------------------------------
-    tb_row("test-parallel-detection.R", 70L, "setTimeLimit", 0,
-           "a heterogeneous pool names the daemons that cannot load",
-           note = "not a bound on a blocked mirai wait (M14)"),
-    tb_row("test-parallel-detection.R", 71L, "setTimeLimit", 0,
-           "a heterogeneous pool names the daemons that cannot load",
-           note = "restore"),
-    tb_row("test-parallel-detection.R", 74L, "start_mixed_daemons", 60,
-           "a heterogeneous pool names the daemons that cannot load",
-           note = "its own `timeout` default"),
-    tb_row("test-parallel-detection.R", 82L, "collect_bounded", 30,
-           "a heterogeneous pool names the daemons that cannot load"),
-    tb_row("test-parallel-detection.R", 270L, "start_daemons_undispatched",
-           START_DAEMONS_BOUND_S(),
-           "dispatch_folds warns once per call, whatever it is dispatching"),
-    tb_row("test-parallel-detection.R", 218L, "start_daemons_undispatched",
-           START_DAEMONS_BOUND_S(),
-           "a run on an uncancellable pool warns exactly once"),
-    tb_row("test-parallel-detection.R", 247L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "a dispatcher-backed run warns not at all"),
-    tb_row("test-parallel-detection.R", 130L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "a primed pool matches the host's namespace exactly"),
-    tb_row("test-parallel-detection.R", 132L, "daemons_load_status", 30,
-           "a primed pool matches the host's namespace exactly",
-           note = "explicit timeout = 30000"),
-    tb_row("test-parallel-detection.R", 142L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "a symbol no build defines is reported by every daemon that loaded"),
-    tb_row("test-parallel-detection.R", 145L, "daemons_load_status", 30,
-           "a symbol no build defines is reported by every daemon that loaded",
-           note = "explicit timeout = 30000"),
-    tb_row("test-parallel-detection.R", 159L, "check_daemons_can_load", 0,
-           "a symbol no build defines is reported by every daemon that loaded",
-           note = "status already in hand"),
-    tb_row("test-parallel-detection.R", 89L, "daemons_load_status", 30,
-           "a heterogeneous pool names the daemons that cannot load",
-           note = "explicit timeout = 30000"),
-    tb_row("test-parallel-detection.R", 101L, "check_daemons_can_load", 0,
-           "a heterogeneous pool names the daemons that cannot load",
-           note = "status already in hand"),
+    tb_row(
+      "test-parallel-detection.R",
+      70L,
+      "setTimeLimit",
+      0,
+      "a heterogeneous pool names the daemons that cannot load",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      71L,
+      "setTimeLimit",
+      0,
+      "a heterogeneous pool names the daemons that cannot load",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      74L,
+      "start_mixed_daemons",
+      60,
+      "a heterogeneous pool names the daemons that cannot load",
+      note = "its own `timeout` default"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      82L,
+      "collect_bounded",
+      30,
+      "a heterogeneous pool names the daemons that cannot load"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      275L,
+      "start_daemons_undispatched",
+      START_DAEMONS_BOUND_S(),
+      "dispatch_folds warns once per call, whatever it is dispatching"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      219L,
+      "start_daemons_undispatched",
+      START_DAEMONS_BOUND_S(),
+      "a run on an uncancellable pool warns exactly once"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      248L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a dispatcher-backed run warns not at all"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      130L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a primed pool matches the host's namespace exactly"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      132L,
+      "daemons_load_status",
+      30,
+      "a primed pool matches the host's namespace exactly",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      142L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a symbol no build defines is reported by every daemon that loaded"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      145L,
+      "daemons_load_status",
+      30,
+      "a symbol no build defines is reported by every daemon that loaded",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      160L,
+      "check_daemons_can_load",
+      0,
+      "a symbol no build defines is reported by every daemon that loaded",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      89L,
+      "daemons_load_status",
+      30,
+      "a heterogeneous pool names the daemons that cannot load",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      101L,
+      "check_daemons_can_load",
+      0,
+      "a heterogeneous pool names the daemons that cannot load",
+      note = "status already in hand"
+    ),
     # The one test that starts its pools with bare `mirai::daemons()` rather
     # than through a budgeted helper, because it compares the two POOL KINDS and
     # priming is orthogonal to the property under test -- routing it through
@@ -244,42 +501,109 @@ time_budget_ledger <- function() {
     # `daemons(2)` returned in 0.635 s, `daemons(2, dispatcher = FALSE)` in
     # 0.224 s, `daemons(0)` in 0.205 s, with `status()$connections` already
     # reading 2. None waits on a mirai result, so none has a bound to declare.
-    tb_row("test-parallel-detection.R", 183L, "daemons", 0,
-           "the two pool kinds are distinguishable, and the count cannot do it",
-           note = "bare mirai::daemons(2); returns without waiting, measured 0.635 s"),
-    tb_row("test-parallel-detection.R", 188L, "daemons", 0,
-           "the two pool kinds are distinguishable, and the count cannot do it",
-           note = "bare mirai::daemons(2, dispatcher = FALSE), measured 0.224 s"),
+    tb_row(
+      "test-parallel-detection.R",
+      184L,
+      "daemons",
+      0,
+      "the two pool kinds are distinguishable, and the count cannot do it",
+      note = "bare mirai::daemons(2); returns without waiting, measured 0.635 s"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      189L,
+      "daemons",
+      0,
+      "the two pool kinds are distinguishable, and the count cannot do it",
+      note = "bare mirai::daemons(2, dispatcher = FALSE), measured 0.224 s"
+    ),
 
     # --- test-parallel-identity.R -------------------------------------------
     # The heaviest file by declared worst case, and deliberately untouched here:
     # its eight-plus pool restarts are what a ROADMAP candidate proposes to
     # share, and doing that safely needs evidence a reused pool stays clean
     # between tests. M16 records the figure and sets no ceiling on it.
-    tb_row("test-parallel-identity.R", 38L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "serial and parallel agree, any worker count",
-           times = 2L, note = "inside for (n in c(2L, 3L))"),
-    tb_row("test-parallel-identity.R", 72L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "the RNG kind pin survives dispatch"),
-    tb_row("test-parallel-identity.R", 89L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "a third RNG kind still round-trips"),
-    tb_row("test-parallel-identity.R", 114L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "fold order does not change the estimate"),
-    tb_row("test-parallel-identity.R", 151L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "the caller's RNG state is left untouched"),
-    tb_row("test-parallel-identity.R", 165L, "setTimeLimit", 0,
-           "the caller's RNG state is left untouched",
-           note = "not a bound on a blocked mirai wait (M14)"),
-    tb_row("test-parallel-identity.R", 166L, "setTimeLimit", 0,
-           "the caller's RNG state is left untouched", note = "restore"),
-    tb_row("test-parallel-identity.R", 216L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "seeds are assigned per fold, not per worker"),
-    tb_row("test-parallel-identity.R", 262L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "a failed fold does not disturb the others"),
-    tb_row("test-parallel-identity.R", 273L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "notes survive the trip back from a worker"),
-    tb_row("test-parallel-identity.R", 329L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "the parallel branch really ran"),
+    tb_row(
+      "test-parallel-identity.R",
+      38L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "serial and parallel agree, any worker count",
+      times = 2L,
+      note = "inside for (n in c(2L, 3L))"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      72L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the RNG kind pin survives dispatch"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      89L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a third RNG kind still round-trips"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      116L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "fold order does not change the estimate"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      153L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the caller's RNG state is left untouched"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      167L,
+      "setTimeLimit",
+      0,
+      "the caller's RNG state is left untouched",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      168L,
+      "setTimeLimit",
+      0,
+      "the caller's RNG state is left untouched",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      226L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "seeds are assigned per fold, not per worker"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      272L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a failed fold does not disturb the others"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      283L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "notes survive the trip back from a worker"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      346L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the parallel branch really ran"
+    ),
 
     # --- test-parallel-metrics.R --------------------------------------------
     # One pool start, and that is the whole file's declared waiting. The two
@@ -289,22 +613,44 @@ time_budget_ledger <- function() {
     # it orphans rather than blocks -- so there is no bound to declare. They are
     # named here because the guard cannot see them, which is the same
     # disclosure the option/deadline-poll gap above makes.
-    tb_row("test-parallel-metrics.R", 58L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "the metric set the caller gave reaches folds running on a worker"),
-    tb_row("test-parallel-payload.R", 268L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "a daemon receives the payload rehydrated, not the leaned one"),
+    tb_row(
+      "test-parallel-metrics.R",
+      58L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the metric set the caller gave reaches folds running on a worker"
+    ),
+    tb_row(
+      "test-parallel-payload.R",
+      287L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a daemon receives the payload rehydrated, not the leaned one"
+    ),
 
     # --- test-parallel-interrupt.R ------------------------------------------
-    tb_row("test-parallel-interrupt.R", 41L, "start_daemons",
-           START_DAEMONS_BOUND_S(), "an interrupted run leaves no fold executing"),
-    tb_row("test-parallel-interrupt.R", 92L, "deadline poll", 15,
-           "an interrupted run leaves no fold executing",
-           note = "while (executing() > 0L && Sys.time() < deadline)"),
-    tb_row("test-parallel-interrupt.R", 109L, "start_daemons",
-           START_DAEMONS_BOUND_S(),
-           "a completed run is not disturbed by the unconditional cancel"),
+    tb_row(
+      "test-parallel-interrupt.R",
+      43L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "an interrupted run leaves no fold executing"
+    ),
+    tb_row(
+      "test-parallel-interrupt.R",
+      98L,
+      "deadline poll",
+      15,
+      "an interrupted run leaves no fold executing",
+      note = "while (executing() > 0L && Sys.time() < deadline)"
+    ),
+    tb_row(
+      "test-parallel-interrupt.R",
+      115L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a completed run is not disturbed by the unconditional cancel"
+    ),
 
     # --- helper-parallel.R --------------------------------------------------
     # The two waits inside start_daemons(), carried at 0 here because they are
@@ -312,12 +658,22 @@ time_budget_ledger <- function() {
     # again here would double-count. They get rows anyway so the guard sees them
     # classified rather than absent, which is the whole discipline: a wait is
     # either budgeted somewhere or it is a finding.
-    tb_row("helper-parallel.R", 61L, "collect_bounded", 0,
-           "prime_daemons()",
-           note = "PRIME_DAEMONS_BOUND_S, counted at each start_daemons() site"),
-    tb_row("helper-parallel.R", 81L, "collect_bounded", 0,
-           "warm_daemons()",
-           note = "WARM_DAEMONS_BOUND_S, counted at each start_daemons() site")
+    tb_row(
+      "helper-parallel.R",
+      61L,
+      "collect_bounded",
+      0,
+      "prime_daemons()",
+      note = "PRIME_DAEMONS_BOUND_S, counted at each start_daemons() site"
+    ),
+    tb_row(
+      "helper-parallel.R",
+      84L,
+      "collect_bounded",
+      0,
+      "warm_daemons()",
+      note = "WARM_DAEMONS_BOUND_S, counted at each start_daemons() site"
+    )
   )
 }
 

@@ -109,7 +109,7 @@ reset_dispatch_record <- function() {
 # frame for the fold's inner splits and rehydrate_payload() writes it back onto
 # all of them, which is only sound if they shared it to begin with.
 # `nested_resamples()` guarantees that and validates it at construction
-# (R/nested-resamples.R:84), but check_nested() admits any object whose
+# (R/nested-resamples.R:86), but check_nested() admits any object whose
 # `inner_resamples` elements are `rset`s -- including a `manual_rset()` of splits
 # over different frames. Such a design would otherwise be tuned on the wrong rows
 # in parallel and the right ones serially: a silent IP2 breach, and an IP1
@@ -121,9 +121,13 @@ is_fold_payload <- function(x) {
   }
   split <- x[["split"]]
   inner <- x[["inner"]]
-  if (!inherits(split, "rsplit") || !is.data.frame(split$data) ||
-        !is.data.frame(inner) || !is.list(inner$splits) ||
-        length(inner$splits) == 0L) {
+  if (
+    !inherits(split, "rsplit") ||
+      !is.data.frame(split$data) ||
+      !is.data.frame(inner) ||
+      !is.list(inner$splits) ||
+      length(inner$splits) == 0L
+  ) {
     return(FALSE)
   }
   inner_data <- inner$splits[[1L]]$data
@@ -187,11 +191,22 @@ rehydrate_payload <- function(payload, shared) {
 # The seeds are already drawn and assigned by position before this is called
 # (D-011), so nothing here draws, and a fold's result cannot depend on where or
 # when it runs. That is the whole reason the loop is safe to parallelize.
-dispatch_folds <- function(payloads, object, grid, metrics,
-                           call = rlang::caller_env()) {
+dispatch_folds <- function(
+  payloads,
+  object,
+  grid,
+  metrics,
+  call = rlang::caller_env()
+) {
   if (!use_parallel()) {
     record_dispatch("serial")
-    return(lapply(payloads, fold_task, object = object, grid = grid, metrics = metrics))
+    return(lapply(
+      payloads,
+      fold_task,
+      object = object,
+      grid = grid,
+      metrics = metrics
+    ))
   }
 
   check_daemons_can_load(call = call)
@@ -253,8 +268,13 @@ dispatch_folds <- function(payloads, object, grid, metrics,
       ns <- asNamespace("nestedtune")
       worker(ns$rehydrate_payload(payload, shared), object, grid, metrics)
     }
-    args <- list(object = object, grid = grid, metrics = metrics,
-                 shared = shared, worker = worker)
+    args <- list(
+      object = object,
+      grid = grid,
+      metrics = metrics,
+      shared = shared,
+      worker = worker
+    )
   } else {
     task <- fold_task
     args <- list(object = object, grid = grid, metrics = metrics)
@@ -318,9 +338,15 @@ dispatch_folds <- function(payloads, object, grid, metrics,
 default_preflight_timeout_ms <- 30000L
 
 preflight_timeout <- function(call = rlang::caller_env()) {
-  value <- getOption("nestedtune.preflight_timeout", default_preflight_timeout_ms)
-  usable <- is.numeric(value) && length(value) == 1L &&
-    !is.na(value) && is.finite(value) && value > 0
+  value <- getOption(
+    "nestedtune.preflight_timeout",
+    default_preflight_timeout_ms
+  )
+  usable <- is.numeric(value) &&
+    length(value) == 1L &&
+    !is.na(value) &&
+    is.finite(value) &&
+    value > 0
   if (!usable) {
     cli::cli_abort(
       c(
@@ -429,10 +455,12 @@ daemon_probe_expr <- function() {
   ))
 }
 
-daemons_load_status <- function(package = "nestedtune",
-                                timeout = preflight_timeout(call = call),
-                                symbols = daemon_symbol_manifest(package),
-                                call = rlang::caller_env()) {
+daemons_load_status <- function(
+  package = "nestedtune",
+  timeout = preflight_timeout(call = call),
+  symbols = daemon_symbol_manifest(package),
+  call = rlang::caller_env()
+) {
   # Forced before anything is dispatched. Left lazy, the bound is not read until
   # after everywhere() has already sent the probe, so a typo in the option costs
   # a full cold load on every daemon before the user is told the option is bad.
@@ -481,8 +509,13 @@ daemon_report <- function(x) {
   }
   loaded <- x[["loaded"]]
   missing <- x[["missing"]]
-  if (!is.logical(loaded) || length(loaded) != 1L || is.na(loaded) ||
-        !is.character(missing) || anyNA(missing)) {
+  if (
+    !is.logical(loaded) ||
+      length(loaded) != 1L ||
+      is.na(loaded) ||
+      !is.character(missing) ||
+      anyNA(missing)
+  ) {
     return(NULL)
   }
   list(loaded = loaded, missing = missing)
@@ -494,12 +527,17 @@ daemon_report <- function(x) {
 # A pool can fail both ways at once, so the record carries counts rather than a
 # bare verdict: the load failure takes the class, because installing is the
 # actionable fix, and the message still names the non-answers (M10-D1).
-preflight_outcome <- function(answers, timeout = NA_real_,
-                              package = "nestedtune") {
+preflight_outcome <- function(
+  answers,
+  timeout = NA_real_,
+  package = "nestedtune"
+) {
   reports <- lapply(as.list(answers), daemon_report)
   answered <- !vapply(reports, is.null, logical(1))
   loaded <- vapply(
-    reports, function(r) !is.null(r) && r[["loaded"]], logical(1)
+    reports,
+    function(r) !is.null(r) && r[["loaded"]],
+    logical(1)
   )
   absent <- lapply(reports[loaded], function(r) r[["missing"]])
 
@@ -527,7 +565,11 @@ preflight_outcome <- function(answers, timeout = NA_real_,
     total = total,
     cannot_load = cannot_load,
     incompatible = incompatible,
-    missing_symbols = if (is.null(missing_symbols)) character() else missing_symbols,
+    missing_symbols = if (is.null(missing_symbols)) {
+      character()
+    } else {
+      missing_symbols
+    },
     no_answer = no_answer,
     timeout = timeout,
     package = package
@@ -540,8 +582,10 @@ preflight_outcome <- function(answers, timeout = NA_real_,
 # -- found the hard way when it hung `R CMD check` for 39 minutes. The
 # heterogeneous pool AC1 asks for is built in test-parallel-detection.R, where
 # the scratch library keeps mirai and drops only the probed package.
-check_daemons_can_load <- function(status = daemons_load_status(call = call),
-                                   call = rlang::caller_env()) {
+check_daemons_can_load <- function(
+  status = daemons_load_status(call = call),
+  call = rlang::caller_env()
+) {
   if (identical(status$outcome, "ok")) {
     return(invisible(TRUE))
   }
@@ -600,22 +644,34 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
     # non-answer case immediately below. The two need DIFFERENT fixes, so both
     # are stated here.
     if (n_incompatible > 0L) {
-      bullets <- c(bullets, i = "A further {n_incompatible} daemon{?s} loaded
+      bullets <- c(
+        bullets,
+        i = "A further {n_incompatible} daemon{?s} loaded
                                  {.pkg {package}} but
                                  {cli::qty(n_incompatible)}{?is/are} running a
                                  different build, missing {.code {shown}}{more};
                                  restart the pool after installing, because a
                                  running daemon keeps the namespace it already
-                                 loaded.")
+                                 loaded."
+      )
     }
     if (n_silent > 0L) {
-      bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
-                                 within {timeout} ms.")
+      bullets <- c(
+        bullets,
+        i = "A further {n_silent} daemon{?s} did not answer
+                                 within {timeout} ms."
+      )
     }
     cli::cli_abort(
-      c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
-                      serially -- results are identical either way."),
-      class = c("nestedtune_daemons_cannot_load", "nestedtune_daemons_unusable"),
+      c(
+        bullets,
+        i = "Alternatively call {.code mirai::daemons(0)} to run
+                      serially -- results are identical either way."
+      ),
+      class = c(
+        "nestedtune_daemons_cannot_load",
+        "nestedtune_daemons_unusable"
+      ),
       call = call
     )
   }
@@ -644,13 +700,22 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
            already loaded."
     )
     if (n_silent > 0L) {
-      bullets <- c(bullets, i = "A further {n_silent} daemon{?s} did not answer
-                                 within {timeout} ms.")
+      bullets <- c(
+        bullets,
+        i = "A further {n_silent} daemon{?s} did not answer
+                                 within {timeout} ms."
+      )
     }
     cli::cli_abort(
-      c(bullets, i = "Alternatively call {.code mirai::daemons(0)} to run
-                      serially -- results are identical either way."),
-      class = c("nestedtune_daemons_incompatible", "nestedtune_daemons_unusable"),
+      c(
+        bullets,
+        i = "Alternatively call {.code mirai::daemons(0)} to run
+                      serially -- results are identical either way."
+      ),
+      class = c(
+        "nestedtune_daemons_incompatible",
+        "nestedtune_daemons_unusable"
+      ),
       call = call
     )
   }
@@ -660,7 +725,10 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
   bullets <- "The mirai daemons did not answer the startup check within
               {timeout} ms."
   if (n_total > 0L) {
-    bullets <- c(bullets, i = "{n_silent} of {n_total} daemon{?s} did not reply.")
+    bullets <- c(
+      bullets,
+      i = "{n_silent} of {n_total} daemon{?s} did not reply."
+    )
   }
   cli::cli_abort(
     c(
@@ -694,8 +762,10 @@ check_daemons_can_load <- function(status = daemons_load_status(call = call),
 #
 # `cancellable` is an argument so the branch is reachable without a real pool,
 # the same seam check_daemons_can_load() opens with `status`.
-warn_if_not_cancellable <- function(cancellable = pool_is_cancellable(),
-                                    call = rlang::caller_env()) {
+warn_if_not_cancellable <- function(
+  cancellable = pool_is_cancellable(),
+  call = rlang::caller_env()
+) {
   if (isTRUE(cancellable)) {
     return(invisible(FALSE))
   }
@@ -805,7 +875,8 @@ worker_failure_message <- function(x) {
       error = function(cnd) NULL
     )
     return(paste0(
-      "The worker failed with mirai error value ", as.integer(x),
+      "The worker failed with mirai error value ",
+      as.integer(x),
       if (!is.null(named)) paste0(" (", named, ")") else ""
     ))
   }

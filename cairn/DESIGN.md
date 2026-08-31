@@ -87,6 +87,16 @@ naming convention.
   by ID, type, source, and which test pins it — the asserting test is the single
   source of truth, never a restated value. This is the declared location every
   ≥2-types audit reads off. _(added 2026-07-25, M01.)_
+- **`air` is the formatter, and a committed tree is clean under it.** `air.toml`
+  at the root declares the settings (the tidymodels shape: `[format]` with
+  `skip = ["tribble"]`), `air format .` is expected to change nothing on a
+  committed tree, and `.github/workflows/format-suggest.yaml` posts any
+  difference on a pull request as a review suggestion. One consequence to know
+  before reformatting: `tests/testthat/helper-time-budget.R` holds a budget
+  ledger of `file:line` positions in the daemon test files and
+  `test-suite-hygiene.R` fails when a row points at a moved line, so a
+  formatting pass re-points that ledger in the same commit. _(added 2026-08-30,
+  M33 — the first code-style convention recorded here.)_
 - **Pure R — no compiled code.** No `src/`, no `LinkingTo`, no C/C++/Fortran
   toolchain. Adding compiled code later is additive and would be a design
   decision recorded as a D-entry.
@@ -270,4 +280,27 @@ execution in RR01, and tune 1.x seeded differently (D-012).
 
 ## Known issues
 
-_(none yet.)_
+- The two vendored community pages carry defects inherited verbatim from the
+  organization's shared texts, accepted at M32's review because repairing them
+  locally would fork the texts this repo adopted for being byte-identical
+  across the organization. `.github/CODE_OF_CONDUCT.md` has a reference-style
+  Markdown link with a URL where its label belongs and no matching definition,
+  so it renders as literal bracketed text on the published page; and
+  `.github/CONTRIBUTING.md` links Contributor Covenant 2.0 while the code of
+  conduct beside it on the site is 2.1. Both are upstream problems; fixing
+  either means fixing it upstream first.
+
+- The three vendored organization CI workflows carry properties this repository
+  would not choose, accepted at M33's review for the same reason: each is held
+  at the organization's shared blob, and editing one puts it off that blob.
+  `.github/workflows/pr-commands.yaml` offers a `/style` command that runs
+  `styler::style_pkg()`, a different formatter from the `air` this repository
+  adopted, so using it commits a tree `format-suggest.yaml` then flags line by
+  line — treat `/style` as unavailable here. `format-suggest.yaml` runs on
+  `pull_request_target` with `posit-dev/setup-air@v1` and
+  `reviewdog/action-suggester@v1` on moving tags under `pull-requests: write`,
+  and its `permissions:` block zeroes `contents`, which works only because this
+  repository is public. `lock.yaml` declares no `permissions:` block at all, so
+  its nightly run depends on the repository's default workflow token being
+  writable; that setting could not be read at review. The moving-tag half is
+  carried by the standing candidate row that tracks the pkgdown deploy pin.

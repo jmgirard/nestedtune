@@ -26,10 +26,17 @@ suppressMessages(library(nestedtune))
 suppressMessages(library(mirai))
 
 cat(R.version.string, "|", R.version$platform, "\n")
-cat("cores:", parallel::detectCores(),
-    "| tune", as.character(packageVersion("tune")),
-    "| mirai", as.character(packageVersion("mirai")),
-    "| ranger", as.character(packageVersion("ranger")), "\n\n")
+cat(
+  "cores:",
+  parallel::detectCores(),
+  "| tune",
+  as.character(packageVersion("tune")),
+  "| mirai",
+  as.character(packageVersion("mirai")),
+  "| ranger",
+  as.character(packageVersion("ranger")),
+  "\n\n"
+)
 
 set.seed(4242)
 n <- 600
@@ -72,7 +79,11 @@ for (k in c(2L, 4L, 6L)) {
   t_warm <- system.time(warm <- run())[["elapsed"]]
   cat(sprintf(
     "%d daemons  cold %6.1f s (%.2fx)  warm %6.1f s (%.2fx)  identical: %s\n",
-    k, t_cold, t_serial / t_cold, t_warm, t_serial / t_warm,
+    k,
+    t_cold,
+    t_serial / t_cold,
+    t_warm,
+    t_serial / t_warm,
     identical(cold, serial) && identical(warm, serial)
   ))
 }

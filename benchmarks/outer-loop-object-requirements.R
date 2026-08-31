@@ -31,11 +31,15 @@
 # so its numbers compose with M23's and M26's rather than starting a second
 # baseline.
 
-stopifnot(requireNamespace("rsample", quietly = TRUE),
-          requireNamespace("mlbench", quietly = TRUE),
-          requireNamespace("lobstr", quietly = TRUE))
-if (requireNamespace("pkgload", quietly = TRUE) &&
-    !requireNamespace("nestedtune", quietly = TRUE)) {
+stopifnot(
+  requireNamespace("rsample", quietly = TRUE),
+  requireNamespace("mlbench", quietly = TRUE),
+  requireNamespace("lobstr", quietly = TRUE)
+)
+if (
+  requireNamespace("pkgload", quietly = TRUE) &&
+    !requireNamespace("nestedtune", quietly = TRUE)
+) {
   pkgload::load_all(".", quiet = TRUE)
 } else {
   suppressMessages(library(nestedtune))
@@ -52,11 +56,19 @@ source(helper)
 SEED <- 35222 # the seed rsample-283-reprex.R fixes, kept for comparability
 
 cat(R.version.string, "|", R.version$platform, "\n")
-cat("rsample", as.character(packageVersion("rsample")),
-    "| nestedtune", as.character(packageVersion("nestedtune")),
-    "| mlbench", as.character(packageVersion("mlbench")),
-    "| lobstr", as.character(packageVersion("lobstr")),
-    "| seed", SEED, "\n\n")
+cat(
+  "rsample",
+  as.character(packageVersion("rsample")),
+  "| nestedtune",
+  as.character(packageVersion("nestedtune")),
+  "| mlbench",
+  as.character(packageVersion("mlbench")),
+  "| lobstr",
+  as.character(packageVersion("lobstr")),
+  "| seed",
+  SEED,
+  "\n\n"
+)
 
 # ---- the closed-form models (derived in rsample-283-reprex.R) ---------------
 #
@@ -78,18 +90,26 @@ d <- env$LetterRecognition
 n <- nrow(d)
 data_bytes <- as.numeric(lobstr::obj_size(d))
 
-cat(sprintf("LetterRecognition: %d x %d, %s B\n\n",
-            n, ncol(d), format(data_bytes, big.mark = ",")))
+cat(sprintf(
+  "LetterRecognition: %d x %d, %s B\n\n",
+  n,
+  ncol(d),
+  format(data_bytes, big.mark = ",")
+))
 
 measure_size <- function(v, inner_v) {
   set.seed(SEED)
-  ncv <- rsample::nested_cv(d,
-                            outside = rsample::vfold_cv(v = v),
-                            inside = rsample::vfold_cv(v = inner_v))
+  ncv <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = v),
+    inside = rsample::vfold_cv(v = inner_v)
+  )
   set.seed(SEED)
-  lean <- nested_resamples(d,
-                           outside = rsample::vfold_cv(v = v),
-                           inside = rsample::vfold_cv(v = inner_v))
+  lean <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = v),
+    inside = rsample::vfold_cv(v = inner_v)
+  )
   ncv_bytes <- as.numeric(lobstr::obj_size(ncv))
   lean_bytes <- as.numeric(lobstr::obj_size(lean))
   ncv_model <- rsample_size(data_bytes, n, v, inner_v)
@@ -111,13 +131,16 @@ cat("== axis 1: obj_size(), nested_cv vs nested_resamples ==\n")
 cat("scheme        ncv bytes  resid%      lean bytes  resid%   ratio  model\n")
 for (i in seq_len(nrow(sizes))) {
   r <- sizes[i, ]
-  cat(sprintf("%-6s  %13s  %+6.2f%%  %12s  %+6.2f%%  %6.3f  %6.3f\n",
-              r$scheme,
-              format(round(r$ncv_bytes), big.mark = ","),
-              r$ncv_model_resid_pct,
-              format(round(r$lean_bytes), big.mark = ","),
-              r$lean_model_resid_pct,
-              r$ratio_ncv_over_lean, r$model_ratio))
+  cat(sprintf(
+    "%-6s  %13s  %+6.2f%%  %12s  %+6.2f%%  %6.3f  %6.3f\n",
+    r$scheme,
+    format(round(r$ncv_bytes), big.mark = ","),
+    r$ncv_model_resid_pct,
+    format(round(r$lean_bytes), big.mark = ","),
+    r$lean_model_resid_pct,
+    r$ratio_ncv_over_lean,
+    r$model_ratio
+  ))
 }
 
 # ==== axis 2: per-fold wire bytes under the current dispatch path ============
@@ -159,8 +182,13 @@ wire_models <- function(n, p, v, inner_v) {
 }
 
 measure_wire <- function(constructor, label, v, inner_v) {
-  fx <- fixture_design(constructor, v = v, inner_v = inner_v,
-                       n = FIXTURE_N, p = FIXTURE_P)
+  fx <- fixture_design(
+    constructor,
+    v = v,
+    inner_v = inner_v,
+    n = FIXTURE_N,
+    p = FIXTURE_P
+  )
   design <- fx$design
   payloads <- lapply(seq_len(nrow(design)), function(i) {
     list(
@@ -182,21 +210,29 @@ measure_wire <- function(constructor, label, v, inner_v) {
   # of rows 1-40 with probability ~e^-2, so a few folds carry the coincidence.
   # Subtracting the occurrences inside the fold's own frame makes the count
   # answer "copies of the shared frame", not "occurrences of its first bytes".
-  shared_copies <- vapply(seq_along(lean), function(i) {
-    raw <- count_data_copies(lean[[i]], shared_sentinel)
-    inner_frame <- design$inner_resamples[[i]]$splits[[1L]]$data
-    if (identical(inner_frame, shared)) {
-      return(raw)
-    }
-    raw - count_data_copies(inner_frame, shared_sentinel)
-  }, integer(1))
-  own_copies <- vapply(seq_along(lean), function(i) {
-    inner_frame <- design$inner_resamples[[i]]$splits[[1L]]$data
-    if (identical(inner_frame, shared)) {
-      return(NA_integer_) # nothing of its own to count: the frame IS shared
-    }
-    count_data_copies(lean[[i]], sentinel_of(inner_frame))
-  }, integer(1))
+  shared_copies <- vapply(
+    seq_along(lean),
+    function(i) {
+      raw <- count_data_copies(lean[[i]], shared_sentinel)
+      inner_frame <- design$inner_resamples[[i]]$splits[[1L]]$data
+      if (identical(inner_frame, shared)) {
+        return(raw)
+      }
+      raw - count_data_copies(inner_frame, shared_sentinel)
+    },
+    integer(1)
+  )
+  own_copies <- vapply(
+    seq_along(lean),
+    function(i) {
+      inner_frame <- design$inner_resamples[[i]]$splits[[1L]]$data
+      if (identical(inner_frame, shared)) {
+        return(NA_integer_) # nothing of its own to count: the frame IS shared
+      }
+      count_data_copies(lean[[i]], sentinel_of(inner_frame))
+    },
+    integer(1)
+  )
 
   models <- wire_models(FIXTURE_N, FIXTURE_P, v, inner_v)
   payload_model <- if (identical(label, "nested_resamples")) {
@@ -213,18 +249,32 @@ measure_wire <- function(constructor, label, v, inner_v) {
     wire_per_fold = mean(fold_bytes) + shared_bytes,
     wire_model = payload_model + models$shared,
     shared_copies = sum(shared_copies),
-    own_frame_copies_per_fold = if (all(is.na(own_copies))) 0L
-                                else as.integer(unique(own_copies))
+    own_frame_copies_per_fold = if (all(is.na(own_copies))) {
+      0L
+    } else {
+      as.integer(unique(own_copies))
+    }
   )
 }
 
-cat("\n== axis 2: per-fold wire bytes, fixture", FIXTURE_N, "x",
-    FIXTURE_P + 1, "==\n")
+cat(
+  "\n== axis 2: per-fold wire bytes, fixture",
+  FIXTURE_N,
+  "x",
+  FIXTURE_P + 1,
+  "==\n"
+)
 shared_ref <- payload_bytes(payload_fixture_data(n = FIXTURE_N, p = FIXTURE_P))
-cat("shared frame serialized:", format(shared_ref, big.mark = ","), "B",
-    sprintf("(model %s B, %+.2f%%)\n\n",
-            format(8 * FIXTURE_N * (FIXTURE_P + 1), big.mark = ","),
-            100 * (8 * FIXTURE_N * (FIXTURE_P + 1) / shared_ref - 1)))
+cat(
+  "shared frame serialized:",
+  format(shared_ref, big.mark = ","),
+  "B",
+  sprintf(
+    "(model %s B, %+.2f%%)\n\n",
+    format(8 * FIXTURE_N * (FIXTURE_P + 1), big.mark = ","),
+    100 * (8 * FIXTURE_N * (FIXTURE_P + 1) / shared_ref - 1)
+  )
+)
 
 wire <- rbind(
   measure_wire(nested_resamples, "nested_resamples", 5, 5),
@@ -233,19 +283,27 @@ wire <- rbind(
   measure_wire(rsample::nested_cv, "nested_cv", 20, 5)
 )
 
-cat("scheme  constructor       payload/fold  resid%   wire/fold      model",
-    "  shared-copies  own-frame\n")
+cat(
+  "scheme  constructor       payload/fold  resid%   wire/fold      model",
+  "  shared-copies  own-frame\n"
+)
 for (i in seq_len(nrow(wire))) {
   r <- wire[i, ]
-  cat(sprintf("%-6s  %-16s %12s  %+6.2f%%  %12s  %12s  %8d  %6d\n",
-              r$scheme, r$constructor,
-              format(round(r$payload_mean), big.mark = ","),
-              r$payload_model_resid_pct,
-              format(round(r$wire_per_fold), big.mark = ","),
-              format(round(r$wire_model), big.mark = ","),
-              r$shared_copies, r$own_frame_copies_per_fold))
+  cat(sprintf(
+    "%-6s  %-16s %12s  %+6.2f%%  %12s  %12s  %8d  %6d\n",
+    r$scheme,
+    r$constructor,
+    format(round(r$payload_mean), big.mark = ","),
+    r$payload_model_resid_pct,
+    format(round(r$wire_per_fold), big.mark = ","),
+    format(round(r$wire_model), big.mark = ","),
+    r$shared_copies,
+    r$own_frame_copies_per_fold
+  ))
 }
 
-cat("\nwire/fold counts the leaned payload plus the shared frame riding in",
-    "\n.args, which mirai serializes once per task; the workflow term is the",
-    "\nuser's object and is not counted (measured at M23).\n")
+cat(
+  "\nwire/fold counts the leaned payload plus the shared frame riding in",
+  "\n.args, which mirai serializes once per task; the workflow term is the",
+  "\nuser's object and is not counted (measured at M23).\n"
+)

@@ -17,13 +17,16 @@ report <- fixture_cache_report()
 if (nrow(report) > 0L) {
   cat(sprintf(
     "\nfixture cache: %d signatures, %d builds, %d requests\n",
-    nrow(report), sum(report$builds), sum(report$requests)
+    nrow(report),
+    sum(report$builds),
+    sum(report$requests)
   ))
   cat(sprintf("%7s %9s  %s\n", "builds", "requests", "signature"))
   for (i in seq_len(nrow(report))) {
     cat(sprintf(
       "%7d %9d  %s\n",
-      report$builds[[i]], report$requests[[i]],
+      report$builds[[i]],
+      report$requests[[i]],
       substr(report$signature[[i]], 1L, 96L)
     ))
   }

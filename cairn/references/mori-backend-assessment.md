@@ -35,7 +35,7 @@ no current claim. Standing disclaimer: this is a reference, not an authority
 - `tidymodels/tune` issue #1188, "proof of concept of adding {mori}", open, filed 2026-04-27 by **EmilHvitfeldt** (Emil Hvitfeldt), no comments. tune's maintainer is Max Kuhn; the benchmark in that issue is Emil's, not his — observed 2026-07-31.
 - Identity and transport measurements — `benchmarks/probe-mori-dispatch.R` in this repo; wire figures — `benchmarks/mori-wire-manifest.json`, its committed installed-state capture — observed 2026-08-01.
 - The dispatch path assessed against — `R/parallel.R:118-138` (`is_fold_payload`), `:140-179` (`lean_payload`/`rehydrate_payload`), `:190` (`dispatch_folds`) — observed 2026-07-31.
-- M23's committed figures, re-derived here — `fixture_design()` (v = 5, inner_v = 5, `set.seed(2)`), moved at M26 review to `tests/testthat/helper-payload-size.R` so the probe can source it, and `tests/testthat/test-parallel-payload.R:140` (`expect_identical(count_data_copies(fat, sentinel), 6L)`) — observed 2026-08-01.
+- M23's committed figures, re-derived here — `fixture_design()` (v = 5, inner_v = 5, `set.seed(2)`), moved at M26 review to `tests/testthat/helper-payload-size.R` so the probe can source it, and `tests/testthat/test-parallel-payload.R:152` (`expect_identical(count_data_copies(fat, sentinel), 6L)`) — observed 2026-08-01.
 
 ## What `mori` is
 
@@ -84,7 +84,7 @@ independently member-by-member — since no dispatch sends them today.
 The identity finding comes from three arms: the package's own
 `dispatch_folds()` serial branch, its parallel branch, and a **replica** of
 that parallel branch routing the frame through mori. Only the third is
-hand-rolled, and it departs from `R/parallel.R:190` in three ways a reader
+hand-rolled, and it departs from `R/parallel.R:194` in three ways a reader
 should weigh before trusting the result.
 
 1. **No leaning, and no invariant gate.** `dispatch_folds()` blanks `$data` on
@@ -118,7 +118,7 @@ change if mori were adopted) · `Conditional` (changed on some pools, not all) �
 | P4 | The mirai-vs-`future` question raised on tune#969 | mori is not a scheduler, so it supplies no evidence either way. The question stays open | `Out of reach` |
 | P5 | M23 — per-fold wire cost | Changed substantially: the data leaves the wire entirely (1 copy → 0), taking the per-fold total from 941,683 B (`lean_bundle_bytes`) to 103,109 B (`mori_bundle_bytes`), a factor of 9.13 (`ratio_lean_over_mori`) — installed-state, single-stream capture — observed 2026-08-01 | `Changed` |
 | P6 | That `lean_payload()`/`rehydrate_payload()`/`is_fold_payload()` (`R/parallel.R:118-179` — observed 2026-07-31) could therefore be deleted | Two reasons they could not. **(a)** `is_fold_payload()` is not leanness machinery at all — it enforces the one-frame-per-fold invariant, and M23 review F1 (scored 93) recorded that without it a `manual_rset()` over differing frames is tuned on the wrong rows in parallel and the right ones serially: an IP2 breach with an IP1 exposure (`R/parallel.R:100-118`). mori needs that predicate exactly as much as leaning did, though the fat-path fallback it currently triggers has no mori analogue and adoption would have to say what replaces it. **(b)** mori is same-machine, so a remote pool cannot map the host's region and the by-value path must stay as its fallback. Adoption removes the blanking and rehydration, not the gate | `Conditional` |
-| P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:543` — observed 2026-07-31) | A daemon needs mori installed in its library, which the probe does not currently ask. Only `daemon_symbol_manifest()` takes a `package` argument (`R/parallel.R:391`); `daemon_probe_expr()` has no formals (`:420`) and `check_daemons_can_load()` has no `package` parameter, so probing a second package is new machinery rather than a new argument value — and M24 review F6 recorded a further constraint, that `asNamespace(package)` runs host-side, so the host must also have the probed package installed — observed 2026-07-31 | `Changed` |
+| P7 | M24 — the pre-flight capability probe (`check_daemons_can_load()`, `R/parallel.R:585` — observed 2026-07-31) | A daemon needs mori installed in its library, which the probe does not currently ask. Only `daemon_symbol_manifest()` takes a `package` argument (`R/parallel.R:417`); `daemon_probe_expr()` has no formals (`:420`) and `check_daemons_can_load()` has no `package` parameter, so probing a second package is new machinery rather than a new argument value — and M24 review F6 recorded a further constraint, that `asNamespace(package)` runs host-side, so the host must also have the probed package installed — observed 2026-07-31 | `Changed` |
 | P8 | rsample#283 / M01 — memory scaling with the outer fold count | Not addressed. `nested_cv()`'s cost is analysis frames materialized **in-process** before any parallelism; mori addresses transfer to daemons. Different axis, and the package's founding gap is untouched by mori either way — observed 2026-07-31 | `Out of reach` |
 | P9 | mori's own adoption cost | `Depends: R (>= 4.3)` against this package's `R (>= 4.1)` (`DESCRIPTION` — observed 2026-07-31), so adoption either raises the floor or makes mori conditional. No hard package dependencies otherwise, and Windows is supported via Win32 file mapping rather than being excluded | `Changed` |
 | P10 | Byte-exact reproducibility of the wire measurements | Unaffected in the installed state: the probe regenerates every manifest figure byte-identically within a process; across processes the totals move by a few bytes because the pid's hex string serializes inside the bundles, and the manifest's `reproducibility` field states the bound on that movement (a re-measurement bound — the committed documents are locked to the committed manifest at the precision they print, a separate and stricter comparison). The srcref-laden worker closure that moved between environments is a development-state artifact absent from the installed capture — observed 2026-08-01 | `Untouched` |
@@ -202,7 +202,7 @@ them belongs to whatever milestone takes the adoption gate.
 
 - **The per-fold frame on the mixed-frame path.** `lean_payload()` attaches a
   fold's own `outer_data`/`inner_data` whenever that fold's frame is not the
-  shared one (`R/parallel.R:150-155` — observed 2026-08-01). The modelled mori
+  shared one (`R/parallel.R:154-159` — observed 2026-08-01). The modelled mori
   row assumes the one-frame fixture; a `manual_rset()` over differing frames
   would still send per-fold frames by value under mori.
 - **The retained by-value branch.** mori is same-machine (P6b), so a remote

@@ -51,11 +51,17 @@ measure <- function(v_values, inner_v = 5, seed = 1) {
 
   rows <- lapply(v_values, function(v) {
     set.seed(seed)
-    lean <- nested_resamples(d, outside = rsample::vfold_cv(v = v),
-                             inside = rsample::vfold_cv(v = inner_v))
+    lean <- nested_resamples(
+      d,
+      outside = rsample::vfold_cv(v = v),
+      inside = rsample::vfold_cv(v = inner_v)
+    )
     set.seed(seed)
-    ref <- rsample::nested_cv(d, outside = rsample::vfold_cv(v = v),
-                              inside = rsample::vfold_cv(v = inner_v))
+    ref <- rsample::nested_cv(
+      d,
+      outside = rsample::vfold_cv(v = v),
+      inside = rsample::vfold_cv(v = inner_v)
+    )
     data.frame(
       v = v,
       lean = as.numeric(lobstr::obj_size(lean)) / data_bytes,
@@ -67,7 +73,9 @@ measure <- function(v_values, inner_v = 5, seed = 1) {
 }
 
 # Slope of size-in-data-units against the outer fold count, over the endpoints.
-slope <- function(size, v) (size[length(size)] - size[1]) / (v[length(v)] - v[1])
+slope <- function(size, v) {
+  (size[length(size)] - size[1]) / (v[length(v)] - v[1])
+}
 
 V_VALUES <- c(2, 5, 10, 50)
 
