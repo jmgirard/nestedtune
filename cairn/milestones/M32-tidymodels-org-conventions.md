@@ -133,7 +133,7 @@ CI workflow change → M33.
 
 - 2026-08-30: all seven tasks done, profile verify and the fuller check clean; status → review.
 
-- 2026-08-30: review — all seven criteria verified with fresh evidence; consistency gate clean (cairn_validate exit 0, no DESIGN principle changed, `document()` no diff, `check()` Status: OK, `check_pkgdown()` clean). Three-lens fan-out returned five findings: one actioned as a follow-up into the standing conventions candidate row, four rejected with reasons; no return-floor trigger.
+- 2026-08-30: review — all seven criteria verified with fresh evidence; consistency gate clean (cairn_validate exit 0, no DESIGN principle changed, `document()` no diff, `check()` Status: OK, `check_pkgdown()` clean). Three-lens fan-out returned five findings: one actioned as a follow-up into the standing conventions candidate row, one fixed at the gate at the maintainer's direction (the NEWS bullet's forward-looking and appearance claims), three rejected with reasons; no return-floor trigger.
 
 ## Decisions
 
@@ -224,10 +224,14 @@ Ranked findings and disposition:
   share. It is an upstream problem, not this diff's.
 - **F2 (prior-review-record).** The `NEWS.md` bullet says the site "is now
   built with" the shared theme, the shape M17's review flagged when a NEWS
-  claim outran what was true at merge. **Rejected.** M17's case needed a manual
-  maintainer step that had not happened; here the merge commit itself triggers
-  `pkgdown.yaml` — none of the changed paths sit in its `paths-ignore` list —
-  so the claim is true from the deploy that the merge starts.
+  claim outran what was true at merge. **Fixed at the gate,** at the
+  maintainer's direction. The bullet had also carried "so it looks like the
+  rest of the ecosystem's sites", an appearance claim about the published site
+  that nothing here measures. It now reads "The documentation site now builds
+  with the tidymodels organization's shared pkgdown theme, and the
+  organization's contributing guide and code of conduct have joined the
+  repository and build as pages of the site." — every clause a property of the
+  build this review ran, true at merge rather than at deploy.
 - **F3 (diff-bug).** All nine surveyed siblings also carry a Plausible
   analytics `in_header` block, which no criterion, scope line or D-entry in
   this milestone rules on. **Follow-up.** Absorbed into the standing "tidymodels
