@@ -80,11 +80,12 @@ drift_rendering_value <- function(rendering) {
 # both reported drift in a figure that had not drifted and, worse, restored the
 # declared occurrence count after a real occurrence was perturbed away -- so
 # the counter went green on exactly the defect it exists to catch. The guard is
-# a lookbehind rather than a word boundary: a rendering can begin with a digit
-# and `\\b` would not separate "524 B" from the "1,524 B" it ends.
+# a lookaround pair rather than a word boundary: a rendering can begin and end
+# with a digit, and `\\b` would separate neither "524 B" from the "1,524 B" it
+# ends nor "9.13" from the "9.134" it begins.
 rendering_pattern <- function(rendering) {
   escaped <- gsub("([][(){}.^$|*+?\\\\])", "\\\\\\1", rendering)
-  paste0("(?<![0-9.,])", escaped)
+  paste0("(?<![0-9.,])", escaped, "(?![0-9]|[.,][0-9])")
 }
 
 # The check proper. Enumerates from the declaration (never parses prose for

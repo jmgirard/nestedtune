@@ -468,7 +468,7 @@ test_that("BC6: the identity holds with param_info supplied (M34, AC4)", {
 # preserves the identity exactly, and test-event-level.R is the anchor for
 # that.
 
-test_that("BC1: the identity holds with a two-class fixture at event_level = \"second\"", {
+test_that("BC7: the identity holds with a two-class fixture at event_level = \"second\" (M35, AC5)", {
   skip_if_no_daemons()
   skip_if_not_installed("ranger")
   skip_if_no_engines(stochastic = TRUE)

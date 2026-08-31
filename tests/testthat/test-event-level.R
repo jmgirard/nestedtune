@@ -63,7 +63,7 @@ refit_and_count <- function(res, nested, wf, i, event) {
   )
 }
 
-cls_runs <- function(d, nested, wf) {
+cls_runs <- function(nested, wf) {
   set.seed(9)
   first <- memoised(nested_tune_grid(
     wf,
@@ -104,7 +104,7 @@ test_that("the fixture keeps both classes in every split, and separates the two 
     expect_identical(missing_assessment_levels(rset), rep("", nrow(rset)))
   }
 
-  runs <- cls_runs(d, nested, cls_workflow(d))
+  runs <- cls_runs(nested, cls_workflow(d))
   differs <- vapply(
     seq_len(nrow(nested)),
     function(i) {
@@ -177,6 +177,15 @@ test_that("AC1: the refusal fires before anything is fitted", {
     nested_tune_grid(wf, folds, grid = det_grid(), event_level = "third")
   )
   expect_identical(.Random.seed, before)
+
+  # And on the other orchestrator, whose seed draw sits after its check block:
+  # a reordering that moved the check below it would go unnoticed otherwise.
+  set.seed(1)
+  before <- .Random.seed
+  expect_error(
+    nested_final_fit(wf, folds, grid = det_grid(), event_level = "third")
+  )
+  expect_identical(.Random.seed, before)
 })
 
 # AC2 -- O1 -------------------------------------------------------------
@@ -187,7 +196,7 @@ test_that("AC2: the sensitivity each outer fold reports is the one yardstick com
   d <- cls_data()
   nested <- cls_nested(d)
   wf <- cls_workflow(d)
-  runs <- cls_runs(d, nested, wf)
+  runs <- cls_runs(nested, wf)
 
   expect_true(all(runs$first$.completed))
   expect_true(all(runs$second$.completed))
@@ -217,7 +226,7 @@ test_that("AC3: the two levels exchange sensitivity and specificity", {
 
   d <- cls_data()
   nested <- cls_nested(d)
-  runs <- cls_runs(d, nested, cls_workflow(d))
+  runs <- cls_runs(nested, cls_workflow(d))
 
   expect_true(all(runs$first$.completed))
   expect_true(all(runs$second$.completed))

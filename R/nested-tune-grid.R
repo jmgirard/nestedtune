@@ -285,16 +285,19 @@
 #' Settable: `event_level`, which reaches the inner `control_grid()` and the
 #' outer `control_last_fit()` alike.
 #'
-#' Forced: inner tuning always runs at `allow_par = FALSE`. Parallelism belongs
-#' over the outer folds, as above, and leaving that to a caller would put two
-#' pools in contention.
+#' Forced: both tune calls a fold makes -- the inner tuning run and the outer
+#' scoring fit -- run at `allow_par = FALSE`. Parallelism belongs over the
+#' outer folds, as above, and leaving that to a caller would put two pools in
+#' contention.
 #'
 #' Not offered: the slots that would have nothing to act on here. `save_pred`,
 #' `extract` and `save_workflow` land on the inner `tune_results`, which each
 #' fold record discards once the fold succeeds; `parallel_over`,
-#' `backend_options`, `workflow_size` and `pkgs` are inert under
-#' `allow_par = FALSE`; and `verbose` output from inside a mirai daemon is not
-#' shown.
+#' `backend_options` and `workflow_size` are inert under `allow_par = FALSE`;
+#' `pkgs` is redundant serially, and on the parallel path the daemon pre-flight
+#' has already required this package's namespace in every worker; and `verbose`
+#' would print from a mirai daemon where nothing shows it, and duplicate the
+#' progress the outer loop reports where the run is serial.
 #'
 #' @examples
 #' \donttest{
@@ -441,15 +444,19 @@ nested_fold_fit <- function(
       # The outer fit had no control object at all until M35, so its metrics
       # were computed at tune's default event level whatever the inner run had
       # been told -- the one place the setting had to reach for a reported
-      # number to move. Only `event_level` is set: `allow_par` is left at
-      # tune's own default rather than forced off the way the inner run's is,
-      # because this fits one workflow on one split and there is no inner
-      # parallelism here to displace (plan gate, 2026-08-31).
+      # number to move. `allow_par = FALSE` is stated rather than left to
+      # tune, whose `control_last_fit()` defaults it off today: the outer fit
+      # runs inside a mirai daemon on the parallel path, and "keep tune serial
+      # within the outer loop" is this package's convention to hold, not an
+      # upstream default's to keep.
       tune::last_fit(
         final_wf,
         split = split,
         metrics = metrics,
-        control = tune::control_last_fit(event_level = event_level)
+        control = tune::control_last_fit(
+          event_level = event_level,
+          allow_par = FALSE
+        )
       )
     },
     error = function(cnd) cnd

@@ -891,6 +891,35 @@ vignettes, never loaded by the package itself.
 
 <!-- Template:
 
+### D-030 (2026-08-31): `event_level` is offered as its own argument rather than a `control` argument taking tune's settings object — the first slot of tune's control objects this package exposes, and the shape D-010's "no `control` argument" now takes
+
+**Context:** M35 needed the caller to name which factor level counts as the
+event. D-010 recorded that `nested_tune_grid()` takes no `control` argument;
+that stance was written when nothing about tune's control objects had to reach
+a caller at all, and the roxygen now states it publicly under "Differences from
+calling tune directly", so what is settable and what is not is part of the
+package's contract rather than an omission.
+
+**Decision:** one narrow `event_level` argument on both orchestrators, passed
+through untouched to `tune::control_grid()` on the inner run and, on
+`nested_tune_grid()`, to a `tune::control_last_fit()` on the outer scoring fit.
+No `control` argument. Considered and rejected: accepting tune's own
+`control_grid()` object — of its ten slots, `save_pred`, `extract` and
+`save_workflow` land on the inner `tune_results` that each fold record discards
+once the fold succeeds; `parallel_over`, `backend_options` and `workflow_size`
+are inert under the `allow_par = FALSE` this package forces; `pkgs` is
+redundant serially and already guaranteed on the parallel path by the daemon
+pre-flight; and `verbose` has nowhere to print from inside a daemon.
+`event_level` was the one slot that changes a number the caller is shown.
+
+**Consequences:** the "no `control` argument" stance survives, but as a
+positive claim the docs make about each slot rather than a blanket refusal.
+Every further slot a caller turns out to need is its own argument and its own
+decision — `eval_time` is the next candidate and stays on the ROADMAP.
+Falsified by a caller needing a slot other than `event_level`, or by the inner
+tuning run being retained on `nested_results`, which would give `save_pred` and
+`extract` something to act on.
+
 ### D-00N (YYYY-MM-DD): Title
 
 **Context:** 1–2 lines.

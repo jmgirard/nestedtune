@@ -184,9 +184,14 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: minor amendment — added discovered task T12, carrying review findings 1, 2 and 3. Both documented by-hand recipes and `cairn/DESIGN.md`'s architecture paragraph describe the pre-M35 shape this milestone's own change falsified; finding 1 was confirmed by execution, the documented recipe returning fold 1's sens/spec pair transposed against the package's 0.967 / 0.0909 at `"second"`.
 - 2026-08-31: T12 — `event_level` added to both documented by-hand recipes and to `cairn/DESIGN.md`'s architecture paragraph. `nested_tune_grid()`'s recipe gained it on the inner `control_grid()` and gained the `control_last_fit()` argument its `last_fit()` line never carried; `nested_final_fit()`'s gained it on the inner `control_grid()`, reflowed so the fenced block keeps its line count and AC4's `106-118` citation stays exact. `test-event-level.R`'s O2 header, which cited the pre-M35 `100-112`, now cites `106-118` too. Verified by execution on the two-class fixture at `event_level = "second"`, seed 42, fold 1: the package reports sens 0.8333 / spec 0.4545 / roc_auc 0.6364, and the recipe as now documented returns the same three. Discrimination proven by deleting the `control_last_fit()` line again — the recipe then returns sens 0.4545 / spec 0.8333, the pair transposed, which is review finding 1 reproduced. `devtools::document()` run, `air format .` clean, `devtools::test()` 1736 pass, 0 fail.
 - 2026-08-31: all tasks done. `devtools::test()` 1736 pass, 0 fail; `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 48.7s, tests `[80s/121s]`. No NOTE to justify. `cairn_validate` weight caps PASS at 147 plan-owned lines. Status set to review; third time.
-- 2026-08-31: /milestone-review third pass — all six criteria verified with fresh evidence and ticked; consistency gate PASS (cairn_validate 16/16, document no-diff, pkgdown clean, air clean, check 0/0/0). Three lenses ran: [S] blame no finding, [S] prior-review 4, [O] diff-bug 10. Nothing meets the return floor; disposition goes to the approval gate.
+- 2026-08-31: /milestone-review third pass — all six criteria verified with fresh evidence and ticked; consistency gate PASS (cairn_validate 16/16, document no-diff, pkgdown clean, air clean, check 0/0/0). Three lenses ran: [S] blame no finding, [S] prior-review 4, [O] diff-bug 10. Nothing meets the return floor.
+- 2026-08-31: approval gate — nine findings fixed on the branch at the maintainer's direction (O1, O2, O4, O5, O6, O7, O9, O10, P4), four routed to candidate rows (O3, P1–P3), one rejected (O8). Suite 1738 pass 0 fail, check 0/0/0 after them. Merge authorized for PR #43.
 
 ## Decisions
+
+- The narrow `event_level` argument over a `control` argument taking tune's
+  settings object was cross-cutting enough to leave the milestone: recorded as
+  D-030, which is the shape D-010's "no `control` argument" now takes.
 
 ## Review
 
@@ -355,3 +360,41 @@ comment that misdescribes correct behaviour, O4's property holds under
 execution, and P1–P3 are pre-existing on the default branch. Status stays
 `review`; disposition goes to the maintainer at the approval gate.
 
+### 2026-08-31 — triage at the approval gate, and the fixes it directed
+
+The maintainer selected, at the merge chip: fix now O1, O2, O4, O5, O6, O7, O9,
+O10 and P4; O3 and P1–P3 to candidate rows; O8 rejected as an intentional
+convention (it is how `param_info` was added in M34, and T7's daemon test
+covers today's hops). Merge authorized for PR #43.
+
+Applied on the branch after the pre-gate checkpoint:
+
+- **O1** — `tune::control_last_fit()` now states `allow_par = FALSE` rather
+  than relying on tune's default for it, and the comment says why: the outer
+  fit runs inside a mirai daemon on the parallel path, and "keep tune serial
+  within the outer loop" is this package's convention to hold. The roxygen
+  "Forced:" paragraph now names both tune calls a fold makes, not just the
+  inner one. Behaviour is unchanged — tune 2.1.0 already defaults it off.
+- **O2** — `rendering_pattern()` gained `(?![0-9]|[.,][0-9])`, so a rendering
+  no longer matches the head of a longer number either. Verified at review:
+  `9.13` no longer matches inside `9.134` or `19.13`, `524 B` no longer inside
+  `31,524 B`, `1,736` no longer inside `1,736.5`, and each still matches where
+  it is the whole number printed. The comment now claims what the regex does.
+- **O4** — the "before anything is fitted" test now asserts `.Random.seed`
+  unchanged across `nested_final_fit()`'s refusal as well.
+- **O5** — the new parallel test is `BC7: … (M35, AC5)`, naming its origin the
+  way the M34 sibling does.
+- **O6, O10** — the "Not offered" paragraph now covers the serial path for
+  `verbose` and states the actual guarantee behind `pkgs` (the daemon
+  pre-flight, not inertness).
+- **O7** — `cls_runs()` lost its unused `d`.
+- **O9** — recorded as **D-030**, with a pointer from this milestone's
+  `## Decisions`.
+- **P4** — `R/parallel.R:364` now names `event_level` (M35) beside `...` and
+  `param_info` (M34).
+
+**Re-verified after the fixes.** `devtools::test()` FAIL 0 / WARN 0 / SKIP 0 /
+PASS 1738 (two more assertions than before, from O4). `devtools::check()`
+Status OK — 0 errors, 0 warnings, 0 notes, duration 2m 58.8s. `air format .`
+and `devtools::document()` both clean, `document()` leaving only the
+`man/nested_tune_grid.Rd` regeneration the O1/O6/O10 roxygen edits owed.

@@ -315,16 +315,19 @@ settled here instead by the arguments above, or forced.
 Settable: \code{event_level}, which reaches the inner \code{control_grid()} and the
 outer \code{control_last_fit()} alike.
 
-Forced: inner tuning always runs at \code{allow_par = FALSE}. Parallelism belongs
-over the outer folds, as above, and leaving that to a caller would put two
-pools in contention.
+Forced: both tune calls a fold makes -- the inner tuning run and the outer
+scoring fit -- run at \code{allow_par = FALSE}. Parallelism belongs over the
+outer folds, as above, and leaving that to a caller would put two pools in
+contention.
 
 Not offered: the slots that would have nothing to act on here. \code{save_pred},
 \code{extract} and \code{save_workflow} land on the inner \code{tune_results}, which each
 fold record discards once the fold succeeds; \code{parallel_over},
-\code{backend_options}, \code{workflow_size} and \code{pkgs} are inert under
-\code{allow_par = FALSE}; and \code{verbose} output from inside a mirai daemon is not
-shown.
+\code{backend_options} and \code{workflow_size} are inert under \code{allow_par = FALSE};
+\code{pkgs} is redundant serially, and on the parallel path the daemon pre-flight
+has already required this package's namespace in every worker; and \code{verbose}
+would print from a mirai daemon where nothing shows it, and duplicate the
+progress the outer loop reports where the run is serial.
 }
 
 \examples{
