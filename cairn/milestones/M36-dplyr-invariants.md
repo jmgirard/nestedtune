@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M36: Removing an outer fold's row stops producing a `nested_results`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -165,6 +165,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: T9 — implementation gate settled the open choice as recommended and the milestone-local decision above records it: one `id_columns()` helper matching `^id[0-9]*$`, asked by `record_columns()`, `has_results_columns()` and `fold_ids()` alike, plus the `length(id_cols) == 0L` refusal. Four tests first, red at 1 error and 14 failures: the repeated-design list column (the error, `unimplemented type 'list' in 'listgreater'`), the add-then-remove round trip for `ideal` and `id_extra`, the id-less template on `can_reconstruct_results()` directly, and the fold labels. The compat table's `bare` branch now calls `expect_bare()` with the entry's name; it was already green, so its discrimination was proved by planting the round-1 defect — dropping the tibble promotion from `bare_results()` turns the table red at 3. Suite after the fix: FAIL 0, WARN 0, SKIP 0, PASS 1973; 37 fixture signatures over 37 builds, none built twice.
 - 2026-08-31: T9 — the review measured O2 with a column named `id_junk`, which sorts before `id2` under this machine's locale and after it under the C collation `R CMD check` runs in, so a test written with that name is green on CI for a reason unrelated to the fix. The committed test uses `id0_junk`, which sorts ahead of `id2` in both.
 - 2026-08-31: T9 — the second gate question settled that `fold_ids()` takes the same helper, fixing a mislabel this branch did not introduce: `mutate(res, id_extra = "x")` made `collect_metrics(summarize = FALSE)` report the folds as `Fold1, x`, reproduced on the default branch in a scratch worktree. `NEWS.md` gains a bullet for it; no acceptance criterion changed.
+- 2026-08-31: T8 and T9 done; `devtools::test()` FAIL 0 / WARN 0 / SKIP 0 / PASS 1973 and `devtools::check()` `Status: OK`, 0 errors, 0 warnings, 0 notes, 2m 40.4s. Status → review.
 
 ## Decisions
 

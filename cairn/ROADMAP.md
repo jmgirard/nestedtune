@@ -7,7 +7,7 @@ _Last hygiene check: 2026-08-31 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M36 | Removing an outer fold's row stops producing a `nested_results` | in-progress | — | normal | milestones/M36-dplyr-invariants.md |
+| M36 | Removing an outer fold's row stops producing a `nested_results` | review | — | normal | milestones/M36-dplyr-invariants.md |
 | M35 | The factor level a caller can name as the event | done | — | normal | milestones/archive/M35-event-level.md |
 | M31 | Both red CI jobs go green, so a merge is possible again | done | — | high | milestones/archive/M31-ci-back-to-green.md |
 | M32 | The community files and site template the tidymodels organization shares | done | — | normal | milestones/archive/M32-tidymodels-org-conventions.md |
