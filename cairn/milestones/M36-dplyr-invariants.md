@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M36: Removing an outer fold's row stops producing a `nested_results`
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -98,6 +98,22 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - [x] T5 Register the new test file in the suite's worst-case budget ledger if
       its declared bound needs one; run `devtools::test()` and
       `devtools::check()`.
+- [ ] T6 Fix the two confirmed behavior defects the review returned, with a test
+      apiece. `reconstruct_results()` must promote the keep branch back to a
+      tibble the way `bare_results()` already promotes the bare one, so the five
+      verbs dplyr hands a bare data frame (`filter`, `mutate`, `arrange`,
+      `bind_cols`, `left_join`) stop returning `c("nested_results",
+      "data.frame")`; and `can_reconstruct_results()` must stop comparing the
+      two record-column sets for equality, which drops the class when a caller
+      adds a column matching `^id`. Assert tibble-ness in both branches, and
+      assert an added `id`-prefixed column keeps the class.
+- [ ] T7 The three record fixes the same return directed: a caveat in
+      `?nested_tune_grid`'s `@return` naming the dplyr path as where the rule is
+      enforced (`rename()` bypasses it); `bare_results()`'s comment loses its
+      unreachable "so a grouped result stays grouped" reason; and the two
+      rewritten test titles in `test-nested-results-print.R` and
+      `test-nested-tune-grid-failures.R` stop claiming subsetting coverage they
+      no longer have.
 
 ## Work log
 
@@ -115,6 +131,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: correction — the T1 line above says both fixtures were cache hits off existing signatures. The partial one was; the completed one was not — it keyed separately from `test-nested-tune-grid-results.R`'s builder and the run-wide report showed the fit paid for twice. `compat_results()` now builds the run the way `test-nested-results-print.R` does, which is the suite's most-requested completed fixture, and the report is clean.
 - 2026-08-31: T5 — no budget row is owed: `test-suite-hygiene.R`'s ledger covers the daemon files by name and `test-dplyr-compat.R` makes no wait-shaped call. `devtools::test()` clean (0 failures; the run-wide cache report is 37 signatures, 37 builds, 119 requests, with no fixture built twice), `devtools::check()` `Status: OK` — 0 errors, 0 warnings, 0 notes — and `pkgdown::check_pkgdown()` finds no problems.
 - 2026-08-31: status → review.
+- 2026-08-31: review — all five criteria passed with fresh evidence and the consistency gate is green, but the [O] lens returned two confirmed behavior defects the criteria do not reach and the maintainer judged load-bearing at the gate: `reconstruct_results()` keeps the class while dropping the tibble classes for the five verbs dplyr hands a bare data frame, and `can_reconstruct_results()`'s set-equality over `^id`-matching names drops the class when a caller adds an `id`-prefixed column, contradicting the "columns may be added" invariant the docs and NEWS both state. Approval withheld; status → in-progress for T6 and T7. Defect return 1. F4 absorbed into the vctrs candidate row, F7 rejected as refuted, the D-030 comment-block finding rejected as pre-existing.
 
 ## Decisions
 
@@ -258,4 +275,32 @@ One further finding from the gate itself, outside the lenses: D-030 sits inside
 present to a heading grep but renders nowhere. Pre-existing — `git show
 main:cairn/DECISIONS.md` puts the `<!-- Template:` line at 892 and D-030 at 894
 — and not introduced by this diff.
+
+### Triage
+
+Presented at the merge-approval gate 2026-08-31; approval withheld. The
+maintainer judged F1 and F2 load-bearing defects in what the package does for
+its users — the return-floor's second limb — so the milestone returns to
+`in-progress` rather than being patched at the gate, because both need new test
+coverage as well as a code change.
+
+- F1 — fix, as T6. Returns the milestone.
+- F2 — fix, as T6. Returns the milestone.
+- F3 — fix, as T7: a caveat in the `@return` naming the dplyr path as where the
+  rule is enforced.
+- F4 — follow-up. Absorbed into the existing `vctrs compatibility methods`
+  candidate row, whose promotion condition it satisfies: `group_by()` is the
+  first measured path reaching the stale-attribute state, where `rename()` only
+  reached a broken object.
+- F5 — fix, as T7. The comment goes with the code T6 touches.
+- F6 — fix, as T7: the two test titles stop claiming subsetting coverage.
+- F7 — rejected. Refuted at verification: `tune` is already an Import and its
+  own DESCRIPTION requires `dplyr (>= 1.1.0)`, so the floor narrows no
+  installation.
+- The D-030 comment-block finding — rejected here as out of scope: pre-existing
+  on the default branch and not introduced by this diff. Left for a separate
+  tracking fix, since editing it is a records question the milestone does not
+  own.
+
+Defect returns on M36: 1.
 
