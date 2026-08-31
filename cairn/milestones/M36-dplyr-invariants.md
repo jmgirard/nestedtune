@@ -552,3 +552,155 @@ milestone rather than being patched at the gate.
   so the branch cannot pass over the defect its sibling branch is guarded for.
 
 Defect returns on M36: 2.
+
+### Round 3 (2026-08-31, after defect return 2)
+
+Re-reviewed at 5299cf1 on `m036-dplyr-invariants`, PR
+[#45](https://github.com/tidymodels/nestedtune/pull/45). `origin/main` had still
+not moved (0 behind, 13 ahead), so no merge preceded the evidence below. Round
+2's evidence is superseded by this pass, which re-ran every criterion against
+the code T8 and T9 changed.
+
+#### Acceptance criteria
+
+- AC1 — `?nested_tune_grid`'s `@return` carries the "What an operation on the
+  object may and may not do" block: three bullets covering the four clauses
+  (rows reorderable, never added or removed; columns addable and reorderable;
+  every listed column present holding the values it held), the bare-tibble
+  branch named with examples, and T7's paragraph naming `dplyr_reconstruct()`
+  as where the rule is enforced and `rename()` as the gap.
+  `grep -rn "Subsetting rows carries" R/ man/ NEWS.md` exits 1. T8's `@details`
+  replacement (`R/nested-tune-grid.R:170-173`) now says both counts leave with
+  the class, and the same sentence is in `man/nested_tune_grid.Rd:197-199`, so
+  round 2's O1 is closed. (The `@return`'s claim that `rename()` is the *only*
+  escape is finding R3 below; AC1 as written quantifies over the invariants and
+  the removed sentence, and passes.)
+- AC2 — `dplyr_compat_table()` in `tests/testthat/test-dplyr-compat.R` names all
+  thirteen verbs literally, `mutate`, `select` and `[` carried in both
+  directions. `expect_kept()` asserts branch (a) as the criterion words it —
+  class present, `outer_label`/`grid`/`metrics` identical to the source,
+  `folds_attempted` equal to `nrow(out)`, `folds_completed` to
+  `sum(out$.completed)` — and `tbl_df` besides; branch (b) is now
+  `expect_bare()`, which asserts `tbl_df` too (round 2's O7). `devtools::test()`:
+  FAIL 0, WARN 0, SKIP 0, PASS 1973, so no entry skipped vacuously.
+- AC3 — all eight row-changing forms are asserted one `test_that()` block
+  apiece, so a failure names its form: `filter(.completed)` on a partial run,
+  `slice(1)`, `slice(-1)`, `head(1)`, `x[1, ]`, `x[c(TRUE, FALSE, FALSE), ]`,
+  `x[-1, ]`, `bind_rows(x, x)`. A ninth block asserts none of the eight prints
+  `Outer resamples: 3-fold cross-validation`, over text captured from both
+  `print()` and the cli stream, each form's text asserted non-empty first and
+  the source object shown as the passing control. Green in the same FAIL 0 /
+  SKIP 0 run.
+- AC4 — `NEWS.md`'s dev section opens with a "Breaking:" bullet naming the
+  `[.nested_results` change by example, states what the old behavior returned,
+  and follows with the verbs that keep the class; a second bullet records
+  `dplyr` becoming a hard dependency; a third records the fold-label fix. No
+  deprecation warning ships, per D-003's pre-1.0 waiver. No milestone numbers
+  appear. (The third bullet's "whatever it is called" clause is false as
+  measured — finding R1 below. AC4 asks that the change be recorded, and it is.)
+- AC5 — `devtools::test()`: FAIL 0, WARN 0, SKIP 0, PASS 1973; fixture cache 37
+  signatures over 37 builds, none built twice. `devtools::check()`:
+  `Status: OK`, 0 errors, 0 warnings, 0 notes, duration 2m 37s; its own test
+  leg OK in 70s. No NOTE to justify.
+
+No `Driving RR:` is declared, so the projection-vs-outcome comparison no-ops.
+
+#### Consistency gate
+
+- `cairn_validate.py` exit 0 — every check PASS, `coverage complete`,
+  `binding criteria` and `scaffold present` included. 18 advisory WARNs, all the
+  standing `references staleness` set, unchanged by this milestone. The
+  `release window` advisory did not fire.
+- No `DESIGN.md` principle changed (the file is not in the diff), so
+  `cairn_impact.py --changed` was skipped.
+- `r-package` profile `consistency-gate` slot: `devtools::document()` leaves a
+  clean working tree; `NAMESPACE` and `man/` are regenerated, not hand-edited;
+  `README.Rmd`/`README.md` are untouched by the branch;
+  `pkgdown::check_pkgdown()` — no problems found; `NEWS.md` carries the
+  user-visible changes with no milestone numbers; no new top-level file, so no
+  `.Rbuildignore` entry is owed; no newly exported object, so no `_pkgdown.yml`
+  row is owed; `devtools::check()` `Status: OK`, 0/0/0.
+
+#### Independent review
+
+Executable surface is touched, so all three lenses ran fresh-context on distinct
+evidence bases.
+
+**[S] blame-history** — one new finding (the committed testthat artifacts, R6
+below), which it reached independently of the gate. Otherwise no undisclosed
+conflict: `record_columns()`'s fixed list matches `new_nested_results()`
+exactly, the `id_columns()` narrowing threads correctly through
+`record_columns()`, `has_results_columns()` and `fold_ids()`, and no test
+assertion was dropped without disclosure. It re-raised `group_by()`'s readable
+record and `rename()`'s bypass as completeness observations; both are already on
+the record.
+
+**[S] prior-review** — no regression, zero findings. M20 F1/F2, M03 F1, M34's
+dots-barrier exemption and M22 P1 are each carried forward rather than
+reintroduced. The GitHub probe found one real inline comment repo-wide (PR #30,
+on workflow files this branch does not touch); PR #45 carries only bot comments,
+so there is no thread-level surface.
+
+**[O] diff-bug** — nine findings, ranked by the lens most severe first. Each was
+re-measured this session against the implementation on a hand-built 3-fold and a
+hand-built repeated-design object; the verdicts are those measurements, not the
+lens's account.
+
+- R1 (CONFIRMED) — a caller-added column named `id2` is still read as one of the
+  design's own fold labels. `id_columns()` (`R/nested-results.R:91`) matches
+  `^id[0-9]*$`, which is the design's own naming *and* a name a caller may add.
+  Measured: `mutate(res, id2 = "x")` keeps the class and
+  `collect_metrics(out, summarize = FALSE)$id` returns `"Fold1, x"`,
+  `"Fold2, x"`, `"Fold3, x"` — the mislabel T9 fixed for `id_extra`, back under
+  a different name. `NEWS.md:26` ships "a column you add is left out of them
+  whatever it is called", which is false for the whole `^id[0-9]*$` family. The
+  committed test exercises only `id_extra`, `ideal` and `extra`, so it cannot
+  see this.
+- R2 (CONFIRMED) — the `unimplemented type 'list' in 'listgreater'` error round
+  2 returned as load-bearing is still reachable. Measured on a repeated design
+  (`id = c("Repeat1", "Repeat1", "Repeat2")`, `id2`):
+  `mutate(rep_res, id0 = list(c(1, 2), 3, 4))` aborts with that message from
+  inside `can_reconstruct_results()` (`R/nested-results.R:136`), naming no
+  user-facing function. `cols` is sorted, so `id0`/`id1` land between `id` and
+  `id2` and become the tie-breaking `order()` key — structurally identical to
+  round 2's `id_junk` case. The committed test at `test-dplyr-compat.R:403` is
+  green only because `id0_junk` no longer matches the narrowed regex.
+- R3 (CONFIRMED) — `rbind()` adds rows and keeps the class, while the shipped
+  `@return` names `rename()` as the one operation that escapes the rule.
+  Measured: `rbind(res, res)` and `vctrs::vec_rbind(res, res)` both return a
+  6-row `nested_results` with `outer_label = "3-fold cross-validation"` and
+  `folds_attempted = 3L` — the stale claim #32 is about. The vctrs methods are
+  legitimately Out of scope (D-031); the help page's exhaustive wording is not.
+- R4 (CONFIRMED) — "columns may be added" still does not survive a remove for
+  the same family. Measured round trip `select(mutate(res, X = 1), -X)`: the
+  class is kept for `id_extra`, `ideal` and `extra`, and lost for `id2`, `id0`
+  and `id9`. Round 2's O3, unfixed for the names the test does not use
+  (`test-dplyr-compat.R:419` iterates only over the three that pass).
+- R5 (CONFIRMED) — `group_by()` and `rowwise()` shed the class but leave the
+  whole run record readable, contradicting the `@return`'s "with the record
+  removed along with the class". Same measurement and same root cause as round
+  2's O4, already dispositioned to the vctrs candidate row.
+- R6 (CONFIRMED) — commit c725168 committed testthat's failure-repro artifacts:
+  `tests/testthat/_problems/test-dplyr-compat-{414,439,455}.R` and
+  `tests/testthat/testthat-problems.rds` (43 KB, holding T9's red run). Nothing
+  references them; neither path is in `.gitignore` or `.Rbuildignore`. Measured:
+  `R CMD build` puts all four inside `nestedtune_0.0.0.9000.tar.gz`. The repo
+  already keeps testthat's other transient artifacts out of git by convention
+  (`.gitignore`'s `_snaps/**/*.new.*` rule).
+- R7 (CONFIRMED) — the tree is not clean under `air`, which DESIGN.md:90 records
+  as a convention ("a committed tree is clean under it"). Measured:
+  `air format --check .` reports "Would reformat" for
+  `tests/testthat/test-dplyr-compat.R` and the three `_problems/` files.
+  `.github/workflows/format-suggest.yaml` will post this on the PR.
+- R8 (CONFIRMED) — four comments in `test-dplyr-compat.R` (lines 100, 217, 389,
+  416) still describe the old bare `^id` grep as current, saying an added
+  `id_extra` "lands in the same set". After T9 it does not, so the stated reason
+  for those tests is now false even though the assertions still hold. Same
+  family as round 2's O1.
+- R9 (REJECTED at verification) — the lens read the doc-grep guard's skip under
+  `R CMD check` as leaving AC1 unguarded in CI. The skip is disclosed in the
+  test's own comment (`test-dplyr-compat.R:327-329`) and follows the layout
+  convention `test-vignette-citations.R` already records, so it is a stated
+  limitation rather than a defect. Its second half — that the `group_by` and
+  `ungroup` table entries would pass unchanged against `main` — is unmeasured
+  and concerns dplyr internals rather than this diff.
