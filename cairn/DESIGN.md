@@ -289,3 +289,18 @@ execution in RR01, and tune 1.x seeded differently (D-012).
   `.github/CONTRIBUTING.md` links Contributor Covenant 2.0 while the code of
   conduct beside it on the site is 2.1. Both are upstream problems; fixing
   either means fixing it upstream first.
+
+- The three vendored organization CI workflows carry properties this repository
+  would not choose, accepted at M33's review for the same reason: each is held
+  at the organization's shared blob, and editing one puts it off that blob.
+  `.github/workflows/pr-commands.yaml` offers a `/style` command that runs
+  `styler::style_pkg()`, a different formatter from the `air` this repository
+  adopted, so using it commits a tree `format-suggest.yaml` then flags line by
+  line — treat `/style` as unavailable here. `format-suggest.yaml` runs on
+  `pull_request_target` with `posit-dev/setup-air@v1` and
+  `reviewdog/action-suggester@v1` on moving tags under `pull-requests: write`,
+  and its `permissions:` block zeroes `contents`, which works only because this
+  repository is public. `lock.yaml` declares no `permissions:` block at all, so
+  its nightly run depends on the repository's default workflow token being
+  writable; that setting could not be read at review. The moving-tag half is
+  carried by the standing candidate row that tracks the pkgdown deploy pin.

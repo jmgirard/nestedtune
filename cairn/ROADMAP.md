@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references pages record no verification claim, unchanged. Line caps hold: ROADMAP.md 50, LESSONS.md 49. Both byte budgets are still over and still need their own pass: ROADMAP.md 28,175 B against 24,000 and LESSONS.md 24,579 B against 20,000; the compressible rows remain spent, so closing the gap means graduating or dropping candidates, a user call, and this pass widened the ROADMAP gap rather than closing it. Since the last check: M32 shipped the organization's community files, the tidytemplate site and the lifecycle badge and is archived, M29's row aged out under terminal-row retention, and the conventions candidate row absorbed M32's deferred finding about the siblings' site analytics)_
+_Last hygiene check: 2026-08-30 (all 16 checks green; advisory — 18 references pages record no verification claim, unchanged. Line caps hold: ROADMAP.md 49, LESSONS.md 49, PROFILE.md 119, the M33 archive summary 25. Both byte budgets are still over and still need their own pass: ROADMAP.md 28,568 B against 24,000 and LESSONS.md 25,701 B against 20,000; the compressible rows remain spent, so closing the gap means graduating or dropping candidates, a user call. Since the last check: M33 shipped the organization's three shared CI workflows and adopted air as the formatter and is archived, M27's row aged out under terminal-row retention, the two M02 lessons and the two M03 lessons were each merged into one line to make room for M33's, and DESIGN's Known issues gained the vendored workflows' accepted defects)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M27 | What the outer loop needs from the resampling object, in writing | done | — | normal | milestones/archive/M27-resampling-object-requirements.md |
 | M28 | What we keep, what is only glue, and what belongs to rsample | done | — | normal | milestones/archive/M28-code-inventory.md |
 | M30 | Every address the package shows names its new home | done | — | high | milestones/archive/M30-address-rename.md |
 | M31 | Both red CI jobs go green, so a merge is possible again | done | — | high | milestones/archive/M31-ci-back-to-green.md |
 | M32 | The community files and site template the tidymodels organization shares | done | — | normal | milestones/archive/M32-tidymodels-org-conventions.md |
-| M33 | The organization's shared CI workflows, and `air` as this repo's formatter | review | M32 | normal | milestones/M33-org-ci-workflows.md |
+| M33 | The organization's shared CI workflows, and `air` as this repo's formatter | done | M32 | normal | milestones/archive/M33-org-ci-workflows.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent
      terminal (done or dropped) rows — older ones live in milestones/archive/ + git -->
 
