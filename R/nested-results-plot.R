@@ -30,7 +30,8 @@
 #' @param object A `nested_results` object from [nested_tune_grid()].
 #' @param type Which view to draw: `"parameters"` (the default) or
 #'   `"performance"`.
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return A `ggplot` object.
 #'

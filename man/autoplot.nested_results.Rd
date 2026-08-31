@@ -12,7 +12,8 @@
 \item{type}{Which view to draw: \code{"parameters"} (the default) or
 \code{"performance"}.}
 
-\item{...}{Not used.}
+\item{...}{Not used; must be empty. An argument passed here is an error
+rather than silently ignored.}
 }
 \value{
 A \code{ggplot} object.

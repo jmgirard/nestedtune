@@ -26,7 +26,8 @@
 #' re-run on the complete dataset.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return The stored `tune_results` object, unchanged. It is tune's own object,
 #'   so tune's generics apply to it directly.
@@ -103,7 +104,8 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #' [nested_tune_grid()] records for each outer fold.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return A tibble with one row per candidate scored, carrying one column per
 #'   tuned parameter plus tune's `.config` label for the candidate. It is the

@@ -865,8 +865,6 @@ the milestone file `cairn/milestones/M33-org-ci-workflows.md` holds the survey
 and the reformatting evidence.
 
 
-<!-- Template:
-
 ### D-029 (2026-08-31): `dials` joins Suggests so the tests can name a parameter range — extends the dependency set D-028 last touched, and is the first addition whose package is already installed by an existing Import
 
 **Context:** M34 forwards `param_info` to `tune::tune_grid()`, and the criterion
@@ -889,6 +887,9 @@ defect in the test.
 `[dials::parameters()]` links the two new `@param` blocks carry now name a
 declared package. `Suggests` remains what it was — used by tests, examples and
 vignettes, never loaded by the package itself.
+
+
+<!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
 

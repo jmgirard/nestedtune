@@ -164,6 +164,8 @@ addressed; R's own matching rule, and no fence sees it.
   field, which needs no declaration and binds the test to a dials internal.
 - 2026-08-31: `devtools::check()` clean — 0 errors, 0 warnings, 0 notes; full
   suite green (`testthat.R` 64s/100s under check).
+- 2026-08-31: review fixed five findings at the gate (F1-F4, F8) and deferred
+  four to a candidate row; F9 rejected as an intentional plan-gate choice.
 - 2026-08-31: /milestone-review — PR #42 opened, all seven criteria executed
   with fresh evidence, consistency gate clean, three-lens review returned ten
   findings from the diff lens and none from the other two.
@@ -255,4 +257,30 @@ files this diff does not touch). The diff-bug lens ([O]) reported ten, ranked:
   more informative "no method for this class" error.
 
 None demonstrates an acceptance criterion failing, so none is a return under
-the review floor. Dispositions are recorded at the merge gate below.
+the review floor.
+
+### Findings triage
+
+Fixed on the branch at the gate, on the maintainer's decision: F1 (the scan
+now skips when `R/` and `vignettes/` are absent, the anchor and reasoning
+`test-vignette-citations.R` already documents), F2 (D-029 moved above the
+template block, where it renders), F3 (the nine methods' `@param ...` now says
+the argument is an error rather than ignored; `document()` re-run), F4 (the
+NEWS entry now names abbreviated argument names), F8 (the `R/parallel.R`
+comment). Deferred to a candidate ROADMAP row: F5, F6, F7, F10. F9 rejected:
+the plan gate chose the behavioural fixture over a mock capture knowingly, and
+the coupling to tune's expansion is what that choice buys.
+
+Re-verified after the fixes: `devtools::check()` 0 errors, 0 warnings, 0 notes;
+full suite green.
+
+### One observation, recorded rather than acted on
+
+The suite's wall-clock does not match what the milestone recorded. Under check
+it read `[71s/110s]` on the first review run and `[341s/599s]` on the second,
+and a standalone `devtools::test()` between them measured 561s with every test
+green and none skipped; the implementation work log recorded `64s/100s`. The
+diff between the two check runs is five documentation and test-hygiene edits
+that cannot account for it, so the cause is not established here. It stays
+under `PROFILE.md`'s 20-minute `check-r-package` step cap either way. Filed as
+a candidate row rather than diagnosed at the gate.

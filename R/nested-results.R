@@ -129,7 +129,8 @@ new_tbl <- function(cols) {
 #' @param x A `nested_results` object from [nested_tune_grid()].
 #' @param summarize Whether to average the per-fold metrics (`TRUE`, the
 #'   default) or return them one row per outer fold (`FALSE`).
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return A tibble. Summarized, one row per metric with the mean across outer
 #'   folds, the number of folds, and the standard error of that mean.

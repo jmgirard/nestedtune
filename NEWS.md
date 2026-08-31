@@ -3,7 +3,9 @@
 * Breaking: `nested_tune_grid()`, `nested_final_fit()` and `nested_resamples()`
   now take `...` immediately after their required arguments, so `grid`,
   `metrics` and `param_info` must be named. A call that passed them by position
-  needs updating. In exchange, a mistyped or unsupported argument is now an
+  needs updating, and so does one that abbreviated a name: R does not
+  partial-match an argument that follows `...`, so `metrics` can no longer be
+  written `met`. In exchange, a mistyped or unsupported argument is now an
   error naming the function it was passed to, instead of being ignored. Every
   method the package registers whose `...` is documented as unused refuses an
   argument the same way.

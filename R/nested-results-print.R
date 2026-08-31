@@ -28,7 +28,8 @@
 #' fold's candidate count and appears only when the sets actually differ.
 #'
 #' @param x A `nested_results` object from [nested_tune_grid()].
-#' @param ... Not used.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
 #'
 #' @return `x`, invisibly.
 #'

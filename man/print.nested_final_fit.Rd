@@ -9,7 +9,8 @@
 \arguments{
 \item{x}{A \code{nested_final_fit} object from \code{\link[=nested_final_fit]{nested_final_fit()}}.}
 
-\item{...}{Not used.}
+\item{...}{Not used; must be empty. An argument passed here is an error
+rather than silently ignored.}
 }
 \value{
 \code{x}, invisibly.

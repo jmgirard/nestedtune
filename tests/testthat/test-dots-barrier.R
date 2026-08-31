@@ -155,6 +155,17 @@ collect_metrics_call_args <- function(path) {
 
 test_that("AC6: no in-repo call passes `summarize` positionally", {
   root <- test_path("..", "..")
+  # Under `R CMD check` the suite runs from `<pkg>.Rcheck/tests/testthat`, so
+  # `root` is `<pkg>.Rcheck`: `R/` and `vignettes/` are not there and their
+  # `list.files()` calls return nothing. The two non-empty guards below are
+  # satisfied by `tests/` alone (45 files, 47 calls), so without this the scan
+  # would narrow to a third of its domain and still report green -- exactly the
+  # silently-empty domain M14 taught. Skipping says so; the same anchor and the
+  # same reasoning are in test-vignette-citations.R.
+  skip_if_not(
+    dir.exists(file.path(root, "R")) && dir.exists(file.path(root, "vignettes")),
+    "not the source tree: R/ and vignettes/ are absent, so the scan is partial"
+  )
   files <- c(
     list.files(file.path(root, "R"), pattern = "[.]R$", full.names = TRUE),
     list.files(
