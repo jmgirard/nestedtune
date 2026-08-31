@@ -70,10 +70,30 @@ outer_scheme_label <- function(resamples) {
 # so one method covers the verbs; `[` is the one door that does not lead here on
 # its own, and is routed here explicitly below.
 
-# The run's record: every column new_nested_results() writes. The id columns are
-# grepped rather than named because a repeated design carries `id` and `id2`,
-# the same reason fold_ids() greps. Read off the TEMPLATE only -- see
-# can_reconstruct_results().
+# Which of these names are the design's own fold labels.
+#
+# The constructor takes whatever the rset carries beside `splits` and
+# `inner_resamples`, and for every design rsample builds that is `id` alone, or
+# `id` and `id2` for a repeated one. Matching those names is therefore the same
+# set, and it is the only place the answer is given -- record_columns(),
+# has_results_columns() and fold_ids() all ask here, so the class cannot hold
+# two ideas of what a label column is.
+#
+# The anchor at both ends is the point. A bare `^id` prefix also matches
+# `ideal`, `id_extra` and anything else a caller joins in to label folds with,
+# and treating one of those as the design's own is what made an added column
+# impossible to remove again, what turned an added list column into an order()
+# key on a repeated design, and what pasted an added column into every fold's
+# printed label (M36 review O2, O3). An rset whose label column is spelled some
+# other way is not matched, and its results object then stops keeping the class
+# through a dplyr verb rather than keeping it on an unchecked record -- the
+# conservative direction (M36 review O6).
+id_columns <- function(nms) {
+  grep("^id[0-9]*$", nms, value = TRUE)
+}
+
+# The run's record: every column new_nested_results() writes. Read off the
+# TEMPLATE only -- see can_reconstruct_results().
 record_columns <- function(nms) {
   fixed <- c(
     "splits",
@@ -85,7 +105,7 @@ record_columns <- function(nms) {
     ".tuning_seed",
     ".outer_fit_seed"
   )
-  nms %in% fixed | grepl("^id", nms)
+  nms %in% fixed | nms %in% id_columns(nms)
 }
 
 # Whether `data` may wear `template`'s class: every column of the template's
@@ -97,9 +117,7 @@ record_columns <- function(nms) {
 # The record compared is the TEMPLATE's, and a column `data` carries beyond it
 # is simply not looked at. Comparing the two sets for equality instead would
 # read a caller-added column as a record that no longer matches, which is what
-# "columns may be added" forbids -- and an added name is not exotic here: the
-# id columns are found by grepping `^id`, so `id_extra`, the sort of thing a
-# caller joins in to label folds with, lands in the set (M36 review F2).
+# "columns may be added" forbids (M36 review F2).
 can_reconstruct_results <- function(data, template) {
   if (!is.data.frame(data) || !has_results_columns(data)) {
     return(FALSE)
@@ -111,7 +129,14 @@ can_reconstruct_results <- function(data, template) {
   if (!identical(nrow(data), nrow(template))) {
     return(FALSE)
   }
-  id_cols <- cols[grepl("^id", cols)]
+  # Without an id column there is no ordering to compare under: the
+  # permutation is empty, every compared column comes out zero-length, and any
+  # two objects are identical(). Refusing is the honest answer -- the record
+  # cannot be checked, so it cannot be vouched for (M36 review O5).
+  id_cols <- id_columns(cols)
+  if (length(id_cols) == 0L) {
+    return(FALSE)
+  }
   in_id_order <- function(x) {
     ord <- do.call(order, lapply(id_cols, function(nm) x[[nm]]))
     lapply(cols, function(nm) x[[nm]][ord])
@@ -205,7 +230,7 @@ dplyr_reconstruct.nested_results <- function(data, template) {
 # `can_reconstruct_results()` asks that the record be whole.
 has_results_columns <- function(x) {
   required <- c(".metrics", ".selected", ".grid", ".notes", ".completed")
-  all(required %in% names(x)) && any(grepl("^id", names(x)))
+  all(required %in% names(x)) && length(id_columns(names(x))) > 0L
 }
 
 # A tibble is a data frame with three classes and compact row names. Building
@@ -445,8 +470,10 @@ per_fold_metrics <- function(x) {
 
 # The outer fold labels. A repeated design carries id and id2; pasting them
 # keeps each row's label unique without assuming which columns are present.
+# Asking id_columns() rather than grepping `^id` here is what stops a column the
+# caller added from being pasted in with them (M36 T9).
 fold_ids <- function(x) {
-  id_cols <- grep("^id", names(x), value = TRUE)
+  id_cols <- id_columns(names(x))
   if (length(id_cols) == 1L) {
     return(x[[id_cols]])
   }

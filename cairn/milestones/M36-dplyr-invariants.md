@@ -123,7 +123,7 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
       fails on the claim: a row subset's five attributes are already asserted
       `NULL` in `test-nested-tune-grid-failures.R`, so widen the roxygen grep
       guard rather than duplicating it if the suite has one.
-- [ ] T9 Settle how `record_columns()` identifies the design's own id columns,
+- [x] T9 Settle how `record_columns()` identifies the design's own id columns,
       against D-031's "every column `new_nested_results()` writes" (O6), and fix
       the three defects the current `^id` grep leaves. Narrowing the match to
       what rsample actually names (`^id$|^id[0-9]+$`) is the alternative T6
@@ -162,8 +162,39 @@ the selection-frequency method (#36) and the generalized tuning interface (#35)
 - 2026-08-31: review round 2 — all five criteria re-verified against T6/T7's code (test 1911 PASS / 0 FAIL, check Status: OK 0/0/0) and the consistency gate is green. Three lenses ran; the [O] lens returned seven findings, all confirmed on re-measurement: a stale `@details` sentence still promising the old subsetting behavior, and a family of four rooted in `record_columns()`'s `^id` grep (a hard `order()` error on a repeated design, an added `^id` column that cannot be removed again, a vacuous check under an id-less template, a divergence from the constructor's own id rule), plus two more paths leaving the record readable and one test-rigor gap. Presented at the merge gate.
 - 2026-08-31: review round 2 — approval withheld at the merge gate; status → in-progress for T8 and T9. No acceptance criterion failed; the return is under the floor's second limb, the maintainer judging the shipped help page's now-false subsetting sentence (O1), the hard `order()` error a caller-added `^id` list column raises on a repeated design (O2) and the added `^id` column that cannot be removed again (O3) load-bearing for users. O5, O6 and O7 fold into T9 as the same helper's remaining gaps; O4 goes to the vctrs candidate row with round 1's F4. Defect return 2.
 - 2026-08-31: T8 — the `@details` sentence promising that subsetting recomputes the two counts is gone from `R/nested-tune-grid.R` and, after `devtools::document()`, from `man/nested_tune_grid.Rd`; what replaces it says both counts leave with the class and keeps the still-true `.completed`-column clause. The suite had no roxygen grep guard to widen, so `test-dplyr-compat.R` gains one: it reads the roxygen and the generated `.Rd`, asserts each non-empty and still carrying "returns a bare tibble" as its passing control, and asserts three claim strings absent by name. Red first at 4 failures (two claims across two files). Suite: FAIL 0, WARN 0, SKIP 0, PASS 1921.
+- 2026-08-31: T9 — implementation gate settled the open choice as recommended and the milestone-local decision above records it: one `id_columns()` helper matching `^id[0-9]*$`, asked by `record_columns()`, `has_results_columns()` and `fold_ids()` alike, plus the `length(id_cols) == 0L` refusal. Four tests first, red at 1 error and 14 failures: the repeated-design list column (the error, `unimplemented type 'list' in 'listgreater'`), the add-then-remove round trip for `ideal` and `id_extra`, the id-less template on `can_reconstruct_results()` directly, and the fold labels. The compat table's `bare` branch now calls `expect_bare()` with the entry's name; it was already green, so its discrimination was proved by planting the round-1 defect — dropping the tibble promotion from `bare_results()` turns the table red at 3. Suite after the fix: FAIL 0, WARN 0, SKIP 0, PASS 1973; 37 fixture signatures over 37 builds, none built twice.
+- 2026-08-31: T9 — the review measured O2 with a column named `id_junk`, which sorts before `id2` under this machine's locale and after it under the C collation `R CMD check` runs in, so a test written with that name is green on CI for a reason unrelated to the fix. The committed test uses `id0_junk`, which sorts ahead of `id2` in both.
+- 2026-08-31: T9 — the second gate question settled that `fold_ids()` takes the same helper, fixing a mislabel this branch did not introduce: `mutate(res, id_extra = "x")` made `collect_metrics(summarize = FALSE)` report the folds as `Fold1, x`, reproduced on the default branch in a scratch worktree. `NEWS.md` gains a bullet for it; no acceptance criterion changed.
 
 ## Decisions
+
+### 2026-08-31 (T9): the design's own fold-label columns are matched by name, in one helper
+
+**Context:** the rule found the design's id columns by grepping `^id`, which
+also matches `ideal`, `id_extra` and anything else a caller joins in to label
+folds with. Review round 2 measured three costs: an added `^id`-prefixed list
+column joined the ordering keys on a repeated design and raised
+`unimplemented type 'list' in 'listgreater'` from inside the rule; an added
+`^id`-prefixed column could not be removed again, where an added `extra` could;
+and a template carrying no `^id` column made the value comparison vacuous.
+
+**Decision:** one helper, `id_columns()`, matches `^id[0-9]*$` — what rsample
+names the columns `new_nested_results()` takes off the rset, `id` alone or `id`
+and `id2` for a repeated design — and `record_columns()`,
+`has_results_columns()` and `fold_ids()` all ask it, so the class holds one
+idea of what a label column is. `can_reconstruct_results()` refuses outright
+when that set is empty. Considered and rejected: recording the constructor's id
+columns on the object as a further attribute, which would be exact for a design
+whose label column is spelled some other way, at the cost of a new documented
+attribute to keep in sync on every path and to back-fill on hand-built objects;
+no such design exists in rsample's current conventions.
+
+**Consequences:** a results object built from an rset whose label column is not
+spelled `id` or `id<n>` now sheds the class through a dplyr verb rather than
+keeping it on a record that was never checked. `fold_ids()` sharing the helper
+also fixes a mislabel that predates this milestone — an added `id_extra` was
+pasted into every fold's label — recorded in `NEWS.md`. D-031's invariant set is
+unchanged; this settles how "the id columns" in it is computed.
 
 ## Review
 

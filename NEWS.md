@@ -18,6 +18,13 @@
 * `dplyr` is now a hard dependency. It was already installed alongside
   nestedtune, since `tune` requires it.
 
+* Fixed fold labels in `collect_metrics(summarize = FALSE)` and in the
+  partial-run warning, which pasted in any column whose name began with `id`.
+  Adding a column called `id_extra` to a results object reported the folds as
+  `Fold1, x` rather than `Fold1`. Only the columns the resampling design itself
+  names — `id`, and `id2` for a repeated design — are read as fold labels now,
+  and a column you add is left out of them whatever it is called.
+
 * Fixed a failure where every outer fold errored under parallel processing if
   the workflow's recipe used unqualified selectors such as
   `all_numeric_predictors()`. The packages a workflow declares are now attached

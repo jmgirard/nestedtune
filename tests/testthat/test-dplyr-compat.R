@@ -64,9 +64,19 @@ expect_kept <- function(out, src) {
 
 # Branch (b): no claim to be a results object at all -- and still a tibble,
 # which is not a downgrade the caller asked for.
-expect_bare <- function(out) {
-  testthat::expect_false(inherits(out, "nested_results"))
-  testthat::expect_s3_class(out, "tbl_df")
+# `name` is carried because the compat table calls this from a loop, where
+# every entry shares one source line: without it a failure says only that some
+# entry in the table went wrong (M36 review O7).
+expect_bare <- function(out, name = NULL) {
+  what <- if (is.null(name)) "the result" else name
+  testthat::expect_false(
+    inherits(out, "nested_results"),
+    label = paste0(what, " keeps the class")
+  )
+  testthat::expect_true(
+    inherits(out, "tbl_df"),
+    label = paste0(what, " is a tibble")
+  )
   invisible(out)
 }
 
@@ -166,10 +176,10 @@ test_that("every dplyr verb lands in the branch the invariants assign it", {
       testthat::expect_s3_class(out, "nested_results")
       expect_kept(out, res)
     } else {
-      testthat::expect_false(
-        inherits(out, "nested_results"),
-        label = paste0(case$name, " keeps the class")
-      )
+      # The same assertion the standalone AC3 blocks make, `tbl_df` included:
+      # asserting only the class absence here would let a table-only bare verb
+      # lose its tibble classes silently (M36 review O7).
+      expect_bare(out, case$name)
     }
   }
 })
@@ -354,4 +364,104 @@ test_that("the help page makes no promise about what subsetting rows keeps", {
       expect_no_match(text, claim, fixed = TRUE)
     }
   }
+})
+
+# How the object tells its own fold-label columns from ones a caller added.
+#
+# rsample names them `id`, and `id2`, `id3`... for a repeated design, which is
+# exactly what the constructor takes off the rset. Matching a bare `^id` prefix
+# instead also caught `ideal` and `id_extra` -- names a caller can perfectly
+# well add -- and the three tests below are what that cost (M36 review O2, O3,
+# O5).
+
+# A repeated design's id shape, restamped onto a fitted run rather than fitted
+# again: nothing here depends on the run, only on there being two id columns
+# with a tie in the first, which is what makes the second key get compared at
+# all.
+repeated_shape <- function(res) {
+  out <- res
+  out$id <- c("Repeat1", "Repeat1", "Repeat2")
+  out$id2 <- c("Fold1", "Fold2", "Fold1")
+  out
+}
+
+# dplyr calls `dplyr_reconstruct()` a second time with the modified frame as
+# the template, so an added `^id`-prefixed column joined the id columns and
+# became a key in the `order()` call that puts both sides in id order before
+# their values are compared. A list column is not orderable: the call died with
+# `unimplemented type 'list' in 'listgreater'`, raised from inside the rule and
+# naming no function the caller had heard of (M36 review O2).
+#
+# The key is only reached where it is actually compared -- `id` has to tie, and
+# the added column has to sort ahead of `id2` -- and that second condition is a
+# question about collation rather than about the data. `id_junk`, the name the
+# review measured it with, sorts before `id2` under this machine's locale and
+# after it under the C collation `R CMD check` runs in, so the test would have
+# been green on CI for a reason having nothing to do with the fix. `id0_junk`
+# sorts ahead of `id2` in both, which is the point: whether a caller's column
+# becomes an ordering key is not something the rule may depend on.
+test_that("an added id-prefixed list column survives two verbs on a repeated design", {
+  skip_if_no_engines()
+  rep_res <- repeated_shape(compat_results())
+
+  out <- dplyr::mutate(rep_res, id0_junk = list(c(1, 2), 3, 4))
+  expect_kept(out, rep_res)
+
+  out2 <- dplyr::arrange(out, dplyr::desc(id2))
+  expect_kept(out2, rep_res)
+  expect_true("id0_junk" %in% names(out2))
+})
+
+# "Columns may be added" implies the caller may take one away again. The record
+# is read off the template, so an added `^id`-prefixed column was protected as
+# if the constructor had written it: the same round trip kept the class for
+# `extra` and lost it for `ideal`.
+test_that("a column the caller added can be removed again, whatever it is named", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  for (nm in c("ideal", "id_extra", "extra")) {
+    out <- dplyr::select(dplyr::mutate(res, !!nm := 1), -dplyr::all_of(nm))
+    expect_kept(out, res)
+    expect_false(nm %in% names(out))
+  }
+})
+
+# The value comparison must not be able to go vacuous. Both sides are put in id
+# order before their record columns are compared, so a template whose record
+# holds no id column at all gives an empty ordering, zero-length columns on
+# both sides, and `identical()` for any two objects. Not reachable through a
+# verb -- an object whose id column was renamed fails the `data`-side column
+# gate first -- so the rule is called directly.
+test_that("a template with no id column of its own cannot be reconstructed onto", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  changed <- res
+  changed$.tuning_seed <- changed$.tuning_seed + 1L
+  template <- res
+  names(template)[names(template) == "id"] <- "fold"
+
+  # Passing controls: the same pair is accepted when nothing differs and
+  # rejected, for the seeds, when the template does carry its id column.
+  expect_true(nestedtune:::can_reconstruct_results(res, res))
+  expect_false(nestedtune:::can_reconstruct_results(changed, res))
+
+  expect_false(nestedtune:::can_reconstruct_results(changed, template))
+})
+
+# The fold labels are found the same way, so an added `id_extra` was pasted
+# into every one of them: `collect_metrics(summarize = FALSE)` reported the
+# folds as "Fold1, x" and so on. This one predates the milestone -- reproduced
+# on the default branch -- and goes with the same helper.
+test_that("a column the caller added is not pasted into the fold labels", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  labels <- collect_metrics(res, summarize = FALSE)$id
+  expect_setequal(labels, c("Fold1", "Fold2", "Fold3"))
+
+  out <- dplyr::mutate(res, id_extra = "x")
+  expect_s3_class(out, "nested_results")
+  expect_identical(collect_metrics(out, summarize = FALSE)$id, labels)
 })
