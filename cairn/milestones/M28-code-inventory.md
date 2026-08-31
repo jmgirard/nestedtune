@@ -1,6 +1,6 @@
 # M28: What we keep, what is only glue, and what belongs to rsample
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -179,6 +179,8 @@ user-declared and nothing here proposes one.
 - 2026-08-30: blocked → in-progress. The blocker is resolved: M31 shipped both CI fixes and merged to `main` at `06fc2b1` — `macos-latest (release)` now resolves `gower` from source on that leg alone, and `ubuntu-latest (devel)`'s job cap goes 20 → 60 minutes with the hang bound moved onto the `check-r-package` step. `main` merged into this branch; `cairn/ROADMAP.md` was the only file touched on both sides and auto-merged. The ROADMAP candidate row capturing the blocker is removed, M31's archive summary being its record.
 
 - 2026-08-30: post-merge re-verification. `git diff main...HEAD -- R/ NAMESPACE man/ DESCRIPTION` is empty, so `89d8418` — the commit the note's Provenance names — still describes `R/` and no deliverable claim moved under the merge; the branch diff is the same five markdown files. `devtools::test()` is FAIL 0, WARN 0, SKIP 0, PASS 1628; `cairn_validate.py` exits 0 with the same two advisory classes (18 `references staleness`, one sizing tripwire at 16 tasks). `devtools::document()` not required — no roxygen changed on this branch.
+
+- 2026-08-30: CI on PR #38 is green at `8b70ae1` — the state the blocker denied. All seven checks pass: `macos-latest (release)` 6m37s and `ubuntu-latest (devel)` 30m40s, the two jobs that were red on every prior run of this branch, plus `ubuntu-latest (release)` 8m40s, `ubuntu-latest (oldrel-1)` 8m37s, `windows-latest (release)` 10m19s, `test-coverage` 6m14s and pkgdown `build` 2m37s (`deploy` skipped, not the default branch). The devel leg ran cold at 30m40s, inside M31's 60-minute job cap and outside the 20 a bare cap would have allowed. Status in-progress → review.
 
 ## Decisions
 
