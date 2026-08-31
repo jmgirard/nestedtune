@@ -105,7 +105,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - AC3 → T5, T6
 - AC4 → T4, T5, T6
 - AC5 → T2, T5, T7
-- AC6 → T8, T9
+- AC6 → T8, T9, T10
 
 ## Tasks
 
@@ -146,6 +146,9 @@ two-class test fixture, and the refusal path for a value outside the two.
       `control` argument, to say what is settable and what is not; run
       `devtools::document()`, add the NEWS entry, run `air format .`.
 - [x] T9: full `devtools::check()`; record the NOTEs.
+- [x] T10: (discovered) repair `tests/testthat/test-ci-workflows.R`, which the
+      default branch's rewrite of `pkgdown.yaml` into a single job left asserting
+      two job names that no longer exist.
 
 ## Work log
 
@@ -172,6 +175,8 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: T9 — `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 34.1s, tests `[71s/112s]`. No NOTE to justify. That test leg is the figure M34 recorded (`64s/100s`), not the 561s standalone / `[341s/599s]` the ROADMAP's slow-suite candidate row records for 2026-08-31; the row's phenomenon did not reproduce here.
 - 2026-08-31: all tasks done, suite and check clean; status set to review.
 - 2026-08-31: /milestone-review returned M35 to in-progress at step 1: AC6 fails. `origin/main` had moved 6 commits since the branch was cut (external PR #30, merged on GitHub); after merging it in, `devtools::test()` is 5 FAIL / 1730 PASS, all in `test-ci-workflows.R:54,64,65,66,78` — commit 72c3be2 replaced the two-job pkgdown workflow (`build` + `deploy`) with a single `pkgdown` job and left the test asserting the old job names, so `main` itself is red. Nothing in M35's own diff is implicated; the fix is a discovered task in the T0 class. Draft PR opened: https://github.com/tidymodels/nestedtune/pull/43.
+- 2026-08-31: minor amendment — added discovered task T10, same class as T0. `origin/main`'s commit 72c3be2 replaced `pkgdown.yaml`'s `build` + `deploy` job pair with a single `pkgdown` job that builds and deploys in one checkout; `test-ci-workflows.R` still asked `job_uses()` for the two vanished job names, so both its tests fell over (`job_uses()` returning `NULL`, then a subscript-out-of-bounds on the empty `checkout`). Nothing in M35's diff is implicated. Implementation gate chose repairing the test over restoring the two-job workflow (the rewrite is main's deliberate change and matches the r-lib template), landing it on this branch rather than a separate hotfix (AC6 cannot pass while the suite is red, and T0 set the precedent), and re-siting the block-boundary self-test on `pr-commands.yaml`.
+- 2026-08-31: T10 — `test-ci-workflows.R` repaired. The ordering test now reads the `pkgdown` job and asserts what it always asserted: a checkout precedes `github-pages-deploy-action` in the job's steps. The old boundary guard (`build`'s `upload-artifact` must not appear in `deploy`'s steps) is vacuous with one job that is also the file's last, so the `job_uses()` self-test moved to `pr-commands.yaml`, whose `document` and `style` jobs run in sequence and end with the same `pr-push` step — one occurrence is what proves the read stopped at the boundary. The file header's account of the PR #17 bug is unchanged; a paragraph records that the checkout is now the single job's own first step. Discrimination proven by planting each defect separately: unbounding the block (`end <- length(lines)`) turned the boundary test red at two `pr-push` occurrences and left the ordering test green; deleting the checkout step from `pkgdown.yaml` turned the ordering test red and left the boundary test green. `air format .` clean, `devtools::test()` 1736 pass, 0 fail.
 
 ## Decisions
 
