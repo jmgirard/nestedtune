@@ -61,7 +61,14 @@ parameters rather than discarding them.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nested_tune_grid</span><span class="op">(</span><span class="va">object</span>, <span class="va">resamples</span>, grid <span class="op">=</span> <span class="fl">10</span>, metrics <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nested_tune_grid</span><span class="op">(</span></span>
+<span>  <span class="va">object</span>,</span>
+<span>  <span class="va">resamples</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  param_info <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  grid <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  metrics <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -81,6 +88,19 @@ before anything is fitted, because <code><a href="https://rsample.tidymodels.org
 whatever its <code>inside</code> argument returned — so a specification that produces
 no <code>rset</code> gives a design that cannot be run, where <code><a href="nested_resamples.html">nested_resamples()</a></code>
 refuses one at construction.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Not used; must be empty. Everything after it is matched by name,
+so a mistyped or unsupported argument is an error rather than a silent
+positional match.</p></dd>
+
+
+<dt id="arg-param-info">param_info<a class="anchor" aria-label="anchor" href="#arg-param-info"></a></dt>
+<dd><p>A <code><a href="https://dials.tidymodels.org/reference/parameters.html" class="external-link">dials::parameters()</a></code> object, or <code>NULL</code> to let tune
+derive one from the workflow. Passed unchanged to <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune::tune_grid()</a></code> on
+every outer fold, so a restricted range restricts the grid every fold
+searches.</p></dd>
 
 
 <dt id="arg-grid">grid<a class="anchor" aria-label="anchor" href="#arg-grid"></a></dt>

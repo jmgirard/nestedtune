@@ -6,7 +6,7 @@ Collect the metrics from a nested resampling run
 
 ``` r
 # S3 method for class 'nested_results'
-collect_metrics(x, summarize = TRUE, ...)
+collect_metrics(x, ..., summarize = TRUE)
 ```
 
 ## Arguments
@@ -16,14 +16,15 @@ collect_metrics(x, summarize = TRUE, ...)
   A `nested_results` object from
   [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md).
 
+- ...:
+
+  Not used; must be empty. An argument passed here is an error rather
+  than silently ignored.
+
 - summarize:
 
   Whether to average the per-fold metrics (`TRUE`, the default) or
   return them one row per outer fold (`FALSE`).
-
-- ...:
-
-  Not used.
 
 ## Value
 

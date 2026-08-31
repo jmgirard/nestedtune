@@ -13,7 +13,14 @@ fold's chosen parameters rather than discarding them.
 ## Usage
 
 ``` r
-nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
+nested_tune_grid(
+  object,
+  resamples,
+  ...,
+  param_info = NULL,
+  grid = 10,
+  metrics = NULL
+)
 ```
 
 ## Arguments
@@ -40,6 +47,22 @@ nested_tune_grid(object, resamples, grid = 10, metrics = NULL)
   run, where
   [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   refuses one at construction.
+
+- ...:
+
+  Not used; must be empty. Everything after it is matched by name, so a
+  mistyped or unsupported argument is an error rather than a silent
+  positional match.
+
+- param_info:
+
+  A
+  [`dials::parameters()`](https://dials.tidymodels.org/reference/parameters.html)
+  object, or `NULL` to let tune derive one from the workflow. Passed
+  unchanged to
+  [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
+  on every outer fold, so a restricted range restricts the grid every
+  fold searches.
 
 - grid:
 

@@ -544,10 +544,12 @@ function takes a seed of its own:
 ``` r
 
 args(nested_tune_grid)
-#> function (object, resamples, grid = 10, metrics = NULL) 
+#> function (object, resamples, ..., param_info = NULL, grid = 10, 
+#>     metrics = NULL) 
 #> NULL
 args(nested_final_fit)
-#> function (object, resamples, grid = 10, metrics = NULL) 
+#> function (object, resamples, ..., param_info = NULL, grid = 10, 
+#>     metrics = NULL) 
 #> NULL
 ```
 

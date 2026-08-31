@@ -22,7 +22,8 @@ extract_scored_candidates(x, ...)
 
 - ...:
 
-  Not used.
+  Not used; must be empty. An argument passed here is an error rather
+  than silently ignored.
 
 ## Value
 

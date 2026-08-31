@@ -10,7 +10,7 @@ size of the object that holds them.
 ## Usage
 
 ``` r
-nested_resamples(data, outside, inside)
+nested_resamples(data, outside, inside, ...)
 ```
 
 ## Arguments
@@ -30,6 +30,11 @@ nested_resamples(data, outside, inside)
   The inner resampling specification, given as an unevaluated call such
   as `vfold_cv(v = 5)`. Unlike `outside`, this cannot be an existing
   object, because it is evaluated once per outer fold.
+
+- ...:
+
+  Not used; must be empty. All three arguments above are required, so
+  the barrier is what turns a mistyped fourth into an error.
 
 ## Value
 

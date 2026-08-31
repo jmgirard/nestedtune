@@ -55,7 +55,7 @@ the size of the object that holds them.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nested_resamples</span><span class="op">(</span><span class="va">data</span>, <span class="va">outside</span>, <span class="va">inside</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nested_resamples</span><span class="op">(</span><span class="va">data</span>, <span class="va">outside</span>, <span class="va">inside</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -76,6 +76,11 @@ unevaluated call such as <code>vfold_cv(v = 5)</code> or as an already-evaluated
 <dd><p>The inner resampling specification, given as an unevaluated
 call such as <code>vfold_cv(v = 5)</code>. Unlike <code>outside</code>, this cannot be an
 existing object, because it is evaluated once per outer fold.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Not used; must be empty. All three arguments above are required,
+so the barrier is what turns a mistyped fourth into an error.</p></dd>
 
 </dl></div>
     <div class="section level2">

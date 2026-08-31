@@ -10,7 +10,14 @@ the data. The result is the model to deploy.
 ## Usage
 
 ``` r
-nested_final_fit(object, resamples, grid = 10, metrics = NULL)
+nested_final_fit(
+  object,
+  resamples,
+  ...,
+  param_info = NULL,
+  grid = 10,
+  metrics = NULL
+)
 ```
 
 ## Arguments
@@ -39,6 +46,22 @@ nested_final_fit(object, resamples, grid = 10, metrics = NULL)
   reverse does not follow: this function additionally needs the design's
   stored inner specification, which the loop never re-runs, so a design
   with none is refused here and runs perfectly well there.
+
+- ...:
+
+  Not used; must be empty. Everything after it is matched by name, so a
+  mistyped or unsupported argument is an error rather than a silent
+  positional match.
+
+- param_info:
+
+  A
+  [`dials::parameters()`](https://dials.tidymodels.org/reference/parameters.html)
+  object, or `NULL` to let tune derive one from the workflow. Passed
+  unchanged to
+  [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html),
+  so a restricted range restricts the grid the final fit's tuning run
+  searches.
 
 - grid:
 
