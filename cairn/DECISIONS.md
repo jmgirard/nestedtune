@@ -995,6 +995,43 @@ package may use its functions internally without further argument. Falsified
 by a coherence requirement in vctrs that the registered pairs violate, or by a
 downstream package depending on any of the three upstream behaviors.
 
+### D-033 (2026-08-31): `vec_cbind()` keeping the class rests on vctrs' experimental `vec_cbind_frame_ptype()`, and stays there — annotates the `vec_cbind` divergence D-032 fixed, on RR04's review
+
+**Context:** D-032 fixed that a column added through vctrs keeps the class
+exactly as one added through `dplyr::bind_cols()` does, so the answer does not
+depend on which door the caller used. Implementation then found that
+`vec_cbind()` consults neither of the vctrs generics that decision assumed: it
+builds its output container through `vec_cbind_frame_ptype()`, which vctrs
+exports but documents as experimental and keyword-internal, saying to expect
+changes. Whether a user-facing invariant may rest there was escalated as RB04
+and reviewed in `cairn/reviews/archive/RR04-vctrs-cbind-hook.md`.
+
+**Decision:** the method stays registered. The review found no other mechanism
+— `vec_restore()` dispatches on the template, so with no frame-prototype
+method none of this package's code runs on the call at all — and found the
+generic load-bearing inside vctrs itself for its `sf` support, with an
+unchanged contract since 2020. The dependency's two failure directions are
+both acceptable: a generic that stops being consulted drops the class, which
+is the honest direction and the behavior rsample and tune already have, and a
+generic that stops being exported fails the package at load, which is loud.
+Removing the method instead was rejected on the review's ground that it buys
+with certainty the state keeping it merely risks. Two further recommendations
+are scheduled rather than taken here: a check leg against development vctrs,
+and asking upstream to stabilize the generic or to restore `vec_cbind()`'s
+output against its first input's type the way `dplyr::bind_cols()` already
+patches in; both live on a ROADMAP candidate row. Rejected outright: a
+load-time self-check probing whether the class still survives, which would
+warn users who cannot act on it.
+
+**Consequences:** one method in the package depends on an interface its own
+package marks unstable, and the test asserting the behavior is what names the
+day it moves. `dplyr::bind_cols()` is itself `vec_cbind()` followed by the
+same reconstruction this package registers, so the two doors were never as
+separate as the divergence from rsample suggested. Falsified by a vctrs
+release that changes the generic's contract rather than removing it — a
+silently different container shape is the one failure direction neither guard
+covers.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

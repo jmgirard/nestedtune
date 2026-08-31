@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M37: The vctrs half, so `rbind()` stops claiming a design it never ran
 
-- **Status:** blocked
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -131,3 +131,30 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: T3 measurement, second round: `vec_cbind()` never reaches `vec_ptype2()` or `vec_restore()` on its own — it builds its container by calling `x[0]` through `vec_cbind_frame_ptype()`, and `[.nested_results` sheds the class on a zero-column subset, so the class is gone before either generic is asked. Registering that generic is what AC3 rests on; it is documented `[Experimental]` and keyword `internal`, and no installed package registers a method for it.
 - 2026-08-31: `test-dots-barrier.R`'s AC5 probe (M34) failed on all 14 new methods; they are named in its exemption list with the reason — vctrs passes `x_arg`, `y_arg` and `call` through a `vec_ptype2()`/`vec_cast()` method's `...`, base `rbind()`'s `...` is the data itself, and `names<-` is a replacement function the probe cannot call without a `value`.
 - 2026-08-31: blocked on RB04 — whether AC3 may rest on `vec_cbind_frame_ptype()`, which vctrs marks experimental and internal; raised at the implementation gate and escalated by the maintainer.
+- 2026-08-31: RB04 spawned as a Fable review at the maintainer's approval; RR04 returned advisory findings on all five questions and seven recommendations, ingested here, and the pair is archived.
+- 2026-08-31: RR04 triage — recommendations 1 and 2 applied (keep the method; correct the failure-mode comment), 4 applied as well (the fold counts move off the prototype carriers), 3 and 5 absorbed into the CI-records candidate row as out of this milestone's scope, 6 and 7 rejected on the review's own reasoning. The `nested_results_ptype()` comment finding from Beyond the brief is taken with 2.
+
+## Decisions
+
+- 2026-08-31 (RR04 Q1–Q3, promoted to D-032's annotation as D-033):
+  `vec_cbind_frame_ptype.nested_results()` stays. The review found no other
+  mechanism — `vec_restore()` dispatches on the template, so without a
+  frame-prototype method none of this package's code runs on a `vec_cbind()`
+  call — and found the generic load-bearing inside vctrs for its own `sf`
+  support with an unchanged contract since 2020. Removing it buys with
+  certainty the state keeping it merely risks.
+- 2026-08-31 (RR04 Q4): the empty-container branch in
+  `vec_restore.nested_results()` is sound. No sequence of public calls was
+  found that turns the zero-column token into an object holding rows and an
+  untrue record; every door out of it re-enters a checked branch. The token
+  itself is obtainable by calling `vctrs::vec_cbind_frame_ptype()` directly,
+  which is a vctrs surface marked internal; severity negligible, and the
+  decision below empties it of anything false.
+- 2026-08-31 (RR04 Q5): the prototype carriers stop copying `folds_attempted`
+  and `folds_completed`. The review judged a type token carrying the source's
+  count a violation of IP4's letter rather than its substance — no supported
+  door hands a caller such a token — and this milestone takes the fix anyway,
+  because the count is what `vec_restore()`'s third branch needs and a private
+  attribute carries it without any object claiming a run it does not hold.
+  `grid`, `metrics` and `outer_label` still travel: they describe the run, and
+  are true of any object from it.
