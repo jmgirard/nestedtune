@@ -1,6 +1,6 @@
 # M33: The organization's shared CI workflows, and `air` as this repo's formatter
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M32
 - **Driving RR:** —
@@ -104,7 +104,7 @@ none is up for revision here.
       the `cairn/DECISIONS.md` entry adopting it; extend `PROFILE.md`'s
       `test-doctrine` slot to name the three added workflows, without
       attempting the wider records refresh the standing candidate row owns.
-- [ ] T6: Run `devtools::document()`, `devtools::test()` and
+- [x] T6: Run `devtools::document()`, `devtools::test()` and
       `devtools::check()`.
 
 ## Work log
@@ -121,6 +121,7 @@ none is up for revision here.
 - 2026-08-30: AC5 amended at a mini gate, user-selected. `air format .` reaches 60 files — 10 under `R/`, 39 under `tests/`, 11 under `benchmarks/` — so the planned `R/`-and-`tests/` path list was unsatisfiable; the commit must also carry this file under tracking-travels-with-code; and `tests/testthat/helper-time-budget.R`'s 71 `file:line` ledger rows point into six files the formatter moves, which `test-suite-hygiene.R` fails on, so they are re-pointed by hand in the same commit. Two fresh-context [O] readers audited the wording in full mode before it was written, neither having authored it. The first returned four findings (the separability claim enumerated by no named procedure; the ledger edit admitted silently; reformatted `benchmarks/` files exercised by nothing; an instrument-property flag on the path-scope clause, raised and deliberately kept) and corrected the file split, which this session had recorded as 10/40/10. The second, reading the repair, found the exception list incomplete — the tracking file cannot be reproduced by the formatter — and that equal PASS/FAIL counts admit a compensating pair of flips; both are fixed in the text above. AC5 is the only criterion amended.
 - 2026-08-30: T4 done in one commit. `devtools::test()` on the parent `1d351cc`: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628, no failing tests; on the reformat commit: the same, so both the counts and the (empty) failing-test set match. `air format .` (air 0.11.0) rewrote 60 files — 10 under `R/`, 39 under `tests/`, 11 under `benchmarks/`. `tests/testthat/helper-time-budget.R`'s 71 ledger rows were then re-pointed: 68 by matching each file's `SYMBOL_FUNCTION_CALL` sequence from `utils::getParseData()` before and after, which was element-wise identical in call order so only line numbers moved, and the 3 rows naming no budgeted call (`test-parallel-detection.R` 183→184 and 188→189, `test-parallel-interrupt.R` 92→98) by a `difflib` line map over the file's own before/after text. A second `air format .` left the re-pointed helper unchanged and `air format --check .` is silent. All 11 reformatted files under `benchmarks/` `parse()` without error.
 - 2026-08-30: T5 done. `cairn/DESIGN.md` gains an `air` Conventions bullet, the first code-style convention it records, naming the ledger re-point a reformatting pass forces. `D-028` records adopting `air` and vendoring the three workflows unmodified, with the two gate rejections (taking `format-suggest.yaml` without a formatter; pinning the vendored files' actions). `PROFILE.md`'s `test-doctrine` slot names the three added workflows and that none carries a filtered trigger; the slot's divergences bullet was re-wrapped at 98 columns with no wording change, reclaiming two lines to keep the file under its 120-line cap (119). The write-token action-pin question was absorbed into the standing pkgdown-pin candidate row rather than opened as a new one. The wider CI-records refresh the standing candidate row owns is untouched.
+- 2026-08-30: T6 done, milestone to review. `devtools::document()` produced no diff; `devtools::test()` on the branch tip: FAIL 0 | WARN 0 | SKIP 0 | PASS 1628; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes in 3m 20.9s, so `air.toml`'s `.Rbuildignore` entry holds. `air format --check .` prints nothing on the committed tree. Reproduction check for AC5: `git archive HEAD~1` into a scratch tree, `air format .` there, `diff -r` against `git archive HEAD` — the only two differing paths are `tests/testthat/helper-time-budget.R` and this file, the two the criterion names; within the helper the difference is 56 `NNNL,` ledger lines and nothing else.
 
 ## Decisions
 
