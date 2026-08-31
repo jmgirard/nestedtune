@@ -1,6 +1,6 @@
 # M35: The factor level a caller can name as the event
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -183,6 +183,7 @@ two-class test fixture, and the refusal path for a value outside the two.
 - 2026-08-31: the round-3 audit's six inherited findings are held for review disposition, not repaired here — each repair would widen the criteria set on a milestone with two recorded defect returns (D-118), and T12 is the follow-up home for the documentation one. (a) AC1's call-name and diagnosis clauses are asserted for one exemplar per orchestrator, not all four forms. (b) AC1's four forms leave `check_event_level()`'s `NULL` and `character(0)` branches unbound (Review finding 9). (c) AC4 quantifies over "the metric values" while the test compares `collect_metrics()`, the resample-averaged summary, so a defect preserving the mean satisfies it. (d) AC4's line citation will drift when T12 rewrites that block, and `test-event-level.R`'s O2 header still cites the old `100-112`. (e) AC5 binds the parallel run's `last_dispatch()` but not the serial run's, so leaked daemons would leave the identity holding and establishing nothing; `test-parallel-identity.R:490` does assert it. (f) No criterion binds documentation correctness, which is what T12 repairs.
 - 2026-08-31: minor amendment — added discovered task T12, carrying review findings 1, 2 and 3. Both documented by-hand recipes and `cairn/DESIGN.md`'s architecture paragraph describe the pre-M35 shape this milestone's own change falsified; finding 1 was confirmed by execution, the documented recipe returning fold 1's sens/spec pair transposed against the package's 0.967 / 0.0909 at `"second"`.
 - 2026-08-31: T12 — `event_level` added to both documented by-hand recipes and to `cairn/DESIGN.md`'s architecture paragraph. `nested_tune_grid()`'s recipe gained it on the inner `control_grid()` and gained the `control_last_fit()` argument its `last_fit()` line never carried; `nested_final_fit()`'s gained it on the inner `control_grid()`, reflowed so the fenced block keeps its line count and AC4's `106-118` citation stays exact. `test-event-level.R`'s O2 header, which cited the pre-M35 `100-112`, now cites `106-118` too. Verified by execution on the two-class fixture at `event_level = "second"`, seed 42, fold 1: the package reports sens 0.8333 / spec 0.4545 / roc_auc 0.6364, and the recipe as now documented returns the same three. Discrimination proven by deleting the `control_last_fit()` line again — the recipe then returns sens 0.4545 / spec 0.8333, the pair transposed, which is review finding 1 reproduced. `devtools::document()` run, `air format .` clean, `devtools::test()` 1736 pass, 0 fail.
+- 2026-08-31: all tasks done. `devtools::test()` 1736 pass, 0 fail; `devtools::check()` Status OK, 0 errors, 0 warnings, 0 notes, duration 2m 48.7s, tests `[80s/121s]`. No NOTE to justify. `cairn_validate` weight caps PASS at 147 plan-owned lines. Status set to review; third time.
 
 ## Decisions
 

@@ -7,7 +7,7 @@ _Last hygiene check: 2026-08-31 (all 16 checks green; advisories only — 18 ref
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M35 | The factor level a caller can name as the event | in-progress | — | normal | milestones/M35-event-level.md |
+| M35 | The factor level a caller can name as the event | review | — | normal | milestones/M35-event-level.md |
 | M30 | Every address the package shows names its new home | done | — | high | milestones/archive/M30-address-rename.md |
 | M31 | Both red CI jobs go green, so a merge is possible again | done | — | high | milestones/archive/M31-ci-back-to-green.md |
 | M32 | The community files and site template the tidymodels organization shares | done | — | normal | milestones/archive/M32-tidymodels-org-conventions.md |
