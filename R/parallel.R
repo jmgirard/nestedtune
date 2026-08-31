@@ -197,6 +197,7 @@ dispatch_folds <- function(
   grid,
   metrics,
   param_info = NULL,
+  event_level = "first",
   call = rlang::caller_env()
 ) {
   if (!use_parallel()) {
@@ -207,7 +208,8 @@ dispatch_folds <- function(
       object = object,
       grid = grid,
       metrics = metrics,
-      param_info = param_info
+      param_info = param_info,
+      event_level = event_level
     ))
   }
 
@@ -272,6 +274,7 @@ dispatch_folds <- function(
       grid,
       metrics,
       param_info,
+      event_level,
       shared,
       worker
     ) {
@@ -281,7 +284,8 @@ dispatch_folds <- function(
         object,
         grid,
         metrics,
-        param_info
+        param_info,
+        event_level
       )
     }
     args <- list(
@@ -289,6 +293,7 @@ dispatch_folds <- function(
       grid = grid,
       metrics = metrics,
       param_info = param_info,
+      event_level = event_level,
       shared = shared,
       worker = worker
     )
@@ -298,7 +303,8 @@ dispatch_folds <- function(
       object = object,
       grid = grid,
       metrics = metrics,
-      param_info = param_info
+      param_info = param_info,
+      event_level = event_level
     )
   }
   environment(task) <- globalenv()
@@ -914,7 +920,14 @@ worker_failure_message <- function(x) {
 # none of the package's internals resolve (RR03 Q5). Looking the namespace up
 # here either works or fails loudly, and the pre-flight check makes it the
 # latter before any fold is dispatched.
-fold_task <- function(payload, object, grid, metrics, param_info = NULL) {
+fold_task <- function(
+  payload,
+  object,
+  grid,
+  metrics,
+  param_info = NULL,
+  event_level = "first"
+) {
   ns <- asNamespace("nestedtune")
   ns$nested_fold_fit(
     split = payload$split,
@@ -923,6 +936,7 @@ fold_task <- function(payload, object, grid, metrics, param_info = NULL) {
     object = object,
     grid = grid,
     metrics = metrics,
-    param_info = param_info
+    param_info = param_info,
+    event_level = event_level
   )
 }

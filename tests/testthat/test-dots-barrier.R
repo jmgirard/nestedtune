@@ -10,11 +10,19 @@
 
 test_that("AC1: the three entry points carry `...` after their required arguments", {
   # Written out rather than derived, so a signature that drifts has to be
-  # re-agreed here. `param_info`, `grid` and `metrics` all sit behind the
-  # barrier and therefore match by name only.
+  # re-agreed here. `param_info`, `grid`, `metrics` and `event_level` all sit
+  # behind the barrier and therefore match by name only.
   expect_identical(
     names(formals(nested_tune_grid)),
-    c("object", "resamples", "...", "param_info", "grid", "metrics")
+    c(
+      "object",
+      "resamples",
+      "...",
+      "param_info",
+      "grid",
+      "metrics",
+      "event_level"
+    )
   )
   expect_identical(
     names(formals(nested_final_fit)),

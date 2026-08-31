@@ -274,7 +274,14 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
   on.exit(mirai::daemons(0), add = TRUE)
   start_daemons_undispatched(2)
 
-  fold_record <- function(payload, object, grid, metrics, param_info) {
+  fold_record <- function(
+    payload,
+    object,
+    grid,
+    metrics,
+    param_info,
+    event_level
+  ) {
     list(
       completed = TRUE,
       metrics = data.frame(.estimate = as.double(payload$seed)),

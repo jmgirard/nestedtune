@@ -345,7 +345,14 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
 
   start_daemons(2)
   local_mocked_bindings(
-    fold_task = function(payload, object, grid, metrics, param_info) {
+    fold_task = function(
+      payload,
+      object,
+      grid,
+      metrics,
+      param_info,
+      event_level
+    ) {
       seed <- payload$seeds[[1L]]
       file.create(file.path(
         Sys.getenv("NESTEDTUNE_LEDGER"),
@@ -362,7 +369,8 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
         object = object,
         grid = grid,
         metrics = metrics,
-        param_info = param_info
+        param_info = param_info,
+        event_level = event_level
       )
     }
   )

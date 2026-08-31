@@ -357,14 +357,14 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      868L,
+      876L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "dispatch accepts daemons primed with the package"
     ),
     tb_row(
       "test-parallel-classify.R",
-      875L,
+      883L,
       "daemons_load_status",
       60,
       "dispatch accepts daemons primed with the package",
@@ -372,7 +372,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      876L,
+      884L,
       "check_daemons_can_load",
       0,
       "dispatch accepts daemons primed with the package",
@@ -606,7 +606,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      431L,
+      439L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with param_info supplied"
@@ -638,7 +638,7 @@ time_budget_ledger <- function() {
     # --- test-parallel-interrupt.R ------------------------------------------
     tb_row(
       "test-parallel-interrupt.R",
-      43L,
+      50L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "an interrupted run leaves no fold executing"
@@ -653,7 +653,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-interrupt.R",
-      115L,
+      129L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a completed run is not disturbed by the unconditional cancel"

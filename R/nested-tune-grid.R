@@ -310,7 +310,8 @@ nested_tune_grid <- function(
   ...,
   param_info = NULL,
   grid = 10,
-  metrics = NULL
+  metrics = NULL,
+  event_level = "first"
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -319,6 +320,7 @@ nested_tune_grid <- function(
   check_grid_params(object, grid)
   check_metrics(metrics)
   check_param_info(param_info)
+  check_event_level(event_level)
 
   n <- nrow(resamples)
 
@@ -349,6 +351,7 @@ nested_tune_grid <- function(
     grid = grid,
     metrics = metrics,
     param_info = param_info,
+    event_level = event_level,
     call = rlang::current_env()
   )
 
@@ -371,7 +374,8 @@ nested_fold_fit <- function(
   object,
   grid,
   metrics,
-  param_info = NULL
+  param_info = NULL,
+  event_level = "first"
 ) {
   set_fold_seed(seeds[[1L]])
 
@@ -387,7 +391,10 @@ nested_fold_fit <- function(
         param_info = param_info,
         grid = grid,
         metrics = metrics,
-        control = tune::control_grid(allow_par = FALSE)
+        control = tune::control_grid(
+          allow_par = FALSE,
+          event_level = event_level
+        )
       )
       # Resolved from the tuned object rather than from `metrics`, so the same
       # code answers whether the caller supplied a metric set or let tune pick.

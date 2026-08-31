@@ -291,7 +291,14 @@ test_that("a daemon receives the payload the serial branch would have passed", {
   # the real one would. A mock that had to rehydrate itself would be reproducing
   # the code path it exists to cover.
   local_mocked_bindings(
-    fold_task = function(payload, object, grid, metrics, param_info) {
+    fold_task = function(
+      payload,
+      object,
+      grid,
+      metrics,
+      param_info,
+      event_level
+    ) {
       list(
         completed = TRUE,
         metrics = data.frame(
