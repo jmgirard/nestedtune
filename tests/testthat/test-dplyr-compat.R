@@ -97,10 +97,10 @@ dplyr_compat_table <- function() {
       dplyr::mutate(x, extra = 1)
     }),
     # An id-prefixed name is what a caller joins in to label folds with, and
-    # the record's own id columns used to be found by a bare `^id` grep, so an
-    # added one landed in the same set. `id_columns()` now matches
-    # `^id[0-9]*$`, which leaves this one out. "Columns may be added" has to
-    # hold for it either way (M36 review F2).
+    # the record's own id columns were once found by matching a name pattern,
+    # so an added one landed in the same set. `id_columns()` reads the
+    # constructor's record instead, which no name can join. "Columns may be
+    # added" has to hold for this one either way (M36 review F2, M38).
     list(
       name = "mutate (id-prefixed column added)",
       branch = "kept",
@@ -220,8 +220,9 @@ test_that("a verb that keeps the class returns a tibble, not a bare data frame",
 
 # An added column is the caller's, whatever it is named. `id_extra` and `ideal`
 # both matched the bare `^id` grep the record's own id columns were once found
-# with; neither matches `id_columns()`'s `^id[0-9]*$` today. A name that still
-# does -- `id2` on a plain v-fold design -- is a known gap, filed separately.
+# with, and `id2` matched the anchored pattern that replaced it. None of them
+# reaches the constructor's record, which is what decides now (M38); the `id2`
+# case has its own block below.
 test_that("an id-prefixed column added by the caller keeps the class", {
   skip_if_no_engines()
   res <- compat_results()
@@ -376,31 +377,19 @@ test_that("the help page makes no promise about what subsetting rows keeps", {
 # How the object tells its own fold-label columns from ones a caller added.
 #
 # rsample names them `id`, and `id2`, `id3`... for a repeated design, which is
-# exactly what the constructor takes off the rset. Matching a bare `^id` prefix
-# instead also caught `ideal` and `id_extra` -- names a caller can perfectly
-# well add -- and the three tests below are what that cost (M36 review O2, O3,
-# O5).
-
-# A repeated design's id shape, restamped onto a fitted run rather than fitted
-# again: nothing here depends on the run, only on there being two id columns
-# with a tie in the first, which is what makes the second key get compared at
-# all.
-repeated_shape <- function(res) {
-  out <- res
-  out$id <- c("Repeat1", "Repeat1", "Repeat2")
-  out$id2 <- c("Fold1", "Fold2", "Fold1")
-  out
-}
+# exactly what the constructor takes off the rset -- and, since M38, records.
+# Matching a name pattern instead also caught `ideal` and `id_extra` -- names a
+# caller can perfectly well add -- and the three tests below are what that cost
+# (M36 review O2, O3, O5).
 
 # dplyr calls `dplyr_reconstruct()` a second time with the modified frame as
 # the template, so an added column matching the id pattern joins the id columns
 # and becomes a key in the `order()` call that puts both sides in id order
 # before their values are compared. A list column is not orderable: the call
 # died with `unimplemented type 'list' in 'listgreater'`, raised from inside the
-# rule and naming no function the caller had heard of (M36 review O2). Narrowing
-# the pattern to `^id[0-9]*$` closes it for the name below; a caller who adds a
-# list column actually named `id0` still reaches it, which is the known gap
-# filed separately.
+# rule and naming no function the caller had heard of (M36 review O2). Reading
+# the constructor's record closes it for any name at all, this one included: the
+# added column is not in the record, so it is never a key (M38).
 #
 # The key is only reached where it is actually compared -- `id` has to tie, and
 # the added column has to sort ahead of `id2` -- and that second condition is a
@@ -412,9 +401,9 @@ repeated_shape <- function(res) {
 # becomes an ordering key is not something the rule may depend on.
 test_that("an added id-prefixed list column survives two verbs on a repeated design", {
   skip_if_no_engines()
-  rep_res <- repeated_shape(compat_results())
+  rep_res <- repeated_results()
 
-  out <- dplyr::mutate(rep_res, id0_junk = list(c(1, 2), 3, 4))
+  out <- dplyr::mutate(rep_res, id0_junk = as.list(seq_len(nrow(rep_res))))
   expect_kept(out, rep_res)
 
   out2 <- dplyr::arrange(out, dplyr::desc(id2))
@@ -423,11 +412,11 @@ test_that("an added id-prefixed list column survives two verbs on a repeated des
 })
 
 # "Columns may be added" implies the caller may take one away again. The record
-# is read off the template, so an added column matching the id pattern is
-# protected as if the constructor had written it: the same round trip kept the
-# class for `extra` and lost it for `ideal`, until `id_columns()` narrowed to
-# `^id[0-9]*$`. A name still inside that pattern -- `id2` -- is the known gap
-# filed separately.
+# is read off the template, so a column the rule mistook for one of the design's
+# own was protected as if the constructor had written it: the same round trip
+# kept the class for `extra` and lost it for `ideal` under the bare `^id` grep,
+# and for `id2` under the anchored pattern that replaced it. The `id2` case has
+# its own block below.
 test_that("a column the caller added can be removed again, whatever it is named", {
   skip_if_no_engines()
   res <- compat_results()
@@ -476,4 +465,102 @@ test_that("a column the caller added is not pasted into the fold labels", {
   out <- dplyr::mutate(res, id_extra = "x")
   expect_s3_class(out, "nested_results")
   expect_identical(collect_metrics(out, summarize = FALSE)$id, labels)
+})
+
+# The four forms that survived M36, all of them the same fault: the design's own
+# label columns were found by matching `^id[0-9]*$` against whatever names the
+# object happened to carry, so a caller's column landed in the set whenever its
+# name fell inside the pattern -- and a design column the caller replaced fell
+# out of it. Since M38 the constructor records the names it took off the rset
+# and every reader asks that record, so no name decides anything.
+
+# `id2` is what rsample calls the second label column of a REPEATED design, so
+# on a plain three-fold run it is a name a caller may use and the pattern caught
+# it anyway. Measured on the default branch 2026-08-31:
+# `unique(collect_metrics(dplyr::mutate(res, id2 = "x"), summarize = FALSE)$id)`
+# was `c("Fold1, x", "Fold2, x", "Fold3, x")`.
+test_that("a column named `id2` on a plain design is not pasted into the fold labels", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  # The passing control: the same call on the object with nothing added.
+  expect_identical(
+    unique(collect_metrics(res, summarize = FALSE)$id),
+    c("Fold1", "Fold2", "Fold3")
+  )
+
+  out <- dplyr::mutate(res, id2 = "x")
+  expect_identical(
+    unique(collect_metrics(out, summarize = FALSE)$id),
+    c("Fold1", "Fold2", "Fold3")
+  )
+})
+
+# "Columns may be added" implies the caller may take one away again, and the
+# answer cannot depend on the spelling. Measured on the default branch
+# 2026-08-31: `dplyr::select(dplyr::mutate(res, id2 = 1), -id2)` was a `tbl_df`
+# where the same round trip on `extra` was a `nested_results`.
+test_that("a column named `id2` on a plain design can be removed again", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  # The passing control: the same round trip under a name no pattern matched.
+  expect_kept(dplyr::select(dplyr::mutate(res, extra = 1), -extra), res)
+
+  out <- dplyr::select(dplyr::mutate(res, id2 = 1), -id2)
+  expect_kept(out, res)
+  expect_false("id2" %in% names(out))
+})
+
+# A caller's list column becomes an ordering key only where the rule mistakes it
+# for one of the design's own. It takes a repeated design to reach: `id` ties
+# across a repeat, so the second key is actually compared. Measured on the
+# default branch 2026-08-31:
+# `dplyr::mutate(rep_res, id0 = as.list(seq_len(nrow(rep_res))))` aborted with
+# `unimplemented type 'list' in 'listgreater'`, raised from inside the rule.
+test_that("a list column named `id0` survives a verb on a repeated design", {
+  skip_if_no_engines()
+  rep_res <- repeated_results()
+
+  # The passing control: the same list column under a name no pattern matched.
+  expect_kept(
+    dplyr::mutate(rep_res, extra = as.list(seq_len(nrow(rep_res)))),
+    rep_res
+  )
+
+  out <- dplyr::mutate(rep_res, id0 = as.list(seq_len(nrow(rep_res))))
+  expect_kept(out, rep_res)
+  expect_true("id0" %in% names(out))
+})
+
+# The other direction: a label column the design DID name, replaced by something
+# `order()` cannot take. The record no longer matches, so the honest answer is a
+# bare tibble -- and the rule has to reach that answer rather than die on the
+# way to it. Measured on the default branch 2026-08-31:
+# `dplyr::mutate(res, id = list(c(1, 2), 3, 4))` aborted with
+# `unimplemented type 'list' in 'orderVector1'`, naming no function the caller
+# had heard of.
+test_that("replacing a fold-label column with an unorderable value returns a bare tibble", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  expect_no_condition(out <- dplyr::mutate(res, id = list(c(1, 2), 3, 4)))
+  expect_bare(out)
+})
+
+# The same answer for a label column `order()` takes but cannot compare under.
+# A matrix is atomic, so `is.atomic()` alone let it through; `order()` then reads
+# it column by column and hands back a permutation twice the object's length,
+# which indexes both sides out to the same NA padding and made identical() vouch
+# for a record it never compared. Measured before the guard learned about `dim`:
+# `dplyr::mutate(m, extra = 1)` on a results object whose `id` is a 3x2 matrix
+# returned a `nested_results` (2026-08-31, M38 review O4).
+test_that("a fold-label column with a dim is refused rather than compared", {
+  skip_if_no_engines()
+  res <- compat_results()
+  res$id <- matrix(seq_len(2L * nrow(res)), nrow = nrow(res))
+
+  expect_true(is.atomic(res$id))
+  expect_no_condition(out <- dplyr::mutate(res, extra = 1))
+  expect_bare(out)
 })

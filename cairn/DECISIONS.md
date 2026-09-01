@@ -1090,6 +1090,38 @@ vctrs version that combines three or more tables in an order-dependent way
 through this lattice, or by `dplyr::bind_cols()` changing which argument's
 type it builds on.
 
+### D-036 (2026-08-31): a `nested_results` records the columns its design labelled the folds with, and every reader takes them from that record — supersedes M36's milestone-local decision to recognize those columns by a name pattern, and narrows the invariant set D-031 fixed
+
+**Context:** D-031 fixed the invariant set as every column
+`new_nested_results()` writes, "the `id` columns" among them, and left the
+class to work out which those were. M36 worked it out with a name pattern over
+whatever names the object was carrying, and three review rounds each bought
+exactly one more spelling: a bare `^id` prefix caught `ideal` and `id_extra`,
+and the anchored `^id[0-9]*$` that replaced it still caught `id2` — a name
+rsample gives a repeated design and a caller may perfectly well add to a plain
+one. Those two cases are spelled identically, so no pattern separates them.
+
+**Decision:** the constructor records `setdiff(names(resamples), c("splits",
+"inner_resamples"))` as an `id_columns` attribute, and `id_columns()` returns
+that record rather than matching anything. It travels in `run_attributes()`
+with the rest of the run's description and is shed with the class. Every column
+the constructor copies from the design is one set: the invariant record, the
+fold label and the order key are all read from it, so no name pattern survives
+anywhere in the class. An object carrying no such record gets the empty answer
+and the rule refuses rather than guessing. Considered and rejected: narrowing
+the pattern once more (a narrowing is a pattern again, and the previous two
+each held for exactly one review round); a second private carrier beside
+`nestedtune_template_record` (the record describes the call, and the three
+sites that copy a run's description already carry `run_attributes()` whole).
+
+**Consequences:** what a caller names a column decides nothing, at any of the
+methods that go through the rule. `check_nested()` still admits a design
+carrying columns beside `splits`, `inner_resamples` and `^id`-named ones, and
+those columns are now recorded as fold labels rather than ignored; tightening
+it has its own ROADMAP row. Falsified by a design whose columns beside `splits`
+and `inner_resamples` are not all fold labels, or by a path that must preserve
+the record onto a prototype carrying no run description.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
