@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M39: `print()` shows the object, `summary()` says what it means
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -144,6 +144,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: review findings O3, O5 and O9 fixed as carried: `print_candidate_sets()`'s comment now describes the caller `print.nested_results()` gives it rather than the selection lines that moved behind `summary()`; `summary.nested_results()`'s `@return` names `outer_label` and `grids`, the two components it returns and the clause omitted; and both `[summary()]` links plus `print.nested_results()`'s `@seealso` now point at `[summary.nested_results()]` rather than resolving to `base::summary`.
 - 2026-08-31: amendment done; status back to review. Suite 2398 pass / 0 fail / 0 warn / 0 skip; `devtools::document()` regenerated the two `man/` pages the roxygen fixes touched and nothing else.
 - 2026-09-01: re-review gate failed. `cairn_validate.py` exits 1 on `weight caps`: `cairn/ROADMAP.md` is 60 lines against the cap of <60, pushed over by the one candidate row this branch adds for review finding O1 on a file that was at 59 on `origin/main`. Every acceptance criterion was re-driven fresh at `e285b64` first and all seven hold, AC4 among them under its amended wording, so the return is the cap alone; the remedy is the graduate-or-prune one the cap's own rule states, and the three-lens fan-out was not reached. Status to in-progress.
+- 2026-09-01: the cap gate cleared. The four published-site candidate rows in `cairn/ROADMAP.md` — the Node-20 SHA pins, the deploy job no pull request can exercise, the two-name site-hygiene list and the `/dev/` mode question — were grouped into one row keeping every promotion trigger, chosen at the gate over pruning the measured-false CI-matrix row or dropping this branch's own O1 row; 60 lines to 57, 42,710 B to 42,328, nothing discarded. `cairn_validate.py` now exits with all checks passed. Suite 2398 pass / 0 fail / 0 warn / 0 skip, unchanged, and no R source, roxygen or test file was touched. Status back to review.
 
 ## Decisions
 
