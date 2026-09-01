@@ -1124,6 +1124,31 @@ the record onto a prototype carrying no run description.
 
 <!-- Template:
 
+### D-037 (2026-08-31): the default print of a `nested_results` is rendered by tibble's print method, and `tibble` stays in Suggests — annotates the placement D-034 fixed, on M39's plan gate
+
+**Context:** M39 rewrites `print.nested_results()` to show the object's rows,
+which is what issue #34 asks for. The rows can only be rendered as a tibble by
+`print.tbl_df()`, which lives in tibble — a package D-034 put in Suggests on the
+stated ground that "No code under `R/` uses tibble". A default print method is
+code under `R/`, so the placement was re-examined at M39's plan gate.
+
+**Decision:** `tibble` stays in Suggests, and `print.nested_results()` renders
+the rows by removing `nested_results` from the object's class vector and letting
+S3 dispatch reach tibble's method — never by calling `tibble::` directly.
+Measured at the gate: `dplyr` is in Imports, R loads every Imports namespace
+when nestedtune loads, loading dplyr loads tibble, and a class-stripped print
+then renders `# A tibble: 3 x k`. Moving tibble to Imports was rejected because
+it buys no install-time guarantee D-034 did not already have — tibble arrives
+with dplyr and tune regardless — and it would undo `new_tbl()`'s reason for
+existing.
+
+**Consequences:** the package's default output format now depends on a package
+it does not declare, guaranteed transitively by dplyr's own Imports rather than
+by this DESCRIPTION. If dplyr ever drops tibble, printing degrades silently to
+`print.data.frame` rather than erroring, which is the failure mode to watch for;
+that, or a print rendering as a data frame in any supported configuration, is
+what falsifies this. Nothing changes for anyone installing the package.
+
 ### D-00N (YYYY-MM-DD): Title
 
 **Context:** 1–2 lines.
