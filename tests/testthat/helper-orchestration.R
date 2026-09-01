@@ -392,13 +392,19 @@ as_fold_subset <- function(x, i) {
 # Nothing here fits a model. Every test that asks for this shape asks about the
 # label columns and never about what a fold scored, so the per-fold records are
 # stand-ins -- which is also why this needs no cache entry.
-repeated_results <- function(v = 3, repeats = 2, seed = 11) {
+repeated_design <- function(v = 3, repeats = 2, seed = 11) {
   set.seed(seed)
-  design <- nested_resamples(
+  nested_resamples(
     make_reg_data(),
     outside = rsample::vfold_cv(v = v, repeats = repeats),
     inside = rsample::vfold_cv(v = v)
   )
+}
+
+# The constructor, over stand-in fold records. Split out from the design so a
+# test can hand it a design whose label columns are spelled some other way,
+# which is the whole point of recording them rather than recognizing them.
+results_from <- function(design) {
   n <- nrow(design)
   folds <- lapply(seq_len(n), function(i) {
     list(
@@ -414,6 +420,10 @@ repeated_results <- function(v = 3, repeats = 2, seed = 11) {
     )
   })
   new_nested_results(design, folds, seq_len(2L * n), det_grid(), reg_metrics())
+}
+
+repeated_results <- function(v = 3, repeats = 2, seed = 11) {
+  results_from(repeated_design(v = v, repeats = repeats, seed = seed))
 }
 
 # The two-class fixture (M35).

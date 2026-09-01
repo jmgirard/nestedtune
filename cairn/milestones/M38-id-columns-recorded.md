@@ -95,9 +95,9 @@ their own candidate row stay there.
       current tree, each recording in a comment the output measured
       2026-08-31 (`tests/testthat/test-dplyr-compat.R`, beside the M36 cases
       at `:101`, `:223` and `:428`).
-- [ ] T2. Test for AC1: the recorded value on a 3-fold design and on a
+- [x] T2. Test for AC1: the recorded value on a 3-fold design and on a
       repeated one, and that `id_columns()` returns it.
-- [ ] T3. Record the design's columns in `new_nested_results()`
+- [x] T3. Record the design's columns in `new_nested_results()`
       (`R/nested-results.R:8-38`), add the attribute to `run_attributes()`
       (`:224`) so `stamp_results()` and `copy_results_attributes()` carry it
       and `bare_results()` strips it, and route `id_columns()` (`:91`),
@@ -107,7 +107,7 @@ their own candidate row stay there.
       the template. `can_reconstruct_results()` and `vec_restore()` take the
       record from the *template*, never from the rows in hand, since dplyr
       hands the rule a bare frame for half the verbs.
-- [ ] T4. Guard the `do.call(order, ...)` key in `can_reconstruct_results()`
+- [x] T4. Guard the `do.call(order, ...)` key in `can_reconstruct_results()`
       (`:139-142`) so a recorded column that is not an atomic vector returns
       `FALSE` rather than reaching `order()`.
 - [ ] T5. The AC4 sweep: four methods × five names × {`res`, `rep_res`} ×
@@ -127,9 +127,12 @@ their own candidate row stay there.
 - 2026-08-31: created by /milestone-plan.
 - 2026-08-31: criteria audit ran in **full** mode (user-facing tier), fresh-context [O] reader, eleven findings. Fixed here: AC2's mandated test comment and AC1's "asserted on two designs" bound instruments, not the deliverable; AC2(a) was unsatisfiable, since `collect_metrics(summarize = FALSE)` returns one row per fold *and* metric and the fixture uses two, so `$id` is six values; AC4 cited the `@return` as enumerating five doors where it says four; AC5's removal clause named two files but the M36 sentence is only in `NEWS.md`; AC1 mapped only to an implementation task; AC4's matrix varied door and name but not form, omitting the repeated-design and list-column axes the M36 defects arrived on; AC4's `rbind` cell could not discriminate; AC4's "at every door" and its five spellings were bounded by recall, now by `NAMESPACE` and by a stated list; AC1's "every site reads that record" was a source-structure property over an unenumerated domain. Sent to the gate: whether every column the constructor copies is a fold-label column.
 - 2026-08-31: plan gate chose recording the constructor's own column set over deriving the label set from a narrower rule, because any narrowing rule is a name pattern again and three M36 review rounds each bought only the next name; falsified by a design whose non-`splits`/`inner_resamples` columns are not all fold labels, which `check_nested()` currently admits (sent to a candidate row).
+- 2026-08-31: plan gate chose one attribute travelling in `run_attributes()` over a second private carrier beside `nestedtune_template_record`, because the record describes the call rather than the rows and the three copy sites already carry `run_attributes()` whole; falsified by a path that must preserve the record onto a prototype without the run's description.
 - 2026-08-31: implement gate — the sweep's `id2` × `rep_res` cell was dropped (a repeated design carries `id2` itself, so writing it there replaces a recorded column rather than adding a caller's), and the two-label-column fixture is built through the constructor from a real repeated design rather than by restamping a fitted three-fold run.
 - 2026-08-31: T1 — four regression tests added to `test-dplyr-compat.R`, all red on the branch point; `repeated_results()` added to `helper-orchestration.R`. Measured on the default branch: AC2(a) gave `c("Fold1, x", "Fold2, x", "Fold3, x")`, AC2(b) a `tbl_df`, AC2(c) an abort `unimplemented type 'list' in 'listgreater'`, AC3 an abort `unimplemented type 'list' in 'orderVector1'`.
-- 2026-08-31: plan gate chose one attribute travelling in `run_attributes()` over a second private carrier beside `nestedtune_template_record`, because the record describes the call rather than the rows and the three copy sites already carry `run_attributes()` whole; falsified by a path that must preserve the record onto a prototype without the run's description.
+- 2026-08-31: T3, T4 — `new_nested_results()` records `id_columns`, which joins `run_attributes()` and is carried by `stamp_results()` and `copy_results_attributes()` and stripped by `bare_results()`; `id_columns()`, `record_columns()`, `has_results_columns()`, `fold_ids()`, `can_reconstruct_results()` and `template_record()` now take the object rather than a name vector, and `can_reconstruct_results()` reads the record off the template and refuses a label column `order()` cannot take. Six stale comments in `test-dplyr-compat.R` corrected and `repeated_shape()` retired.
+- 2026-08-31: T2 — `tests/testthat/test-id-columns.R` added with three AC1 blocks; `repeated_results()` split into `repeated_design()` + `results_from()` so a design labelled some other way can be built.
+- 2026-08-31: T5's sweep is written in the same file but stays unchecked until the AC4 amendment clears its fresh reader.
 
 ## Decisions
 

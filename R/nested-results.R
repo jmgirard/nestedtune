@@ -31,6 +31,9 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   attr(out, "grid") <- grid
   attr(out, "metrics") <- metrics
   attr(out, "outer_label") <- outer_scheme_label(resamples)
+  # Which columns the design named its folds with, recorded rather than
+  # recognized later. See id_columns().
+  attr(out, "id_columns") <- id_cols
   # IP4: what ran is recorded positively, never inferred from what is absent.
   attr(out, "folds_attempted") <- n
   attr(out, "folds_completed") <- sum(completed)
@@ -70,31 +73,34 @@ outer_scheme_label <- function(resamples) {
 # so one method covers the verbs; `[` is the one door that does not lead here on
 # its own, and is routed here explicitly below.
 
-# Which of these names are the design's own fold labels.
+# Which of an object's columns are the design's own fold labels.
 #
-# The constructor takes whatever the rset carries beside `splits` and
-# `inner_resamples`, and for every design rsample builds that is `id` alone, or
-# `id` and `id2` for a repeated one. Matching those names is therefore the same
-# set, and it is the only place the answer is given -- record_columns(),
-# has_results_columns() and fold_ids() all ask here, so the class cannot hold
-# two ideas of what a label column is.
+# Read off the record the constructor wrote, never derived from the names in
+# hand. It is the only place the answer is given -- record_columns(),
+# has_results_columns(), can_reconstruct_results() and fold_ids() all ask here,
+# so the class cannot hold two ideas of what a label column is.
 #
-# The anchor at both ends is the point. A bare `^id` prefix also matches
-# `ideal`, `id_extra` and anything else a caller joins in to label folds with,
-# and treating one of those as the design's own is what made an added column
-# impossible to remove again, what turned an added list column into an order()
-# key on a repeated design, and what pasted an added column into every fold's
-# printed label (M36 review O2, O3). An rset whose label column is spelled some
-# other way is not matched, and its results object then stops keeping the class
-# through a dplyr verb rather than keeping it on an unchecked record -- the
-# conservative direction (M36 review O6).
-id_columns <- function(nms) {
-  grep("^id[0-9]*$", nms, value = TRUE)
+# Until M38 this matched a name pattern, and every review round bought one more
+# spelling. A bare `^id` prefix caught `ideal` and `id_extra`, names a caller
+# joins in to label folds with; anchoring it to `^id[0-9]*$` left `id2`, which
+# rsample gives a repeated design and a caller may add to a plain one. No
+# pattern separates those two, because they are spelled identically and only the
+# design knows which it is -- so the design is asked once, at construction, and
+# the answer is carried with the run's description.
+#
+# An object carrying no such record gets the empty answer, and the rule then
+# refuses rather than guessing: the conservative direction M36 review O6 already
+# chose for a label column it could not recognize.
+id_columns <- function(x) {
+  nms <- attr(x, "id_columns")
+  if (is.null(nms)) character(0) else nms
 }
 
 # The run's record: every column new_nested_results() writes. Read off the
-# TEMPLATE only -- see can_reconstruct_results().
-record_columns <- function(nms) {
+# TEMPLATE only -- see can_reconstruct_results(). Takes the object rather than
+# its names, because half the answer is the object's recorded label columns and
+# not anything its names can be asked.
+record_columns <- function(x) {
   fixed <- c(
     "splits",
     ".metrics",
@@ -105,7 +111,8 @@ record_columns <- function(nms) {
     ".tuning_seed",
     ".outer_fit_seed"
   )
-  nms %in% fixed | nms %in% id_columns(nms)
+  nms <- names(x)
+  nms %in% fixed | nms %in% id_columns(x)
 }
 
 # Whether `data` may wear `template`'s class: every column of the template's
@@ -119,10 +126,14 @@ record_columns <- function(nms) {
 # read a caller-added column as a record that no longer matches, which is what
 # "columns may be added" forbids (M36 review F2).
 can_reconstruct_results <- function(data, template) {
-  if (!is.data.frame(data) || !has_results_columns(data)) {
+  # The label columns come from the TEMPLATE's record, so what `data` is asked
+  # for is what the run named -- `data` is a bare frame for half the verbs and
+  # carries no record of its own to be asked about.
+  id_cols <- id_columns(template)
+  if (!is.data.frame(data) || !has_results_columns(data, id_cols)) {
     return(FALSE)
   }
-  cols <- sort(names(template)[record_columns(names(template))])
+  cols <- sort(names(template)[record_columns(template)])
   if (!all(cols %in% names(data))) {
     return(FALSE)
   }
@@ -132,9 +143,21 @@ can_reconstruct_results <- function(data, template) {
   # Without an id column there is no ordering to compare under: the
   # permutation is empty, every compared column comes out zero-length, and any
   # two objects are identical(). Refusing is the honest answer -- the record
-  # cannot be checked, so it cannot be vouched for (M36 review O5).
-  id_cols <- id_columns(cols)
-  if (length(id_cols) == 0L) {
+  # cannot be checked, so it cannot be vouched for (M36 review O5). A template
+  # that records a label column it no longer carries is the same case.
+  if (length(id_cols) == 0L || !all(id_cols %in% names(template))) {
+    return(FALSE)
+  }
+  # `order()` takes atomic vectors and dies on anything else, with a message
+  # naming a C routine rather than anything the caller did:
+  # `mutate(x, id = list(c(1, 2), 3, 4))` aborted with "unimplemented type
+  # \'list\' in \'orderVector1\'" (measured 2026-08-31). A label column replaced by
+  # something unorderable is a record that no longer matches, which the rule has
+  # an answer for -- it just has to reach it rather than die on the way (M38).
+  orderable <- function(x) {
+    all(vapply(id_cols, function(nm) is.atomic(x[[nm]]), logical(1)))
+  }
+  if (!orderable(data) || !orderable(template)) {
     return(FALSE)
   }
   in_id_order <- function(x) {
@@ -170,6 +193,9 @@ stamp_results <- function(out, template) {
   attr(out, "grid") <- attr(template, "grid")
   attr(out, "metrics") <- attr(template, "metrics")
   attr(out, "outer_label") <- attr(template, "outer_label")
+  # Which columns the design named its folds with travels the same way, and for
+  # the same reason: it describes the call, not the rows in hand (M38).
+  attr(out, "id_columns") <- attr(template, "id_columns")
   # Read off the rows rather than copied from the template. Under the invariants
   # the two agree, so this corrects nothing today; it is the object's own record
   # of what ran, and IP4 asks that it be true of the object holding it however
@@ -222,7 +248,7 @@ results_attributes <- function() {
 # These stay true of anything the run produced, a type token included; the two
 # counts do not, which is why they are separated here.
 run_attributes <- function() {
-  c("grid", "metrics", "outer_label")
+  c("grid", "metrics", "outer_label", "id_columns")
 }
 
 #' @importFrom dplyr dplyr_reconstruct
@@ -294,7 +320,7 @@ vec_restore.nested_results <- function(x, to, ...) {
   attempted <- template_rows(to)
   required <- template_record(to)
   if (
-    !has_results_columns(x) ||
+    !has_results_columns(x, id_columns(to)) ||
       !is.numeric(attempted) ||
       !is.character(required) ||
       !all(required %in% names(x)) ||
@@ -371,7 +397,7 @@ template_rows <- function(x) {
 # be missing a record column and nothing downstream would know (`vec_cbind(x,
 # tibble::tibble(splits = 1:3))`, whose name repair renames `splits` away).
 template_record <- function(x) {
-  nms <- names(x)[record_columns(names(x))]
+  nms <- names(x)[record_columns(x)]
   if (length(nms) == 0L) {
     return(attr(x, template_record_attribute()))
   }
@@ -545,9 +571,14 @@ rbind.nested_results <- function(..., deparse.level = 1) {
 # least one id column to label the folds with. A subset of `record_columns()`,
 # and the weaker test -- it asks only that the methods will work, while
 # `can_reconstruct_results()` asks that the record be whole.
-has_results_columns <- function(x) {
+# `id_cols` is a parameter because the caller sometimes knows them and `x` does
+# not: `can_reconstruct_results()` is handed a bare frame that carries no record
+# of its own, and the template's record is the one that decides.
+has_results_columns <- function(x, id_cols = id_columns(x)) {
   required <- c(".metrics", ".selected", ".grid", ".notes", ".completed")
-  all(required %in% names(x)) && length(id_columns(names(x))) > 0L
+  all(required %in% names(x)) &&
+    length(id_cols) > 0L &&
+    all(id_cols %in% names(x))
 }
 
 # A tibble is a data frame with three classes and compact row names. Building
@@ -787,10 +818,11 @@ per_fold_metrics <- function(x) {
 
 # The outer fold labels. A repeated design carries id and id2; pasting them
 # keeps each row's label unique without assuming which columns are present.
-# Asking id_columns() rather than grepping `^id` here is what stops a column the
-# caller added from being pasted in with them (M36 T9).
+# Asking id_columns() -- the constructor's record -- rather than a name pattern
+# is what stops a column the caller added from being pasted in with them
+# (M36 T9, narrowed to the record in M38).
 fold_ids <- function(x) {
-  id_cols <- id_columns(names(x))
+  id_cols <- id_columns(x)
   if (length(id_cols) == 1L) {
     return(x[[id_cols]])
   }
