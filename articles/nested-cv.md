@@ -568,11 +568,11 @@ function takes a seed of its own:
 
 args(nested_tune_grid)
 #> function (object, resamples, ..., param_info = NULL, grid = 10, 
-#>     metrics = NULL, event_level = "first") 
+#>     metrics = NULL, event_level = "first", eval_time = NULL) 
 #> NULL
 args(nested_final_fit)
 #> function (object, resamples, ..., param_info = NULL, grid = 10, 
-#>     metrics = NULL, event_level = "first") 
+#>     metrics = NULL, event_level = "first", eval_time = NULL) 
 #> NULL
 ```
 

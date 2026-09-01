@@ -62,7 +62,8 @@ the model to deploy.</p>
 <span>  param_info <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  grid <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  metrics <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  event_level <span class="op">=</span> <span class="st">"first"</span></span>
+<span>  event_level <span class="op">=</span> <span class="st">"first"</span>,</span>
+<span>  eval_time <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,6 +120,31 @@ where it decides which candidate is selected; the final fit itself scores
 nothing, so there is no second place for it to act. Metrics that do not
 distinguish the two levels – accuracy, <code>roc_auc</code>, <code>brier_class</code> – are
 unaffected by it. Ignored for a regression model, as it is in tune.</p></dd>
+
+
+<dt id="arg-eval-time">eval_time<a class="anchor" aria-label="anchor" href="#arg-eval-time"></a></dt>
+<dd><p>A numeric vector of evaluation times for a censored
+regression model, or <code>NULL</code> (the default) to leave the choice to tune. It
+reaches every tune call whose answer depends on it, so a dynamic or
+integrated survival metric – <code>brier_survival()</code>, <code>roc_auc_survival()</code> and
+their relatives – is measured at the times you name. It is ignored, with
+a warning from tune, whenever the metric set has no metric that reads it.
+tune keys that warning on the metrics rather than on the model's mode: a
+set with no survival metric draws one saying the argument is only used
+for censored regression, and a censored regression model scored only by a
+static metric such as <code>concordance_survival()</code> draws a different one,
+saying it is only used for dynamic or integrated survival metrics.</p>
+<p>Refused here, ahead of tune: anything that is not numeric, an empty
+vector, and any element that is missing, negative or not finite. tune
+treats those unevenly, and only once a metric reads the times – a
+character value that reads as a number, such as <code>"1"</code>, is coerced with
+<code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> and accepted, one that does not becomes missing; a
+missing, negative or infinite element is dropped with a warning; and an
+empty vector, or one that dropping has emptied, aborts – and this package
+refuses them all at entry, before a whole run is paid for. Zero, repeated
+times and times out of order are accepted and passed on untouched, since
+tune normalizes those itself; a repeated time draws tune's warning that 0
+inappropriate evaluation time points were removed, once per tune call.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -181,12 +207,13 @@ applied with the generator kind pinned, and both are returned on the object.</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(fit<span class="sc">$</span>tuning_seed, <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>inner <span class="ot">&lt;-</span> <span class="er">&lt;</span>the design<span class="st">'s `inside` specification&gt;(data)</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="st">tuned &lt;- tune_grid(object, inner, grid = grid, metrics = metrics, control =</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="st">  control_grid(allow_par = FALSE, event_level = event_level))</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="st">final &lt;- finalize_workflow(object, select_best(tuned, metric = &lt;first metric&gt;))</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="st">set.seed(fit$fit_seed, kind = "Mersenne-Twister",</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="st">         normal.kind = "Inversion", sample.kind = "Rejection")</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="st">fit(final, data)</span></span></code></pre><p></p></div>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="st">tuned &lt;- tune_grid(object, inner, grid = grid, metrics = metrics,</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="st">  eval_time = eval_time,</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="st">  control = control_grid(allow_par = FALSE, event_level = event_level))</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="st">final &lt;- finalize_workflow(object, select_best(tuned, metric = &lt;first metric&gt;))</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="st">set.seed(fit$fit_seed, kind = "Mersenne-Twister",</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="st">         normal.kind = "Inversion", sample.kind = "Rejection")</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="st">fit(final, data)</span></span></code></pre><p></p></div>
 <p>Building the resamples sits <em>inside</em> the first seed's scope, not before it:
 constructing an <code>rset</code> draws from the generator, so a version that built them
 earlier would still be reproducible from the session seed but no longer from

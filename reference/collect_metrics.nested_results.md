@@ -28,9 +28,15 @@ collect_metrics(x, ..., summarize = TRUE)
 
 ## Value
 
-A tibble. Summarized, one row per metric with the mean across outer
-folds, the number of folds, and the standard error of that mean.
-Unsummarized, one row per outer fold and metric.
+A tibble. Summarized, one row per metric – and, for a metric measured at
+evaluation times, per evaluation time – with the mean across outer
+folds, the number of folds contributing, and the standard error of that
+mean. Unsummarized, one row per outer fold and metric – and per
+evaluation time, where a metric was measured at several. Both carry a
+`.eval_time` column exactly when the run was scored by a dynamic or
+integrated survival metric, as tune's own
+[`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+does; on a static metric's row beside one, it is `NA`.
 
 ## Details
 
@@ -38,10 +44,16 @@ The summarized value is the nested cross-validation estimate: what the
 tune-and-fit procedure achieves on data it never saw. It is not the
 performance of any model you have in hand.
 
-Only the outer folds that completed are summarized, and `n` counts them,
-so a run with failures never reports its estimate as though the whole
-design had run. Those folds are dropped with a warning naming them; when
-no fold completed at all, this errors instead of returning `NA`.
+Only the outer folds that completed are summarized, and `n` counts the
+folds contributing to each row, so a run with failures never reports its
+estimate as though the whole design had run. Those folds are dropped
+with a warning naming them; when no fold completed at all, this errors
+instead of returning `NA`.
+
+A metric measured at several evaluation times (`eval_time` on
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md))
+is summarized per time, never averaged across them: each row's `mean` is
+over the fold estimates at the time it names.
 
 ## Reading `std_err`
 

@@ -2,6 +2,25 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  and
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  gain an `eval_time` argument, passed on to every `tune` call whose
+  answer depends on it, so a censored regression workflow scored by a
+  dynamic or integrated survival metric is measured at the times you
+  name rather than at whatever tune picks. It is refused ahead of tune
+  when it is not numeric, is empty, or has an element that is missing,
+  negative or not finite; zero, repeated times and times out of order
+  are passed on untouched for tune to normalize. A metric measured at
+  several evaluation times is summarized per time by
+  [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+  and [`summary()`](https://rdrr.io/r/base/summary.html), each row
+  naming its time in a `.eval_time` column, and drawn one panel per time
+  by `autoplot(type = "performance")`, so estimates at different times
+  are never averaged together; a run scored by no survival metric keeps
+  the columns it had. Previously neither function took the argument and
+  neither could reach it.
+
 - [`summary()`](https://rdrr.io/r/base/summary.html) on a
   `nested_final_fit` returns a `summary.nested_final_fit` object holding
   the full-data tuning run’s resampling scheme, the number of candidates
