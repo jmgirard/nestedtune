@@ -614,7 +614,8 @@ new_tbl <- function(cols) {
 #' @return A tibble. Summarized, one row per metric -- and, for a metric
 #'   measured at evaluation times, per evaluation time -- with the mean across
 #'   outer folds, the number of folds contributing, and the standard error of
-#'   that mean. Unsummarized, one row per outer fold and metric. Both carry a
+#'   that mean. Unsummarized, one row per outer fold and metric -- and per
+#'   evaluation time, where a metric was measured at several. Both carry a
 #'   `.eval_time` column exactly when the run was scored by a dynamic or
 #'   integrated survival metric, as tune's own `collect_metrics()` does; on a
 #'   static metric's row beside one, it is `NA`.

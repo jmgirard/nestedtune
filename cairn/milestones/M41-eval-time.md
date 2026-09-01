@@ -173,6 +173,7 @@ under D-030.
 - 2026-09-01: T9 — `per_fold_metrics()` reads `.eval_time` off the recorded tibbles where any carries it, filling NA over the zero rows of a failed fold's empty tibble, and `summarize_folds()` keys on it too, the time rendered at 17 significant digits so two times `paste()` would print alike stay two rows; `print_estimate()` appends `at time <t>` to a row carrying one. `collect_metrics()`'s roxygen and NEWS say so. AC8 read as `print()` of the summary, since `print.nested_results()` shows no estimate for any run since M39. Five AC8 tests: the multi-element run (shape, per-time mean and standard error, `n`, the rows differing, the printed lines), the scalar and the regression controls, a failed fold in a timed run, and a direct test on `summarize_folds()` for a static metric's NA row and for two times differing below print precision. Discrimination checked by planting the pooling defect: 6 of the multi-element test's 10 assertions and all 5 of the direct test's redden. Existing shape pins on regression runs hold unchanged.
 - 2026-09-01: T10 — `@param eval_time` reworded on both pages against a same-session read of tune 2.1.0's `check_eval_time_arg()` and `.filter_eval_time()`: the ignore-with-a-warning keys on the metric set holding no metric that reads the times, not on the model's mode (R3); tune coerces a character value with `as.numeric()` and accepts it, drops a missing, negative or infinite element with a warning, and aborts on an empty vector (R2); a repeated time draws the "0 inappropriate evaluation time points" warning once per tune call (R4). AC6's test now requires `\code{eval_time}` inside the "Settable:" sentence itself (R5); checked by deleting it from that sentence on the generated page, which the old match accepted and the new one refuses. `document()` regenerated both `.Rd` files; `air` clean.
 - 2026-09-01: T9 and T10 done on the return; `devtools::test()` clean (FAIL 0, WARN 0, SKIP 0, PASS 2683) and `devtools::check()` clean (0 errors, 0 warnings, 0 notes, 5m 20s); status back to review for round 2.
+- 2026-09-01: review round 2 — all eight criteria verified with fresh evidence, gate clean, CI green. Nine findings: F1, `autoplot(type = "performance")` erroring on a multi-time run, fixed at the gate's direction with two regression tests; F2–F5 doc sentences fixed in the same pass; F6, the AC8 `print()` clause read as the summary's print, accepted by the maintainer; F7, F8, S1 rejected. Fix-now work committed on the branch and re-pushed; approval re-requested since the F1 fix was not trivial.
 
 ## Decisions
 
@@ -371,35 +372,49 @@ decided there.
   duplicated". Reproduced on the censored fixture at `c(0.5, 10)`; the scalar
   run and the default `type = "parameters"` plot both build. On `main` the
   pooled summary gave one row, so this path worked; no test covers
-  `autoplot()` on a timed run. Disposition: pending at the gate.
+  `autoplot()` on a timed run. Disposition: fix now, directed at the
+  gate — `plot_performance()` names the panel `<metric> at time <t>` for a
+  row carrying a time, as the summary print does, and asks the estimator
+  question per time; two regression tests in `test-nested-results-plot.R`, one
+  hand-built on the regression fixture with a static metric's NA-time row and
+  two times that print alike, one on the censored run.
 - F2 (confirmed): the `@return` of `collect_metrics()` (`R/nested-results.R:617`)
   still says "Unsummarized, one row per outer fold and metric", while with
   several times it is one row per fold, metric and time — which the AC8 test
-  itself asserts. Disposition: pending at the gate.
+  itself asserts. Disposition: fix now — the `@return` sentence says per
+  evaluation time too.
 - F3 (confirmed): the `@param eval_time` text on both pages says a censored
   model scored only by a static metric "draws it too", implying the same
   warning; tune 2.1.0's `contains_survival_metric()` matches `_survival` in the
   metric class, so a `concordance_survival()`-only set takes the other branch
   and warns "`eval_time` is only used for dynamic or integrated survival
   metrics" — a different message. The operative fact (ignored, with a warning)
-  is right. Disposition: pending at the gate.
+  is right. Disposition: fix now — the paragraph names both warnings and
+  which metric set draws each.
 - F4 (confirmed): "an empty vector aborts" is unconditional in the text but
   conditional in tune — `check_eval_time_arg(numeric(0), metric_set(rmse))`
-  returns with the mode warning and no abort. Disposition: pending at the gate.
+  returns with the mode warning and no abort. Disposition: fix now — the
+  sentence is scoped to "once a metric reads the times".
 - F5 (low confidence): "a character value is coerced with `as.numeric()` and
   accepted" holds for numeric-looking strings only; `"abc"` becomes NA, is
-  dropped, and the empty result aborts. Disposition: pending at the gate.
+  dropped, and the empty result aborts. Disposition: fix now — "a character
+  value that reads as a number, such as `"1"`", and what one that does not
+  becomes.
 - F6: AC8 names `print()`; `print.nested_results()` has shown no estimate
   since M39, so the implementation and tests read the clause as the summary's
   print method, declared in T9's work-log line. A criterion reading, put to
-  the maintainer rather than made silently. Disposition: pending at the gate.
+  the maintainer rather than made silently. Disposition: the maintainer
+  accepted the summary-print reading at the gate — the only `print()` that
+  reports an estimate is the summary's — and AC8's wording stands.
 - F7 (low confidence): `per_fold_metrics()`'s `column()` fill returns NA for
   any frame lacking a column, so a non-empty metrics tibble missing `.metric`
   would summarize silently where the old `unlist()` failed loudly; not
-  reachable from the package's own writers. Disposition: pending at the gate.
+  reachable from the package's own writers. Disposition: rejected — not
+  reachable from any writer in the package.
 - F8 (not a defect): `summarize_folds()`'s per-group `vapply` passes now scale
   with metrics × times rather than metrics; microseconds at realistic sizes.
-  Disposition: pending at the gate.
+  Disposition: rejected — not a defect.
 - S1 (prior-review lens, low confidence): the comment at
   `tests/testthat/test-parallel-classify.R:801` runs to 94 characters, the
-  pattern R8 named; R8 was rejected as style. Disposition: pending at the gate.
+  pattern R8 named; R8 was rejected as style. Disposition: rejected — style,
+  as R8 was.

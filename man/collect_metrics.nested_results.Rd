@@ -19,7 +19,8 @@ default) or return them one row per outer fold (\code{FALSE}).}
 A tibble. Summarized, one row per metric -- and, for a metric
 measured at evaluation times, per evaluation time -- with the mean across
 outer folds, the number of folds contributing, and the standard error of
-that mean. Unsummarized, one row per outer fold and metric. Both carry a
+that mean. Unsummarized, one row per outer fold and metric -- and per
+evaluation time, where a metric was measured at several. Both carry a
 \code{.eval_time} column exactly when the run was scored by a dynamic or
 integrated survival metric, as tune's own \code{collect_metrics()} does; on a
 static metric's row beside one, it is \code{NA}.

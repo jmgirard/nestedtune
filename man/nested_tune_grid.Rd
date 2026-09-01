@@ -59,20 +59,24 @@ regression model, or \code{NULL} (the default) to leave the choice to tune. It
 reaches every tune call whose answer depends on it, so a dynamic or
 integrated survival metric -- \code{brier_survival()}, \code{roc_auc_survival()} and
 their relatives -- is measured at the times you name. It is ignored, with
-a warning from tune, whenever the metric set has no metric that reads it:
-tune keys that warning on the metrics rather than on the model's mode, so
-a censored regression model scored only by a static metric such as
-\code{concordance_survival()} draws it too.
+a warning from tune, whenever the metric set has no metric that reads it.
+tune keys that warning on the metrics rather than on the model's mode: a
+set with no survival metric draws one saying the argument is only used
+for censored regression, and a censored regression model scored only by a
+static metric such as \code{concordance_survival()} draws a different one,
+saying it is only used for dynamic or integrated survival metrics.
 
 Refused here, ahead of tune: anything that is not numeric, an empty
 vector, and any element that is missing, negative or not finite. tune
-treats those unevenly -- a character value is coerced with \code{as.numeric()}
-and accepted, a missing, negative or infinite element is dropped with a
-warning, and an empty vector aborts -- and this package refuses them all
-at entry, before a whole run is paid for. Zero, repeated times and times
-out of order are accepted and passed on untouched, since tune normalizes
-those itself; a repeated time draws tune's warning that 0 inappropriate
-evaluation time points were removed, once per tune call.}
+treats those unevenly, and only once a metric reads the times -- a
+character value that reads as a number, such as \code{"1"}, is coerced with
+\code{as.numeric()} and accepted, one that does not becomes missing; a
+missing, negative or infinite element is dropped with a warning; and an
+empty vector, or one that dropping has emptied, aborts -- and this package
+refuses them all at entry, before a whole run is paid for. Zero, repeated
+times and times out of order are accepted and passed on untouched, since
+tune normalizes those itself; a repeated time draws tune's warning that 0
+inappropriate evaluation time points were removed, once per tune call.}
 }
 \value{
 An object of class \code{nested_results}: one row per outer fold, with the

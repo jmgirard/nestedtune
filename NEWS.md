@@ -8,8 +8,9 @@
   that is missing, negative or not finite; zero, repeated times and times out
   of order are passed on untouched for tune to normalize. A metric measured at
   several evaluation times is summarized per time by `collect_metrics()` and
-  `summary()`, each row naming its time in a `.eval_time` column, so estimates
-  at different times are never averaged together; a run scored by no survival
+  `summary()`, each row naming its time in a `.eval_time` column, and drawn
+  one panel per time by `autoplot(type = "performance")`, so estimates at
+  different times are never averaged together; a run scored by no survival
   metric keeps the columns it had. Previously neither function took the
   argument and neither could reach it.
 
