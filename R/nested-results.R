@@ -832,8 +832,18 @@ per_fold_metrics <- function(x) {
 # Asking id_columns() -- the constructor's record -- rather than a name pattern
 # is what stops a column the caller added from being pasted in with them
 # (M36 T9, narrowed to the record in M38).
+#
+# A record that cannot label the rows -- empty, or naming any column the object
+# no longer carries -- falls back to row positions rather than guessing from
+# what survives. Pasting the surviving columns is the tempting repair and is
+# the defect being fixed: it produced `"Fold1, "`, a label that raises nothing
+# and is wrong silently. Positions are true of any object, and the caller that
+# needs a name for a fold gets one it can act on.
 fold_ids <- function(x) {
   id_cols <- id_columns(x)
+  if (length(id_cols) == 0L || !all(id_cols %in% names(x))) {
+    return(paste("row", seq_len(nrow(x))))
+  }
   if (length(id_cols) == 1L) {
     return(x[[id_cols]])
   }

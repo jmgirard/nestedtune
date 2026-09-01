@@ -117,7 +117,9 @@ naming convention.
 - **The final model is a separate object, never a field on the results.** A
   final-fit path exists because users need it, but the nested estimate
   describes the tune-and-fit *procedure*, not the shipped model. The structure
-  refuses to imply otherwise, and print methods say so.
+  refuses to imply otherwise, and the print and summary methods say so
+  _(corrected M39: for `nested_results` the sentence is emitted by
+  `print(summary(x))`, not by `print(x)`)_.
 - **Inner-loop selection stability is first-class.** The results object always
   retains each outer fold's selected parameters, and default print/summary
   surfaces disagreement between folds. Nothing else in the ecosystem does this.
