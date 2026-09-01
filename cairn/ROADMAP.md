@@ -7,7 +7,7 @@ _Last hygiene check: 2026-08-31 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M39 | `print()` shows the object, `summary()` says what it means | in-progress | — | normal | milestones/M39-print-tibble-summary-split.md |
+| M39 | `print()` shows the object, `summary()` says what it means | review | — | normal | milestones/M39-print-tibble-summary-split.md |
 | M40 | A `nested_final_fit` answers `summary()` the way its sibling does | planned | M39 | normal | milestones/M40-final-fit-summary.md |
 | M38 | A results object's own fold-label columns, recorded rather than guessed | done | — | normal | milestones/archive/M38-id-columns-recorded.md |
 | M37 | The vctrs half, so `rbind()` stops claiming a design it never ran | done | — | normal | milestones/archive/M37-vctrs-invariants.md |

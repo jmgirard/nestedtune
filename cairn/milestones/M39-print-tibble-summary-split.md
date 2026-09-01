@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M39: `print()` shows the object, `summary()` says what it means
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -128,6 +128,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: T1 done. `summary.nested_results()` and `print.summary.nested_results()` added in `R/nested-results-print.R`; the four section builders now read from the bundle `new_summary_nested_results()` computes, and `warn_partial_summary()` routes to `summary()` without `check_any_completed()`. `print.nested_results()` renders through the same bundle and its output is unchanged at this task — the existing snapshot passing un-rerecorded is the control. Six new blocks in `tests/testthat/test-nested-results-print.R`. Suite: 2366 pass, 0 fail, 0 warn, 0 skip.
 - 2026-08-31: T2 and T4 done in one commit, as the reorder line above records. `print.nested_results()` now emits header, outer-scheme line when the object names one, the rows (class stripped, rendered through `cli::cli_verbatim()` so the method writes to one stream), the not-completed count when it exceeds zero, the candidate-set line, and the `summary()` pointer — and nothing else. `tests/testthat/test-nested-results-print.R` regrouped into print blocks, summary blocks, the AC4 record-form block and the shape block; snapshot deleted and re-recorded (4 print shapes, 5 summary shapes). Suite: 2398 pass, 0 fail, 0 warn, 0 skip.
 - 2026-08-31: T5 done. Roxygen rewritten for `print.nested_results()` and authored for the summary pair, each with its own `@return`; `NAMESPACE` and `man/` regenerated; three `NEWS.md` entries; `summary.nested_results` added to `_pkgdown.yml` (the print method rides its alias, and `check_pkgdown()` finds no problems). Two prose claims the split falsified were corrected where they sit: `cairn/DESIGN.md`'s convention line, which said print methods carry the procedure sentence, and `vignettes/nested-cv.Rmd`, which said the print method had summarized the selections — the vignette now shows `summary(res)` beside `res`. `R CMD check`: 0 errors, 0 warnings, 0 notes.
+- 2026-08-31: all five tasks checked; status to review. Suite 2398 pass / 0 fail / 0 warn / 0 skip; `devtools::check()` 0 errors, 0 warnings, 0 notes; `pkgdown::check_pkgdown()` no problems.
 - 2026-08-31: plan chose fixing M38 review O8 here over leaving it to the `check_nested()` row, because this milestone relocates `print_failures()` and the M33 lesson is that a move invalidates every `file:line` citation the repo's records hold; falsified by the fix proving to need `check_nested()`'s entry-gate refusal to be coherent.
 
 ## Decisions
