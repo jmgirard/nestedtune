@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** m042-fixture-key-derived
+- **Branch/PR:** m042-fixture-key-derived · https://github.com/tidymodels/nestedtune/pull/51
 
 ## Goal
 
@@ -52,22 +52,22 @@ Surface tier: internal — the deliverable is test tooling under
 
 ## Acceptance criteria
 
-- [ ] AC1: For every formal argument that
+- [x] AC1: For every formal argument that
       `setdiff(names(formals(nested_tune_grid)), "...")` and
       `setdiff(names(formals(nested_final_fit)), "...")` enumerate at test
       time, `tests/testthat/test-fixture-cache.R` holds a passing
       expectation that two requests to that orchestrator differing only in
       that argument, keyed at the same RNG state, produce different
       `fixture_key()` values.
-- [ ] AC2: A formal that either enumeration in AC1 yields with no registered
+- [x] AC2: A formal that either enumeration in AC1 yields with no registered
       variant value fails that test with a failure message naming the
       formal.
-- [ ] AC3: `fixture_key()` refuses a request whose sorted arguments'
+- [x] AC3: `fixture_key()` refuses a request whose sorted arguments'
       canonical form contains the `"<depth>"` marker, with an error naming
       the offending argument; a unit test in
       `tests/testthat/test-fixture-cache.R` covers an argument nested past
       the cut.
-- [ ] AC4: The hand-listed test at
+- [x] AC4: The hand-listed test at
       `tests/testthat/test-fixture-cache.R:231-359` is removed, and the
       helper header comment in `tests/testthat/helper-orchestration.R` no
       longer cites it.
@@ -129,3 +129,9 @@ Surface tier: internal — the deliverable is test tooling under
 ## Decisions
 
 ## Review
+
+- 2026-09-01, PR #51. Default branch unmoved since the branch was cut (`git fetch`; `main` at cf89a1d, the branch's base).
+- AC1 — verified. The test-time enumeration `setdiff(names(formals(f)), "...")` yields `object, resamples, param_info, grid, metrics, event_level, eval_time` for both orchestrators (printed from a fresh `load_all()` session). `testthat::test_file()` on the committed `test-fixture-cache.R`: the derived test passes 16 expectations, 0 failures — one registry check plus seven per-formal distinct-key expectations per orchestrator, each pair keyed at seed 2.
+- AC2 — verified. Planted defect run on a scratch copy (the `eval_time` registry entry removed, repo untouched): 2 failures, "nested_tune_grid() has formal(s) with no registered variant value: `eval_time`" and the same for `nested_final_fit()`; 14 other expectations pass.
+- AC3 — verified. `fixture_key()` scans the sorted arguments' canonical form for `"<depth>"` and aborts with class `fixture_key_depth` naming the argument (`helper-orchestration.R`, diff read). The unit test "a request nested past the depth cut is refused, naming the argument" passes both expectations: a 45-level `object` errors matching "argument(s) `object` nest past"; the 30-level control keys to a 32-hex hash.
+- AC4 — verified. `git diff main..HEAD` removes the test "the key separates every fixture signature this suite asks for" whole; `grep` for its title and for the old preamble phrase "asserts every distinct fixture signature" over `tests/testthat/*.R` returns nothing.
