@@ -241,3 +241,37 @@ test_that("the changelog and the help page promise what the code now does", {
     fixed = TRUE
   )
 })
+
+# When the record cannot label the rows (M39 T3, from M38 review O8).
+#
+# Three forms, and before this fix each answered differently and none answered
+# usefully: an empty record gave `character(0)`, a record naming a column the
+# object no longer carries gave `NULL` -- both of which make an indexing caller
+# raise -- and a record naming several columns of which some are absent pasted
+# the survivors and gave the truncated label `"Fold1, "`, which raises nothing
+# and is wrong silently. All three now fall back to row positions, because a
+# record that cannot label the rows is not a record to guess from.
+test_that("an unusable label record falls back to row positions", {
+  skip_if_no_engines()
+  res <- repeated_results()
+  n <- nrow(res)
+  positions <- paste("row", seq_len(n))
+
+  empty <- res
+  attr(empty, "id_columns") <- character(0)
+  expect_identical(fold_ids(empty), positions)
+
+  missing_one <- res
+  attr(missing_one, "id_columns") <- "not_a_column"
+  expect_identical(fold_ids(missing_one), positions)
+
+  # The form fold_ids() answered wrongly rather than raising.
+  partly_missing <- res
+  attr(partly_missing, "id_columns") <- c("id", "not_a_column")
+  expect_identical(fold_ids(partly_missing), positions)
+
+  # The passing control: the record as the constructor wrote it still labels
+  # the rows from the columns, so the fallback is reached by the record being
+  # unusable and not by every object taking it.
+  expect_identical(fold_ids(res), paste(res$id, res$id2, sep = ", "))
+})

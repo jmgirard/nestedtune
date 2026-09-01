@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M39: `print()` shows the object, `summary()` says what it means
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4
-- **Branch/PR:** —
+- **Branch/PR:** `m039-print-tibble-summary-split`
 
 ## Goal
 
@@ -104,7 +104,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
       the AC1 shape: strip the subclass and dispatch for the rows, keep
       `print_candidate_sets()`, add the failure count and the `summary()`
       pointer.
-- [ ] T3. Fix the fold-label defect in the relocated failure section for all
+- [x] T3. Fix the fold-label defect in the relocated failure section for all
       three record forms (M38 review O8), at `fold_ids()`
       (`R/nested-results.R:835`) or at its caller.
 - [ ] T4. Re-point `tests/testthat/test-nested-results-print.R`'s 18 blocks
@@ -121,8 +121,27 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: plan gate chose leaving `print.nested_final_fit()` untouched over splitting its bullets into `summary()`, because the object holds no rows to reveal so topepo's stated complaint does not reach it, and the bullets are RR02 Q7's recorded answer; falsified by a user report that the final-fit print is itself crowded, or by topepo asking for the split explicitly.
 - 2026-08-31: two sizing tripwires fired on the single-milestone draft (9 acceptance criteria against the >~7 mark, and the `nested_final_fit` task shippable on its own), so the `summary.nested_final_fit()` half was split into M40 with `Depends on: M39` rather than compressed; nothing was discarded.
 - 2026-08-31: plan gate chose keeping one disagreement line in `print()` over a tune-exact print, because DESIGN.md:121-123 records surfacing fold disagreement in default output as a convention and no D-entry supersedes it; falsified by evidence that the line crowds the default output, which DESIGN.md:209-212 already names as the trade.
+- 2026-08-31: implementation gate chose the shared `fold_ids()` as the fallback site over a print-path-only repair; recorded in Decisions with its out-of-scope consequence.
+- 2026-08-31: minor amendment, task order — T3 runs first (independent of the split and leaves the suite green), then T1, then T2 and T4 in one commit because T2's rewrite invalidates the print blocks T4 re-points and the verify slot must be clean at each check-off, then T5. No task's content changed.
+- 2026-08-31: T3 done. `fold_ids()` (`R/nested-results.R`) falls back to `paste("row", seq_len(nrow(x)))` when the recorded `id_columns` is empty or names any column the object no longer carries; measured before the fix, the three forms gave `character(0)`, `NULL` and the truncated `"Repeat1, "`. Four new assertions plus a passing control in `tests/testthat/test-id-columns.R`, red before and green after. Suite: 2334 pass, 0 fail, 0 warn, 0 skip.
 - 2026-08-31: plan chose fixing M38 review O8 here over leaving it to the `check_nested()` row, because this milestone relocates `print_failures()` and the M33 lesson is that a move invalidates every `file:line` citation the repo's records hold; falsified by the fix proving to need `check_nested()`'s entry-gate refusal to be coherent.
 
 ## Decisions
+
+### Where the unusable-label-record fallback lives
+
+`fold_ids()` itself falls back to row positions, so every caller of it gets the
+repair, not only the print and summary path. Chosen at the implementation gate
+over a second fallback on the print path alone: `fold_ids()` is the one place
+the class answers "what are the fold labels", and a second answer beside it is
+the duplication the recorded `id_columns` attribute was introduced to remove.
+
+Consequence, stated because Scope puts these callers Out: the four sites Scope
+names — `warn_partial_summary()`, `per_fold_metrics()`,
+`plot_selection_frequency()`'s fold levels and `nested-tune-grid.R`'s failure
+list — stop raising or emitting a truncated label on such an object as a side
+effect, earlier than the `check_nested()` candidate row planned. No work is
+done at those sites and none of them is tested here; the candidate row keeps
+the entry-gate refusal it owns.
 
 ## Review
