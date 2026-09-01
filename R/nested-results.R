@@ -151,7 +151,7 @@ can_reconstruct_results <- function(data, template) {
   # `order()` takes atomic vectors and dies on anything else, with a message
   # naming a C routine rather than anything the caller did:
   # `mutate(x, id = list(c(1, 2), 3, 4))` aborted with "unimplemented type
-  # \'list\' in \'orderVector1\'" (measured 2026-08-31). A label column replaced by
+  # 'list' in 'orderVector1'" (measured 2026-08-31). A label column replaced by
   # something unorderable is a record that no longer matches, which the rule has
   # an answer for -- it just has to reach it rather than die on the way (M38).
   orderable <- function(x) {

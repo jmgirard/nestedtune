@@ -1,6 +1,6 @@
 # M38: A results object's own fold-label columns, recorded rather than guessed
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -149,6 +149,7 @@ their own candidate row stay there.
 - 2026-08-31: T5 — the sweep runs 108 cells (six methods × five names × two designs × two forms, less the `id2` × `rep_res` pair), all green; nothing had to be fixed for it.
 - 2026-08-31: T6 — mutation check, the name pattern restored as the derivation. 30 of the sweep's 108 cells go red, five at every one of the six methods, and all 30 are list-valued: no atomic cell separates the two derivations, which is the sweep's weakest axis. Three of T1's four blocks go red (AC2(a), AC2(b), AC2(c)); AC3's does not, because its fault is the `order()` guard rather than the derivation, and it was measured red on the branch point instead. Of T2's three blocks, "recorded under whatever name it has" and "travels with the class" go red; "the constructor records the columns" does not, since the pattern and the record agree on a design rsample named. A second mutation — the constructor stops writing the attribute — reds that block along with thirteen others.
 - 2026-08-31: T7, T8 — the M36 `NEWS.md` bullet rewritten to what the code now does and a second bullet added for the `order()` fault, the `@return` invariants section given the sentence AC5 asks for, `devtools::document()` run, `air format .` clean; D-036 recorded. A doc block in `test-id-columns.R` guards the promise in all three files and the removal of M36's narrowing sentence.
+- 2026-08-31: all tasks done, status to review. `devtools::document()` produces no diff, `air format .` clean, `cairn_validate` all checks passed (18 references-staleness advisories, unchanged), and `devtools::check()` was OK — 0 errors, 0 warnings, 0 notes, 10m26s — run on the tree at `a89741b` plus one comment-only edit in `R/nested-results.R`.
 ## Decisions
 
 - 2026-08-31: recorded as D-036 — the design's columns are recorded at construction and every reader takes the label set from that record.
