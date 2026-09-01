@@ -541,6 +541,17 @@ skip_if_no_engines <- function(stochastic = FALSE) {
   if (stochastic) testthat::skip_if_not_installed("ranger")
 }
 
+# The censored-regression fixture's engines and metric (M41). `censored`
+# registers the `survival_reg()` engines parsnip declares but does not carry;
+# `survival` supplies `Surv()`, which the formula names; `yardstick` supplies
+# the dynamic metric that reads `eval_time`. All three are Suggests, so
+# everything downstream of this guard skips where they are absent.
+skip_if_no_censored <- function() {
+  testthat::skip_if_not_installed("censored")
+  testthat::skip_if_not_installed("survival")
+  testthat::skip_if_not_installed("yardstick")
+}
+
 # The suite-level fixture cache (M12).
 #
 # Most of this suite's runtime went on building the same tuning run over and

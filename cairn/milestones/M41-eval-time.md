@@ -1,11 +1,11 @@
 # M41: `eval_time` reaches the metrics that need it
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1, GP2, GP3
-- **Branch/PR:** —
+- **Branch/PR:** `m041-eval-time`
 
 ## Goal
 
@@ -95,7 +95,7 @@ under D-030.
 
 ## Tasks
 
-- [ ] T1: `censored` and `survival` into `DESCRIPTION` Suggests; a
+- [x] T1: `censored` and `survival` into `DESCRIPTION` Suggests; a
       `skip_if_no_censored()` guard beside the existing guards in
       `tests/testthat/helper-orchestration.R`; confirm by execution that
       `survival_reg(dist = tune())` on engine `"survival"` fits and predicts
@@ -135,6 +135,8 @@ under D-030.
 - 2026-09-01: plan gate chose recomputing the IPCW Brier score from the definition, with `yardstick::brier_survival()` read beside it, over `brier_survival()` alone, because the latter is the same implementation `tune` calls and would confirm itself (GP2 wants two independent sources). Falsified by the censoring weights proving unreproducible outside yardstick.
 - 2026-09-01: plan gate chose a local `check_eval_time()` validating shape only over delegating to tune entirely or also refusing a non-censored mode, because every other argument on these orchestrators is checked at entry and a tune abort from inside a mirai daemon names a tune frame, while mode appropriateness is upstream's call about upstream's argument (GP1). Falsified by tune's own value validation diverging from this check.
 - 2026-09-01: plan gate chose retiring the ROADMAP row's `control` half onto D-030 over keeping a narrowed candidate row, because D-030 already names its own falsifier (a caller needing another slot, or the inner tuning run being retained) and the ROADMAP is 45.5 kB against a 24 kB budget. Falsified by a caller asking for a `control_grid()` slot other than `event_level`.
+- 2026-09-01: implement gate confirmed the `censored` + `survival` Suggests addition (D-038) and chose an entry check that refuses only what tune cannot use — non-numeric, missing, negative, non-finite, empty — accepting `0`, duplicates and unsorted times, which `tune:::.filter_eval_time()` normalizes itself. Read from tune 2.1.0: it coerces with `as.numeric()`, drops `NA`, keeps `x >= 0 & is.finite(x)`, uniques, warns about what it dropped, and aborts only when nothing survives.
+- 2026-09-01: T1 — `censored` and `survival` into Suggests, `skip_if_no_censored()` beside `skip_if_no_engines()`. Installing `censored` pulled 7 recursive dependencies not already present (`libcoin`, `inum`, `strucchange`, `stabs`, `nnls`, `partykit`, `mboost`), matching the plan gate's estimate. Confirmed by execution that `survival_reg(dist = tune())` on engine `"survival"` fits and predicts `type = "survival"`, returning a `.pred` list-column of `.eval_time`/`.pred_survival` rows. D-038 written; the same commit moves the `<!-- Template:` marker that had swallowed D-037 since M39 to sit above the template block where it belongs, leaving both entries' text untouched.
 - 2026-09-01: a second criteria-audit pass over the revised wording (full mode, fresh reader) returned four defects, all fixed: AC3's planted-defect clause was unsatisfiable — verified against `tune:::choose_eval_time()` and `tune:::first_eval_time()`, which take element 1 whether the argument is passed or falls back to the run's own times, so forwarding to `select_best()` discriminates nothing and is now recorded as Out; AC1's probes were all length ≤ 1, admitting an implementation that validates only `eval_time[1]`, and gained `c(1, NA_real_)`; AC1's "before any fold is dispatched" had no referent on the final-fit path, which dispatches no folds, and now names `final_fit_worker()`; AC2's second oracle was satisfied by computing and discarding the value, and now has to agree to tolerance. AC4-AC7 were clean on all five questions.
 
 ## Decisions
