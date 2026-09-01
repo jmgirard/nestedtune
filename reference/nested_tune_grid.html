@@ -171,15 +171,32 @@ the columns above — returns a bare tibble, with the record removed along
 with the class. A three-row object cannot honestly describe itself as the
 ten-fold design it was cut from, so it stops describing itself at all and
 hands back the data.</p>
-<p>The rule is enforced where dplyr asks for it, in a <code>dplyr_reconstruct()</code>
-method, which the verbs above and <code>[</code> all reach. An operation that never
-gets there is outside it, and two do. <code>rename()</code> is implemented as
-<code>set_names()</code> and reaches the object through <strong>vctrs</strong>, so renaming one of
-the columns listed above returns a <code>nested_results</code> that no longer has it.
-<code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code> likewise goes through <strong>vctrs</strong> rather than dplyr, so it adds
-rows and keeps the class, leaving the counts describing the object it was
-built from. Treat both as gaps rather than as further invariants; the
-vctrs methods that would close them are not written yet.</p>
+<p>It is one rule, reached through four doors. dplyr's verbs and <code>[</code> reach it
+through a <code>dplyr_reconstruct()</code> method; <strong>vctrs</strong>' own verbs —
+<code>vec_slice()</code>, <code>vec_rbind()</code>, <code>vec_c()</code>, <code>vec_cbind()</code>, <code>vec_ptype()</code> and
+<code>vec_cast()</code> — reach it through <code>vec_restore()</code>; and <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code> and
+<code>rename()</code>, which reach neither generic, have methods of their own. So
+<code>rbind(x, x)</code> and a <code>rename()</code> that moves one of the columns above hand
+back a bare tibble, the same answer <code>slice()</code> gives, rather than an object
+whose record has stopped describing its own rows.</p>
+<p>Combining is the one place the doors part. <code>vctrs::vec_rbind(x)</code> and
+<code>vctrs::vec_c(x)</code> hand back a bare tibble even with nothing to combine <code>x</code>
+with, where <code>dplyr::bind_rows(x)</code> returns a <code>nested_results</code>: vctrs asks
+for the common type before it asks the rule anything, and the common type
+of one results object is a plain table. Every combination of two or more
+returns a bare tibble through either door, which is the rule above.</p>
+<p>Column-binding is the one place argument order shows. <code>bind_cols()</code> and
+<code>vec_cbind()</code> both build their answer on the first argument's type, so
+<code>bind_cols(x, extra)</code> and <code>vec_cbind(x, extra)</code> are a <code>nested_results</code>
+while <code>bind_cols(extra, x)</code> and <code>vec_cbind(extra, x)</code> are plain tibbles
+holding the same ten columns. Either verb answers the same way in either
+position.</p>
+<p>Three verbs sit outside all of it. <code>group_by()</code>, <code>rowwise()</code> and
+<code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">tibble::as_tibble()</a></code> return a grouped, a rowwise and a plain tibble
+respectively — none of them a <code>nested_results</code> — and each carries the
+attributes across, so <code>attr(dplyr::group_by(x, id), "outer_label")</code> still
+answers with the run's scheme. Nothing they hand back claims to be a
+results object; the record is along for the ride.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

@@ -20,6 +20,37 @@
   a `left_join()` that matches one row apiece. These are the invariants
   `tune` declares on its own results objects.
 
+- Breaking: the same rule now covers the vctrs verbs and base
+  [`rbind()`](https://rdrr.io/r/base/cbind.html).
+  `vctrs::vec_slice(x, 1)`, `vctrs::vec_rbind(x, x)`,
+  `vctrs::vec_c(x, x)` and `rbind(x, x)` each return a plain tibble.
+  Previously all four handed back an object still carrying the class and
+  still reporting the fold counts of the object it was built from —
+  `rbind(x, x)` gave six rows still headed as a 3-fold run. Reordering
+  rows with `vctrs::vec_slice(x, c(2, 1, 3))` keeps the class, and so
+  does adding a column with
+  [`vctrs::vec_cbind()`](https://vctrs.r-lib.org/reference/vec_bind.html),
+  which now answers exactly as
+  [`dplyr::bind_cols()`](https://dplyr.tidyverse.org/reference/bind_cols.html)
+  does. Both build on the first argument’s type, so
+  `vec_cbind(x, extra)` and `bind_cols(x, extra)` keep the class while
+  `vec_cbind(extra, x)` and `bind_cols(extra, x)` return plain tibbles
+  holding the same columns.
+  [`vctrs::vec_rbind()`](https://vctrs.r-lib.org/reference/vec_bind.html)
+  and [`vctrs::vec_c()`](https://vctrs.r-lib.org/reference/vec_c.html)
+  return a plain tibble even when given one argument and nothing to
+  combine it with, where `dplyr::bind_rows(x)` keeps the class.
+
+- Breaking:
+  [`dplyr::rename()`](https://dplyr.tidyverse.org/reference/rename.html)
+  moving one of the columns the run is recorded in now returns a plain
+  tibble. Previously it returned a `nested_results` that no longer had
+  that column: `rename()` renames through `names<-`, which reaches
+  neither dplyr’s reconstruction nor vctrs’.
+
+- `vctrs` is now a hard dependency. It was already installed alongside
+  nestedtune, since `dplyr` requires it.
+
 - `dplyr` is now a hard dependency. It was already installed alongside
   nestedtune, since `tune` requires it.
 
