@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M39: `print()` shows the object, `summary()` says what it means
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -63,12 +63,15 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
       `check_any_completed()` abort is not inherited, because a description of a
       failed run is what M04 built and M03 recorded.
 - [ ] AC4. Where a `nested_results`' recorded `id_columns` cannot label its
-      rows, `print()` and `print(summary())` name each failed fold by its row
-      position rather than raising or emitting a truncated label, in all three
-      forms the record takes: an attribute of length zero; one naming a column
-      the object no longer carries; and one naming several columns of which
-      some are absent — the third being the form `fold_ids()` answers wrongly
-      today rather than raising.
+      rows, `print(summary())` names each failed fold by its row position
+      rather than raising or emitting a truncated label, and `print()` on the
+      same object raises nothing, over the objects the AC4 block in
+      `tests/testthat/test-nested-results-print.R` builds for the three forms
+      the record takes: an attribute of length zero; one naming a column the
+      object no longer carries; and one naming several columns of which some
+      are absent — the third being the form `fold_ids()` answered wrongly
+      before this milestone rather than raising. Those objects are the domain;
+      the claim is over them.
 - [x] AC5. Over the objects that running
       `tests/testthat/test-nested-results-print.R` passes to a print or summary
       method, no call to `print.nested_results()` or
@@ -135,6 +138,11 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: a local `devtools::check()` reports one error, `test-parallel-interrupt.R:102`. Not this branch's: the identical assertion fails with the identical message in a detached worktree at `origin/main`, the test file is untouched by the diff, it passes standalone twice and under `devtools::test()`, and all five CI legs are green. Recorded rather than fixed.
 - 2026-08-31: three-lens review fan-out. Blame-history and prior-review returned no findings. Diff-bug returned nine, all logged with dispositions in the Review section: one rejected as already-true prose, one rejected as pre-existing, two to follow-up rows, three fix-now carried back with this return, one put to the maintainer, and one returning the milestone.
 - 2026-08-31: amendment return: AC4 — "`print()` and `print(summary())` name each failed fold by its row position rather than raising or emitting a truncated label". AC1 requires `print()` to emit a count of incomplete folds and no line naming any fold, so post-split `print()` never calls `fold_ids()` and names no fold by any label; the two criteria contradict each other and the work follows AC1. Status to in-progress for that amendment alone.
+- 2026-08-31: criteria audit ran in FULL mode over the amended AC4 wording, twice, each pass a fresh-context reader that did not author it. Pass 1 returned five findings; three with one clear answer were fixed in place (the object domain was unbounded and the milestone's own review finding O7 names an object inside it on which `print()` raises; both "today" anchors were already false, T3 having fixed the form AC4 called wrong; the conditional AC2 draft was offered pre-ticked while requiring unwritten work), and two thoroughness findings were declined. Pass 2 over the revision returned three more with one clear answer, all fixed: "warns nothing" bound a property the pre-amendment AC4 did not, AC5 already promising it over a superset domain; the trailing domain phrase read as evidence rather than scope without AC5's disambiguating sentence; and the conditional AC2 draft still compared against `origin/main`'s output on the very objects AC4's fallback changes.
+- 2026-08-31: amendment return: AC4 — "Where a `nested_results`' recorded `id_columns` cannot label its rows, `print(summary())` names each failed fold by its row position rather than raising or emitting a truncated label, and `print()` on the same object raises nothing, over the objects the AC4 block in `tests/testthat/test-nested-results-print.R` builds for the three forms the record takes: an attribute of length zero; one naming a column the object no longer carries; and one naming several columns of which some are absent — the third being the form `fold_ids()` answered wrongly before this milestone rather than raising. Those objects are the domain; the claim is over them." Chosen at the mini gate over rewording it differently or leaving it; the box stays unticked for review to verify afresh. No task changed and Coverage still reads AC4 → T3.
+- 2026-08-31: mini gate chose logging M39 review O1 as a candidate row over repairing the `x$.notes` pointer here, because the repair falsifies AC2 as written and this milestone had already returned once for a wrong promise; AC2 stands ticked and unamended, and the drafted AC2 amendment is not written.
+- 2026-08-31: review findings O3, O5 and O9 fixed as carried: `print_candidate_sets()`'s comment now describes the caller `print.nested_results()` gives it rather than the selection lines that moved behind `summary()`; `summary.nested_results()`'s `@return` names `outer_label` and `grids`, the two components it returns and the clause omitted; and both `[summary()]` links plus `print.nested_results()`'s `@seealso` now point at `[summary.nested_results()]` rather than resolving to `base::summary`.
+- 2026-08-31: amendment done; status back to review. Suite 2398 pass / 0 fail / 0 warn / 0 skip; `devtools::document()` regenerated the two `man/` pages the roxygen fixes touched and nothing else.
 
 ## Decisions
 

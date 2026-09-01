@@ -21,12 +21,13 @@
 #' @description
 #' Shows the object: its outer folds as the tibble rows they are, the outer
 #' resampling scheme it came from, how many folds did not complete, and a
-#' pointer to [summary()] for what the run means.
+#' pointer to [summary.nested_results()] for what the run means.
 #'
 #' Printing also says when the folds were not choosing from the same menu. A
 #' grid given as a size is expanded per fold, under that fold's own seed, so a
 #' continuous parameter leaves every fold with its own candidates — which
-#' changes how the selections [summary()] reports should be read. The line
+#' changes how the selections [summary.nested_results()] reports should be
+#' read. The line
 #' reports each fold's candidate count and appears only when the sets actually
 #' differ.
 #'
@@ -58,7 +59,8 @@
 #'
 #' res
 #'
-#' @seealso [nested_tune_grid()], [collect_metrics()]
+#' @seealso [summary.nested_results()], [nested_tune_grid()],
+#'   [collect_metrics()]
 #' @export
 print.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
@@ -128,11 +130,12 @@ print_failure_count <- function(x) {
 #'   rather than silently ignored.
 #'
 #' @return An object of class `summary.nested_results`: a list holding the
-#'   outer design's requested and completed fold counts, the failed folds with
-#'   the stage each failed at, the parameter values the completed folds
-#'   selected, and the metric estimates averaged across them. Printing it is
-#'   what most callers want; the components are there for a caller that needs a
-#'   number rather than a line of text.
+#'   outer resampling scheme's label, the outer design's requested and
+#'   completed fold counts, the failed folds with the stage each failed at, the
+#'   parameter values the completed folds selected, the candidate grid each
+#'   completed fold searched, and the metric estimates averaged across them.
+#'   Printing it is what most callers want; the components are there for a
+#'   caller that needs a number rather than a line of text.
 #'
 #' @seealso [nested_tune_grid()], [collect_metrics()]
 #' @export
@@ -266,15 +269,15 @@ print_selection <- function(s) {
 
 # Whether the folds were even choosing from the same menu (M21).
 #
-# Printed here rather than in the design block because it qualifies the lines
-# above it: a reader comparing what each fold selected is entitled to know that
-# the folds did not all have the same candidates to select from. With the
-# default `grid = 10` and any continuous parameter this is the ordinary case,
-# not an edge case -- expansion is stochastic and each fold tunes under its own
-# seed.
+# Printed by print() rather than behind summary() because it qualifies the rows
+# above it: a reader looking at a table of outer folds is entitled to know that
+# the folds did not all have the same candidates to choose from, before
+# summary() says what each one chose. With the default `grid = 10` and any
+# continuous parameter this is the ordinary case, not an edge case --
+# expansion is stochastic and each fold tunes under its own seed.
 #
 # Silent on agreement, so the line appears only when it changes how the
-# selections above should be read.
+# selections summary() reports should be read.
 print_candidate_sets <- function(grids) {
   if (length(grids) < 2L || same_candidates(grids)) {
     return(invisible(NULL))

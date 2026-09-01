@@ -18,12 +18,13 @@ rather than silently ignored.}
 \description{
 Shows the object: its outer folds as the tibble rows they are, the outer
 resampling scheme it came from, how many folds did not complete, and a
-pointer to \code{\link[=summary]{summary()}} for what the run means.
+pointer to \code{\link[=summary.nested_results]{summary.nested_results()}} for what the run means.
 
 Printing also says when the folds were not choosing from the same menu. A
 grid given as a size is expanded per fold, under that fold's own seed, so a
 continuous parameter leaves every fold with its own candidates — which
-changes how the selections \code{\link[=summary]{summary()}} reports should be read. The line
+changes how the selections \code{\link[=summary.nested_results]{summary.nested_results()}} reports should be
+read. The line
 reports each fold's candidate count and appears only when the sets actually
 differ.
 }
@@ -52,5 +53,6 @@ res
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=collect_metrics]{collect_metrics()}}
+\code{\link[=summary.nested_results]{summary.nested_results()}}, \code{\link[=nested_tune_grid]{nested_tune_grid()}},
+\code{\link[=collect_metrics]{collect_metrics()}}
 }

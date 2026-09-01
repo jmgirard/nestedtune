@@ -19,11 +19,12 @@ rather than silently ignored.}
 }
 \value{
 An object of class \code{summary.nested_results}: a list holding the
-outer design's requested and completed fold counts, the failed folds with
-the stage each failed at, the parameter values the completed folds
-selected, and the metric estimates averaged across them. Printing it is
-what most callers want; the components are there for a caller that needs a
-number rather than a line of text.
+outer resampling scheme's label, the outer design's requested and
+completed fold counts, the failed folds with the stage each failed at, the
+parameter values the completed folds selected, the candidate grid each
+completed fold searched, and the metric estimates averaged across them.
+Printing it is what most callers want; the components are there for a
+caller that needs a number rather than a line of text.
 
 \code{print()} returns \code{x}, invisibly.
 }
