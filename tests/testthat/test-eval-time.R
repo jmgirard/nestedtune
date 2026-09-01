@@ -105,7 +105,10 @@ test_that("the fixture's grid is ranked differently at the two evaluation times"
   # And the winner is not a tie broken by rounding. Measured 2026-09-01 on
   # tune 2.1.0 / censored 0.3.4: 1.0% at the early time, 3.5% at the late one.
   for (scored in ranked) {
-    expect_gt((scored$mean[[2L]] - scored$mean[[1L]]) / scored$mean[[1L]], 0.005)
+    expect_gt(
+      (scored$mean[[2L]] - scored$mean[[1L]]) / scored$mean[[1L]],
+      0.005
+    )
   }
 })
 

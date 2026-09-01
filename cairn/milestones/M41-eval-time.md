@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1, GP2, GP3
-- **Branch/PR:** `m041-eval-time`
+- **Branch/PR:** `m041-eval-time` / https://github.com/tidymodels/nestedtune/pull/50
 
 ## Goal
 
@@ -37,7 +37,7 @@ under D-030.
 
 ## Acceptance criteria
 
-- [ ] AC1: both orchestrators take `eval_time`, defaulting to `NULL`. Each of
+- [x] AC1: both orchestrators take `eval_time`, defaulting to `NULL`. Each of
       `-1`, `NA_real_`, `"1"`, `Inf`, `numeric(0)` and `c(1, NA_real_)` is
       refused by both with an error whose `conditionCall()` names the function
       the user called, raised before any fitting begins — verified with
@@ -45,7 +45,7 @@ under D-030.
       `final_fit_worker()` mocked to signal on the final-fit path. `NULL` and
       a well-formed positive numeric vector pass through untouched, on a
       regression workflow included.
-- [ ] AC2: on the censored-regression fixture, every outer fold of a
+- [x] AC2: on the censored-regression fixture, every outer fold of a
       `nested_tune_grid()` run completes, and the dynamic survival metric each
       reports at the named evaluation time equals the IPCW-weighted squared
       error the test computes from the definition out of a refit of that
@@ -54,7 +54,7 @@ under D-030.
       same predictions, agreeing with it to tolerance. The fixture test
       asserts at-risk observations and events on both sides of each named
       evaluation time, without which the equality holds vacuously.
-- [ ] AC3: two `nested_tune_grid()` runs over the same seed differing only in
+- [x] AC3: two `nested_tune_grid()` runs over the same seed differing only in
       `eval_time` report a different metric on at least one outer fold, and
       each run's per-fold metrics equal a `tune::tune_grid()` +
       `tune::last_fit()` reference the test builds from that fold's own
@@ -62,22 +62,22 @@ under D-030.
       time. The two probes are distinct scalar evaluation times, and a run at
       a multi-element `eval_time` reports the metric its first element names,
       matching what tune does with the same vector.
-- [ ] AC4: `nested_final_fit()` tunes and selects under the caller's
+- [x] AC4: `nested_final_fit()` tunes and selects under the caller's
       `eval_time` — its retained tuning results equal, candidate for
       candidate, a `tune::tune_grid()` the test builds at the same `eval_time`
       under the object's recorded `tuning_seed`, and its `selected` equals
       `tune::select_best()` on those reference results at that `eval_time`. At
       least one candidate ranks differently between the two evaluation times
       probed, and `selected` differs between the two runs.
-- [ ] AC5: under a mirai daemon pool, a `nested_tune_grid()` run at a named
+- [x] AC5: under a mirai daemon pool, a `nested_tune_grid()` run at a named
       `eval_time` returns the same per-fold metrics and selections as the
       serial run at the same seed.
-- [ ] AC6: `man/nested_tune_grid.Rd` and `man/nested_final_fit.Rd` each carry
+- [x] AC6: `man/nested_tune_grid.Rd` and `man/nested_final_fit.Rd` each carry
       an `\item{eval_time}` entry; `nested_tune_grid()`'s "Differences from
       calling tune directly" section names `eval_time` beside `event_level`
       as settable, and both pages state which `eval_time` values this package
       refuses ahead of tune.
-- [ ] AC7: `censored` and `survival` are declared in Suggests and a
+- [x] AC7: `censored` and `survival` are declared in Suggests and a
       `_R_CHECK_DEPENDS_ONLY_=true` check run passes, every test needing them
       skipping rather than failing; `Rscript -e 'devtools::test()'` clean and
       `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings, NOTEs
@@ -147,7 +147,121 @@ under D-030.
 - 2026-09-01: AC7 evidence — `devtools::check()` clean, 0 errors / 0 warnings / 0 notes, tests `[76s/119s]`. A second run under `_R_CHECK_DEPENDS_ONLY_=true` is also 0/0/0 with FAIL 0, SKIP 85, PASS 2229; the six `test-eval-time.R` blocks that need the new dependencies skip with "{censored} is not installed" and BC8 skips with mirai, so nothing fails where the Suggests are absent.
 - 2026-09-01: all eight tasks done, `devtools::test()` clean (FAIL 0, WARN 0, SKIP 0, PASS 2645) and `devtools::check()` clean; status to review.
 - 2026-09-01: a second criteria-audit pass over the revised wording (full mode, fresh reader) returned four defects, all fixed: AC3's planted-defect clause was unsatisfiable — verified against `tune:::choose_eval_time()` and `tune:::first_eval_time()`, which take element 1 whether the argument is passed or falls back to the run's own times, so forwarding to `select_best()` discriminates nothing and is now recorded as Out; AC1's probes were all length ≤ 1, admitting an implementation that validates only `eval_time[1]`, and gained `c(1, NA_real_)`; AC1's "before any fold is dispatched" had no referent on the final-fit path, which dispatches no folds, and now names `final_fit_worker()`; AC2's second oracle was satisfied by computing and discarding the value, and now has to agree to tolerance. AC4-AC7 were clean on all five questions.
+- 2026-09-01: review — all seven criteria verified with fresh evidence; `cairn_validate` and the r-package consistency gate clean; `format-suggest` was red on one over-width line, fixed with `air format`. Nine findings recorded, dispositions pending at the merge gate.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-09-01 on `m041-eval-time` at PR #50, branch level with
+`origin/main` (no merge needed). Evidence is from runs made in this review.
+
+### Acceptance-criteria evidence
+
+- AC1 — `testthat::test_local(filter = "eval-time")`: the four AC1 blocks pass.
+  Each of `-1`, `NA_real_`, `"1"`, `Inf`, `numeric(0)` and `c(1, NA_real_)` is
+  refused by both orchestrators, `rlang::call_name(conditionCall())` reading
+  `nested_tune_grid` / `nested_final_fit`; with `dispatch_folds()` and
+  `final_fit_worker()` mocked to a sentinel, no refused value reaches the
+  sentinel and every accepted one does; `NULL`, `0`, `c(0.5, 10)` and
+  `c(10, 0.5, 10)` reach both entry points under `expect_identical()`.
+- AC2 — the AC2 block passes: all three outer folds complete, each reports
+  `brier_survival` at `.eval_time` 0.5, and each reported estimate equals the
+  from-the-definition IPCW Brier computed from a refit under the fold's
+  `.outer_fit_seed` with Graf weights built here from a reverse Kaplan-Meier,
+  with `yardstick::brier_survival()` agreeing to `expect_equal()` tolerance.
+  The fixture-property block asserts at-risk observations and events on both
+  sides of both times, on the whole frame and on every fold's assessment set.
+- AC3 — the two AC3 blocks pass: the runs at 0.5 and at 10 disagree on at
+  least one fold, each fold's estimate and selection equals the
+  `tune_grid()` + `last_fit()` reference rebuilt from that fold's own
+  `inner_resamples` under its recorded seeds, and a run at `c(0.5, 10)`
+  records both rows, reports the 0.5 row identically to the scalar run and
+  selects as it does.
+- AC4 — the AC4 block passes: at both evaluation times the retained tuning
+  results equal `tune::collect_metrics()` on a reference `tune_grid()` built
+  under the object's `tuning_seed`, `selected$dist` equals
+  `tune::select_best()` on that reference, the candidate order differs between
+  the two times and `selected` differs with it.
+- AC5 — `testthat::test_local(filter = "parallel-identity")` passes with no
+  skips; BC8 runs the censored fixture serially and under a two-daemon pool at
+  the late evaluation time, asserts the recorded `.eval_time` on every fold and
+  then `expect_identical(parallel, serial)`.
+- AC6 — read directly off the generated pages rather than through the test:
+  both `man/nested_tune_grid.Rd` and `man/nested_final_fit.Rd` carry an
+  `\item{eval_time}` entry stating what is refused ahead of tune, and
+  `nested_tune_grid.Rd`'s "Differences from calling tune directly" reads
+  "Settable: `event_level` ... and `eval_time`". The AC6 test block passes;
+  finding R5 below records that it is a weaker guard than the criterion.
+- AC7 — `censored` and `survival` are in `DESCRIPTION` Suggests.
+  `devtools::check()`: 0 errors, 0 warnings, 0 notes, tests `[112s/167s]`.
+  A second check under `_R_CHECK_DEPENDS_ONLY_=true`: 0 errors, 0 warnings,
+  0 notes, tests `[74s/74s]` — nothing fails where the Suggests are absent.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all 16 checks PASS, 18 advisory warnings (the
+standing references-staleness set), no release window. No `DESIGN.md`
+principle changed, so `cairn_impact.py` did not apply. Toolchain slot:
+`devtools::document()` produces no diff; `pkgdown::check_pkgdown()` reports no
+problems; `NEWS.md` carries an entry naming no milestone number; no new
+top-level files. `devtools::check()` clean as above. CI's `format-suggest` leg
+was red on one over-width line in `tests/testthat/test-eval-time.R`; `air
+format .` fixed it, whitespace only, committed on the branch.
+
+### Findings and disposition
+
+Three fresh-context reviewers ran: the blame-history and prior-review lenses
+each reported no findings (the archive holds no `## Review` sections and the
+repo's PR threads carry one real comment, on an untouched file). The diff-bug
+lens reported eight, ranked; a ninth is this review's own. Each was verified
+against the implementation before disposition.
+
+- R1 (confirmed): a multi-element `eval_time` makes `collect_metrics()`,
+  `summary()` and `print()` average across evaluation times.
+  `per_fold_metrics()` (`R/nested-results.R:809`) drops `.eval_time` and
+  `summarize_folds()` (`:709`) keys on `.metric` and `.estimator` alone, so a
+  3-fold run at `c(0.5, 10)` reports one row whose `mean` is over six values
+  from two different times and whose `n` reads 6 against a documented "number
+  of folds" (`R/nested-results.R:613`). M41 is what makes that state
+  reachable; no criterion covers it, and no test exercises
+  `collect_metrics()` on a multi-time run. Disposition: <R1_DISPOSITION>.
+- R2 (confirmed): the `@param eval_time` sentence "tune discards such values
+  with a warning and carries on" is false for two of the six refused shapes.
+  Measured against tune 2.1.0: `tune:::.filter_eval_time(numeric(0), fail =
+  TRUE)` aborts with "There were no usable evaluation times", and `"1"` is
+  coerced by `as.numeric()` and accepted, not discarded. Disposition:
+  <R2_DISPOSITION>.
+- R3 (confirmed): "Ignored, with a warning from tune, for a model whose mode
+  is not censored regression" names the wrong trigger.
+  `tune:::check_eval_time_arg()` branches on whether the metric set contains a
+  survival metric; a censored model scored by a static survival metric gets a
+  different warning. The sentence echoes tune's own message text, which is
+  where the wording came from. Disposition: <R3_DISPOSITION>.
+- R4 (confirmed): repeated times are accepted and forwarded by design, and
+  tune then warns "There were 0 inappropriate evaluation time points that were
+  removed" — once per tune call per fold. Measured on `c(10, 0.5, 10)`. The
+  documentation does not mention it. Disposition: <R4_DISPOSITION>.
+- R5 (confirmed): AC6's test scopes with `sub(".*Differences from calling tune
+  directly", "", ...)` and then matches `\code{eval_time}` anywhere after the
+  heading, so it would stay green if the argument appeared only in the "Not
+  passed on" paragraph. The criterion holds on the artifact — verified above —
+  but the guard is weaker than the promise. Disposition: <R5_DISPOSITION>.
+- R6 (confirmed): `test-fixture-cache.R:231` enumerates the fixture signatures
+  the suite asks for and gained no `srv_*` entry, so no pair differing only by
+  `eval_time` is covered. `fixture_key()` hashes every matched argument, so
+  behavior is right today and only the guard's coverage lags. The same gap is
+  already a ROADMAP candidate row from M34 and M35. Disposition:
+  <R6_DISPOSITION>.
+- R7 (confirmed): `srv_workflow(data)`
+  (`tests/testthat/helper-orchestration.R:579`) never uses its `data`
+  argument, though every call site passes one. Disposition: <R7_DISPOSITION>.
+- R8 (confirmed): the rewritten comment at
+  `tests/testthat/test-parallel-classify.R:801` runs past the file's wrapping
+  width; `air` does not reflow comments, so the formatter stays green.
+  Disposition: <R8_DISPOSITION>.
+- R9 (this review): M41's plan commit removed the ROADMAP candidate row that
+  bundled the `control` question, leaving the "Generalize the orchestrator
+  past `tune_grid()`" row saying "Depends on the `control`/`...` question the
+  row above owns" with no such row above it. `cairn_validate`'s dangling-token
+  check does not see prose cross-references. Disposition: <R9_DISPOSITION>.
