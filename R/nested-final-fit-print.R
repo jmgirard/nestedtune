@@ -159,40 +159,62 @@ tuning_scheme_label <- function(tuned) {
   label
 }
 
-# One entry per parameter selection chose a value for, rendered.
+# One entry per parameter selection chose a value for, unrendered.
+#
+# The single extraction both the summary component and the print line are
+# rendered from, so the two cannot come to describe one selection differently.
 #
 # tune adds a `.config` column to what select_best() returns; it labels the
 # candidate inside the tuning run and means nothing outside it, so it is
 # dropped here and by everything reading this.
-#
-# The values are collapsed rather than taken as scalars. A list-valued
-# selection is not something select_best() produces, but both callers are print
-# paths that promise never to raise, and a length-2 cell would otherwise abort
-# where a joined string describes it.
-summary_final_selection <- function(selected) {
+final_selection_values <- function(selected) {
   keep <- setdiff(names(selected), ".config")
-  out <- lapply(keep, function(nm) {
-    paste0(format(selected[[nm]][[1L]]), collapse = ", ")
-  })
+  out <- lapply(keep, function(nm) selected[[nm]][[1L]])
   names(out) <- keep
   out
 }
 
+# The stored `selection` component: one string per parameter, at the value's
+# own precision.
+#
+# `as.character()` rather than `format()`, matching `selection_values()` on the
+# results side. This is a component a caller reaches for a value, and comparing
+# it against the results-side selection is the thing it is for; `format()`
+# would round it to the session's `digits` option and report two equal
+# selections as different ones (M40 review F1).
+#
+# The values are collapsed rather than taken as scalars. A list-valued
+# selection is not something select_best() produces, but the caller is a print
+# path that promises never to raise, and a length-2 cell would otherwise abort
+# where a joined string describes it.
+summary_final_selection <- function(selected) {
+  lapply(final_selection_values(selected), function(value) {
+    if (length(value) != 1L) {
+      return(paste0(format(value), collapse = ", "))
+    }
+    if (is.na(value)) {
+      return("NA")
+    }
+    as.character(value)
+  })
+}
+
 # The selected candidate as `name = value` pairs, on one line.
 #
-# Rendered from the same extraction the summary stores, so the two cannot come
-# to describe one selection differently.
+# Rendered with `format()`, which is what a one-line label wants and what this
+# method has always emitted; the stored component above renders the same
+# extraction for a reader who wants the value instead.
 selected_label <- function(selected) {
-  values <- summary_final_selection(selected)
+  values <- final_selection_values(selected)
   if (length(values) == 0L) {
     return("nothing to select")
   }
-  paste0(
-    names(values),
-    " = ",
-    unlist(values, use.names = FALSE),
-    collapse = ", "
+  rendered <- vapply(
+    values,
+    function(value) paste0(format(value), collapse = ", "),
+    character(1)
   )
+  paste0(names(rendered), " = ", rendered, collapse = ", ")
 }
 
 # What the tuning run was, before what it chose. The candidate count is the

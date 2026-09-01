@@ -166,42 +166,63 @@ diff-bug lens reported seven, ranked below with dispositions.
    sibling's `"0.00316227766016838"`, and becomes `"0.00316"` under
    `options(digits = 3)`. A caller comparing the two summaries' selections
    gets a spurious mismatch on every continuous parameter.
-   **Recommended disposition:** fix now — render the stored scalars with
-   `as.character()`, mirroring the sibling, while `selected_label()` keeps
-   `format()` so `print.nested_final_fit()` stays byte-identical, plus a
-   regression test over a continuous parameter. Not a return-floor finding: no
-   acceptance criterion binds the component's precision.
+   **Disposition:** fix-now, directed at the gate, and done. Not a
+   return-floor finding: no acceptance criterion binds the component's
+   precision. `final_selection_values()` is now the single unrendered
+   extraction; `summary_final_selection()` renders it with `as.character()`,
+   mirroring `selection_values()`, and `selected_label()` keeps `format()`, so
+   `print.nested_final_fit()` stays byte-identical and AC1 still passes.
 2. `print_final_estimate()` never reads `s$estimate`, so a hand-built object
    holding a value would still print the no-estimate sentence, and the stub
    test's `estimate = NULL` assertion proves nothing.
-   **Recommended disposition:** reject — the component is `NULL` by construction for
+   **Disposition:** rejected — the component is `NULL` by construction for
    every object `summary.nested_final_fit()` can produce (the milestone's own
    Decisions section), so there is no value for the method to read; the
    hand-built counterexample is not a reachable state.
 3. `tuning_scheme_label()` catches `error` but not `warning`, where the file's
    comment says nothing here raises.
-   **Recommended disposition:** reject — a warning is not a raise, so the comment is
+   **Disposition:** rejected — a warning is not a raise, so the comment is
    accurate as written; the class-stripping difference from
    `outer_scheme_label()` is correct for a single-level object, as the
    blame-history lens independently found.
 4. AC2's test asserts `s$selection` only for `num_comp`, an integer, the one
    type where `format()` and `as.character()` agree, so finding 1 was
    invisible to the suite.
-   **Recommended disposition:** fix with finding 1 — a test exercising a
-   continuous value, shown red against the `format()` rendering first.
+   **Disposition:** fixed with finding 1. `the stored selection keeps the
+   value's own precision` builds a `nested_final_fit` around
+   `penalty = 0.0031622776601683794` and asserts the stored string at full
+   precision, again under `options(digits = 3)`, and asserts the print label
+   still renders `penalty = 0.003162278`. Shown red first: three of its four
+   assertions fail against the pre-fix `R/nested-final-fit-print.R` and the
+   label assertion passes, so it discriminates the rendering rather than the
+   file.
 5. All five acceptance-criterion boxes were unticked while the status read
    `review`.
-   **Recommended disposition:** reject as out of scope — the boxes are the review
+   **Disposition:** rejected as out of scope — the boxes are the review
    phase's to tick against fresh evidence, which is what this section records.
 6. The Estimate block says "The tuning run above has metrics" while
    `print_final_design()` drops the tuning line when `tuning_label` is `NULL`.
-   **Recommended disposition:** reject — the design block always emits the candidate
+   **Disposition:** rejected — the design block always emits the candidate
    count, so "above" still refers to the tuning run.
 7. `NEWS.md` omits the `estimate` component and calls the stored strings
    "values".
-   **Recommended disposition:** fix now — name the `estimate` component in the
-   entry.
+   **Disposition:** fix-now, done — the entry names the `estimate` component.
+   The "values" wording is accurate once finding 1 is fixed.
 
 No Driving RR, so no projection-vs-outcome pairs. No gate failure and no
 return-floor finding: every criterion passed as written on fresh evidence, and
 no reported finding demonstrates a criterion failing.
+
+### Gate
+
+At the merge gate the maintainer directed findings 1, 4 and 7 fixed before the
+merge and the other four rejected as recorded. After the fix: `devtools::test()`
+FAIL 0, WARN 0, SKIP 0, PASS 2468 (up 4); `devtools::check()` `Status: OK`,
+0 errors, 0 warnings, 0 notes; `devtools::document()` no diff; `air format .`
+no change. The AC1 byte-identity block and the print snapshot are unchanged by
+the fix, so every criterion above still stands on its recorded evidence.
+
+The fix's first form used `withr::with_options()`, which `R CMD check` flagged
+as an undeclared `::` import; it was rewritten with `options()`/`on.exit()`,
+the convention `tests/testthat/test-nested-tune-grid-checks.R:507` already
+records, rather than taking a dependency at a review gate.

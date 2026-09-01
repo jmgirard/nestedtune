@@ -2,8 +2,9 @@
 
 * `summary()` on a `nested_final_fit` returns a `summary.nested_final_fit`
   object holding the full-data tuning run's resampling scheme, the number of
-  candidates that run scored, and the parameter values selection chose — so a
-  caller can reach a value without re-deriving it from the fit. Printing it
+  candidates that run scored, the parameter values selection chose, and an
+  `estimate` component that is always `NULL` — so a caller can reach a value
+  without re-deriving it from the fit. Printing it
   reports those under headings and says, where the number would be, that this
   model has no performance estimate of its own and that the nested estimate is
   the one to report. Previously `summary()` on a final fit fell through to the

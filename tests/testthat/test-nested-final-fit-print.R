@@ -197,3 +197,45 @@ test_that("the summary report is stable", {
 
   expect_snapshot(print(summary(final_for_print())))
 })
+
+test_that("the stored selection keeps the value's own precision", {
+  # Built directly: this is a property of how the component is rendered, and a
+  # continuous tuning parameter would take an engine to reach.
+  #
+  # A value whose display rendering and whose value differ. The results-side
+  # summary stores `as.character()`, and comparing the two selections is what
+  # the component is for, so a rounded string here would report two equal
+  # selections as different ones -- and would change answer with the session's
+  # `digits` option (M40 review F1).
+  penalty <- 0.0031622776601683794
+  final <- structure(
+    list(
+      workflow = NULL,
+      selected = data.frame(
+        penalty = penalty,
+        .config = "Preprocessor1_Model1"
+      ),
+      tuning = NULL,
+      tuning_seed = 1L,
+      fit_seed = 2L
+    ),
+    class = "nested_final_fit"
+  )
+
+  expect_identical(
+    summary(final)$selection,
+    list(penalty = as.character(penalty))
+  )
+  expect_identical(summary(final)$selection$penalty, "0.00316227766016838")
+
+  # Restored with on.exit() rather than withr, which this package does not
+  # depend on.
+  op <- options(digits = 3)
+  on.exit(options(op), add = TRUE)
+  expect_identical(summary(final)$selection$penalty, "0.00316227766016838")
+  options(op)
+
+  # The one-line print label is unchanged by that: it renders for reading, and
+  # `print.nested_final_fit()` emits exactly what it always did.
+  expect_identical(selected_label(final$selected), "penalty = 0.003162278")
+})
