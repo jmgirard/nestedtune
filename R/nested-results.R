@@ -176,9 +176,12 @@ stamp_results <- function(out, template) {
   # the object was reached.
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
-  # The private carrier is a prototype's, not a caller's: an object with rows
-  # records what it holds in the two counts above and needs no second copy.
-  attr(out, template_rows_attribute()) <- NULL
+  # The private carriers are a prototype's, not a caller's: an object with rows
+  # records what it holds in the two counts above, and its own names say which
+  # columns the record is in.
+  for (nm in template_attributes()) {
+    attr(out, nm) <- NULL
+  }
   out
 }
 
@@ -189,7 +192,7 @@ stamp_results <- function(out, template) {
 # The class is removed by subtraction rather than replaced with tibble's three,
 # which leaves whatever else the object was carrying alone.
 bare_results <- function(data) {
-  for (nm in c(results_attributes(), template_rows_attribute())) {
+  for (nm in c(results_attributes(), template_attributes())) {
     attr(data, nm) <- NULL
   }
   class(data) <- setdiff(class(data), "nested_results")
@@ -259,12 +262,8 @@ dplyr_reconstruct.nested_results <- function(data, template) {
 # The two cases are separated rather than run through one weakened check. Where
 # the template carries the record, the full rule decides, and a combination is
 # refused because six rows cannot match a three-row template. Where it does
-# not, all that survives is what the prototype's attributes say the run was:
-# the rows in hand must carry a whole record of their own and must number what
-# the prototype's private row count records. That is weaker, and it is the
-# weakest place in the class -- but `vec_cbind()` cannot alter an existing
-# column, only add and recycle, so what it can do wrong is exactly what the
-# count catches (recycling a one-fold object up to three rows).
+# not, all that survives is what the prototype's attributes say the source was,
+# which is the weakest place in the class.
 #' @importFrom vctrs vec_restore
 #' @export
 vec_restore.nested_results <- function(x, to, ...) {
@@ -280,10 +279,18 @@ vec_restore.nested_results <- function(x, to, ...) {
   if (length(x) == 0L && nrow(x) == 0L && length(to) == 0L) {
     return(copy_results_attributes(as_results_tbl(x), to))
   }
+  # The rows in hand must carry a whole record of their own, under the names the
+  # source kept it in, and must number what the source had. `vec_cbind()` cannot
+  # alter an existing column, only add, recycle and REPAIR NAMES, so what it can
+  # do wrong is exactly what these two catch: recycling a one-fold object up to
+  # three rows, and renaming a record column out from under the record.
   attempted <- template_rows(to)
+  required <- template_record(to)
   if (
     !has_results_columns(x) ||
       !is.numeric(attempted) ||
+      !is.character(required) ||
+      !all(required %in% names(x)) ||
       !identical(nrow(x), as.integer(attempted))
   ) {
     return(bare_results(x))
@@ -292,17 +299,26 @@ vec_restore.nested_results <- function(x, to, ...) {
 }
 
 # The common type of a `nested_results` with a table carries BOTH sides'
-# columns and wears the `nested_results` class. The union is what makes a
-# combination with a table whose columns differ answer at all: vctrs casts every
-# input to the common type and then assigns the columns positionally, so a
-# common type omitting the other side's columns leaves the cast returning fewer
-# columns than the container has and vctrs raising its own internal error
-# (`dplyr::bind_rows(x, tibble::tibble(other = 1))`, measured 2026-08-31).
-# The class is what makes `vec_cbind()` reach `vec_restore()` at all: a bare
-# prototype takes the class off before the rule is ever asked, and the same
-# column-add would then answer differently through vctrs than through
-# `dplyr::bind_cols()` (measured 2026-08-31). The class is kept or shed in one
-# place, which is `vec_restore()` above.
+# columns. The union is what makes a combination with a table whose columns
+# differ answer at all: vctrs casts every input to the common type and then
+# assigns the columns positionally, so a common type omitting the other side's
+# columns leaves the cast returning fewer columns than the container has and
+# vctrs raising its own internal error (`dplyr::bind_rows(x,
+# tibble::tibble(other = 1))`, measured 2026-08-31).
+#
+# It wears the `nested_results` class only where the results object is the
+# FIRST argument. The class is what makes `vec_cbind()` reach `vec_restore()`
+# at all -- a bare prototype takes the class off before the rule is ever asked
+# -- so this is what decides whether a column add keeps the class, and
+# `dplyr::bind_cols()` keeps it on the first argument's type and no other
+# (measured 2026-08-31, both orders). A caller cannot see which door a verb
+# uses, so the doors answer alike; the cost is that these ten methods are not
+# mirror images of each other, which vctrs asks a `vec_ptype2()` lattice to be.
+# Nothing here reaches the asymmetry: `vec_rbind()` and `vec_c()` finalize a
+# `nested_results` to a bare tibble before any of them is dispatched on
+# (measured 2026-08-31), leaving `vec_cbind()`, which combines in argument
+# order. The class is kept or shed in one place, which is `vec_restore()`
+# above.
 #
 # That is the lattice vctrs uses inside an operation, not the answer a caller
 # gets. Exported `vctrs::vec_ptype()` and `vctrs::vec_ptype2()` on a
@@ -318,14 +334,16 @@ results_ptype <- function(base, from) {
 # which is right for an object a caller holds and wrong for a token: a
 # prototype has no rows of its own to describe. So the two counts do not travel
 # onto one at all -- nothing wearing the class is left claiming a run it does
-# not hold (IP4) -- and the source row count `vec_restore()` checks a
-# combination against travels privately instead, where it describes the
-# operation's source rather than the token's own rows.
+# not hold (IP4) -- and what `vec_restore()` checks a combination against
+# travels privately instead, describing the operation's SOURCE rather than the
+# token's own rows: how many rows that source had, and which of its columns the
+# record was in.
 copy_results_attributes <- function(out, from) {
   for (nm in run_attributes()) {
     attr(out, nm) <- attr(from, nm)
   }
   attr(out, template_rows_attribute()) <- template_rows(from)
+  attr(out, template_record_attribute()) <- template_record(from)
   out
 }
 
@@ -339,8 +357,30 @@ template_rows <- function(x) {
   n
 }
 
+# The names of the source's record columns, from whichever carrier holds them:
+# an object with columns says so in its own names, a prototype privately. A
+# prototype has none of the source's columns left to read -- `vec_cbind()`'s is
+# a frame with no columns at all -- so without this the assembled result could
+# be missing a record column and nothing downstream would know (`vec_cbind(x,
+# tibble::tibble(splits = 1:3))`, whose name repair renames `splits` away).
+template_record <- function(x) {
+  nms <- names(x)[record_columns(names(x))]
+  if (length(nms) == 0L) {
+    return(attr(x, template_record_attribute()))
+  }
+  nms
+}
+
 template_rows_attribute <- function() {
   "nestedtune_template_rows"
+}
+
+template_record_attribute <- function() {
+  "nestedtune_template_record"
+}
+
+template_attributes <- function() {
+  c(template_rows_attribute(), template_record_attribute())
 }
 
 # `vec_cbind()` does not reach the prototype above on its own. It builds the
@@ -375,7 +415,7 @@ vec_ptype2.nested_results.tbl_df <- function(x, y, ...) {
 
 #' @export
 vec_ptype2.tbl_df.nested_results <- function(x, y, ...) {
-  results_ptype(vctrs::tib_ptype2(x, bare_results(y), ...), y)
+  vctrs::tib_ptype2(x, bare_results(y), ...)
 }
 
 #' @export
@@ -385,7 +425,7 @@ vec_ptype2.nested_results.data.frame <- function(x, y, ...) {
 
 #' @export
 vec_ptype2.data.frame.nested_results <- function(x, y, ...) {
-  results_ptype(vctrs::df_ptype2(x, bare_results(y), ...), y)
+  vctrs::df_ptype2(x, bare_results(y), ...)
 }
 
 # Casting down is a question the class can answer: the record is dropped along

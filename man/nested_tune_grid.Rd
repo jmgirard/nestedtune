@@ -114,6 +114,13 @@ through a \code{dplyr_reconstruct()} method; \strong{vctrs}' own verbs —
 back a bare tibble, the same answer \code{slice()} gives, rather than an object
 whose record has stopped describing its own rows.
 
+Column-binding is the one place argument order shows. \code{bind_cols()} and
+\code{vec_cbind()} both build their answer on the first argument's type, so
+\code{bind_cols(x, extra)} and \code{vec_cbind(x, extra)} are a \code{nested_results}
+while \code{bind_cols(extra, x)} and \code{vec_cbind(extra, x)} are plain tibbles
+holding the same ten columns. Either verb answers the same way in either
+position.
+
 Three verbs sit outside all of it. \code{group_by()}, \code{rowwise()} and
 \code{tibble::as_tibble()} return a grouped, a rowwise and a plain tibble
 respectively — none of them a \code{nested_results} — and each carries the

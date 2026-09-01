@@ -266,3 +266,39 @@ test_that("combining with a table whose columns differ answers rather than raisi
   # for the wrong reason.
   expect_false("other" %in% names(res))
 })
+
+test_that("vec_cbind() sheds the class when name repair moves a record column", {
+  skip_if_no_engines()
+  res <- compat_results()
+  clash <- tibble::tibble(splits = 1:3)
+
+  through_vctrs <- suppressMessages(vctrs::vec_cbind(res, clash))
+  through_dplyr <- suppressMessages(dplyr::bind_cols(res, clash))
+
+  expect_no_record(through_vctrs, "vec_cbind() over a record column")
+  expect_identical(class(through_vctrs), class(through_dplyr))
+  expect_identical(names(through_vctrs), names(through_dplyr))
+
+  # The passing control: name repair really did move the record column, so the
+  # assertions above cannot pass on a call that left `splits` where it was.
+  expect_false("splits" %in% names(through_vctrs))
+  expect_true("splits" %in% names(res))
+})
+
+test_that("a column add answers the same through either door with the results object second", {
+  skip_if_no_engines()
+  res <- compat_results()
+  extra <- tibble::tibble(extra = 1:3)
+
+  through_vctrs <- vctrs::vec_cbind(extra, res)
+  through_dplyr <- dplyr::bind_cols(extra, res)
+
+  expect_no_record(through_vctrs, "vec_cbind() with the results object second")
+  expect_identical(class(through_vctrs), class(through_dplyr))
+  expect_identical(names(through_vctrs), names(through_dplyr))
+
+  # The passing control: the results object leading is the case that keeps the
+  # class (AC3), so the shedding above is a property of the position and not of
+  # the verb refusing every column add.
+  expect_s3_class(vctrs::vec_cbind(res, extra), "nested_results")
+})

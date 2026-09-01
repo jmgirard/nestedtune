@@ -105,6 +105,13 @@
 #'   back a bare tibble, the same answer `slice()` gives, rather than an object
 #'   whose record has stopped describing its own rows.
 #'
+#'   Column-binding is the one place argument order shows. `bind_cols()` and
+#'   `vec_cbind()` both build their answer on the first argument's type, so
+#'   `bind_cols(x, extra)` and `vec_cbind(x, extra)` are a `nested_results`
+#'   while `bind_cols(extra, x)` and `vec_cbind(extra, x)` are plain tibbles
+#'   holding the same ten columns. Either verb answers the same way in either
+#'   position.
+#'
 #'   Three verbs sit outside all of it. `group_by()`, `rowwise()` and
 #'   `tibble::as_tibble()` return a grouped, a rowwise and a plain tibble
 #'   respectively — none of them a `nested_results` — and each carries the
