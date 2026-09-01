@@ -71,7 +71,7 @@ Surface tier: internal — the deliverable is test tooling under
       `tests/testthat/test-fixture-cache.R:231-359` is removed, and the
       helper header comment in `tests/testthat/helper-orchestration.R` no
       longer cites it.
-- [ ] AC5: The profile's verify slot is clean on the branch:
+- [x] AC5: The profile's verify slot is clean on the branch:
       `devtools::test()` passes with no failures, and `devtools::check()`
       reports 0 errors, 0 warnings, 0 notes.
 
@@ -135,3 +135,6 @@ Surface tier: internal — the deliverable is test tooling under
 - AC2 — verified. Planted defect run on a scratch copy (the `eval_time` registry entry removed, repo untouched): 2 failures, "nested_tune_grid() has formal(s) with no registered variant value: `eval_time`" and the same for `nested_final_fit()`; 14 other expectations pass.
 - AC3 — verified. `fixture_key()` scans the sorted arguments' canonical form for `"<depth>"` and aborts with class `fixture_key_depth` naming the argument (`helper-orchestration.R`, diff read). The unit test "a request nested past the depth cut is refused, naming the argument" passes both expectations: a 45-level `object` errors matching "argument(s) `object` nest past"; the 30-level control keys to a 32-hex hash.
 - AC4 — verified. `git diff main..HEAD` removes the test "the key separates every fixture signature this suite asks for" whole; `grep` for its title and for the old preamble phrase "asserts every distinct fixture signature" over `tests/testthat/*.R` returns nothing.
+- AC5 — verified. `devtools::test()` on the branch: 0 failures, 0 warnings, 0 skips, 2708 pass; fixture cache report 43 signatures / 43 builds / 170 requests, no `fixture_key_depth` error on any real request. `devtools::check()`: 0 errors, 0 warnings, 0 notes, tests [134s/185s].
+- Consistency gate. `cairn_validate.py` exit 0, all checks pass, advisories only (the standing 18 references-staleness warnings; release window closed). No DESIGN principle touched, so `cairn_impact.py` skipped. Toolchain slot: `devtools::document()` leaves no diff; README.Rmd untouched on the branch and README.md newer than it, so in sync; `pkgdown::check_pkgdown()` no problems; no new top-level files; NEWS.md needs no entry — the diff is test tooling with no user-visible change (internal tier); `check()` clean as above.
+- Review fan-out: three fresh-context reviewers spawned ([O] diff-bug, [S] blame-history, [S] prior-review). Findings and triage below.
