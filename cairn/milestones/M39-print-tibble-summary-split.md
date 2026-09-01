@@ -146,6 +146,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-09-01: re-review gate failed. `cairn_validate.py` exits 1 on `weight caps`: `cairn/ROADMAP.md` is 60 lines against the cap of <60, pushed over by the one candidate row this branch adds for review finding O1 on a file that was at 59 on `origin/main`. Every acceptance criterion was re-driven fresh at `e285b64` first and all seven hold, AC4 among them under its amended wording, so the return is the cap alone; the remedy is the graduate-or-prune one the cap's own rule states, and the three-lens fan-out was not reached. Status to in-progress.
 - 2026-09-01: the cap gate cleared. The four published-site candidate rows in `cairn/ROADMAP.md` — the Node-20 SHA pins, the deploy job no pull request can exercise, the two-name site-hygiene list and the `/dev/` mode question — were grouped into one row keeping every promotion trigger, chosen at the gate over pruning the measured-false CI-matrix row or dropping this branch's own O1 row; 60 lines to 57, 42,710 B to 42,328, nothing discarded. `cairn_validate.py` now exits with all checks passed. Suite 2398 pass / 0 fail / 0 warn / 0 skip, unchanged, and no R source, roxygen or test file was touched. Status back to review.
 - 2026-09-01: round 3. All seven criteria re-driven fresh at `2e74821` and all hold; `cairn_validate.py` exit 0 with `weight caps` passing; `devtools::check()` 0 errors, 0 warnings, 0 notes; eleven CI checks green on PR #48. Three-lens fan-out: blame-history and prior-review no findings, diff-bug eleven. Two fixed on the branch (a man-page sentence that said a wholly failed run neither warns nor returns, where it does both; a missing `@seealso` back-link), four rejected, four absorbed into two existing candidate rows, one put to the maintainer at the gate. No finding meets the return floor.
+- 2026-09-01: merge approved at the gate; R1 dispositioned to a follow-up row rather than fixed here or accepted as a known issue.
 
 ## Decisions
 
@@ -699,3 +700,7 @@ the `check_nested()` row, whose malformed-object question it repeats. That
 `check_nested()` row now carries findings from a second milestone for the first
 time, so the next pass to extend it poses the disposition chip rather than
 extending it again.
+
+R1's disposition, chosen by the maintainer at the merge gate: a follow-up row
+rather than a fix here or an accepted limitation. It joined the grouped M39
+print/summary row, which now carries five items.
