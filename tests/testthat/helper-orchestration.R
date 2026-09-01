@@ -850,22 +850,36 @@ inside_spec_bindings <- function(args, env) {
 # `canonical_form()`'s depth cut: past the cut the form is truncated, so two
 # arguments differing only below it would share a key and one test would be
 # served the other's fixture. Every fixture family this suite builds sits well
-# inside the cut (workflows at most 28 levels against a cut of 40, measured
-# 2026-09-01 at M42's plan), so a hit means a new fixture shape, and the remedy
-# is raising the cut rather than hashing a truncated form.
+# inside the cut (the sorted argument list the guard forms reaches 30 levels
+# for the `det`, `sep` and `unstable` requests, against a cut of 40, measured
+# 2026-09-01 at M42), so a hit means a new fixture shape, and the remedy is
+# raising the cut rather than hashing a truncated form. The refusal names each
+# deep argument by name, or by its position in the request when it has none:
+# `memoised()` names every argument `match.call()` matches, so a bare position
+# means a direct `fixture_key()` call or a value that landed in `...`.
 fixture_key <- function(fn, args, env = parent.frame()) {
   ordered <- if (is.null(names(args))) args else args[order(names(args))]
   form <- canonical_form(ordered)
   if (has_depth_marker(form)) {
-    deep <- names(ordered)[vapply(
-      seq_along(ordered),
-      function(i) has_depth_marker(canonical_form(ordered[i])),
+    # Located over `args`, not `ordered`, so a position is the request's own.
+    deep <- which(vapply(
+      seq_along(args),
+      function(i) has_depth_marker(canonical_form(args[i])),
       logical(1)
-    )]
+    ))
+    labels <- names(args)[deep]
+    if (is.null(labels)) {
+      labels <- rep("", length(deep))
+    }
+    labels <- ifelse(
+      nzchar(labels),
+      sprintf("`%s`", labels),
+      sprintf("position %d", deep)
+    )
     rlang::abort(
       sprintf(
         "fixture_key(): argument(s) %s nest past canonical_form()'s depth cut, so the request cannot be keyed without truncation.",
-        toString(sprintf("`%s`", deep))
+        toString(labels)
       ),
       class = "fixture_key_depth"
     )

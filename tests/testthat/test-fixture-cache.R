@@ -277,6 +277,20 @@ test_that("the key separates every formal argument of both orchestrators", {
     f <- orchestrators[[fn_name]]
     axes <- setdiff(names(formals(f)), "...")
 
+    # One fact held independently of `formals()`: the enumeration above can
+    # silently empty (an orchestrator rewritten over `...` would drop every
+    # axis with the loop below never running), so the two arguments every
+    # orchestrator takes are expected by name.
+    absent <- setdiff(c("object", "resamples"), axes)
+    expect(
+      length(absent) == 0L,
+      sprintf(
+        "%s()'s enumerated formals lack %s",
+        fn_name,
+        toString(sprintf("`%s`", absent))
+      )
+    )
+
     unregistered <- setdiff(axes, names(signature_variants))
     expect(
       length(unregistered) == 0L,
@@ -284,6 +298,16 @@ test_that("the key separates every formal argument of both orchestrators", {
         "%s() has formal(s) with no registered variant value: %s",
         fn_name,
         toString(sprintf("`%s`", unregistered))
+      )
+    )
+
+    stale <- setdiff(names(signature_variants), axes)
+    expect(
+      length(stale) == 0L,
+      sprintf(
+        "the registry holds variant(s) for no formal of %s(): %s",
+        fn_name,
+        toString(sprintf("`%s`", stale))
       )
     )
 
@@ -324,12 +348,20 @@ test_that("a request nested past the depth cut is refused, naming the argument",
   # `canonical_form()` stops at 40 levels and writes "<depth>" in place of
   # whatever lies below. A key built over that form would be blind to
   # everything past the cut, so the request is refused instead. Past 40 levels
-  # of a bare list the only thing under test is the cut itself; no fixture in
-  # this suite comes within 12 levels of it.
+  # of a bare list the only thing under test is the cut itself; the sorted
+  # argument list the guard forms reaches 30 levels for the deepest fixture
+  # family (measured 2026-09-01 at M42, `helper-orchestration.R` carries the
+  # same figure).
   nest <- function(n) {
     x <- 1L
-    for (i in seq_len(n)) x <- list(x)
+    for (i in seq_len(n)) {
+      x <- list(x)
+    }
     x
+  }
+  keyed <- function(object) {
+    set.seed(3)
+    fixture_key(fake_fit, list(object = object, resamples = "shallow"))
   }
 
   set.seed(3)
@@ -339,11 +371,29 @@ test_that("a request nested past the depth cut is refused, naming the argument",
     class = "fixture_key_depth"
   )
 
-  # The control: the same request with the deep argument inside the cut keys
-  # normally, and is a hash rather than anything else.
+  # A deep value with no name is named by its position in the request, which
+  # is where a direct `fixture_key()` call leaves it.
   set.seed(3)
-  key <- fixture_key(fake_fit, list(object = nest(30L), resamples = "shallow"))
-  expect_match(key, "^[0-9a-f]{32}$")
+  expect_error(
+    fixture_key(fake_fit, list(nest(45L), resamples = "shallow")),
+    "argument\\(s\\) position 1 nest past",
+    class = "fixture_key_depth"
+  )
+
+  # Through `memoised()` the same positional value arrives named, since the
+  # request is rebuilt by `match.call()` before it is keyed.
+  set.seed(3)
+  expect_error(
+    memoised(fake_fit(nest(45L), "shallow")),
+    "argument\\(s\\) `object` nest past",
+    class = "fixture_key_depth"
+  )
+
+  # The cut itself: the first refused depth is 40, the last keyed 39, and two
+  # requests inside the cut differing only below the 38th level key apart.
+  expect_error(keyed(nest(40L)), class = "fixture_key_depth")
+  expect_match(keyed(nest(39L)), "^[0-9a-f]{32}$")
+  expect_false(identical(keyed(nest(39L)), keyed(nest(38L))))
 })
 
 test_that("the same signature keys the same way twice, so it is built once", {
