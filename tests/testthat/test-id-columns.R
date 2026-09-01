@@ -199,3 +199,45 @@ test_that("no method's answer depends on what the caller named the column", {
     }
   }
 })
+
+# The prose half. The behavior above is what a reader of `NEWS.md` and the help
+# page is being promised, and M36 shipped a sentence narrowing that promise to
+# the pattern this milestone removed -- "unless you name it `id` or `id`
+# followed by digits". A claim left standing after the code stopped making it is
+# the fault this block exists to catch (M36 review O1 asked the same of the
+# subsetting paragraph).
+#
+# `test_path("..", "..", ...)` resolves outside the source tree under
+# `R CMD check`, so this skips there and fires where the documentation is
+# actually edited. Each file is asserted long enough to have been read and shown
+# to carry the sentence that replaced the claim, so a mistyped path cannot pass
+# the negative for the wrong reason.
+test_that("the changelog and the help page promise what the code now does", {
+  paths <- list(
+    news = test_path("..", "..", "NEWS.md"),
+    roxygen = test_path("..", "..", "R", "nested-tune-grid.R"),
+    rd = test_path("..", "..", "man", "nested_tune_grid.Rd")
+  )
+  skip_if_not(all(vapply(paths, file.exists, logical(1))), "sources absent")
+  # The roxygen source carries a `#'` on every line, and the sentence wraps, so
+  # the markers are dropped before the whitespace is collapsed -- otherwise a
+  # claim that spans two lines is unfindable in the one file it is edited in.
+  flat <- function(path) {
+    lines <- sub("^\\s*#'\\s?", "", readLines(path, warn = FALSE))
+    gsub("\\s+", " ", paste(lines, collapse = " "))
+  }
+
+  promise <- "read as a fold label only when the design itself carr"
+  for (nm in names(paths)) {
+    text <- flat(paths[[nm]])
+    expect_gt(nchar(text), 1000L)
+    expect_match(text, promise, fixed = TRUE)
+  }
+
+  # The narrowed claim M36 left in the changelog, gone.
+  expect_no_match(
+    flat(paths$news),
+    "unless you name it `id` or `id` followed by digits",
+    fixed = TRUE
+  )
+})

@@ -96,6 +96,14 @@ the invariants \code{tune} declares on its own results objects:
 held.
 }
 
+The columns the run is recorded in are the ones the resampling design
+named, and \code{nested_tune_grid()} records them when it builds the result. So
+a column you add afterwards is read as a fold label only when the design
+itself carries a column of that name — \code{id}, and \code{id2} for a repeated
+design. The name you pick decides nothing on its own: adding \code{id2} to a
+result from a plain v-fold design leaves the class, the record and the
+fold labels alone, exactly as adding \code{extra} does.
+
 An operation that stays inside those rules — \code{arrange()}, \code{mutate()}
 adding a column, a join that matches one row apiece — returns a
 \code{nested_results} with the call's record intact. Anything else — \code{slice()},

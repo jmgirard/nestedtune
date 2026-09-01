@@ -127,9 +127,9 @@ their own candidate row stay there.
 - [x] T6. Mutation check: restore `grep("^id[0-9]*$", names(x))` as the
       derivation and record in the work log which of T1's, T2's and T5's tests
       go red.
-- [ ] T7. `NEWS.md` bullet and the `@return` invariants text rewritten to what
+- [x] T7. `NEWS.md` bullet and the `@return` invariants text rewritten to what
       the code now does; `devtools::document()`, `air format .`.
-- [ ] T8. D-entry: the design's columns are recorded at construction and the
+- [x] T8. D-entry: the design's columns are recorded at construction and the
       invariant record is read from that record, superseding M36's
       milestone-local decision and amending the clause D-031 fixed.
 
@@ -148,6 +148,9 @@ their own candidate row stay there.
 - 2026-08-31: the amended AC4 went to a fresh-context [O] reader in **full** mode, five findings, all fixed here: four of six call shapes were unpinned and the choice decided runnability (`vec_cast(y, res)` refuses as a loss of precision) and discrimination (`dplyr_reconstruct` against an un-mutated template passes in the broken code too); "the six methods that route a caller's column through the rule" read as exhaustive with "the rule" undefined; two clauses stated instrument sensitivity rather than class behavior; the `names<-` probe put the tested name only in the data, so all 18 of its cells were true by construction; and "AC1's" mis-cited a fixture AC1 does not name. The `names<-` probe changed to an identity name assignment over an object already carrying the caller's column.
 - 2026-08-31: T5 — the sweep runs 108 cells (six methods × five names × two designs × two forms, less the `id2` × `rep_res` pair), all green; nothing had to be fixed for it.
 - 2026-08-31: T6 — mutation check, the name pattern restored as the derivation. 30 of the sweep's 108 cells go red, five at every one of the six methods, and all 30 are list-valued: no atomic cell separates the two derivations, which is the sweep's weakest axis. Three of T1's four blocks go red (AC2(a), AC2(b), AC2(c)); AC3's does not, because its fault is the `order()` guard rather than the derivation, and it was measured red on the branch point instead. Of T2's three blocks, "recorded under whatever name it has" and "travels with the class" go red; "the constructor records the columns" does not, since the pattern and the record agree on a design rsample named. A second mutation — the constructor stops writing the attribute — reds that block along with thirteen others.
+- 2026-08-31: T7, T8 — the M36 `NEWS.md` bullet rewritten to what the code now does and a second bullet added for the `order()` fault, the `@return` invariants section given the sentence AC5 asks for, `devtools::document()` run, `air format .` clean; D-036 recorded. A doc block in `test-id-columns.R` guards the promise in all three files and the removal of M36's narrowing sentence.
 ## Decisions
+
+- 2026-08-31: recorded as D-036 — the design's columns are recorded at construction and every reader takes the label set from that record.
 
 ## Review
