@@ -291,22 +291,27 @@ vec_restore.nested_results <- function(x, to, ...) {
   stamp_results(as_results_tbl(x), to)
 }
 
-# The common type of a `nested_results` with a table is the `nested_results`
-# prototype, on every pair. This is what makes `vec_cbind()` reach
-# `vec_restore()` at all: a bare prototype takes the class off before the rule
-# is ever asked, and the same column-add would then answer differently through
-# vctrs than through `dplyr::bind_cols()` (measured 2026-08-31). The class is
-# kept or shed in one place, which is `vec_restore()` above.
+# The common type of a `nested_results` with a table carries BOTH sides'
+# columns and wears the `nested_results` class. The union is what makes a
+# combination with a table whose columns differ answer at all: vctrs casts every
+# input to the common type and then assigns the columns positionally, so a
+# common type omitting the other side's columns leaves the cast returning fewer
+# columns than the container has and vctrs raising its own internal error
+# (`dplyr::bind_rows(x, tibble::tibble(other = 1))`, measured 2026-08-31).
+# The class is what makes `vec_cbind()` reach `vec_restore()` at all: a bare
+# prototype takes the class off before the rule is ever asked, and the same
+# column-add would then answer differently through vctrs than through
+# `dplyr::bind_cols()` (measured 2026-08-31). The class is kept or shed in one
+# place, which is `vec_restore()` above.
 #
 # That is the lattice vctrs uses inside an operation, not the answer a caller
 # gets. Exported `vctrs::vec_ptype()` and `vctrs::vec_ptype2()` on a
 # `nested_results` both hand back a bare tibble (measured 2026-08-31), because
 # vctrs finalizes what this returns before returning it. The apparent mismatch
 # is not a defect to fix here.
-nested_results_ptype <- function(x) {
-  ptype <- vctrs::vec_slice(bare_results(x), 0L)
-  class(ptype) <- c("nested_results", class(ptype))
-  copy_results_attributes(ptype, x)
+results_ptype <- function(base, from) {
+  class(base) <- c("nested_results", class(base))
+  copy_results_attributes(base, from)
 }
 
 # What a type token carries. `stamp_results()` reads the counts off the rows,
@@ -354,35 +359,33 @@ template_rows_attribute <- function() {
 #' @importFrom vctrs vec_cbind_frame_ptype
 #' @export
 vec_cbind_frame_ptype.nested_results <- function(x, ...) {
-  out <- bare_results(x)[0]
-  class(out) <- c("nested_results", class(out))
-  copy_results_attributes(out, x)
+  results_ptype(bare_results(x)[0], x)
 }
 
 #' @importFrom vctrs vec_ptype2
 #' @export
 vec_ptype2.nested_results.nested_results <- function(x, y, ...) {
-  nested_results_ptype(x)
+  results_ptype(vctrs::tib_ptype2(bare_results(x), bare_results(y), ...), x)
 }
 
 #' @export
 vec_ptype2.nested_results.tbl_df <- function(x, y, ...) {
-  nested_results_ptype(x)
+  results_ptype(vctrs::tib_ptype2(bare_results(x), y, ...), x)
 }
 
 #' @export
 vec_ptype2.tbl_df.nested_results <- function(x, y, ...) {
-  nested_results_ptype(y)
+  results_ptype(vctrs::tib_ptype2(x, bare_results(y), ...), y)
 }
 
 #' @export
 vec_ptype2.nested_results.data.frame <- function(x, y, ...) {
-  nested_results_ptype(x)
+  results_ptype(vctrs::tib_ptype2(bare_results(x), y, ...), x)
 }
 
 #' @export
 vec_ptype2.data.frame.nested_results <- function(x, y, ...) {
-  nested_results_ptype(y)
+  results_ptype(vctrs::df_ptype2(x, bare_results(y), ...), y)
 }
 
 # Casting down is a question the class can answer: the record is dropped along
@@ -393,20 +396,28 @@ vec_ptype2.data.frame.nested_results <- function(x, y, ...) {
 # report honestly (IP4), so the refusal is vctrs' own incompatible-cast
 # condition rather than a lossy one -- nothing was lost, the conversion was
 # never available. rsample refuses the same way for the same reason.
+#
+# Every one of them casts the COLUMNS across as well. vctrs hands a cast the
+# type it wants back, and assigns what the cast returns into a container built
+# from that same type: a cast handing back the object it was given, over a type
+# holding a column the object does not, is a column short and vctrs raises its
+# own internal error rather than a message a caller can act on (measured
+# 2026-08-31 on `dplyr::bind_rows(x, tibble::tibble(other = 1))`, which returns
+# a plain table on a build with none of these methods registered).
 #' @importFrom vctrs vec_cast
 #' @export
 vec_cast.nested_results.nested_results <- function(x, to, ...) {
-  x
+  reconstruct_results(vctrs::tib_cast(bare_results(x), bare_results(to), ...), x)
 }
 
 #' @export
 vec_cast.tbl_df.nested_results <- function(x, to, ...) {
-  bare_results(x)
+  vctrs::tib_cast(bare_results(x), to, ...)
 }
 
 #' @export
 vec_cast.data.frame.nested_results <- function(x, to, ...) {
-  as.data.frame(bare_results(x))
+  vctrs::df_cast(as.data.frame(bare_results(x)), to, ...)
 }
 
 #' @export

@@ -235,3 +235,34 @@ test_that("group_by(), rowwise() and as_tibble() leave the recorded attributes r
   # could not pass them for the wrong reason.
   expect_identical(attr(res, "outer_label"), "3-fold cross-validation")
 })
+
+# The review's two returns. Neither is an acceptance criterion -- both are
+# defects the review found in the methods above -- so each is asserted against
+# behavior that already existed somewhere else: what `main` did before these
+# methods were registered (T6), and what `dplyr::bind_cols()` does today (T7).
+
+test_that("combining with a table whose columns differ answers rather than raising", {
+  skip_if_no_engines()
+  res <- compat_results()
+  other <- tibble::tibble(other = 1)
+
+  forms <- list(
+    bind_rows = dplyr::bind_rows(res, other),
+    vec_rbind = vctrs::vec_rbind(res, other)
+  )
+
+  for (nm in names(forms)) {
+    out <- forms[[nm]]
+    expect_no_record(out, paste0(nm, "() over an unshared column"))
+    expect_identical(names(out), c(names(res), "other"), label = paste0(nm, " names"))
+    expect_identical(nrow(out), nrow(res) + 1L, label = paste0(nm, " rows"))
+    # The union is what the answer rests on: the rows the source contributed
+    # carry no value for a column it never had.
+    expect_identical(out$other, c(NA, NA, NA, 1), label = paste0(nm, " other"))
+  }
+
+  # The passing control: the two tables really do differ in their columns, so a
+  # run where `other` were already a column of `res` could not pass the above
+  # for the wrong reason.
+  expect_false("other" %in% names(res))
+})

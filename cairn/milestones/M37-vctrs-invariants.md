@@ -112,7 +112,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
       add the `group_by()`/`rowwise()`/`as_tibble()` limitation to `DESIGN.md`'s
       Known issues; NEWS entries; `devtools::document()`.
 - [x] T5 Run `devtools::test()` and `devtools::check()`.
-- [ ] T6 Review return: make the `vec_ptype2` and `vec_cast` methods honor the
+- [x] T6 Review return: make the `vec_ptype2` and `vec_cast` methods honor the
       other side's columns, so combining a `nested_results` with a table whose
       columns differ answers instead of raising vctrs' internal error
       (`dplyr::bind_rows(x, tibble::tibble(other = 1))` works on `main` and
@@ -151,6 +151,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: all tasks checked; status to `review`.
 - 2026-08-31: /milestone-review — PR #46 opened, `main` unmoved at `b26eb77`. All seven criteria pass on fresh evidence; `cairn_validate` exit 0 and the r-package consistency gate clean. Three review lenses ran; the [O] diff lens returned eleven findings, six of them reproduced here, F1 measured as a regression against `main`.
 - 2026-08-31: review return (defect return 1) — the merge gate withheld approval on two confirmed findings: the `vec_ptype2`/`vec_cast` methods ignore the other side's columns, so `dplyr::bind_rows(x, tibble::tibble(other = 1))` raises vctrs' internal `Can't assign 9 columns to df of length 10` where `main` returns a 4-row, 10-column tibble; and `vctrs::vec_cbind(x, tibble::tibble(splits = 1:3))` keeps the class and the record after name repair renames `splits` away, where `dplyr::bind_cols()` sheds. No acceptance criterion failed; the return is the maintainer's load-bearing-defect call. T6 and T7 log the work; status to `in-progress`.
+- 2026-08-31: T6 — the `vec_cast` methods now cast the columns across to `to` (`tib_cast`/`df_cast`) and the five `vec_ptype2` methods return the union of both sides' columns; `dplyr::bind_rows(x, tibble::tibble(other = 1))` and `vctrs::vec_rbind()` on the same pair return a 4-row, 10-column bare tibble again rather than vctrs' internal `Can't assign 9 columns to df of length 10`. The new regression block fails on the previous code with exactly that error; suite 2079 passing, 0 failures, 0 skips.
 
 ## Decisions
 
