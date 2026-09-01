@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** `m038-id-columns-recorded`
+- **Branch/PR:** `m038-id-columns-recorded` — https://github.com/tidymodels/nestedtune/pull/47
 
 ## Goal
 
@@ -41,12 +41,12 @@ their own candidate row stay there.
 
 ## Acceptance criteria
 
-- [ ] AC1. `new_nested_results()` records, as an attribute on the object, the
+- [x] AC1. `new_nested_results()` records, as an attribute on the object, the
       column names it took from the design — `setdiff(names(resamples),
       c("splits", "inner_resamples"))` — and `id_columns()` returns that
       record. The recorded value is `"id"` for a 3-fold `nested_resamples()`
       design and `c("id", "id2")` for a 3-fold repeated-twice one.
-- [ ] AC2. The three defects the M36 review measured on 2026-08-31 no longer
+- [x] AC2. The three defects the M36 review measured on 2026-08-31 no longer
       occur, on `res` (a 3-fold design) and `rep_res` (3-fold repeated twice):
       (a) `unique(collect_metrics(dplyr::mutate(res, id2 = "x"), summarize =
       FALSE)$id)` is `c("Fold1", "Fold2", "Fold3")` — pre-milestone,
@@ -57,7 +57,7 @@ their own candidate row stay there.
       (c) `dplyr::mutate(rep_res, id0 = as.list(seq_len(nrow(rep_res))))` is a
       `nested_results` — pre-milestone, an abort, `unimplemented type 'list'
       in 'listgreater'`.
-- [ ] AC3. Replacing a recorded fold-label column with a value that cannot be
+- [x] AC3. Replacing a recorded fold-label column with a value that cannot be
       ordered returns a bare tibble instead of aborting from inside the rule:
       `dplyr::mutate(res, id = list(c(1, 2), 3, 4))` is a `tbl_df` carrying no
       `nested_results` class and raises no condition — pre-milestone, an
@@ -81,7 +81,7 @@ their own candidate row stay there.
       `dplyr_reconstruct(bare, y)`, `y[rep(TRUE, nrow(y)), ]`,
       `vec_restore(bare, y)`, `names(y) <- names(y)`, `rbind(y)` and
       `vec_cast(y, y)`.
-- [ ] AC5. `NEWS.md` and `nested_tune_grid()`'s `@return` state that a column
+- [x] AC5. `NEWS.md` and `nested_tune_grid()`'s `@return` state that a column
       you add is read as a fold label only when the resampling design itself
       carries a column of that name, and `NEWS.md`'s M36 sentence narrowing
       the claim to "unless you name it `id` or `id` followed by digits" is
@@ -149,9 +149,37 @@ their own candidate row stay there.
 - 2026-08-31: T5 — the sweep runs 108 cells (six methods × five names × two designs × two forms, less the `id2` × `rep_res` pair), all green; nothing had to be fixed for it.
 - 2026-08-31: T6 — mutation check, the name pattern restored as the derivation. 30 of the sweep's 108 cells go red, five at every one of the six methods, and all 30 are list-valued: no atomic cell separates the two derivations, which is the sweep's weakest axis. Three of T1's four blocks go red (AC2(a), AC2(b), AC2(c)); AC3's does not, because its fault is the `order()` guard rather than the derivation, and it was measured red on the branch point instead. Of T2's three blocks, "recorded under whatever name it has" and "travels with the class" go red; "the constructor records the columns" does not, since the pattern and the record agree on a design rsample named. A second mutation — the constructor stops writing the attribute — reds that block along with thirteen others.
 - 2026-08-31: T7, T8 — the M36 `NEWS.md` bullet rewritten to what the code now does and a second bullet added for the `order()` fault, the `@return` invariants section given the sentence AC5 asks for, `devtools::document()` run, `air format .` clean; D-036 recorded. A doc block in `test-id-columns.R` guards the promise in all three files and the removal of M36's narrowing sentence.
-- 2026-08-31: all tasks done, status to review. `devtools::document()` produces no diff, `air format .` clean, `cairn_validate` all checks passed (18 references-staleness advisories, unchanged), and `devtools::check()` was OK — 0 errors, 0 warnings, 0 notes, 10m26s — run on the tree at `a89741b` plus one comment-only edit in `R/nested-results.R`.
+- 2026-08-31: all tasks done, status to review. `devtools::document()` produces no diff, `air format .` clean, `cairn_validate` all checks passed (18 references-staleness advisories, unchanged), and `devtools::check()` was OK — 0 errors, 0 warnings, 0 notes, 10m26s — run on the tree at `a89741b` plus one comment-only edit in `R/nested-results.R`.- 2026-08-31: review started; PR #47 opened as a draft. AC1, AC2, AC3 and AC5 verified with fresh evidence; AC4 and AC6 pending the test suite and `devtools::check()`, both running.
+
 ## Decisions
 
 - 2026-08-31: recorded as D-036 — the design's columns are recorded at construction and every reader takes the label set from that record.
 
 ## Review
+
+Fresh evidence, run 2026-08-31 on the branch at `e34b2c6` (default branch `main`
+at `f4db8f4`, an ancestor of the branch, so nothing to merge in). PR
+https://github.com/tidymodels/nestedtune/pull/47.
+
+- AC1 — `attr(res, "id_columns")` is `"id"` and `id_columns(res)` returns it; on
+  the repeated fixture both are `c("id", "id2")`. Each equals
+  `setdiff(names(design), c("splits", "inner_resamples"))` measured on the same
+  two designs. The constructor writes the attribute at `R/nested-results.R:36`
+  from the `id_cols` it copied the columns by (`:10`).
+- AC2 — measured on `res` (3-fold) and `rep_res` (3-fold repeated twice):
+  (a) `unique(collect_metrics(mutate(res, id2 = "x"), summarize = FALSE)$id)` is
+  `c("Fold1", "Fold2", "Fold3")`; (b) `select(mutate(res, id2 = 1), -id2)` has
+  class `c("nested_results", "tbl_df", "tbl", "data.frame")`, identical to the
+  same round trip on `extra`; (c) `mutate(rep_res, id0 = as.list(...))` returns
+  a `nested_results` and no longer aborts.
+- AC3 — `mutate(res, id = list(c(1, 2), 3, 4))` returns class
+  `c("tbl_df", "tbl", "data.frame")`, does not inherit `nested_results`, and a
+  `withCallingHandlers` trap over every condition class caught none.
+- AC5 — `NEWS.md:43-60` carries the sentence "A results object now records the
+  columns its resampling design labelled the folds with, so a column you add is
+  read as a fold label only when the design itself carries a column of that
+  name", and a second bullet for the `order()` fault.
+  `man/nested_tune_grid.Rd:99-106` (from the `@return` in
+  `R/nested-tune-grid.R`) says the same. `grep -rn "followed by digits|unless
+  you name it" NEWS.md man/ R/` returns nothing, so M36's narrowing sentence is
+  gone.
