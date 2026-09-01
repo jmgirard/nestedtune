@@ -1055,6 +1055,43 @@ signal that `R/` wants it too.
 
 <!-- Template:
 
+### D-035 (2026-08-31): a column added through `vec_cbind()` keeps the class only where the results object is the first argument, and combining with a table whose columns differ produces a table rather than refusing — annotates the two divergences D-032 recorded, on the defect returns M37's review made
+
+**Context:** D-032 recorded three deliberate divergences from rsample and tune
+and named its own falsifier as a coherence requirement in vctrs that the
+registered pairs violate. The review of that work found one: the `vec_ptype2`
+and `vec_cast` methods answered with one side's type rather than the type
+holding both sides' columns, so combining a results object with a table whose
+columns differ raised vctrs' own internal error where the package without any
+of these methods returned a plain table. The same review found that a column
+add kept the class in either argument position through vctrs while
+`dplyr::bind_cols()` kept it only on the first argument's type.
+
+**Decision:** the common type of a results object and a table carries both
+sides' columns, and every cast reconciles its columns to the type it is asked
+for. The common type wears the results class only where the results object is
+the first argument, matching what `bind_cols()` already did, so the two doors
+answer alike in both positions. The prototype these methods travel on carries
+the source's record column names privately, and an assembled result missing
+any of them sheds the class — which is what `vec_cbind()`'s name repair can do
+to a record column, and the one thing that operation can do wrong that a row
+count does not catch. Considered and rejected: keeping the class on both sides
+and documenting the difference from `bind_cols()` (a caller cannot see which
+door a verb uses, which is the property the help page states).
+
+**Consequences:** two of the three divergences D-032 recorded read differently
+now. A column added through `vec_cbind()` keeps the class where the results
+object leads and not otherwise, so the divergence from rsample is narrower
+than D-032 states; and combining a results object with a bare tibble produces
+a plain table rather than refusing, which is what the acceptance criteria ask
+for and not what D-032's Consequences paragraph says. The ten `vec_ptype2` and
+`vec_cast` methods are no longer mirror images of each other, which vctrs asks
+a lattice to be; the measurements showing nothing in the package reaches that
+asymmetry are in `cairn/milestones/M37-vctrs-invariants.md`. Falsified by a
+vctrs version that combines three or more tables in an order-dependent way
+through this lattice, or by `dplyr::bind_cols()` changing which argument's
+type it builds on.
+
 ### D-00N (YYYY-MM-DD): Title
 
 **Context:** 1–2 lines.

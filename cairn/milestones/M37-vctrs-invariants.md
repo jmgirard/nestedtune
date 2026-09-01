@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M37: The vctrs half, so `rbind()` stops claiming a design it never ran
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -154,6 +154,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: T6 — the `vec_cast` methods now cast the columns across to `to` (`tib_cast`/`df_cast`) and the five `vec_ptype2` methods return the union of both sides' columns; `dplyr::bind_rows(x, tibble::tibble(other = 1))` and `vctrs::vec_rbind()` on the same pair return a 4-row, 10-column bare tibble again rather than vctrs' internal `Can't assign 9 columns to df of length 10`. The new regression block fails on the previous code with exactly that error; suite 2079 passing, 0 failures, 0 skips.
 - 2026-08-31: implementation gate chose to match `dplyr::bind_cols()` on argument order — the results class survives a `vec_cbind()` column add only when the results object is the first argument — over keeping it on both sides and leaving the two doors answering differently; the cost is that the ten `vec_ptype2`/`vec_cast` methods are not mirror images of each other, which nothing in the package reaches, `vec_rbind()` and `vec_c()` finalizing the class off before any of them is dispatched on (measured 2026-08-31). Falsified by a vctrs version combining three or more tables in an order-dependent way through this lattice.
 - 2026-08-31: T7 — the prototype carriers now also carry the source's record column names privately, and `vec_restore()`'s third branch requires every one of them present, so `vctrs::vec_cbind(x, tibble::tibble(splits = 1:3))` sheds the class and the record after name repair renames `splits` away, as `dplyr::bind_cols()` already did; `vec_ptype2.tbl_df.nested_results()` and its data-frame pair return the bare union, so `vec_cbind(tibble::tibble(extra = 1:3), x)` sheds too. Two regression blocks, both failing on the previous code; the `@return` gains a paragraph on argument order; suite 2098 passing, 0 failures, 0 skips.
+- 2026-08-31: D-035 records the argument-order rule and the column-reconciling common type, annotating the two divergences D-032 stated that now read differently. All tasks checked; `devtools::test()` 2098 passing, 0 failures, 0 skips, `devtools::check()` `Status: OK` (0 errors, 0 warnings, 0 notes, 3m 35s); status to `review`.
 
 ## Decisions
 
