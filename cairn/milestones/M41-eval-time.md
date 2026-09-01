@@ -333,3 +333,73 @@ round 1's lines above where it differs.
   that print alike. `print()` evidence is on the summary's print method,
   since `print.nested_results()` shows no estimate since M39 — recorded as
   finding F6 below for the maintainer, not read silently.
+- AC7 — `censored` and `survival` in `DESCRIPTION` Suggests. `devtools::check()`
+  in this round: 0 errors, 0 warnings, 0 notes, tests `[181s/265s]`, 5m 44s.
+  A second check under `_R_CHECK_DEPENDS_ONLY_=true`: 0 errors, 0 warnings,
+  0 notes, tests `[115s/118s]` — nothing fails where the Suggests are absent;
+  a passing check prints no skip count, so the skip half rests on round 1's
+  count of 85 and on the shorter test time.
+
+#### Consistency gate, round 2
+
+`cairn_validate.py` exit 0, all 16 checks PASS; 19 advisories: the standing
+18 references-staleness warnings plus a sizing tripwire (M41 now carries 8
+criteria against the 7 tripwire, the eighth added by round 1's return), no
+release window. No `DESIGN.md` principle changed, so `cairn_impact.py` did not
+apply. Toolchain slot: `devtools::document()` produces no diff;
+`pkgdown::check_pkgdown()` reports no problems; `NEWS.md` carries the entry,
+naming no milestone number; neither README file is touched by the branch; no
+new top-level files; `devtools::check()` clean as above. CI: all eleven legs
+green on the head commit.
+
+#### Findings and disposition, round 2
+
+The same three lenses ran fresh. The blame-history lens reported no findings
+(threading positionally consistent with the M07–M16 parallel path; D-010,
+D-011, D-016, D-030, D-031, D-036–D-038 not contradicted). The prior-review
+lens verified R1–R5 and R9 resolved in code and R6–R8 dispositioned as
+recorded, and reported one item (S1). The diff-bug lens reported eight.
+Dispositions are the maintainer's at the merge gate; each is recorded as
+decided there.
+
+- F1 (confirmed by execution in this review): `autoplot(type = "performance")`
+  errors on a multi-evaluation-time run. `plot_performance()`
+  (`R/nested-results-plot.R:220`) builds panels from `.metric`/`.estimator`
+  alone; with two rows for `brier_survival` the metric counts as ambiguous,
+  both panels read `brier_survival (standard)`, and
+  `factor(scored_panels, levels = panels)` aborts with "factor level [2] is
+  duplicated". Reproduced on the censored fixture at `c(0.5, 10)`; the scalar
+  run and the default `type = "parameters"` plot both build. On `main` the
+  pooled summary gave one row, so this path worked; no test covers
+  `autoplot()` on a timed run. Disposition: pending at the gate.
+- F2 (confirmed): the `@return` of `collect_metrics()` (`R/nested-results.R:617`)
+  still says "Unsummarized, one row per outer fold and metric", while with
+  several times it is one row per fold, metric and time — which the AC8 test
+  itself asserts. Disposition: pending at the gate.
+- F3 (confirmed): the `@param eval_time` text on both pages says a censored
+  model scored only by a static metric "draws it too", implying the same
+  warning; tune 2.1.0's `contains_survival_metric()` matches `_survival` in the
+  metric class, so a `concordance_survival()`-only set takes the other branch
+  and warns "`eval_time` is only used for dynamic or integrated survival
+  metrics" — a different message. The operative fact (ignored, with a warning)
+  is right. Disposition: pending at the gate.
+- F4 (confirmed): "an empty vector aborts" is unconditional in the text but
+  conditional in tune — `check_eval_time_arg(numeric(0), metric_set(rmse))`
+  returns with the mode warning and no abort. Disposition: pending at the gate.
+- F5 (low confidence): "a character value is coerced with `as.numeric()` and
+  accepted" holds for numeric-looking strings only; `"abc"` becomes NA, is
+  dropped, and the empty result aborts. Disposition: pending at the gate.
+- F6: AC8 names `print()`; `print.nested_results()` has shown no estimate
+  since M39, so the implementation and tests read the clause as the summary's
+  print method, declared in T9's work-log line. A criterion reading, put to
+  the maintainer rather than made silently. Disposition: pending at the gate.
+- F7 (low confidence): `per_fold_metrics()`'s `column()` fill returns NA for
+  any frame lacking a column, so a non-empty metrics tibble missing `.metric`
+  would summarize silently where the old `unlist()` failed loudly; not
+  reachable from the package's own writers. Disposition: pending at the gate.
+- F8 (not a defect): `summarize_folds()`'s per-group `vapply` passes now scale
+  with metrics × times rather than metrics; microseconds at realistic sizes.
+  Disposition: pending at the gate.
+- S1 (prior-review lens, low confidence): the comment at
+  `tests/testthat/test-parallel-classify.R:801` runs to 94 characters, the
+  pattern R8 named; R8 was rejected as style. Disposition: pending at the gate.
