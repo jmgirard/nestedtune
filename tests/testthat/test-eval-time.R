@@ -1,8 +1,32 @@
 # Oracle records (DESIGN Conventions: oracles are recorded in the test file
-# that asserts them). The records for the behavioral oracles are added with the
-# tests that pin them; this file opens with the fixture's own properties, which
+# that asserts them). The file opens with the fixture's own properties, which
 # are asserted rather than assumed because every comparison below is vacuous
 # without them.
+#
+# O1 -- type "closed-form". Source: the definition of the IPCW Brier score --
+#   the mean over the held-out rows of w_i * (1{T_i > t} - S_hat(t | x_i))^2,
+#   with Graf's inverse-probability-of-censoring weights built here from a
+#   reverse Kaplan-Meier of the censoring distribution fitted on the fold's own
+#   analysis rows (`survival::survfit(Surv(time, 1 - event) ~ 1)`), evaluated at
+#   `min(T_i, t)` and zero for a row censored before `t`. Nothing from `tune`
+#   or `yardstick` computes it; `yardstick::brier_survival()` is read beside it
+#   as a second reading of the same predictions. Pinned by "AC2: the metric each
+#   outer fold reports at the named evaluation time is the IPCW Brier score".
+#
+# O2 -- type "live" (independent implementation). Source: a `tune::tune_grid()`
+#   plus `tune::last_fit()` the test runs itself from the fold's own
+#   `inner_resamples` and split, seeded by the recipe `nested_fold_fit()`
+#   follows -- the fold's recorded `.tuning_seed` then its `.outer_fit_seed`,
+#   both kind-pinned -- at the same evaluation time. Pinned by "AC3: each run's
+#   per-fold metrics are the ones tune produces at that evaluation time", and in
+#   its final-fit form by "AC4: nested_final_fit() tunes and selects under the
+#   caller's evaluation time".
+#
+# O3 -- type "invariant". Source: two internal routes that must agree -- a run
+#   at a multi-element `eval_time` and a run at that vector's first element have
+#   to select the same candidate and report the same number at that element,
+#   because `tune:::first_eval_time()` takes element one either way. Pinned by
+#   "AC3: a multi-element evaluation time reports what its first element names".
 
 # The evaluation times a censored-regression metric is measured at (M41).
 #
@@ -244,4 +268,273 @@ test_that("AC1: an accepted `eval_time` reaches the final fit untouched", {
     )
     expect_identical(seen$value, list(value))
   }
+})
+
+# AC2 -- O1 -------------------------------------------------------------
+
+# The generator kind `nested_fold_fit()` pins, so a reference run draws the same
+# stream the recorded seed drew.
+seed_as_fold <- function(seed) {
+  set.seed(
+    seed,
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+}
+
+# The IPCW Brier score at `t` from the definition, with no metric function of
+# any kind: refit the fold's selected candidate on its analysis rows under the
+# seed the fold recorded, predict the survival probability of the rows it held
+# out, and average the squared error under Graf's weights.
+#
+# The weights are built here rather than read off the prediction object, so the
+# comparison does not confirm itself: a reverse Kaplan-Meier of the censoring
+# distribution -- the same data with the event indicator flipped -- fitted on
+# the analysis rows alone. A row still at risk at `t` is weighted by 1/G(t), a
+# row that failed before `t` by 1/G at its own failure time, and a row censored
+# before `t` contributes nothing, since whether it would have survived to `t`
+# is not observed.
+brier_from_definition <- function(res, nested, workflow, i, t) {
+  final_workflow <- tune::finalize_workflow(workflow, res$.selected[[i]])
+  seed_as_fold(res$.outer_fit_seed[[i]])
+  analysis <- rsample::analysis(nested$splits[[i]])
+  fit <- parsnip::fit(final_workflow, data = analysis)
+
+  held <- rsample::assessment(nested$splits[[i]])
+  predicted <- predict(fit, new_data = held, type = "survival", eval_time = t)
+  survival_at_t <- vapply(
+    predicted$.pred,
+    function(x) x$.pred_survival,
+    numeric(1)
+  )
+
+  censoring <- survival::survfit(
+    survival::Surv(time, 1 - event) ~ 1,
+    data = analysis
+  )
+  g <- stats::stepfun(censoring$time, c(1, censoring$surv))
+  weights <- ifelse(
+    held$time > t,
+    1 / g(t),
+    ifelse(held$event == 1, 1 / g(held$time), 0)
+  )
+  still_alive <- as.numeric(held$time > t)
+
+  # And the same predictions read a second way, through the metric tune calls.
+  weighted <- parsnip::.censoring_weights_graf(
+    workflows::extract_fit_parsnip(fit),
+    dplyr::bind_cols(
+      tibble::tibble(surv = survival::Surv(held$time, held$event)),
+      predicted
+    )
+  )
+
+  list(
+    defined = mean(weights * (still_alive - survival_at_t)^2),
+    yardstick = yardstick::brier_survival(
+      weighted,
+      truth = surv,
+      .pred
+    )$.estimate
+  )
+}
+
+test_that("AC2: the metric each outer fold reports at the named evaluation time is the IPCW Brier score", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  workflow <- srv_workflow(data)
+  t <- srv_eval_times()[[1L]]
+
+  set.seed(9)
+  res <- memoised(nested_tune_grid(
+    workflow,
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = t
+  ))
+
+  expect_true(all(res$.completed))
+
+  for (i in seq_len(nrow(nested))) {
+    reported <- res$.metrics[[i]]
+    expect_identical(reported$.metric, "brier_survival")
+    expect_identical(reported$.eval_time, t)
+
+    both <- brier_from_definition(res, nested, workflow, i, t)
+    expect_equal(reported$.estimate, both$defined)
+    expect_equal(both$yardstick, both$defined)
+  }
+})
+
+# AC3 -- O2, O3 ---------------------------------------------------------
+
+# One outer fold, rebuilt by hand: the recipe `nested_fold_fit()` follows, run
+# from the fold's own inner resamples and split under the seeds the fold
+# recorded, at the evaluation time the caller named.
+fold_reference <- function(res, nested, workflow, i, eval_time) {
+  seed_as_fold(res$.tuning_seed[[i]])
+  tuned <- tune::tune_grid(
+    workflow,
+    resamples = nested$inner_resamples[[i]],
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = eval_time,
+    control = tune::control_grid(allow_par = FALSE, event_level = "first")
+  )
+  metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
+  selected <- suppressWarnings(tune::select_best(tuned, metric = metric_name))
+
+  seed_as_fold(res$.outer_fit_seed[[i]])
+  fitted <- tune::last_fit(
+    tune::finalize_workflow(workflow, selected),
+    split = nested$splits[[i]],
+    metrics = srv_metrics(),
+    eval_time = eval_time,
+    control = tune::control_last_fit(event_level = "first", allow_par = FALSE)
+  )
+  list(selected = selected, metrics = tune::collect_metrics(fitted))
+}
+
+test_that("AC3: two runs differing only in `eval_time` report different metrics, each the one tune produces", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  workflow <- srv_workflow(data)
+  times <- srv_eval_times()
+
+  runs <- lapply(times, function(t) {
+    set.seed(9)
+    memoised(nested_tune_grid(
+      workflow,
+      nested,
+      grid = srv_grid(),
+      metrics = srv_metrics(),
+      eval_time = t
+    ))
+  })
+
+  # The two runs disagree somewhere. Without this every equality below could
+  # hold of a run that ignored the argument entirely.
+  early <- vapply(runs[[1L]]$.metrics, function(m) m$.estimate, numeric(1))
+  late <- vapply(runs[[2L]]$.metrics, function(m) m$.estimate, numeric(1))
+  expect_false(isTRUE(all.equal(early, late)))
+
+  for (k in seq_along(times)) {
+    for (i in seq_len(nrow(nested))) {
+      reference <- fold_reference(runs[[k]], nested, workflow, i, times[[k]])
+      expect_identical(
+        runs[[k]]$.metrics[[i]]$.estimate,
+        reference$metrics$.estimate
+      )
+      expect_identical(runs[[k]]$.metrics[[i]]$.eval_time, times[[k]])
+      expect_identical(runs[[k]]$.selected[[i]]$dist, reference$selected$dist)
+    }
+  }
+})
+
+test_that("AC3: a multi-element `eval_time` reports what its first element names", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  workflow <- srv_workflow(data)
+  times <- srv_eval_times()
+
+  set.seed(9)
+  scalar <- memoised(nested_tune_grid(
+    workflow,
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = times[[1L]]
+  ))
+
+  # tune says out loud that it is taking the first of them, once per fold; that
+  # message is the behavior under test, not noise to be silenced elsewhere.
+  set.seed(9)
+  vector_run <- suppressWarnings(memoised(nested_tune_grid(
+    workflow,
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = times
+  )))
+
+  for (i in seq_len(nrow(nested))) {
+    reported <- vector_run$.metrics[[i]]
+    expect_identical(reported$.eval_time, times)
+
+    at_first <- reported$.estimate[reported$.eval_time == times[[1L]]]
+    expect_identical(at_first, scalar$.metrics[[i]]$.estimate)
+
+    # And selection followed the first element too, which is what
+    # `tune:::first_eval_time()` does with the same vector.
+    expect_identical(
+      vector_run$.selected[[i]]$dist,
+      scalar$.selected[[i]]$dist
+    )
+  }
+})
+
+# AC4 -- O2 -------------------------------------------------------------
+
+test_that("AC4: nested_final_fit() tunes and selects under the caller's evaluation time", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  workflow <- srv_workflow(data)
+  times <- srv_eval_times()
+
+  fits <- lapply(times, function(t) {
+    set.seed(11)
+    memoised(nested_final_fit(
+      workflow,
+      nested,
+      grid = srv_grid(),
+      metrics = srv_metrics(),
+      eval_time = t
+    ))
+  })
+
+  for (k in seq_along(times)) {
+    fit <- fits[[k]]
+
+    # The inner rset is not reachable from the design -- it is drawn inside the
+    # tuning seed's scope, from the full data -- so it is rebuilt here from the
+    # seed the object recorded, exactly as the documented recipe says.
+    seed_as_fold(fit$tuning_seed)
+    inner <- rsample::vfold_cv(data, v = 3)
+    reference <- tune::tune_grid(
+      workflow,
+      resamples = inner,
+      grid = srv_grid(),
+      metrics = srv_metrics(),
+      eval_time = times[[k]],
+      control = tune::control_grid(allow_par = FALSE, event_level = "first")
+    )
+
+    expect_identical(
+      tune::collect_metrics(reference),
+      tune::collect_metrics(extract_tune_results(fit))
+    )
+    expect_identical(
+      tune::select_best(reference, metric = "brier_survival")$dist,
+      fit$selected$dist
+    )
+  }
+
+  # And the two evaluation times do not merely agree by chance: they rank the
+  # candidates differently and choose differently.
+  ranked <- lapply(fits, function(fit) {
+    scored <- tune::collect_metrics(extract_tune_results(fit))
+    scored$dist[order(scored$mean)]
+  })
+  expect_false(identical(ranked[[1L]], ranked[[2L]]))
+  expect_false(identical(fits[[1L]]$selected$dist, fits[[2L]]$selected$dist))
 })
