@@ -510,3 +510,55 @@ test_that("BC7: the identity holds with a two-class fixture at event_level = \"s
   expect_true(all(parallel$.completed))
   expect_identical(parallel, serial)
 })
+
+# BC8 mirrors BC7 for the other argument this package forwards to tune: the
+# evaluation time a censored-regression metric is measured at. What it adds
+# beyond BC7 is the payload -- `eval_time` rides in `.args` alongside
+# `event_level`, so a run whose wrapper dropped it would still complete and
+# would still return a number, just tune's default one.
+
+test_that("BC8: the identity holds with a censored fixture at a named eval_time (M41, AC5)", {
+  skip_if_no_daemons()
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  wf <- srv_workflow(data)
+  eval_time <- srv_eval_times()[[2L]]
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  mirai::daemons(0)
+  set.seed(2026L)
+  serial <- nested_tune_grid(
+    wf,
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = eval_time
+  )
+  expect_identical(last_dispatch(), "serial")
+
+  start_daemons(2)
+  set.seed(2026L)
+  parallel <- without_pkgload_warning(
+    nested_tune_grid(
+      wf,
+      nested,
+      grid = srv_grid(),
+      metrics = srv_metrics(),
+      eval_time = eval_time
+    )
+  )
+
+  expect_identical(last_dispatch(), "parallel")
+  expect_true(all(serial$.completed))
+  expect_true(all(parallel$.completed))
+
+  # The evaluation time survived the wire, not merely some evaluation time:
+  # a dropped argument would leave tune to pick its own and these would be a
+  # different number on both sides.
+  for (i in seq_len(nrow(nested))) {
+    expect_identical(serial$.metrics[[i]]$.eval_time, eval_time)
+  }
+  expect_identical(parallel, serial)
+})

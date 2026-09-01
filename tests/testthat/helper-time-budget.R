@@ -618,6 +618,13 @@ time_budget_ledger <- function() {
       START_DAEMONS_BOUND_S(),
       "the identity holds with a two-class fixture at event_level second"
     ),
+    tb_row(
+      "test-parallel-identity.R",
+      541L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the identity holds with a censored fixture at a named eval_time"
+    ),
 
     # --- test-parallel-metrics.R --------------------------------------------
     # One pool start, and that is the whole file's declared waiting. The two
