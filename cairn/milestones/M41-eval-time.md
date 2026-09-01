@@ -83,7 +83,7 @@ under D-030.
       `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings, NOTEs
       justified).
 
-- [ ] AC8: on a `nested_tune_grid()` run at a multi-element `eval_time`,
+- [x] AC8: on a `nested_tune_grid()` run at a multi-element `eval_time`,
       `collect_metrics()`, `summary()` and `print()` report each metric
       separately per evaluation time — every row names its evaluation time,
       its `mean` is over that time's fold estimates alone, and its `n` counts
@@ -290,3 +290,46 @@ against the implementation before disposition.
   past `tune_grid()`" row saying "Depends on the `control`/`...` question the
   row above owns" with no such row above it. `cairn_validate`'s dangling-token
   check does not see prose cross-references. Disposition: fixed in this review's return commit.
+
+### Round 2 (2026-09-01)
+
+Reviewed on `m041-eval-time` at PR #50 after the return; branch level with
+`origin/main` (no merge needed), all eleven CI legs green on the head commit.
+Every criterion was re-executed in this round; the evidence below supersedes
+round 1's lines above where it differs.
+
+- AC1 — `devtools::test()` clean (FAIL 0, WARN 0, SKIP 0, PASS 2683); the
+  four AC1 blocks pass unchanged: six refused shapes on both orchestrators
+  with `conditionCall()` naming the user's function, no refused value reaching
+  the mocked `dispatch_folds()` / `final_fit_worker()`, and `NULL`, `0`,
+  `c(0.5, 10)`, `c(10, 0.5, 10)` reaching both under `expect_identical()`.
+- AC2 — the AC2 block passes in the same run: three folds complete, each
+  `brier_survival` at 0.5 equals the from-the-definition IPCW Brier from a
+  refit under the fold's seeds, `yardstick::brier_survival()` agreeing to
+  tolerance; the fixture-property block asserts at-risk and events on both
+  sides of both times.
+- AC3 — both AC3 blocks pass: the 0.5 and 10 runs differ on at least one fold,
+  each fold equals its `tune_grid()` + `last_fit()` reference, and the
+  `c(0.5, 10)` run reports the 0.5 row as the scalar run does.
+- AC4 — the AC4 block passes: retained tuning results and `selected` equal the
+  `tune_grid()` / `select_best()` reference at both times, ranking and
+  selection differing between them.
+- AC5 — `test-parallel-identity.R` passes with no skips in the same run; BC8
+  asserts `.eval_time` on every fold, then `expect_identical(parallel, serial)`.
+- AC6 — read off the regenerated pages: both `.Rd` files carry an
+  `\item{eval_time}` entry whose second paragraph states what this package
+  refuses ahead of tune, and `nested_tune_grid.Rd`'s "Settable:" sentence names
+  `\code{eval_time}` beside `event_level`. The tightened AC6 block (T10) passes.
+- AC8 — the five AC8 blocks pass: the `c(0.5, 10)` run gives per-fold rows
+  `id, .metric, .estimator, .eval_time, .estimate` (folds × times of them) and
+  a summary of one row per time whose `mean` and `std_err` equal the dumb
+  recomputation over that time's fold estimates and whose `n` is the fold
+  count, the two rows unequal; `summary()$estimate` is identical to it and the
+  summary print carries "at time 0.5" / "at time 10" lines. The scalar run
+  keeps one row with `n` = completed folds; the regression run keeps
+  `.metric, .estimator, mean, n, std_err` with no "at time" text; a failed fold
+  in a timed run contributes no rows and `n` reads 2 per time; the direct
+  summarizer test keeps a static metric's NA-time row and separates two times
+  that print alike. `print()` evidence is on the summary's print method,
+  since `print.nested_results()` shows no estimate since M39 — recorded as
+  finding F6 below for the maintainer, not read silently.
