@@ -1,13 +1,13 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-08-31 (all checks green; advisories only — the same 18 references pages record no verification claim. Line caps hold: ROADMAP.md 59 against 60 after M32's row aged out, LESSONS.md 49, PROFILE.md 119, the M37 archive summary 11. Both byte budgets are over and both got worse again: ROADMAP.md 41,653 B against 24,000 and LESSONS.md 28,698 B against 20,000. The compressible rows are still spent, so closing the gap means graduating or dropping candidates — a user call, now three passes overdue — and M37 added a row of its own for seven review findings it deferred. Since the last check: M37 shipped the vctrs invariants, `rbind()` and `rename()` on `nested_results` and is archived after two review rounds, D-032 through D-035 were recorded, and the hand-edit lesson gained a clause because a D-entry landed inside DECISIONS.md's trailing template comment for the second time in two commits)_
+_Last hygiene check: 2026-08-31 (all checks green; advisories only — the same 18 references pages record no verification claim. Line caps hold: ROADMAP.md 59 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M38 archive summary 11. Both byte budgets are over and both got worse: ROADMAP.md 41,910 B against 24,000 and LESSONS.md 29,755 B against 20,000, the latter despite trimming M36's lesson to its uncovered remainder and folding M38's into an existing line rather than adding one. The compressible rows are spent, so closing the gap means graduating or dropping candidates — a user call, now four passes overdue. Since the last check: M38 shipped the recorded fold-label columns and is archived after one review round, D-036 was recorded, M36's lesson was trimmed because the 108-cell sweep now reds on the mistake its prescription warned about, and the `check_nested()` candidate row absorbed two M38 review findings)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M38 | A results object's own fold-label columns, recorded rather than guessed | review | — | normal | milestones/M38-id-columns-recorded.md |
+| M38 | A results object's own fold-label columns, recorded rather than guessed | done | — | normal | milestones/archive/M38-id-columns-recorded.md |
 | M37 | The vctrs half, so `rbind()` stops claiming a design it never ran | done | — | normal | milestones/archive/M37-vctrs-invariants.md |
 | M36 | Removing an outer fold's row stops producing a `nested_results` | done | — | normal | milestones/archive/M36-dplyr-invariants.md |
 | M35 | The factor level a caller can name as the event | done | — | normal | milestones/archive/M35-event-level.md |
