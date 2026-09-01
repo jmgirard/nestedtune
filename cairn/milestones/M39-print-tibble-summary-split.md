@@ -100,14 +100,14 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
       sentence (`R/nested-results-print.R:71-76`) behind them, and route
       `warn_partial_summary()` (`R/nested-results.R:789`) to the summary
       request without its `check_any_completed()` sibling.
-- [ ] T2. Rewrite `print.nested_results()` (`R/nested-results-print.R:60`) to
+- [x] T2. Rewrite `print.nested_results()` (`R/nested-results-print.R:60`) to
       the AC1 shape: strip the subclass and dispatch for the rows, keep
       `print_candidate_sets()`, add the failure count and the `summary()`
       pointer.
 - [x] T3. Fix the fold-label defect in the relocated failure section for all
       three record forms (M38 review O8), at `fold_ids()`
       (`R/nested-results.R:835`) or at its caller.
-- [ ] T4. Re-point `tests/testthat/test-nested-results-print.R`'s 18 blocks
+- [x] T4. Re-point `tests/testthat/test-nested-results-print.R`'s 18 blocks
       onto the print/summary split, add the AC3 and AC4 blocks, re-record
       `tests/testthat/_snaps/nested-results-print.md`.
 - [ ] T5. Roxygen and `@return` for the three methods, NAMESPACE, `NEWS.md`,
@@ -126,6 +126,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: T3 done. `fold_ids()` (`R/nested-results.R`) falls back to `paste("row", seq_len(nrow(x)))` when the recorded `id_columns` is empty or names any column the object no longer carries; measured before the fix, the three forms gave `character(0)`, `NULL` and the truncated `"Repeat1, "`. Four new assertions plus a passing control in `tests/testthat/test-id-columns.R`, red before and green after. Suite: 2334 pass, 0 fail, 0 warn, 0 skip.
 - 2026-08-31: implementation gate chose a returned bundle of computed pieces over a thin wrapper recomputing at print time; recorded in Decisions, and it binds M40's mirror.
 - 2026-08-31: T1 done. `summary.nested_results()` and `print.summary.nested_results()` added in `R/nested-results-print.R`; the four section builders now read from the bundle `new_summary_nested_results()` computes, and `warn_partial_summary()` routes to `summary()` without `check_any_completed()`. `print.nested_results()` renders through the same bundle and its output is unchanged at this task — the existing snapshot passing un-rerecorded is the control. Six new blocks in `tests/testthat/test-nested-results-print.R`. Suite: 2366 pass, 0 fail, 0 warn, 0 skip.
+- 2026-08-31: T2 and T4 done in one commit, as the reorder line above records. `print.nested_results()` now emits header, outer-scheme line when the object names one, the rows (class stripped, rendered through `cli::cli_verbatim()` so the method writes to one stream), the not-completed count when it exceeds zero, the candidate-set line, and the `summary()` pointer — and nothing else. `tests/testthat/test-nested-results-print.R` regrouped into print blocks, summary blocks, the AC4 record-form block and the shape block; snapshot deleted and re-recorded (4 print shapes, 5 summary shapes). Suite: 2398 pass, 0 fail, 0 warn, 0 skip.
 - 2026-08-31: plan chose fixing M38 review O8 here over leaving it to the `check_nested()` row, because this milestone relocates `print_failures()` and the M33 lesson is that a move invalidates every `file:line` citation the repo's records hold; falsified by the fix proving to need `check_nested()`'s entry-gate refusal to be coherent.
 
 ## Decisions

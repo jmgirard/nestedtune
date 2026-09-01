@@ -1,31 +1,34 @@
-# Printing a nested_results.
+# Printing a nested_results, and summarizing one.
 #
-# Every fact printed here is derived from the columns at print time rather than
-# read off the counts stamped at construction. The stamped counts describe the
-# run the rows came from; a subset's rows are their own run, and printing must
-# describe the object in hand (IP4).
+# The two answer different questions and this file keeps them apart. print()
+# describes the OBJECT: it is a tibble of outer folds, so it shows its rows,
+# says how much of the design did not run, and points at summary() for the rest.
+# summary() says what the run MEANS: the design, the failures and their stages,
+# the selections, and the estimate across the folds that completed.
 #
-# Printing never raises and never warns. collect_metrics() does both, because
-# asking for a summary of a design that did not run deserves an answer with a
-# condition attached; printing is a description of an object, and an object that
-# describes a failed run is exactly what M03 built.
+# Every fact either one reports is derived from the columns at call time rather
+# than read off the counts stamped at construction. The stamped counts describe
+# the run the rows came from; a subset's rows are their own run, and both
+# methods must describe the object in hand (IP4).
+#
+# Printing never raises and never warns. summary() and collect_metrics() warn on
+# a partial run, because asking what a design that only partly ran means
+# deserves an answer with a condition attached; printing is a description of an
+# object, and an object that describes a failed run is exactly what M03 built.
 
 #' Print a nested cross-validation result
 #'
 #' @description
-#' Reports how much of the requested outer design actually ran, which outer
-#' folds failed and at which stage, what each fold's inner tuning selected, and
-#' the estimate across the folds that completed.
-#'
-#' The selection lines are the part nothing else in the ecosystem shows. When
-#' outer folds choose different parameters, the tuning procedure is unstable on
-#' this data — averaging the metrics hides that, so printing marks it.
+#' Shows the object: its outer folds as the tibble rows they are, the outer
+#' resampling scheme it came from, how many folds did not complete, and a
+#' pointer to [summary()] for what the run means.
 #'
 #' Printing also says when the folds were not choosing from the same menu. A
 #' grid given as a size is expanded per fold, under that fold's own seed, so a
 #' continuous parameter leaves every fold with its own candidates — which
-#' changes how the selection lines above should be read. The line reports each
-#' fold's candidate count and appears only when the sets actually differ.
+#' changes how the selections [summary()] reports should be read. The line
+#' reports each fold's candidate count and appears only when the sets actually
+#' differ.
 #'
 #' @param x A `nested_results` object from [nested_tune_grid()].
 #' @param ... Not used; must be empty. An argument passed here is an error
@@ -60,14 +63,48 @@
 print.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
-  s <- new_summary_nested_results(x)
-  print_design(s)
-  print_failures(s)
-  print_selection(s)
-  print_candidate_sets(s$grids)
-  print_estimate(s)
-  print_procedure_note()
+  label <- attr(x, "outer_label")
+  if (!is.null(label)) {
+    cli::cli_text("Outer resamples: {label}")
+  }
+  print_rows(x)
+  print_failure_count(x)
+  print_candidate_sets(x$.grid[x$.completed])
+  cli::cli_bullets(c(
+    i = "Use {.fn summary} for what the run means: which folds failed, what \\
+         each one selected, and the estimate across them."
+  ))
   invisible(x)
+}
+
+# The object's own rows, rendered by whatever prints the classes underneath.
+#
+# Stripping this class rather than formatting the columns here: a nested_results
+# IS a tibble and tibble already knows how to show one, including the truncation
+# rules a wide table needs (D-037). Routed through cli rather than printed
+# straight to the console so the whole method writes to one stream -- cli
+# redirects to stderr whenever a sink is active on stdout, and a method that
+# wrote to both would come apart under capture.
+print_rows <- function(x) {
+  rows <- x
+  class(rows) <- setdiff(class(rows), "nested_results")
+  cli::cli_verbatim(utils::capture.output(print(rows)))
+  invisible(NULL)
+}
+
+# How much of the design did not run. The count only -- which folds failed and
+# at what stage is a fact about what the run MEANS, and lives behind summary().
+# Silent on a whole run, so its presence is itself the signal.
+print_failure_count <- function(x) {
+  failed <- sum(!x$.completed)
+  if (failed == 0L) {
+    return(invisible(NULL))
+  }
+  n <- nrow(x)
+  cli::cli_bullets(c(
+    x = "{failed} of {n} outer fold{?s} did not complete."
+  ))
+  invisible(NULL)
 }
 
 #' Summarize a nested cross-validation result
