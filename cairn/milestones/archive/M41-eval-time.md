@@ -6,17 +6,15 @@
 untouched to every `tune` call whose answer depends on it.
 
 **Outcome:** `eval_time = NULL` on `nested_tune_grid()` and `nested_final_fit()`,
-checked at entry by `check_eval_time()` (`R/checks.R`: non-numeric, empty,
-missing, negative or non-finite refused naming the caller; zero, repeats and
-unsorted passed through), threaded via `dispatch_folds()`, the mirai lean
-wrapper and `fold_task()` into `tune_grid()` and `last_fit()`, and into
-`final_fit_worker()`'s `tune_grid()`; `select_best()` deliberately not given it.
-`per_fold_metrics()` and `summarize_folds()` key on tune's `.eval_time` column
-when the recorded metrics carry it: one summary row per time, NA on a static
+checked at entry by `check_eval_time()` (`R/checks.R`; non-numeric, empty,
+missing, negative or non-finite refused naming the caller), threaded through
+`dispatch_folds()`, the mirai lean wrapper and `fold_task()` into `tune_grid()`
+and `last_fit()`, and into `final_fit_worker()`; `select_best()` not given it.
+`per_fold_metrics()` and `summarize_folds()` key on tune's `.eval_time` when
+the recorded metrics carry it: one summary row per time, NA on a static
 metric's row; `print_estimate()` says `at time <t>`, `plot_performance()` gives
 a panel per time (`timed_metric()`, `render_times()`). `censored` and `survival`
-in Suggests; the `srv_*` fixture and `test-eval-time.R`, its IPCW Brier
-recomputed from the definition beside `yardstick::brier_survival()`.
+in Suggests; `srv_*` fixture; `test-eval-time.R` recomputes the IPCW Brier itself.
 
 **Decisions:** D-038. Milestone-local: `.eval_time` present exactly when tune
 records it, not always.
