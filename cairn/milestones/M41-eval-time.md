@@ -1,6 +1,6 @@
 # M41: `eval_time` reaches the metrics that need it
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -83,6 +83,15 @@ under D-030.
       `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings, NOTEs
       justified).
 
+- [ ] AC8: on a `nested_tune_grid()` run at a multi-element `eval_time`,
+      `collect_metrics()`, `summary()` and `print()` report each metric
+      separately per evaluation time — every row names the evaluation time it
+      belongs to, its `mean` is over that time's fold estimates alone, and its
+      `n` counts the folds contributing at that time — and the rows for the
+      two times differ. A run at a scalar `eval_time` and a run at `NULL` on
+      the regression fixture each report one row per metric with `n` equal
+      to the completed folds, as they do now.
+
 ## Coverage
 
 - AC1 → T3
@@ -92,6 +101,8 @@ under D-030.
 - AC5 → T4, T7
 - AC6 → T8
 - AC7 → T1, T8
+- AC8 → T9
+- AC6 → T10
 
 ## Tasks
 
@@ -126,6 +137,20 @@ under D-030.
 - [x] T8: roxygen on both orchestrators, the "Differences from calling tune
       directly" section, NEWS entry; `devtools::document()`;
       `devtools::check()`.
+- [ ] T9: key `per_fold_metrics()` and `summarize_folds()`
+      (`R/nested-results.R`) on the evaluation time as well as the metric and
+      estimator, carrying `.eval_time` into the summary's rows; decide the
+      column's shape at the implement gate (it changes an exported output);
+      update the `collect_metrics()` roxygen contract and `print()` /
+      `summary()` where they read the summary; AC8 tests on the censored
+      fixture plus the unchanged-shape controls.
+- [ ] T10: reword `@param eval_time` on both pages against tune 2.1.0 as
+      measured in review — `numeric(0)` aborts in tune rather than warning,
+      `"1"` is coerced and accepted, the not-censored warning keys on the
+      metric set, and repeated times draw tune's "0 inappropriate evaluation
+      time points" warning per call (R2–R4); tighten AC6's test so
+      `\code{eval_time}` is asserted inside the "Settable:" sentence (R5);
+      `devtools::document()`.
 
 ## Work log
 
@@ -148,6 +173,7 @@ under D-030.
 - 2026-09-01: all eight tasks done, `devtools::test()` clean (FAIL 0, WARN 0, SKIP 0, PASS 2645) and `devtools::check()` clean; status to review.
 - 2026-09-01: a second criteria-audit pass over the revised wording (full mode, fresh reader) returned four defects, all fixed: AC3's planted-defect clause was unsatisfiable — verified against `tune:::choose_eval_time()` and `tune:::first_eval_time()`, which take element 1 whether the argument is passed or falls back to the run's own times, so forwarding to `select_best()` discriminates nothing and is now recorded as Out; AC1's probes were all length ≤ 1, admitting an implementation that validates only `eval_time[1]`, and gained `c(1, NA_real_)`; AC1's "before any fold is dispatched" had no referent on the final-fit path, which dispatches no folds, and now names `final_fit_worker()`; AC2's second oracle was satisfied by computing and discarding the value, and now has to agree to tolerance. AC4-AC7 were clean on all five questions.
 - 2026-09-01: review — all seven criteria verified with fresh evidence; `cairn_validate` and the r-package consistency gate clean; `format-suggest` was red on one over-width line, fixed with `air format`. Nine findings recorded, dispositions pending at the merge gate.
+- 2026-09-01: review returned M41 to in-progress — defect return 1 of the thrash count. Failed: finding R1, the summary over a multi-element `eval_time` averaging across evaluation times with `n` counting fold×time, which the maintainer judged load-bearing under the return floor; no acceptance criterion covered it, so this send-back adds AC8 with Coverage AC8 → T9, and T10 for the doc and test findings R2–R5. R6 absorbed into the existing fixture-cache candidate row at hygiene; R7, R8 rejected as style; R9 fixed here. Merge declined at the gate; PR #50 stays open as a draft.
 
 ## Decisions
 
@@ -225,43 +251,43 @@ against the implementation before disposition.
   from two different times and whose `n` reads 6 against a documented "number
   of folds" (`R/nested-results.R:613`). M41 is what makes that state
   reachable; no criterion covers it, and no test exercises
-  `collect_metrics()` on a multi-time run. Disposition: <R1_DISPOSITION>.
+  `collect_metrics()` on a multi-time run. Disposition: floor return — the maintainer judged it a load-bearing defect in what `collect_metrics()` reports; M41 returns to `in-progress` under AC8 / T9.
 - R2 (confirmed): the `@param eval_time` sentence "tune discards such values
   with a warning and carries on" is false for two of the six refused shapes.
   Measured against tune 2.1.0: `tune:::.filter_eval_time(numeric(0), fail =
   TRUE)` aborts with "There were no usable evaluation times", and `"1"` is
   coerced by `as.numeric()` and accepted, not discarded. Disposition:
-  <R2_DISPOSITION>.
+  fix on the return (T10).
 - R3 (confirmed): "Ignored, with a warning from tune, for a model whose mode
   is not censored regression" names the wrong trigger.
   `tune:::check_eval_time_arg()` branches on whether the metric set contains a
   survival metric; a censored model scored by a static survival metric gets a
   different warning. The sentence echoes tune's own message text, which is
-  where the wording came from. Disposition: <R3_DISPOSITION>.
+  where the wording came from. Disposition: fix on the return (T10).
 - R4 (confirmed): repeated times are accepted and forwarded by design, and
   tune then warns "There were 0 inappropriate evaluation time points that were
   removed" — once per tune call per fold. Measured on `c(10, 0.5, 10)`. The
-  documentation does not mention it. Disposition: <R4_DISPOSITION>.
+  documentation does not mention it. Disposition: fix on the return (T10).
 - R5 (confirmed): AC6's test scopes with `sub(".*Differences from calling tune
   directly", "", ...)` and then matches `\code{eval_time}` anywhere after the
   heading, so it would stay green if the argument appeared only in the "Not
   passed on" paragraph. The criterion holds on the artifact — verified above —
-  but the guard is weaker than the promise. Disposition: <R5_DISPOSITION>.
+  but the guard is weaker than the promise. Disposition: fix on the return (T10).
 - R6 (confirmed): `test-fixture-cache.R:231` enumerates the fixture signatures
   the suite asks for and gained no `srv_*` entry, so no pair differing only by
   `eval_time` is covered. `fixture_key()` hashes every matched argument, so
   behavior is right today and only the guard's coverage lags. The same gap is
   already a ROADMAP candidate row from M34 and M35. Disposition:
-  <R6_DISPOSITION>.
+  follow-up — absorbed into the existing fixture-cache candidate row at post-merge hygiene, no new row.
 - R7 (confirmed): `srv_workflow(data)`
   (`tests/testthat/helper-orchestration.R:579`) never uses its `data`
-  argument, though every call site passes one. Disposition: <R7_DISPOSITION>.
+  argument, though every call site passes one. Disposition: rejected — style, no defect.
 - R8 (confirmed): the rewritten comment at
   `tests/testthat/test-parallel-classify.R:801` runs past the file's wrapping
   width; `air` does not reflow comments, so the formatter stays green.
-  Disposition: <R8_DISPOSITION>.
+  Disposition: rejected — style, `air` is the formatter and it is green.
 - R9 (this review): M41's plan commit removed the ROADMAP candidate row that
   bundled the `control` question, leaving the "Generalize the orchestrator
   past `tune_grid()`" row saying "Depends on the `control`/`...` question the
   row above owns" with no such row above it. `cairn_validate`'s dangling-token
-  check does not see prose cross-references. Disposition: <R9_DISPOSITION>.
+  check does not see prose cross-references. Disposition: fixed in this review's return commit.
