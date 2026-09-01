@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M39: `print()` shows the object, `summary()` says what it means
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -62,7 +62,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
       It never aborts, including where every fold failed — `collect_metrics()`'s
       `check_any_completed()` abort is not inherited, because a description of a
       failed run is what M04 built and M03 recorded.
-- [ ] AC4. Where a `nested_results`' recorded `id_columns` cannot label its
+- [x] AC4. Where a `nested_results`' recorded `id_columns` cannot label its
       rows, `print(summary())` names each failed fold by its row position
       rather than raising or emitting a truncated label, and `print()` on the
       same object raises nothing, over the objects the AC4 block in
@@ -143,6 +143,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: mini gate chose logging M39 review O1 as a candidate row over repairing the `x$.notes` pointer here, because the repair falsifies AC2 as written and this milestone had already returned once for a wrong promise; AC2 stands ticked and unamended, and the drafted AC2 amendment is not written.
 - 2026-08-31: review findings O3, O5 and O9 fixed as carried: `print_candidate_sets()`'s comment now describes the caller `print.nested_results()` gives it rather than the selection lines that moved behind `summary()`; `summary.nested_results()`'s `@return` names `outer_label` and `grids`, the two components it returns and the clause omitted; and both `[summary()]` links plus `print.nested_results()`'s `@seealso` now point at `[summary.nested_results()]` rather than resolving to `base::summary`.
 - 2026-08-31: amendment done; status back to review. Suite 2398 pass / 0 fail / 0 warn / 0 skip; `devtools::document()` regenerated the two `man/` pages the roxygen fixes touched and nothing else.
+- 2026-09-01: re-review gate failed. `cairn_validate.py` exits 1 on `weight caps`: `cairn/ROADMAP.md` is 60 lines against the cap of <60, pushed over by the one candidate row this branch adds for review finding O1 on a file that was at 59 on `origin/main`. Every acceptance criterion was re-driven fresh at `e285b64` first and all seven hold, AC4 among them under its amended wording, so the return is the cap alone; the remedy is the graduate-or-prune one the cap's own rule states, and the three-lens fan-out was not reached. Status to in-progress.
 
 ## Decisions
 
@@ -401,3 +402,76 @@ That is evidence about the promise rather than about the work, so the milestone
 returns for a gated criterion amendment (`/milestone-implement` step 6) and
 re-review, and the merge gate is not reached. No merge approval was requested
 and none was given.
+
+### Round 2 — re-review after the AC4 amendment
+
+Fresh evidence gathered 2026-09-01 at `e285b64`, against PR #48. `origin/main`
+was 0 commits behind, so no re-merge was needed. The amendment commit's only
+source change is documentation and comments (`git diff db159f0..HEAD --
+R/nested-results-print.R` touches roxygen text, a `@seealso` list and one
+internal comment), so every criterion was re-driven against it rather than
+inherited from round 1.
+
+- AC1 — **verified.** Re-drove `print()` over the same four objects covering
+  the criterion's four switches, reading back every line via `cli::cli_fmt()`.
+  Label + all completed + equal grids: header, `Outer resamples: 3-fold
+  cross-validation`, `# A tibble: 3 x 9` and three data rows, the `summary()`
+  pointer. `outer_label` NULL: identical less that line. One fold not
+  completed: adds `1 of 3 outer folds did not complete.` between rows and
+  pointer. Differing grids (`same_candidates()` FALSE, checked): adds
+  `Candidates searched: 5, 5, 5 - the folds did not search the same grid` in
+  the same slot. No line outside the enumeration in any of the four.
+- AC2 — **verified.** `class(summary(x))` is `summary.nested_results`. Printing
+  it emits the four M04 sections in order plus the procedure sentence naming
+  `nested_final_fit()`. On the differing-grids object, whose `print()` emitted
+  the candidate line, the summary output does not repeat it.
+- AC3 — **verified.** One fold not completed: the only condition signalled is
+  class `nestedtune_partial_summary`, and the call still returns a
+  `summary.nested_results`. Every fold completed: an instrumented handler
+  counting every non-message condition counted 0. Every fold failed: returned a
+  `summary.nested_results` rather than aborting, printing `0 completed`, three
+  failure lines, `No outer fold completed, so nothing was selected.` and `...
+  so there is no estimate.`
+- AC4 — **verified over the criterion's stated domain.** Built the three record
+  forms the AC4 block builds, on an object with one failed fold. In all three,
+  `print()` raised nothing and `print(summary())` named the failed fold `row 2`
+  with no truncated `Fold1, ` label. The passing control with the record the
+  constructor writes named it `Fold2` and never said `row 2`, so the fallback
+  is reached by the record being unusable rather than by every object.
+- AC5 — **verified over the criterion's domain.** Wrapped both print methods
+  with a condition-recording handler and ran
+  `tests/testthat/test-nested-results-print.R` under `NOT_CRAN=true`: 27
+  blocks, 127 passing assertions, 0 failures, 0 errors, 0 skips; 58 calls into
+  the two methods intercepted; 0 warnings. One raise, and not over an object in
+  the domain: the `check_dots_empty()` abort the file asserts with
+  `expect_error()` on `print(summary(res), foo = 1)`, a rejected argument.
+- AC6 — **verified by reading the three roxygen blocks in
+  `R/nested-results-print.R`.** `@return` at `:38` ("`x`, invisibly."), at
+  `:132` (the `summary.nested_results` bundle, now naming the outer label and
+  the per-fold candidate grid the amendment added) and at `:153` ("`print()`
+  returns `x`, invisibly.").
+- AC7 — **verified.** `devtools::document()` produced no diff;
+  `devtools::test()` ran 2398 pass / 0 fail / 0 warn / 0 skip. The
+  `check-r-package` legs on PR #48 at `e285b64`: ubuntu release, ubuntu
+  oldrel-1 and macOS release green, ubuntu devel and Windows release still
+  pending at the time of this gate failure (pkgdown, test-coverage, codecov and
+  format-suggest all green). The two pending legs are the one part of AC7 this
+  round did not see finish; the amendment commit changed only documentation and
+  comments.
+
+Toolchain consistency-gate checks all pass: `document()` no diff (so `NAMESPACE`
+and `man/` are not hand-edited), README.Rmd untouched by the diff,
+`pkgdown::check_pkgdown()` "No problems found.", three `NEWS.md` entries naming
+no milestone numbers, no new top-level files.
+
+**Universal cairn-file check fails, and the milestone returns.**
+`cairn_validate.py` exits 1 on `weight caps`: `cairn/ROADMAP.md` is 60 lines
+against a cap of <60. The branch is what pushed it over — `git diff
+origin/main..HEAD -- cairn/ROADMAP.md` adds exactly one line, the candidate row
+this milestone filed for review finding O1, on a file that was at 59 of 60 on
+`origin/main`. Every other check passes (16 PASS, `coverage complete` and
+`scaffold present` among them; the only advisory is the standing 18
+`references/` pages recording no verification claim, unchanged here, and the
+`release window` advisory did not fire). `cairn_impact.py` skipped: no IP/GP
+principle changed. The three-lens fan-out was not reached; the gate stops
+review before it.
