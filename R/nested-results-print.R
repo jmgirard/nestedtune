@@ -122,8 +122,10 @@ print_failure_count <- function(x) {
 #'
 #' Summarizing a run that only partly completed warns, and still returns the
 #' summary: the folds that ran are described, and the warning says the design
-#' asked for more. Summarizing a run where nothing completed does neither one
-#' nor the other — it reports a failed run, which is what there is to report.
+#' asked for more. A run where every fold failed is the same case — it warns
+#' and still returns, describing a failed run rather than refusing to answer.
+#' That is where this differs from [collect_metrics()], which aborts when no
+#' outer fold completed.
 #'
 #' @param object A `nested_results` object from [nested_tune_grid()].
 #' @param ... Not used; must be empty. An argument passed here is an error
@@ -137,7 +139,7 @@ print_failure_count <- function(x) {
 #'   Printing it is what most callers want; the components are there for a
 #'   caller that needs a number rather than a line of text.
 #'
-#' @seealso [nested_tune_grid()], [collect_metrics()]
+#' @seealso [print.nested_results()], [nested_tune_grid()], [collect_metrics()]
 #' @export
 summary.nested_results <- function(object, ...) {
   rlang::check_dots_empty()

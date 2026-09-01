@@ -39,9 +39,11 @@ this data — averaging the metrics hides that, so the summary marks it.
 
 Summarizing a run that only partly completed warns, and still returns the
 summary: the folds that ran are described, and the warning says the design
-asked for more. Summarizing a run where nothing completed does neither one
-nor the other — it reports a failed run, which is what there is to report.
+asked for more. A run where every fold failed is the same case — it warns
+and still returns, describing a failed run rather than refusing to answer.
+That is where this differs from \code{\link[=collect_metrics]{collect_metrics()}}, which aborts when no
+outer fold completed.
 }
 \seealso{
-\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=collect_metrics]{collect_metrics()}}
+\code{\link[=print.nested_results]{print.nested_results()}}, \code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=collect_metrics]{collect_metrics()}}
 }

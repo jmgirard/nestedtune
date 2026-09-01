@@ -145,6 +145,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: amendment done; status back to review. Suite 2398 pass / 0 fail / 0 warn / 0 skip; `devtools::document()` regenerated the two `man/` pages the roxygen fixes touched and nothing else.
 - 2026-09-01: re-review gate failed. `cairn_validate.py` exits 1 on `weight caps`: `cairn/ROADMAP.md` is 60 lines against the cap of <60, pushed over by the one candidate row this branch adds for review finding O1 on a file that was at 59 on `origin/main`. Every acceptance criterion was re-driven fresh at `e285b64` first and all seven hold, AC4 among them under its amended wording, so the return is the cap alone; the remedy is the graduate-or-prune one the cap's own rule states, and the three-lens fan-out was not reached. Status to in-progress.
 - 2026-09-01: the cap gate cleared. The four published-site candidate rows in `cairn/ROADMAP.md` — the Node-20 SHA pins, the deploy job no pull request can exercise, the two-name site-hygiene list and the `/dev/` mode question — were grouped into one row keeping every promotion trigger, chosen at the gate over pruning the measured-false CI-matrix row or dropping this branch's own O1 row; 60 lines to 57, 42,710 B to 42,328, nothing discarded. `cairn_validate.py` now exits with all checks passed. Suite 2398 pass / 0 fail / 0 warn / 0 skip, unchanged, and no R source, roxygen or test file was touched. Status back to review.
+- 2026-09-01: round 3. All seven criteria re-driven fresh at `2e74821` and all hold; `cairn_validate.py` exit 0 with `weight caps` passing; `devtools::check()` 0 errors, 0 warnings, 0 notes; eleven CI checks green on PR #48. Three-lens fan-out: blame-history and prior-review no findings, diff-bug eleven. Two fixed on the branch (a man-page sentence that said a wholly failed run neither warns nor returns, where it does both; a missing `@seealso` back-link), four rejected, four absorbed into two existing candidate rows, one put to the maintainer at the gate. No finding meets the return floor.
 
 ## Decisions
 
@@ -476,3 +477,225 @@ this milestone filed for review finding O1, on a file that was at 59 of 60 on
 `release window` advisory did not fire). `cairn_impact.py` skipped: no IP/GP
 principle changed. The three-lens fan-out was not reached; the gate stops
 review before it.
+
+### Round 3 — re-review after the ROADMAP cap gate cleared
+
+Fresh evidence gathered 2026-09-01 at `2e74821`, against PR #48. `git fetch`
+then `git rev-list --left-right --count origin/main...HEAD` reports 0 commits
+behind, and the local default branch matches its origin ref, so no merge was
+needed. The two commits since round 2 (`827ae72`, `2e74821`) touch only
+`cairn/ROADMAP.md` and this milestone file — `git diff --stat e285b64..HEAD`
+lists no other path — but every criterion was re-driven fresh rather than
+inherited.
+
+- AC1 — **verified.** Drove `print()` over four objects covering the
+  criterion's four switches, reading every emitted line back through
+  `cli::cli_fmt()`. Label + all completed + equal grids (`same_candidates()`
+  TRUE, checked): header, `Outer resamples: 3-fold cross-validation`, the rows
+  (`# A tibble: 3 x 9`, three data rows, tibble's own `2 more variables` line —
+  so the class strip dispatches to tibble's method), the `summary()` pointer.
+  `outer_label` NULL: identical less the `Outer resamples:` line. One fold not
+  completed: adds `1 of 3 outer folds did not complete.` between rows and
+  pointer. Differing grids (`same_candidates()` FALSE, checked): adds
+  `Candidates searched: 2, 3, 3 - the folds did not search the same grid` in
+  the same slot, and no failure count. No line outside the enumeration appeared
+  in any of the four.
+- AC2 — **verified.** `class(summary(x))` is `summary.nested_results`. Printing
+  it emits the four M04 sections in order — `Outer folds: 3 requested, 3
+  completed`; the failure lines and their `x$.notes` pointer; the
+  `Selected parameters` heading and its line; the
+  `Estimate (3 of 3 outer folds)` heading and its metric lines — followed by
+  the procedure sentence naming `nested_final_fit()`. On the differing-grids
+  object, whose `print()` emitted the candidate line, the summary output
+  matches `Candidates searched` zero times and `did not search the same grid`
+  zero times, so the line appears once in the pair and it is in `print()`.
+- AC3 — **verified.** One fold not completed: an instrumented handler recorded
+  exactly one non-message condition, of class `nestedtune_partial_summary`, and
+  the muffled call still returned a `summary.nested_results`. Every fold
+  completed: the same handler counted 0. Every fold failed: returned a
+  `summary.nested_results` rather than aborting, and printing it emits
+  `0 completed`, three failure lines,
+  `No outer fold completed, so nothing was selected.` and
+  `... so there is no estimate.`
+- AC4 — **verified over the criterion's stated domain.** Built the three record
+  forms the AC4 block builds — `character(0)`, `"not_a_column"`, and
+  `c("id", "not_a_column")` — on an object with one failed fold. In all three,
+  `print()` raised nothing and warned nothing, and `print(summary())` matched
+  `row 2 failed during outer fit` and did not match the truncated `Fold1, `.
+  The passing control with the record the constructor writes named the fold
+  `Fold2 failed during outer fit` and never said `row 2`, so the fallback is
+  reached by the record being unusable rather than by every object.
+- AC5 — **verified over the criterion's domain.** Replaced both print methods
+  in the namespace, the package environment and the S3 methods table with
+  condition-recording wrappers, proved the instrument counts a deliberate call
+  before trusting it, then ran `tests/testthat/test-nested-results-print.R`
+  under `NOT_CRAN=true`: 27 blocks, 127 passing assertions, 0 failures, 0
+  errors, 0 skips; 58 calls into the two methods intercepted; 0 warnings. One
+  raise, and not over an object in the domain: the `check_dots_empty()` abort
+  on `print(summary(res), foo = 1)`, which the file asserts with
+  `expect_error()` — a rejected `...` argument, not an object the file passes
+  to a print method.
+- AC6 — **verified by reading the three roxygen blocks in
+  `R/nested-results-print.R`.** `@return` at `:38` ("`x`, invisibly."), at
+  `:132` (the `summary.nested_results` bundle, naming the outer label, the
+  requested and completed counts, the failures with stages, the selections, the
+  candidate grid each completed fold searched, and the estimates) and at `:153`
+  ("`print()` returns `x`, invisibly.").
+- AC7 — **verified.** The `verify` slot is clean: `devtools::document()`
+  produced no diff at `2e74821`, and `devtools::test()` ran 2398 pass / 0 fail
+  / 0 warn / 0 skip. The fuller pre-review check the criterion names,
+  `check-r-package`, passes on all five legs of PR #48 at `2e74821` — ubuntu
+  devel (9m46s), ubuntu release (10m27s), ubuntu oldrel-1 (9m10s), macOS
+  release (7m56s), Windows release (10m41s) — with pkgdown, test-coverage, the
+  two codecov contexts and format-suggest green alongside them: eleven checks,
+  no pending, no failure.
+
+  The round-1 note that a local `devtools::check()` reports
+  `test-parallel-interrupt.R:102` is superseded by measurement, not by
+  argument: run again this round on the same machine, `devtools::check()`
+  finished `0 errors | 0 warnings | 0 notes` in 2m39s with the test file's own
+  leg reported OK. That is consistent with what round 1 recorded about it —
+  machine-local and intermittent inside the `R CMD check` subprocess, and
+  reproducing at `origin/main` too.
+
+### Consistency gate (round 3)
+
+- `cairn_validate.py`: exit 0, all 16 PASS checks pass — `weight caps` among
+  them, which is what returned the milestone in round 2, and `coverage
+  complete` and `scaffold present` too. Five advisory OKs and one WARN: the
+  standing 18 `references/` pages recording no verification claim, unchanged by
+  this milestone. The `release window` advisory did not fire.
+- `cairn_impact.py`: skipped. The milestone's only `DESIGN.md` edit is at
+  `:117-122`, a bullet in the conventions prose; the IP block starts at
+  `:156`. No IP/GP principle changed.
+- `devtools::document()`: no diff at `2e74821`, and after this round's two
+  roxygen fixes it rewrote only `man/summary.nested_results.Rd`.
+- `NAMESPACE` and `man/` regenerate from roxygen; the `document()` runs above
+  are that check.
+- README.Rmd is present and untouched by the diff, so README.md cannot be out
+  of sync with it.
+- `pkgdown::check_pkgdown()`: "No problems found." — re-run after the
+  `@seealso` fix.
+- `NEWS.md` carries three entries for this milestone's user-visible changes,
+  naming no milestone numbers.
+- No new top-level files, so no `.Rbuildignore` entry is owed.
+- Full check at review: `devtools::check()` 0 errors, 0 warnings, 0 notes.
+
+### Independent fresh-context review (round 3)
+
+Surface tier is user-facing and the diff touches R sources, so the full
+three-lens fan-out ran again on the current diff, each lens on its own evidence
+base.
+
+- **[S] blame-history** — no findings. It traced the dropped
+  `check_any_completed()` inheritance (still intact in
+  `collect_metrics.nested_results()`, omitted only in the new method), the
+  `fold_ids()` fallback against D-036, the moved candidate-set line, the
+  class-stripping print against D-037, and the DESIGN.md and vignette prose
+  corrections, and reported no undisclosed contradiction of prior intent.
+- **[S] prior-review** — no findings. It read the `## Review` sections of the
+  M04, M36 and M38 archives plus `LESSONS.md`, confirmed M04's cli/one-stream
+  lesson and M36/M38's recorded-`id_columns` rule are both respected, and
+  confirmed this milestone's own round-1 dispositions held: O3, O5 and O9 fixed
+  in `e285b64`, O1 on its candidate row, O2 and O7 left alone as rejected. Its
+  GitHub probe found one real inline comment in the repo's history, on an
+  unrelated file; per-PR walks of #4, #22, #42, #45, #46 and #47 returned empty.
+- **[O] diff-bug** — eleven ranked findings, below.
+
+### Findings and disposition (round 3)
+
+Ranked as the reviewer ranked them. Every finding is recorded with its
+disposition, including the rejected ones (IP3). Each claim below was re-run
+against the implementation rather than taken from the reviewer's account of it.
+
+- **R1. `print()` rejects every tibble print argument, so a run with more than
+  ten outer folds cannot be printed past `# i N more rows`.**
+  `rlang::check_dots_empty()` at `R/nested-results-print.R:66`, and
+  `print_rows()` (`:93`) calls `print(rows)` with no `...`. Confirmed:
+  `print(res, n = 25)` aborts with `` `...` must be empty. x Problematic
+  argument: * n = 25 ``. The rejection predates the split, but the split is
+  what makes `n` and `width` meaningful, since the rows are now what printing
+  shows. AC1 neither requires nor forbids passing them. **Disposition: for the
+  maintainer at the gate** — forwarding `...` to the tibble method changes an
+  exported method's argument contract from "an error" to "accepted", which is a
+  design decision rather than review-side work.
+- **R2. `summary()`'s documentation says a wholly failed run neither warns nor
+  returns, and it does both.** `R/nested-results-print.R:124-127` (rendered at
+  `man/summary.nested_results.Rd`) read "Summarizing a run where nothing
+  completed does neither one nor the other". Measured on an object whose every
+  fold failed: `summary()` signals `nestedtune_partial_summary` and returns a
+  `summary.nested_results`. `NEWS.md` states this correctly, so the man page
+  contradicted both the code and the changelog. **Disposition: fix now** —
+  the sentence now says the wholly failed run is the same case and names
+  `collect_metrics()`, which was measured to abort there
+  (`There is nothing to summarize: no outer fold completed.`).
+- **R3. A non-character `.notes$location` aborts `summary()` where the
+  pre-split code rendered it.** `vapply(..., character(1))` at
+  `R/nested-results-print.R:185`; the pre-split code passed
+  `fold_failure_stage()`'s value straight to cli. Confirmed: with
+  `location` set to `factor("outer fit")`, `fold_failure_stage()` still returns
+  the value and `summary()` aborts with `values must be type 'character'`.
+  Reaching it takes a hand-corrupted `.notes` — the package's own writers put a
+  character there. **Disposition: follow-up** — same malformed-object hardening
+  class as R7 below, which the `check_nested()` candidate row already owns.
+- **R4. Five print snapshots now pin pillar's exact table rendering.**
+  `tests/testthat/_snaps/nested-results-print.md`. **Disposition: follow-up,
+  and already filed** — this is round 1's O8, on the candidate row it went to;
+  no second row.
+- **R5. `print_candidate_sets()` is given a logical index where
+  `new_summary_nested_results()` uses `which()`.**
+  `R/nested-results-print.R:74` against `:181-188`. **Disposition: rejected as
+  out-of-scope** — the reviewer's own check found both HEAD and `origin/main`
+  raise on an `NA` in `.completed`, so the diff introduced no behaviour
+  difference here; the divergence is style, which the taxonomy excludes.
+- **R6. `summary.nested_results()`'s `@seealso` did not point back at
+  `print.nested_results()`.** `R/nested-results-print.R:140`, where the print
+  method's own `@seealso` was updated to point forward in `e285b64`.
+  **Disposition: fix now** — the back-link is added and
+  `check_pkgdown()` re-run clean.
+- **R7. `print()` raises on an `NA` in `.completed`.** **Disposition: rejected
+  as out-of-scope, already litigated** — this is round 1's O7, rejected then
+  because `main` raises on the same input at `print_estimate()`; nothing in the
+  diff changed that, and the object shape is the `check_nested()` row's.
+- **R8. `cairn/DESIGN.md:124` was said to still claim `print()` surfaces
+  selection disagreement.** **Disposition: rejected, already litigated** — this
+  is round 1's O2. The bullet reads "default print/summary surfaces
+  disagreement between folds", naming the pair; after the split `summary()`
+  surfaces selection disagreement and `print()` surfaces candidate-set
+  disagreement, so the sentence remains true of the pair it names. Re-read this
+  round at `:123-125` to confirm the wording is unchanged.
+- **R9. The `summary.nested_results` topic renders two unlabelled `\value`
+  paragraphs.** `man/summary.nested_results.Rd:20-30`, because
+  `print.summary.nested_results()` rides `@rdname`. AC6 is satisfied either way
+  — it asks that each method have a `@return` clause naming what it returns,
+  and all three do. **Disposition: follow-up** — splitting the topic or
+  labelling the clauses is a documentation-layout choice beyond this
+  milestone's scope.
+- **R10. The new `summary()` method ships with no `@examples`, so its pkgdown
+  page has an empty Examples section.** `R/nested-results-print.R:130-146`.
+  **Disposition: follow-up** — worth having, and adding a runnable
+  `examplesIf` block is new user-facing content rather than a review-side fix.
+- **R11. `man/print.nested_results.Rd` carries a two-word line left by the
+  `e285b64` re-wrap.** **Disposition: rejected** — a wrapping nitpick in
+  generated output, which the out-of-scope taxonomy covers, and it renders
+  identically.
+
+### Outcome (round 3)
+
+All seven criteria verified with fresh evidence at `2e74821`; the consistency
+gate passes, including the `weight caps` check that returned the milestone in
+round 2, and `devtools::check()` is clean. Of the eleven findings, two were
+fixed on the branch (R2, R6), four rejected (R5, R7, R8, R11), four sent to
+follow-up rows (R3, R4, R9, R10) and one put to the maintainer at the gate
+(R1). None demonstrates an acceptance criterion failing, so the return floor
+is not met and no finding returns the milestone.
+
+Follow-up rows filed for the four deferred findings, both by absorption rather
+than new rows, because `cairn/ROADMAP.md` sits at 57 lines against a cap of
+<60 and round 2 returned this milestone on exactly that cap. R4, R9 and R10
+joined the existing M39 review O1 row, which is now a grouped row of four M39
+print/summary follow-ups keeping each item's own promotion trigger; R3 joined
+the `check_nested()` row, whose malformed-object question it repeats. That
+`check_nested()` row now carries findings from a second milestone for the first
+time, so the next pass to extend it poses the disposition chip rather than
+extending it again.
