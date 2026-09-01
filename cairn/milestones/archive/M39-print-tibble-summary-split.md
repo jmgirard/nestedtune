@@ -1,0 +1,11 @@
+# M39: `print()` shows the object, `summary()` says what it means
+
+**Status:** done (2026-09-01, PR #48 https://github.com/tidymodels/nestedtune/pull/48)
+
+**Goal:** Printing a `nested_results` shows a user it is a tibble of outer folds, and the annotations M04 built move behind `summary()`. Closes issue #34.
+
+**Outcome:** `print.nested_results()` emits a header, an `Outer resamples:` line when the object names one, its own rows (`print_rows()` strips the subclass so tibble's method renders them, through `cli::cli_verbatim()` so the method writes to one stream), a not-completed count when it exceeds zero, `print_candidate_sets()`'s disagreement line, and a `summary()` pointer — and nothing else. `summary.nested_results()` returns a `summary.nested_results` bundle built once by `new_summary_nested_results()` (`outer_label`, `requested`, `completed`, `failures`, `selection`, `grids`, `estimate`), printed by `print.summary.nested_results()` through M04's four section builders plus the IP3 procedure sentence. `warn_partial_summary()` routes here without `collect_metrics()`'s `check_any_completed()` abort, so a wholly failed run is described rather than refused. `fold_ids()` falls back to `paste("row", ...)` when the recorded `id_columns` is empty or names an absent column (M38 review O8, all three forms).
+
+**Decisions:** two milestone-local, in git — the unusable-label-record fallback lives in `fold_ids()` itself, so every caller gets it; `summary()` returns a computed bundle rather than a recomputing wrapper, and M40 mirrors that shape. D-037 records refusing to move tibble to Imports.
+
+**Review:** three rounds. Round 1 returned AC4 for a gated amendment (its `print()` clause contradicted AC1) and carried three doc fixes; round 2 failed the `weight caps` check on `ROADMAP.md`, cleared by grouping four published-site candidate rows. Round 3: all seven criteria verified, gate green, `devtools::check()` clean, eleven CI checks green. Three-lens fan-out — blame-history and prior-review no findings, diff-bug eleven: two fixed (a man page saying a wholly failed run neither warns nor returns, when it does both; a missing `@seealso` back-link), four rejected, five absorbed into two existing candidate rows, R1 among them by the maintainer's gate decision. The issue link was missing until the user caught it at the gate.

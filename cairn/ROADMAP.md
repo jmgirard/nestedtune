@@ -1,19 +1,18 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-08-31 (all checks green; advisories only — the same 18 references pages record no verification claim. Line caps hold: ROADMAP.md 59 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M38 archive summary 11. Both byte budgets are over and both got worse: ROADMAP.md 41,910 B against 24,000 and LESSONS.md 29,755 B against 20,000, the latter despite trimming M36's lesson to its uncovered remainder and folding M38's into an existing line rather than adding one. The compressible rows are spent, so closing the gap means graduating or dropping candidates — a user call, now four passes overdue. Since the last check: M38 shipped the recorded fold-label columns and is archived after one review round, D-036 was recorded, M36's lesson was trimmed because the 108-cell sweep now reds on the mistake its prescription warned about, and the `check_nested()` candidate row absorbed two M38 review findings)_
+_Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 18 references pages record no verification claim. Line caps hold: ROADMAP.md 56 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M39 archive summary 11. Both byte budgets are over and ROADMAP.md got worse again: 45,348 B against 24,000, up 3,438 since the last check because five M39 review findings were absorbed into two existing rows rather than filed as new ones, which the line cap left as the only move; LESSONS.md is unchanged at 29,755 B against 20,000, no lesson being owed. The compressible rows are spent, so closing the gap means graduating or dropping candidates — a user call, now five passes overdue. Since the last check: M39 shipped the print/summary split and is archived after three review rounds, closing issue #34; the M39 review row grew to five grouped print/summary follow-ups; the `check_nested()` row took its first extension by a second milestone's findings, so the next pass to extend it poses the disposition chip; and M34's terminal row was pruned to keep the five most recent)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M39 | `print()` shows the object, `summary()` says what it means | review | — | normal | milestones/M39-print-tibble-summary-split.md |
+| M39 | `print()` shows the object, `summary()` says what it means | done | — | normal | milestones/archive/M39-print-tibble-summary-split.md |
 | M40 | A `nested_final_fit` answers `summary()` the way its sibling does | planned | M39 | normal | milestones/M40-final-fit-summary.md |
 | M38 | A results object's own fold-label columns, recorded rather than guessed | done | — | normal | milestones/archive/M38-id-columns-recorded.md |
 | M37 | The vctrs half, so `rbind()` stops claiming a design it never ran | done | — | normal | milestones/archive/M37-vctrs-invariants.md |
 | M36 | Removing an outer fold's row stops producing a `nested_results` | done | — | normal | milestones/archive/M36-dplyr-invariants.md |
 | M35 | The factor level a caller can name as the event | done | — | normal | milestones/archive/M35-event-level.md |
-| M34 | The arguments a caller can hand through to `tune` | done | — | normal | milestones/archive/M34-forward-tune-arguments.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
