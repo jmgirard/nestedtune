@@ -1,5 +1,30 @@
 # nestedtune 0.0.0.9000
 
+* Breaking: printing a `nested_results` now shows the object — its outer folds
+  as the tibble rows they are, the resampling scheme it came from, a count of
+  the folds that did not complete, and a note when the folds did not all search
+  the same grid. Everything else printing used to report has moved behind
+  `summary()`: which folds failed and at which stage, what each fold's inner
+  tuning selected, the estimate across the folds that completed, and the
+  sentence saying a nested estimate describes the procedure rather than a model
+  you can deploy. Previously `print()` reported all of that and never showed a
+  single row of the object.
+
+* `summary()` on a `nested_results` returns a `summary.nested_results` object
+  holding the requested and completed fold counts, the failed folds with the
+  stage each failed at, the values the completed folds selected for each tuned
+  parameter, and the metric estimates averaged across them — so a caller can
+  reach a number without re-deriving it from the columns. Summarizing a run
+  that only partly completed warns and still returns the summary; summarizing
+  one where every fold failed does the same, where `collect_metrics()` refuses
+  outright.
+
+* A `nested_results` whose record of its fold-label columns cannot label its
+  rows — because the record is empty, or names a column the object no longer
+  carries — now names each fold by its row position. Previously the first two
+  cases made printing raise, and a record naming several columns of which some
+  were absent produced a truncated label such as `Fold1, `.
+
 * Breaking: an operation that changes which outer folds a `nested_results`
   holds now returns a plain tibble instead of a `nested_results`. `slice()`,
   `head()`, `x[1, ]`, `x[-1, ]`, a `filter()` that drops a failed fold and

@@ -124,6 +124,13 @@ res <- nested_tune_grid(wf, folds, grid = grid)
 res
 ```
 
+Printing shows the object: one row per outer fold, and the record each fold
+left behind. `summary()` says what the run means.
+
+```{r summarize}
+summary(res)
+```
+
 ## What to report, and why
 
 ```{r estimate}
@@ -224,7 +231,7 @@ Two things the nested estimate does not say, both easy to over-read:
 
 ## What each fold chose
 
-The print method summarized this above, and `.selected` holds it exactly: a list
+The summary above reported this, and `.selected` holds it exactly: a list
 column of one-row tibbles, one per outer fold, each holding the parameters that
 fold's inner tuning chose. Stacked up, with the fold each came from:
 
