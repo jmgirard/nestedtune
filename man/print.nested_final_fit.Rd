@@ -26,6 +26,7 @@ a claim about this model; the nested estimate from \code{\link[=nested_tune_grid
 the one to report (IP3).
 }
 \seealso{
-\code{\link[=nested_final_fit]{nested_final_fit()}}, \code{\link[=nested_tune_grid]{nested_tune_grid()}},
-\code{\link[=extract_tune_results]{extract_tune_results()}}, \code{\link[=extract_scored_candidates]{extract_scored_candidates()}}
+\code{\link[=summary.nested_final_fit]{summary.nested_final_fit()}}, \code{\link[=nested_final_fit]{nested_final_fit()}},
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=extract_tune_results]{extract_tune_results()}},
+\code{\link[=extract_scored_candidates]{extract_scored_candidates()}}
 }

@@ -25,8 +25,9 @@
 #'
 #' @return `x`, invisibly.
 #'
-#' @seealso [nested_final_fit()], [nested_tune_grid()],
-#'   [extract_tune_results()], [extract_scored_candidates()]
+#' @seealso [summary.nested_final_fit()], [nested_final_fit()],
+#'   [nested_tune_grid()], [extract_tune_results()],
+#'   [extract_scored_candidates()]
 #' @export
 print.nested_final_fit <- function(x, ...) {
   rlang::check_dots_empty()

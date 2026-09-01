@@ -1,5 +1,15 @@
 # nestedtune 0.0.0.9000
 
+* `summary()` on a `nested_final_fit` returns a `summary.nested_final_fit`
+  object holding the full-data tuning run's resampling scheme, the number of
+  candidates that run scored, and the parameter values selection chose — so a
+  caller can reach a value without re-deriving it from the fit. Printing it
+  reports those under headings and says, where the number would be, that this
+  model has no performance estimate of its own and that the nested estimate is
+  the one to report. Previously `summary()` on a final fit fell through to the
+  default method and printed a table of the object's five internal components.
+  `print()` on a final fit is unchanged.
+
 * Breaking: printing a `nested_results` now shows the object — its outer folds
   as the tibble rows they are, the resampling scheme it came from, a count of
   the folds that did not complete, and a note when the folds did not all search
