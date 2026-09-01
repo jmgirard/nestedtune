@@ -105,6 +105,13 @@
 #'   back a bare tibble, the same answer `slice()` gives, rather than an object
 #'   whose record has stopped describing its own rows.
 #'
+#'   Combining is the one place the doors part. `vctrs::vec_rbind(x)` and
+#'   `vctrs::vec_c(x)` hand back a bare tibble even with nothing to combine `x`
+#'   with, where `dplyr::bind_rows(x)` returns a `nested_results`: vctrs asks
+#'   for the common type before it asks the rule anything, and the common type
+#'   of one results object is a plain table. Every combination of two or more
+#'   returns a bare tibble through either door, which is the rule above.
+#'
 #'   Column-binding is the one place argument order shows. `bind_cols()` and
 #'   `vec_cbind()` both build their answer on the first argument's type, so
 #'   `bind_cols(x, extra)` and `vec_cbind(x, extra)` are a `nested_results`

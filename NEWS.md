@@ -22,7 +22,12 @@
   object it was built from — `rbind(x, x)` gave six rows still headed as a
   3-fold run. Reordering rows with `vctrs::vec_slice(x, c(2, 1, 3))` keeps the
   class, and so does adding a column with `vctrs::vec_cbind()`, which now
-  answers exactly as `dplyr::bind_cols()` does.
+  answers exactly as `dplyr::bind_cols()` does. Both build on the first
+  argument's type, so `vec_cbind(x, extra)` and `bind_cols(x, extra)` keep the
+  class while `vec_cbind(extra, x)` and `bind_cols(extra, x)` return plain
+  tibbles holding the same columns. `vctrs::vec_rbind()` and `vctrs::vec_c()`
+  return a plain tibble even when given one argument and nothing to combine it
+  with, where `dplyr::bind_rows(x)` keeps the class.
 
 * Breaking: `dplyr::rename()` moving one of the columns the run is recorded in
   now returns a plain tibble. Previously it returned a `nested_results` that no

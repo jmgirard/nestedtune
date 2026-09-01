@@ -114,6 +114,13 @@ through a \code{dplyr_reconstruct()} method; \strong{vctrs}' own verbs —
 back a bare tibble, the same answer \code{slice()} gives, rather than an object
 whose record has stopped describing its own rows.
 
+Combining is the one place the doors part. \code{vctrs::vec_rbind(x)} and
+\code{vctrs::vec_c(x)} hand back a bare tibble even with nothing to combine \code{x}
+with, where \code{dplyr::bind_rows(x)} returns a \code{nested_results}: vctrs asks
+for the common type before it asks the rule anything, and the common type
+of one results object is a plain table. Every combination of two or more
+returns a bare tibble through either door, which is the rule above.
+
 Column-binding is the one place argument order shows. \code{bind_cols()} and
 \code{vec_cbind()} both build their answer on the first argument's type, so
 \code{bind_cols(x, extra)} and \code{vec_cbind(x, extra)} are a \code{nested_results}

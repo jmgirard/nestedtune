@@ -271,11 +271,18 @@ vec_restore.nested_results <- function(x, to, ...) {
     return(reconstruct_results(x, to))
   }
   # The empty container `vec_cbind()` assembles into, on its way past
-  # `vec_cbind_frame_ptype()`. Nothing about a run can be checked here and
-  # nothing is claimed: what carries the class through is a frame with no
-  # columns and no rows, which reaches no caller -- `x[0]` gets the class taken
-  # off by `[` before anyone can hold one. The result assembled into it comes
-  # back through this same function with its columns, below.
+  # `vec_cbind_frame_ptype()`. Nothing about a run can be checked here, because
+  # what carries the class through has no columns to check: `x[0]` drops every
+  # column and keeps the rows. The result assembled into it comes back through
+  # this same function with its columns, below, and is checked there.
+  #
+  # The container is not private. `vctrs::vec_cbind_frame_ptype(x)` is exported,
+  # and calling it directly hands back a columnless object wearing the class and
+  # the run's description, which `print()` reports as a run it does not hold
+  # before erroring on the missing columns (measured 2026-08-31). vctrs
+  # documents that generic as experimental and keyword-internal, which is the
+  # ground the RB04 review judged the exposure negligible on; no verb reaches
+  # it. Recorded in the milestone's review as R2.
   if (length(x) == 0L && nrow(x) == 0L && length(to) == 0L) {
     return(copy_results_attributes(as_results_tbl(x), to))
   }

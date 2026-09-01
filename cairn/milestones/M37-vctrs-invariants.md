@@ -158,6 +158,8 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 
 - 2026-08-31: /milestone-review, second round — all seven criteria pass on fresh evidence; `cairn_validate` exit 0 and the r-package consistency gate clean; `devtools::check()` `Status: OK`, `devtools::test()` 2098 passing. Three lenses ran; the [O] diff lens returned eleven findings, two reproduced by the session. Two mechanical fixes at the gate: `air format .` on the three sites `format-suggest` flagged red, and D-035 moved out of the `<!-- Template:` comment block it had been written inside.
 
+- 2026-08-31: merge gate directed the wording fixes and approved the merge: the `@return`'s parting-doors paragraph, the frame-prototype comment, the NEWS argument-order and single-argument lines, and a test block pinning both. `devtools::check()` `Status: OK` after them.
+
 ## Decisions
 
 - 2026-08-31 (RR04 Q1–Q3, promoted to D-032's annotation as D-033):
@@ -303,10 +305,24 @@ session directly before triage.
 
 ### Gate fixes
 
-Two committed before the approval gate, both mechanical: `air format .` on the
-three sites `format-suggest` flagged, and moving D-035 out of the template
-comment block (R1). Neither changes behavior; the suite re-run above is against
-both.
+Two before the approval gate, both mechanical: `air format .` on the three
+sites `format-suggest` flagged, and moving D-035 out of the template comment
+block (R1). Neither changes behavior.
+
+Three more directed at the gate, all wording, no behavior change: the
+`@return` gains a paragraph naming the one place the doors part, so the "one
+rule" claim above it is no longer falsified by `vctrs::vec_rbind(x)` (R3); the
+frame-prototype comment now says what the container is (rows kept, columns
+dropped) and that `vctrs::vec_cbind_frame_ptype()` is exported and hands back
+a columnless object wearing the class, instead of claiming it reaches no
+caller (R2); and `NEWS.md` names the argument-order rule and the
+single-argument divergence (R10). A new `test-vctrs-compat.R` block pins both
+behaviors the new prose asserts, with `dplyr::bind_rows(x)` keeping the class
+as its passing control. `devtools::check()` after all five: `Status: OK`, 0
+errors, 0 warnings, 0 notes, 3m 35.4s; `test-vctrs-compat.R` 158 passing, 0
+failures, 0 skips.
+
+R4-R9 and R11 go to a candidate row at the post-merge pass.
 
 Disposition of R2-R11 is the maintainer's at the merge gate. No acceptance
 criterion fails, and no finding is a measured regression against `main`, so

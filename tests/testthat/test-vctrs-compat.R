@@ -306,3 +306,27 @@ test_that("a column add answers the same through either door with the results ob
   # the verb refusing every column add.
   expect_s3_class(vctrs::vec_cbind(res, extra), "nested_results")
 })
+
+# The one place the doors do not answer alike, pinned so the help page's
+# paragraph on it cannot drift: `vec_rbind()` and `vec_c()` ask for the common
+# type before they ask the rule anything, and the common type of one results
+# object is a plain table, so a single-argument call sheds where
+# `dplyr::bind_rows()` keeps. Recorded as R2 of M37's review.
+test_that("vec_rbind() and vec_c() shed on one argument where bind_rows() keeps", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  expect_no_record(vctrs::vec_rbind(res), "vec_rbind() on one argument")
+  expect_no_record(vctrs::vec_c(res), "vec_c() on one argument")
+  expect_s3_class(vctrs::vec_ptype(res), "tbl_df")
+  expect_false(inherits(vctrs::vec_ptype(res), "nested_results"))
+
+  # The passing control: the dplyr door keeps the class on the same call, so
+  # the assertions above are about which door was used and not about a rule
+  # that sheds on every combination verb.
+  expect_s3_class(dplyr::bind_rows(res), "nested_results")
+
+  # And neither door keeps it once there is something to combine with.
+  expect_no_record(vctrs::vec_rbind(res, res), "vec_rbind() on two")
+  expect_no_record(dplyr::bind_rows(res, res), "bind_rows() on two")
+})
