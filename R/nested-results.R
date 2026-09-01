@@ -447,7 +447,10 @@ vec_ptype2.data.frame.nested_results <- function(x, y, ...) {
 #' @importFrom vctrs vec_cast
 #' @export
 vec_cast.nested_results.nested_results <- function(x, to, ...) {
-  reconstruct_results(vctrs::tib_cast(bare_results(x), bare_results(to), ...), x)
+  reconstruct_results(
+    vctrs::tib_cast(bare_results(x), bare_results(to), ...),
+    x
+  )
 }
 
 #' @export
@@ -461,7 +464,13 @@ vec_cast.data.frame.nested_results <- function(x, to, ...) {
 }
 
 #' @export
-vec_cast.nested_results.tbl_df <- function(x, to, ..., x_arg = "", to_arg = "") {
+vec_cast.nested_results.tbl_df <- function(
+  x,
+  to,
+  ...,
+  x_arg = "",
+  to_arg = ""
+) {
   stop_no_cast_to_results(x, to, x_arg, to_arg)
 }
 

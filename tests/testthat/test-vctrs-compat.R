@@ -254,7 +254,11 @@ test_that("combining with a table whose columns differ answers rather than raisi
   for (nm in names(forms)) {
     out <- forms[[nm]]
     expect_no_record(out, paste0(nm, "() over an unshared column"))
-    expect_identical(names(out), c(names(res), "other"), label = paste0(nm, " names"))
+    expect_identical(
+      names(out),
+      c(names(res), "other"),
+      label = paste0(nm, " names")
+    )
     expect_identical(nrow(out), nrow(res) + 1L, label = paste0(nm, " rows"))
     # The union is what the answer rests on: the rows the source contributed
     # carry no value for a column it never had.

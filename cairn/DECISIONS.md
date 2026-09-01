@@ -1053,8 +1053,6 @@ the tests needs it present, which `devtools` installs from Suggests. Falsified
 by a test needing tibble outside the compatibility file, which would be a
 signal that `R/` wants it too.
 
-<!-- Template:
-
 ### D-035 (2026-08-31): a column added through `vec_cbind()` keeps the class only where the results object is the first argument, and combining with a table whose columns differ produces a table rather than refusing — annotates the two divergences D-032 recorded, on the defect returns M37's review made
 
 **Context:** D-032 recorded three deliberate divergences from rsample and tune
@@ -1091,6 +1089,8 @@ asymmetry are in `cairn/milestones/M37-vctrs-invariants.md`. Falsified by a
 vctrs version that combines three or more tables in an order-dependent way
 through this lattice, or by `dplyr::bind_cols()` changing which argument's
 type it builds on.
+
+<!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
 
