@@ -6,8 +6,12 @@
   measured at the times you name rather than at whatever tune picks. It is
   refused ahead of tune when it is not numeric, is empty, or has an element
   that is missing, negative or not finite; zero, repeated times and times out
-  of order are passed on untouched for tune to normalize. Previously neither
-  function took the argument and neither could reach it.
+  of order are passed on untouched for tune to normalize. A metric measured at
+  several evaluation times is summarized per time by `collect_metrics()` and
+  `summary()`, each row naming its time in a `.eval_time` column, so estimates
+  at different times are never averaged together; a run scored by no survival
+  metric keeps the columns it had. Previously neither function took the
+  argument and neither could reach it.
 
 * `summary()` on a `nested_final_fit` returns a `summary.nested_final_fit`
   object holding the full-data tuning run's resampling scheme, the number of

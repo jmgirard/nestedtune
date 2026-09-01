@@ -590,5 +590,217 @@ test_that("AC6: both help pages document `eval_time` and what this package refus
     pages$nested_tune_grid
   )
   expect_match(differences, "Settable: \\code{event_level}", fixed = TRUE)
-  expect_match(differences, "\\code{eval_time}", fixed = TRUE)
+  # Inside the "Settable:" sentence itself, not merely somewhere after the
+  # heading -- the "Not passed on" paragraph names the argument too, and a
+  # match anywhere below the heading would stay green if it appeared only there
+  # (M41 review R5). `rd_text()` has already collapsed the page onto one line.
+  expect_match(
+    differences,
+    "Settable: \\\\code\\{event_level\\}[^.]*\\\\code\\{eval_time\\}"
+  )
+})
+
+# AC8 -- per-time summaries ----------------------------------------------------
+#
+# What a multi-element `eval_time` does to the summary. Once a dynamic survival
+# metric is in the set, every per-fold metric tibble tune records carries a
+# `.eval_time` column, so an average that ignored it would pool the estimates
+# at the early time with those at the late one and count fold x time in `n`
+# (M41 review R1). The column travels into collect_metrics() and summary()
+# exactly when tune recorded it, which is what tune's own collect_metrics()
+# does (implement gate, 2026-09-01).
+
+test_that("AC8: a multi-element `eval_time` is summarized per evaluation time", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  workflow <- srv_workflow(data)
+  times <- srv_eval_times()
+
+  set.seed(9)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    workflow,
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = times
+  )))
+
+  per_fold <- collect_metrics(res, summarize = FALSE)
+  expect_identical(
+    names(per_fold),
+    c("id", ".metric", ".estimator", ".eval_time", ".estimate")
+  )
+  expect_identical(nrow(per_fold), nrow(nested) * length(times))
+
+  summarized <- collect_metrics(res)
+  expect_identical(
+    names(summarized),
+    c(".metric", ".estimator", ".eval_time", "mean", "n", "std_err")
+  )
+  expect_identical(nrow(summarized), length(times))
+  expect_identical(summarized$.eval_time, times)
+  expect_identical(summarized$n, rep(nrow(nested), length(times)))
+
+  # Each row's mean and standard error are over that time's fold estimates
+  # alone, computed the dumb way from the per-fold rows.
+  for (k in seq_along(times)) {
+    at_k <- per_fold$.estimate[per_fold$.eval_time == times[[k]]]
+    expect_identical(length(at_k), nrow(nested))
+    expect_equal(summarized$mean[[k]], mean(at_k))
+    expect_equal(summarized$std_err[[k]], stats::sd(at_k) / sqrt(length(at_k)))
+  }
+  # And the two rows differ, without which a pooled average would pass above.
+  expect_false(isTRUE(all.equal(summarized$mean[[1L]], summarized$mean[[2L]])))
+
+  # summary() reads the same function, and its print names the time per row.
+  s <- summary(res)
+  expect_identical(s$estimate, summarized)
+
+  txt <- print_text(s)
+  for (k in seq_along(times)) {
+    expect_match(
+      txt,
+      paste0(
+        "brier_survival (standard) at time ",
+        format(times[[k]]),
+        ": ",
+        format(summarized$mean[[k]], digits = 3)
+      ),
+      fixed = TRUE
+    )
+  }
+  # `n` equals the completed folds on every row, so no row is qualified.
+  expect_no_match(txt, "from [0-9]+ fold")
+})
+
+test_that("AC8: a scalar `eval_time` still reports one row per metric", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  times <- srv_eval_times()
+
+  set.seed(9)
+  scalar <- memoised(nested_tune_grid(
+    srv_workflow(data),
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = times[[1L]]
+  ))
+
+  summarized <- collect_metrics(scalar)
+  expect_identical(
+    names(summarized),
+    c(".metric", ".estimator", ".eval_time", "mean", "n", "std_err")
+  )
+  expect_identical(nrow(summarized), 1L)
+  expect_identical(summarized$.eval_time, times[[1L]])
+  expect_identical(summarized$n, sum(scalar$.completed))
+
+  txt <- print_text(summary(scalar))
+  expect_match(
+    txt,
+    paste0("brier_survival (standard) at time ", format(times[[1L]]), ":"),
+    fixed = TRUE
+  )
+})
+
+test_that("AC8: a run with no evaluation time keeps the shape it had", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+
+  summarized <- collect_metrics(res)
+  expect_identical(
+    names(summarized),
+    c(".metric", ".estimator", "mean", "n", "std_err")
+  )
+  expect_identical(nrow(summarized), length(unique(summarized$.metric)))
+  expect_true(all(summarized$n == sum(res$.completed)))
+
+  per_fold <- collect_metrics(res, summarize = FALSE)
+  expect_identical(
+    names(per_fold),
+    c("id", ".metric", ".estimator", ".estimate")
+  )
+
+  expect_no_match(print_text(summary(res)), "at time")
+})
+
+test_that("AC8: a failed fold contributes no rows and keeps the time column", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  times <- srv_eval_times()
+
+  # A failed fold's metrics are an empty tibble recorded before any evaluation
+  # time existed, so it carries no `.eval_time` column; the assembly must not
+  # lose the column, nor pad the failed fold with rows, on its account.
+  set.seed(9)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    srv_workflow(data),
+    break_fold(nested, 2L),
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = times
+  )))
+  expect_false(res$.completed[[2L]])
+  expect_identical(sum(res$.completed), 2L)
+
+  per_fold <- suppressWarnings(collect_metrics(res, summarize = FALSE))
+  expect_identical(nrow(per_fold), 2L * length(times))
+  expect_false(fold_ids(res)[[2L]] %in% per_fold$id)
+
+  summarized <- suppressWarnings(collect_metrics(res))
+  expect_identical(summarized$.eval_time, times)
+  expect_identical(summarized$n, rep(2L, length(times)))
+})
+
+test_that("AC8: a static metric beside a dynamic one keeps one row, with no time", {
+  # Direct on the summarizer, on the shape a `last_fit()` on tune 2.1.0 records
+  # for a metric set mixing `brier_survival()` with `concordance_survival()`:
+  # the static metric's row carries NA in `.eval_time` (measured 2026-09-01).
+  # Hand-built rather than fitted, so the case costs no model.
+  per_fold <- new_tbl(list(
+    id = rep(c("Fold1", "Fold2"), each = 3L),
+    .metric = rep(
+      c("brier_survival", "brier_survival", "concordance_survival"),
+      2L
+    ),
+    .estimator = rep("standard", 6L),
+    .eval_time = rep(c(2, 5, NA), 2L),
+    .estimate = c(0.1, 0.2, 0.6, 0.3, 0.4, 0.8)
+  ))
+
+  out <- summarize_folds(per_fold)
+
+  expect_identical(
+    out$.metric,
+    c("brier_survival", "brier_survival", "concordance_survival")
+  )
+  expect_identical(out$.eval_time, c(2, 5, NA))
+  expect_equal(out$mean, c(0.2, 0.3, 0.7))
+  expect_identical(out$n, c(2L, 2L, 2L))
+
+  # Two times differing below print precision are two rows, not one: the key
+  # must separate what `paste()` would render alike.
+  close <- new_tbl(list(
+    id = c("Fold1", "Fold1"),
+    .metric = c("brier_survival", "brier_survival"),
+    .estimator = c("standard", "standard"),
+    .eval_time = c(0.1 + 0.2, 0.3),
+    .estimate = c(0.1, 0.9)
+  ))
+  expect_identical(nrow(summarize_folds(close)), 2L)
 })
