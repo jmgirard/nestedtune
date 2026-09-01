@@ -1,11 +1,11 @@
 # M42: The fixture key's separation test, derived from the orchestrators' own arguments
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** m042-fixture-key-derived
 
 ## Goal
 
@@ -85,7 +85,7 @@ Surface tier: internal — the deliverable is test tooling under
 
 ## Tasks
 
-- [ ] T1: In `tests/testthat/test-fixture-cache.R`, replace the test at
+- [x] T1: In `tests/testthat/test-fixture-cache.R`, replace the test at
       lines 231-359 with the derived axis test. A base request per
       orchestrator from the `det_*` family; a `signature_variants` registry
       (named list, one entry per formal, each returning the alternate value:
@@ -97,7 +97,7 @@ Surface tier: internal — the deliverable is test tooling under
       variant at the same seed per formal and expects distinct keys, for
       both orchestrators. Skip guard as the old test's
       (`skip_if_no_engines(stochastic = TRUE)`).
-- [ ] T2: Plant two defects and record each red run in the work log before
+- [x] T2: Plant two defects and record each red run in the work log before
       restoring: remove `eval_time` from the registry (expect the failure to
       name `eval_time`), and mutate `fixture_key()` to drop `eval_time` from
       `args` before hashing (expect the `eval_time` pair's expectation to
@@ -121,6 +121,8 @@ Surface tier: internal — the deliverable is test tooling under
 - 2026-09-01: plan gate chose deriving the axes over deleting the test outright because the builds report catches duplicate builds, never a wrongly shared one; falsified by the report catching a planted shared-run defect on its own.
 - 2026-09-01: plan gate chose a request-time abort in `fixture_key()` over a teardown-time warning for the depth guard because the teardown prints after every assertion has already read a possibly mis-served fixture; falsified by a real fixture legitimately exceeding the cut, which would then need the cut raised rather than the request refused.
 - 2026-09-01: plan-time measurement — canonical-form depth of every fixture family's workflow, design and metric set: workflows 22-28, designs 10-12, metric sets 12, the orchestrators 8; no `"<depth>"` marker on any.
+- 2026-09-01: T1 — the hand-listed test replaced by the derived axis test (7 formals × 2 orchestrators, each pair keyed at seed 2); the `param_info` variant is built inline from `dials::num_comp()` since no `narrow_param_info()` helper exists. File header comment updated to match.
+- 2026-09-01: T2 — defect A (registry without `eval_time`) red: 2 failures, "nested_tune_grid() has formal(s) with no registered variant value: `eval_time`" and the same for `nested_final_fit()`. Defect B (`fixture_key()` drops `eval_time` before hashing) was GREEN on the first test shape: `fixture_key()` forces `args` lazily and `det_nested()` reseeds, so a request built inside the call keyed on RNG state, and two `det_workflow()` builds without a reseed carried different `step_pca()` ids — every pair separated on something other than the axis. Test amended to seed before each build and key pre-built requests; defect B then red on exactly the `eval_time` pair for both orchestrators (2 failures, 45 pass); clean run 47 pass.
 
 ## Decisions
 

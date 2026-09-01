@@ -4,12 +4,13 @@
 # times, and it is only safe if a served result is indistinguishable from a
 # fresh build. Two things have to hold for that, and both are asserted here: a
 # hit returns the same value, conditions and RNG state a build would, and the
-# key separates every fixture this suite actually asks for.
+# key separates two requests that differ in any one orchestrator argument.
 #
 # The second is the one with teeth. A key that fails to separate two distinct
 # fixtures does not raise anything -- it quietly hands one test another test's
-# run, and the test still passes. So the separation is checked against the real
-# fixture objects, pairwise, rather than trusted.
+# run, and the test still passes. So the separation is checked per argument,
+# over the formals `nested_tune_grid()` and `nested_final_fit()` declare at
+# test time, rather than over a list of signatures someone remembered to write.
 
 # A stand-in for the orchestrator: cheap, and net-zero on the RNG exactly as
 # `nested_tune_grid()` and `nested_final_fit()` are (D-011). Nothing here fits a
@@ -228,134 +229,95 @@ test_that("a different seed rebuilds rather than serving the first result", {
   expect_false(identical(second$draw, first$draw))
 })
 
-test_that("the key separates every fixture signature this suite asks for", {
+test_that("the key separates every formal argument of both orchestrators", {
   skip_if_no_engines(stochastic = TRUE)
+  skip_if_not_installed("dials")
 
   d <- make_reg_data()
-  u <- unstable_data()
 
-  # Every distinct combination the converted files request. Each is keyed at
-  # the same RNG state, so what separates them is the arguments alone -- if two
-  # of these collided, the cache would serve one test the other's run.
-  signatures <- list(
-    det = function() {
-      list(
-        object = det_workflow(d),
-        resamples = det_nested(d),
-        grid = det_grid(),
-        metrics = reg_metrics()
+  # A base request naming every formal at its default, so that a variant can
+  # differ from it in exactly one argument and nothing else.
+  base_request <- function() {
+    list(
+      object = det_workflow(d),
+      resamples = det_nested(d),
+      param_info = NULL,
+      grid = det_grid(),
+      metrics = reg_metrics(),
+      event_level = "first",
+      eval_time = NULL
+    )
+  }
+
+  # One alternate value per formal. The domain below is read from the
+  # orchestrators themselves, so an argument added to either without an entry
+  # here fails the test naming it -- a hand-written list of signatures missed
+  # `event_level` and `eval_time` when each arrived.
+  signature_variants <- list(
+    object = function() stoch_workflow(d),
+    resamples = function() det_nested(d, v = 4),
+    param_info = function() {
+      update(
+        tune::extract_parameter_set_dials(det_workflow(d)),
+        num_comp = dials::num_comp(c(1L, 2L))
       )
     },
-    det_no_metrics = function() {
-      list(
-        object = det_workflow(d),
-        resamples = det_nested(d),
-        grid = det_grid(),
-        metrics = NULL
+    grid = function() data.frame(num_comp = 1:2),
+    metrics = function() NULL,
+    event_level = function() "second",
+    eval_time = function() 1
+  )
+
+  orchestrators <- list(
+    nested_tune_grid = nested_tune_grid,
+    nested_final_fit = nested_final_fit
+  )
+
+  for (fn_name in names(orchestrators)) {
+    f <- orchestrators[[fn_name]]
+    axes <- setdiff(names(formals(f)), "...")
+
+    unregistered <- setdiff(axes, names(signature_variants))
+    expect(
+      length(unregistered) == 0L,
+      sprintf(
+        "%s() has formal(s) with no registered variant value: %s",
+        fn_name,
+        toString(sprintf("`%s`", unregistered))
       )
-    },
-    unstable = function() {
-      list(
-        object = unstable_workflow(u),
-        resamples = det_nested(u, v = 4),
-        grid = unstable_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    stochastic = function() {
-      list(
-        object = stoch_workflow(d),
-        resamples = det_nested(d),
-        grid = stoch_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    break_inner_2 = function() {
-      list(
-        object = det_workflow(d),
-        resamples = break_fold(det_nested(d), 2L, "inner tuning"),
-        grid = det_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    break_outer_2 = function() {
-      list(
-        object = det_workflow(d),
-        resamples = break_fold(det_nested(d), 2L, "outer fit"),
-        grid = det_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    break_outer_3 = function() {
-      list(
-        object = det_workflow(d),
-        resamples = break_fold(det_nested(d), 3L, "outer fit"),
-        grid = det_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    break_every = function() {
-      list(
-        object = det_workflow(d),
-        resamples = break_every_fold(det_nested(d)),
-        grid = det_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    break_inner_split = function() {
-      list(
-        object = det_workflow(d),
-        resamples = break_inner_split(det_nested(d), 2L),
-        grid = det_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    final = function() {
-      list(
-        object = det_workflow(d),
-        resamples = final_nested(d),
-        grid = det_grid(),
-        metrics = reg_metrics()
-      )
-    },
-    final_no_metrics = function() {
-      list(
-        object = det_workflow(d),
-        resamples = final_nested(d),
-        grid = det_grid(),
-        metrics = NULL
-      )
-    },
-    sep = function() {
-      s <- sep_data()
-      list(
-        object = sep_workflow(s),
-        resamples = sep_nested(s),
-        grid = sep_grid(),
-        metrics = sep_metrics()
-      )
-    },
-    sep_no_metrics = function() {
-      s <- sep_data()
-      list(
-        object = sep_workflow(s),
-        resamples = sep_nested(s),
-        grid = sep_grid(),
-        metrics = NULL
+    )
+
+    for (axis in intersect(axes, names(signature_variants))) {
+      # Both requests are built before either is keyed, each from the same
+      # seed. The builders draw from the RNG -- `det_nested()` seeds it, and
+      # `recipes::step_pca()` draws its step id -- and `fixture_key()` forces
+      # its `args` lazily, so a request built inside the call would move the
+      # RNG state the key snapshots, and two workflows built back to back
+      # would carry different step ids. Either would separate every pair on
+      # something other than the argument under test.
+      set.seed(2)
+      base <- base_request()
+      set.seed(2)
+      variant <- base_request()
+      variant[axis] <- list(signature_variants[[axis]]())
+
+      # Keyed at the same RNG state, so the argument is all that can separate
+      # them -- if they collided, the cache would serve one test the other's run.
+      set.seed(2)
+      key_base <- fixture_key(f, base)
+      set.seed(2)
+      key_variant <- fixture_key(f, variant)
+
+      expect(
+        !identical(key_variant, key_base),
+        sprintf(
+          "two %s() requests differing only in `%s` share a fixture key",
+          fn_name,
+          axis
+        )
       )
     }
-  )
-
-  keys <- vapply(
-    signatures,
-    function(build) {
-      set.seed(2)
-      fixture_key(nested_tune_grid, build())
-    },
-    character(1)
-  )
-
-  expect_identical(anyDuplicated(keys), 0L)
+  }
 })
 
 test_that("the same signature keys the same way twice, so it is built once", {
