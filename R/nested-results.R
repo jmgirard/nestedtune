@@ -611,19 +611,29 @@ new_tbl <- function(cols) {
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored.
 #'
-#' @return A tibble. Summarized, one row per metric with the mean across outer
-#'   folds, the number of folds, and the standard error of that mean.
-#'   Unsummarized, one row per outer fold and metric.
+#' @return A tibble. Summarized, one row per metric -- and, for a metric
+#'   measured at evaluation times, per evaluation time -- with the mean across
+#'   outer folds, the number of folds contributing, and the standard error of
+#'   that mean. Unsummarized, one row per outer fold and metric -- and per
+#'   evaluation time, where a metric was measured at several. Both carry a
+#'   `.eval_time` column exactly when the run was scored by a dynamic or
+#'   integrated survival metric, as tune's own `collect_metrics()` does; on a
+#'   static metric's row beside one, it is `NA`.
 #'
 #' @details
 #' The summarized value is the nested cross-validation estimate: what the
 #' tune-and-fit procedure achieves on data it never saw. It is not the
 #' performance of any model you have in hand.
 #'
-#' Only the outer folds that completed are summarized, and `n` counts them, so
-#' a run with failures never reports its estimate as though the whole design
-#' had run. Those folds are dropped with a warning naming them; when no fold
-#' completed at all, this errors instead of returning `NA`.
+#' Only the outer folds that completed are summarized, and `n` counts the folds
+#' contributing to each row, so a run with failures never reports its estimate
+#' as though the whole design had run. Those folds are dropped with a warning
+#' naming them; when no fold completed at all, this errors instead of returning
+#' `NA`.
+#'
+#' A metric measured at several evaluation times (`eval_time` on
+#' [nested_tune_grid()]) is summarized per time, never averaged across them:
+#' each row's `mean` is over the fold estimates at the time it names.
 #'
 #' @section Reading `std_err`:
 #'
@@ -707,7 +717,18 @@ collect_metrics.nested_results <- function(x, ..., summarize = TRUE) {
 # instead. Both read the estimate off this one function, so they can never
 # disagree about it.
 summarize_folds <- function(per_fold) {
+  # Keyed on the evaluation time too when the rows carry one (M41 review R1):
+  # a dynamic survival metric measured at several times is several estimates,
+  # and an average across them would report a number no time was measured at,
+  # with `n` counting fold x time. The time is rendered at full precision for
+  # the key -- `paste()` would print 0.1 + 0.2 and 0.3 alike -- and NA, which
+  # tune records on a static metric's row beside a dynamic one, keys its own
+  # row as "NA". tune's collect_metrics() groups on the same column (GP1).
+  timed <- ".eval_time" %in% names(per_fold)
   keys <- paste(per_fold$.metric, per_fold$.estimator, sep = "\r")
+  if (timed) {
+    keys <- paste(keys, sprintf("%.17g", per_fold$.eval_time), sep = "\r")
+  }
   first <- !duplicated(keys)
 
   # A fold can score NA -- an outer assessment set with one class gives
@@ -748,13 +769,17 @@ summarize_folds <- function(per_fold) {
     USE.NAMES = FALSE
   )
 
-  new_tbl(list(
+  cols <- list(
     .metric = per_fold$.metric[first],
-    .estimator = per_fold$.estimator[first],
-    mean = mean_of,
-    n = n_of,
-    std_err = se_of
-  ))
+    .estimator = per_fold$.estimator[first]
+  )
+  if (timed) {
+    cols$.eval_time <- per_fold$.eval_time[first]
+  }
+  cols$mean <- mean_of
+  cols$n <- n_of
+  cols$std_err <- se_of
+  new_tbl(cols)
 }
 
 # IP4: nothing is reported for a design that did not run at all. With no fold
@@ -805,26 +830,41 @@ warn_partial_summary <- function(x, call = rlang::caller_env()) {
 }
 
 # One row per outer fold and metric. The per-fold tibbles come straight from
-# tune::last_fit(), so their columns are tune's, not ours.
+# tune::last_fit(), so their columns are tune's, not ours -- including
+# `.eval_time`, which tune records exactly when the metric set holds a dynamic
+# or integrated survival metric and which is carried here on the same terms
+# (M41). A failed fold's tibble is empty and predates any evaluation time, so a
+# column some folds carry and others lack is read where it exists and filled
+# with NA over the (zero) rows of the tibbles that lack it.
 per_fold_metrics <- function(x) {
   ids <- fold_ids(x)
-  n_rows <- vapply(x$.metrics, nrow, integer(1))
+  frames <- x$.metrics
+  n_rows <- vapply(frames, nrow, integer(1))
 
-  new_tbl(list(
-    id = rep(ids, times = n_rows),
-    .metric = unlist(
-      lapply(x$.metrics, function(m) m$.metric),
-      use.names = FALSE
-    ),
-    .estimator = unlist(
-      lapply(x$.metrics, function(m) m$.estimator),
-      use.names = FALSE
-    ),
-    .estimate = unlist(
-      lapply(x$.metrics, function(m) m$.estimate),
+  column <- function(nm, fill) {
+    unlist(
+      lapply(frames, function(m) {
+        if (nm %in% names(m)) m[[nm]] else rep(fill, nrow(m))
+      }),
       use.names = FALSE
     )
+  }
+  timed <- any(vapply(
+    frames,
+    function(m) ".eval_time" %in% names(m),
+    logical(1)
   ))
+
+  cols <- list(
+    id = rep(ids, times = n_rows),
+    .metric = column(".metric", NA_character_),
+    .estimator = column(".estimator", NA_character_)
+  )
+  if (timed) {
+    cols$.eval_time <- column(".eval_time", NA_real_)
+  }
+  cols$.estimate <- column(".estimate", NA_real_)
+  new_tbl(cols)
 }
 
 # The outer fold labels. A repeated design carries id and id2; pasting them

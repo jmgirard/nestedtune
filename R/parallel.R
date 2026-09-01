@@ -198,6 +198,7 @@ dispatch_folds <- function(
   metrics,
   param_info = NULL,
   event_level = "first",
+  eval_time = NULL,
   call = rlang::caller_env()
 ) {
   if (!use_parallel()) {
@@ -209,7 +210,8 @@ dispatch_folds <- function(
       grid = grid,
       metrics = metrics,
       param_info = param_info,
-      event_level = event_level
+      event_level = event_level,
+      eval_time = eval_time
     ))
   }
 
@@ -276,6 +278,7 @@ dispatch_folds <- function(
       metrics,
       param_info,
       event_level,
+      eval_time,
       shared,
       worker
     ) {
@@ -286,7 +289,8 @@ dispatch_folds <- function(
         grid,
         metrics,
         param_info,
-        event_level
+        event_level,
+        eval_time
       )
     }
     args <- list(
@@ -295,6 +299,7 @@ dispatch_folds <- function(
       metrics = metrics,
       param_info = param_info,
       event_level = event_level,
+      eval_time = eval_time,
       shared = shared,
       worker = worker
     )
@@ -305,7 +310,8 @@ dispatch_folds <- function(
       grid = grid,
       metrics = metrics,
       param_info = param_info,
-      event_level = event_level
+      event_level = event_level,
+      eval_time = eval_time
     )
   }
   environment(task) <- globalenv()
@@ -1037,7 +1043,8 @@ fold_task <- function(
   grid,
   metrics,
   param_info = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   ns <- asNamespace("nestedtune")
   ns$nested_fold_fit(
@@ -1048,6 +1055,7 @@ fold_task <- function(
     grid = grid,
     metrics = metrics,
     param_info = param_info,
-    event_level = event_level
+    event_level = event_level,
+    eval_time = eval_time
   )
 }

@@ -282,6 +282,84 @@ test_that("two estimators for one metric get a panel each", {
   expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
 })
 
+test_that("a metric measured at several evaluation times gets a panel per time", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+  # The shape tune's last_fit() records for a metric set mixing a dynamic
+  # survival metric with a static one (measured on tune 2.1.0, 2026-09-01): a
+  # `.eval_time` column, NA on the static metric's row. Hand-built on the
+  # regression fixture so the case costs no censored fit. Before the panel
+  # carried the time, two rows for one metric read as one ambiguous metric,
+  # both panels got the same label, and the level factor aborted on the
+  # duplicate (M41 review F1).
+  for (i in seq_len(nrow(res))) {
+    res$.metrics[[i]] <- new_tbl(list(
+      .metric = c("brier_survival", "brier_survival", "concordance_survival"),
+      .estimator = rep("standard", 3L),
+      .eval_time = c(0.5, 10, NA),
+      .estimate = c(0.25, 0.22, 0.7) + i / 100,
+      .config = rep("Preprocessor1_Model1", 3L)
+    ))
+  }
+  p <- autoplot(res, type = "performance")
+
+  expect_identical(
+    strip_labels(p),
+    c(
+      "brier_survival at time 0.5",
+      "brier_survival at time 10",
+      "concordance_survival"
+    )
+  )
+  points <- plot_points(p)
+  expect_identical(nrow(points), 3L * nrow(res))
+  expect_identical(
+    points$y[points$panel == "brier_survival at time 10"],
+    0.22 + seq_len(nrow(res)) / 100
+  )
+  expect_identical(nrow(plot_rules(p)), 3L)
+  expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
+
+  # Two times differing below print precision are two panels, as they are two
+  # summary rows; a label read at the default 7 digits would duplicate here.
+  close <- res
+  for (i in seq_len(nrow(close))) {
+    close$.metrics[[i]]$.eval_time <- c(0.1 + 0.2, 0.3, NA)
+  }
+  expect_identical(nrow(plot_rules(autoplot(close, type = "performance"))), 3L)
+})
+
+test_that("a censored run at several evaluation times plots", {
+  skip_if_no_censored()
+
+  data <- srv_data()
+  nested <- srv_nested(data)
+  times <- srv_eval_times()
+
+  set.seed(9)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    srv_workflow(data),
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = times
+  )))
+  p <- autoplot(res, type = "performance")
+  expect_identical(
+    strip_labels(p),
+    c("brier_survival at time 0.5", "brier_survival at time 10")
+  )
+  expect_identical(plot_rules(p)$yintercept, collect_metrics(res)$mean)
+})
+
 test_that("the parameters view is the default and both views are ggplots", {
   skip_if_no_engines()
   d <- make_reg_data()

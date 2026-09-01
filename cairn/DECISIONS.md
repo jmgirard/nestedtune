@@ -1122,8 +1122,6 @@ it has its own ROADMAP row. Falsified by a design whose columns beside `splits`
 and `inner_resamples` are not all fold labels, or by a path that must preserve
 the record onto a prototype carrying no run description.
 
-<!-- Template:
-
 ### D-037 (2026-08-31): the default print of a `nested_results` is rendered by tibble's print method, and `tibble` stays in Suggests — annotates the placement D-034 fixed, on M39's plan gate
 
 **Context:** M39 rewrites `print.nested_results()` to show the object's rows,
@@ -1148,6 +1146,46 @@ by this DESCRIPTION. If dplyr ever drops tibble, printing degrades silently to
 `print.data.frame` rather than erroring, which is the failure mode to watch for;
 that, or a print rendering as a data frame in any supported configuration, is
 what falsifies this. Nothing changes for anyone installing the package.
+
+### D-038 (2026-09-01): `eval_time` is offered as its own argument on both orchestrators, and `censored` and `survival` join Suggests — the second slot the per-argument rule D-030 fixed reaches, and extends the dependency set D-034 last added to
+
+**Context:** a censored-regression metric is evaluated at times the caller
+names, and `eval_time` is the argument that carries them. Neither orchestrator
+has one, so a caller tuning such a workflow through this package takes tune's
+default times with no way to state its own. D-030 settled how a setting of
+tune's reaches a caller here — one narrow argument per setting, decided one at
+a time — and named `eval_time` as the next candidate. `eval_time` is not a
+`control_grid()` slot at all but a direct argument of `tune::tune_grid()` and
+`tune::last_fit()`, so that rule applies to it unamended.
+
+**Decision:** an `eval_time` argument on `nested_tune_grid()` and
+`nested_final_fit()`, defaulting to `NULL`, validated at entry by
+`check_eval_time()` and forwarded untouched to `tune::tune_grid()` and
+`tune::last_fit()` on the serial and the mirai path alike. The entry check
+refuses only what tune has no use for — a non-numeric value, or one carrying a
+missing, negative or non-finite element, or an empty vector — and accepts `0`,
+duplicates and unsorted times, which tune normalizes itself. It is not
+forwarded to `tune::select_best()`: left `NULL` there, tune reads the tuning
+run's own evaluation times and takes the first, which is the time the caller
+named, so passing it would change no selection and would repeat tune's own
+message. Whether the mode is appropriate for the argument stays tune's warning
+to give. `censored` and `survival` join Suggests so the tests can build a
+censored-regression workflow whose dynamic survival metric moves when
+`eval_time` moves. Considered and rejected: a `control` argument, on the
+grounds D-030 states; refusing `eval_time` on a non-censored mode, which would
+diverge from tune on tune's own argument; and proving the argument merely
+arrives, from tune's "only used for models with mode censored regression"
+warning, which moves no number the caller is shown.
+
+**Consequences:** the entry check is stricter than tune's own cleanup, so a
+value tune would have accepted after warning about it is refused here instead.
+The test-only dependency closure grows by seven packages, several of them
+compiled, on every check leg, and every test needing them skips where they are
+absent; the count and its members are recorded in M41's work log. Falsified by
+tune's value validation diverging from this check, or by the check legs failing
+to install `censored`.
+
+<!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
 

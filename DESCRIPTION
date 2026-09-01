@@ -26,6 +26,7 @@ Imports:
     vctrs (>= 0.6.1),
     workflows
 Suggests:
+    censored,
     dials,
     knitr,
     lobstr,
@@ -36,6 +37,7 @@ Suggests:
     ranger,
     recipes,
     rmarkdown,
+    survival,
     testthat (>= 3.0.0),
     tibble,
     vdiffr,

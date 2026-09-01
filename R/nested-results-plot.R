@@ -220,8 +220,14 @@ whole_number_breaks <- function(limits) {
 plot_performance <- function(x) {
   per_fold <- per_fold_metrics(x)
   summarized <- summarize_folds(per_fold)
-  ambiguous <- ambiguous_metrics(summarized)
-  bases <- metric_panel(summarized$.metric, summarized$.estimator, ambiguous)
+  # A metric measured at several evaluation times is one estimate per time
+  # (M41), so the time joins the panel name before the estimator question is
+  # asked; a summary keyed on time alone would give two panels one label and
+  # the level factor below would abort on the duplicate (M41 review F1).
+  timed_rows <- timed_metric(summarized)
+  timed_points <- timed_metric(per_fold)
+  ambiguous <- ambiguous_metrics(timed_rows)
+  bases <- metric_panel(timed_rows, summarized$.estimator, ambiguous)
   # The qualifier goes on the panel, exactly where print puts it: a metric
   # averaged over fewer folds than completed says so on its own line, "where the
   # heading would be wrong for it alone" (R/nested-results-print.R:229). One
@@ -237,7 +243,7 @@ plot_performance <- function(x) {
   scored <- !is.na(per_fold$.estimate)
   scored_panels <- panels[match(
     metric_panel(
-      per_fold$.metric[scored],
+      timed_points[scored],
       per_fold$.estimator[scored],
       ambiguous
     ),
@@ -333,9 +339,45 @@ chose_value <- function(k, completed) {
   paste0(k, " of ", completed, " chose")
 }
 
+# The metric name a row is drawn under: the metric alone, or "<metric> at time
+# <t>" where the row carries an evaluation time, as the summary print puts it
+# (R/nested-results-print.R). A row with no time -- a static metric beside a
+# dynamic one, or any run that named none -- keeps the bare name.
+timed_metric <- function(rows) {
+  metric <- rows$.metric
+  if (!".eval_time" %in% names(rows)) {
+    return(metric)
+  }
+  at <- rows$.eval_time
+  timed <- !is.na(at)
+  metric[timed] <- paste0(metric[timed], " at time ", render_times(at[timed]))
+  metric
+}
+
+# Each time formatted on its own -- `format()` over the vector would pad them
+# to a common width and decimal count, "10.0" beside "0.5" -- at 15 significant
+# digits, which renders a typed time as typed. Two distinct times that read
+# alike at 15 (0.1 + 0.2 beside 0.3) are two summary rows and must be two
+# panels, not one duplicated factor level, so those alone are re-rendered at
+# 17, where every double is distinct.
+render_times <- function(at) {
+  each <- function(x, digits) {
+    vapply(x, format, character(1), digits = digits)
+  }
+  out <- each(at, 15L)
+  for (label in unique(out)) {
+    hit <- out == label
+    if (length(unique(at[hit])) > 1L) {
+      out[hit] <- each(at[hit], 17L)
+    }
+  }
+  out
+}
+
 # The panel a metric's scores sit in. Two estimators for the same metric would
 # otherwise share a panel and be marked with two rules; the estimator joins the
 # label exactly when it has to, so the usual plot is not cluttered by it.
+# `metric` is the timed name, so the estimator question is asked per time.
 metric_panel <- function(metric, estimator, ambiguous) {
   ifelse(
     metric %in% ambiguous,
@@ -344,8 +386,8 @@ metric_panel <- function(metric, estimator, ambiguous) {
   )
 }
 
-ambiguous_metrics <- function(summarized) {
-  counts <- table(summarized$.metric)
+ambiguous_metrics <- function(metric) {
+  counts <- table(metric)
   names(counts)[counts > 1L]
 }
 

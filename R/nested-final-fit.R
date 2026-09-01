@@ -51,6 +51,30 @@
 #'   distinguish the two levels -- accuracy, `roc_auc`, `brier_class` -- are
 #'   unaffected by it. Ignored for a regression model, as it is in tune.
 #'
+#' @param eval_time A numeric vector of evaluation times for a censored
+#'   regression model, or `NULL` (the default) to leave the choice to tune. It
+#'   reaches every tune call whose answer depends on it, so a dynamic or
+#'   integrated survival metric -- `brier_survival()`, `roc_auc_survival()` and
+#'   their relatives -- is measured at the times you name. It is ignored, with
+#'   a warning from tune, whenever the metric set has no metric that reads it.
+#'   tune keys that warning on the metrics rather than on the model's mode: a
+#'   set with no survival metric draws one saying the argument is only used
+#'   for censored regression, and a censored regression model scored only by a
+#'   static metric such as `concordance_survival()` draws a different one,
+#'   saying it is only used for dynamic or integrated survival metrics.
+#'
+#'   Refused here, ahead of tune: anything that is not numeric, an empty
+#'   vector, and any element that is missing, negative or not finite. tune
+#'   treats those unevenly, and only once a metric reads the times -- a
+#'   character value that reads as a number, such as `"1"`, is coerced with
+#'   `as.numeric()` and accepted, one that does not becomes missing; a
+#'   missing, negative or infinite element is dropped with a warning; and an
+#'   empty vector, or one that dropping has emptied, aborts -- and this package
+#'   refuses them all at entry, before a whole run is paid for. Zero, repeated
+#'   times and times out of order are accepted and passed on untouched, since
+#'   tune normalizes those itself; a repeated time draws tune's warning that 0
+#'   inappropriate evaluation time points were removed, once per tune call.
+#'
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
 #'   trained workflow, better reached with [extract_workflow()]), `selected`
 #'   (the parameters chosen), `tuning` (the tuning run they were chosen from),
@@ -109,8 +133,9 @@
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
-#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics, control =
-#'   control_grid(allow_par = FALSE, event_level = event_level))
+#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
+#'   eval_time = eval_time,
+#'   control = control_grid(allow_par = FALSE, event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -190,7 +215,8 @@ nested_final_fit <- function(
   param_info = NULL,
   grid = 10,
   metrics = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -200,6 +226,7 @@ nested_final_fit <- function(
   check_metrics(metrics)
   check_param_info(param_info)
   check_event_level(event_level)
+  check_eval_time(eval_time)
   inside <- check_inside_spec(resamples)
 
   env <- rlang::caller_env()
@@ -225,6 +252,7 @@ nested_final_fit <- function(
     metrics,
     param_info = param_info,
     event_level = event_level,
+    eval_time = eval_time,
     call = rlang::current_env()
   )
 }
@@ -251,6 +279,7 @@ final_fit_worker <- function(
   metrics,
   param_info = NULL,
   event_level = "first",
+  eval_time = NULL,
   call = rlang::caller_env()
 ) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
@@ -267,6 +296,7 @@ final_fit_worker <- function(
     param_info = param_info,
     grid = grid,
     metrics = metrics,
+    eval_time = eval_time,
     control = tune::control_grid(
       allow_par = FALSE,
       event_level = event_level
@@ -275,6 +305,9 @@ final_fit_worker <- function(
   # Resolved from the tuned object rather than from `metrics`, so the same code
   # answers whether the caller supplied a metric set or let tune pick.
   metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
+  # Not passed on, for the reason `nested_fold_fit()` gives at the same call
+  # (D-038): left NULL, tune reads the evaluation times off `tuned` -- the ones
+  # this run was tuned at -- and selects at the first of them either way.
   selected <- tune::select_best(tuned, metric = metric_name)
   final_wf <- tune::finalize_workflow(object, selected)
 

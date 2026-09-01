@@ -457,19 +457,28 @@ print_estimate <- function(s) {
   # partial run cannot be read as a whole one however far down the reader gets.
   cli::cli_h2("Estimate ({completed} of {requested} outer fold{?s})")
   summarized <- s$estimate
+  timed <- ".eval_time" %in% names(summarized)
   for (i in seq_len(nrow(summarized))) {
     metric <- summarized$.metric[[i]]
     estimator <- summarized$.estimator[[i]]
     value <- format(summarized$mean[[i]], digits = 3)
+    # A metric measured at an evaluation time is one row per time (M41), and
+    # the line says which, as the condition the number was read under. A row
+    # with no time -- a static metric, or a run that named none -- is unchanged.
+    label <- "{metric} ({estimator})"
+    if (timed && !is.na(summarized$.eval_time[[i]])) {
+      at <- summarized$.eval_time[[i]]
+      label <- paste(label, "at time {at}")
+    }
     # A fold can complete and still score NA on one metric while scoring the
     # others -- so a metric averaged over fewer folds than completed says so,
     # on its own line, where the heading would be wrong for it alone.
     contributing <- summarized$n[[i]]
     if (contributing == completed) {
-      cli::cli_text("{metric} ({estimator}): {value}")
+      cli::cli_text(paste0(label, ": {value}"))
     } else {
       cli::cli_text(
-        "{metric} ({estimator}): {value} (from {contributing} fold{?s})"
+        paste0(label, ": {value} (from {contributing} fold{?s})")
       )
     }
   }

@@ -297,7 +297,8 @@ test_that("a daemon receives the payload the serial branch would have passed", {
       grid,
       metrics,
       param_info,
-      event_level
+      event_level,
+      eval_time
     ) {
       list(
         completed = TRUE,

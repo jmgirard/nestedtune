@@ -46,6 +46,30 @@
 #'   `brier_class` -- are unaffected by it; `sens`, `spec`, `precision` and
 #'   their relatives are not. Ignored for a regression model, as it is in tune.
 #'
+#' @param eval_time A numeric vector of evaluation times for a censored
+#'   regression model, or `NULL` (the default) to leave the choice to tune. It
+#'   reaches every tune call whose answer depends on it, so a dynamic or
+#'   integrated survival metric -- `brier_survival()`, `roc_auc_survival()` and
+#'   their relatives -- is measured at the times you name. It is ignored, with
+#'   a warning from tune, whenever the metric set has no metric that reads it.
+#'   tune keys that warning on the metrics rather than on the model's mode: a
+#'   set with no survival metric draws one saying the argument is only used
+#'   for censored regression, and a censored regression model scored only by a
+#'   static metric such as `concordance_survival()` draws a different one,
+#'   saying it is only used for dynamic or integrated survival metrics.
+#'
+#'   Refused here, ahead of tune: anything that is not numeric, an empty
+#'   vector, and any element that is missing, negative or not finite. tune
+#'   treats those unevenly, and only once a metric reads the times -- a
+#'   character value that reads as a number, such as `"1"`, is coerced with
+#'   `as.numeric()` and accepted, one that does not becomes missing; a
+#'   missing, negative or infinite element is dropped with a warning; and an
+#'   empty vector, or one that dropping has emptied, aborts -- and this package
+#'   refuses them all at entry, before a whole run is paid for. Zero, repeated
+#'   times and times out of order are accepted and passed on untouched, since
+#'   tune normalizes those itself; a repeated time draws tune's warning that 0
+#'   inappropriate evaluation time points were removed, once per tune call.
+#'
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
 #'   (`.metrics`), the parameters chosen for it by inner tuning (`.selected`),
@@ -150,13 +174,14 @@
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-#'                    metrics = metrics,
+#'                    metrics = metrics, eval_time = eval_time,
 #'                    control = control_grid(allow_par = FALSE,
 #'                                           event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' last_fit(final, resamples$splits[[i]], metrics = metrics,
+#'          eval_time = eval_time,
 #'          control = control_last_fit(event_level = event_level))
 #' ```
 #'
@@ -338,7 +363,16 @@
 #' settled here instead by the arguments above, or forced.
 #'
 #' Settable: `event_level`, which reaches the inner `control_grid()` and the
-#' outer `control_last_fit()` alike.
+#' outer `control_last_fit()` alike, and `eval_time`, which reaches the inner
+#' `tune_grid()` and the outer `last_fit()` the same way. `eval_time` is not a
+#' control slot in tune either -- it is an argument of both those functions --
+#' and it is offered here for the same reason `event_level` is: it changes a
+#' number the caller is shown.
+#'
+#' Not passed on: `select_best()` is called without `eval_time`. Left unset it
+#' selects at the first of the evaluation times the tuning run was built with,
+#' which are the ones named here, so naming them twice would change no choice
+#' and would repeat tune's message about which time it took.
 #'
 #' Forced: both tune calls a fold makes -- the inner tuning run and the outer
 #' scoring fit -- run at `allow_par = FALSE`. Parallelism belongs over the
@@ -392,7 +426,8 @@ nested_tune_grid <- function(
   param_info = NULL,
   grid = 10,
   metrics = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -402,6 +437,7 @@ nested_tune_grid <- function(
   check_metrics(metrics)
   check_param_info(param_info)
   check_event_level(event_level)
+  check_eval_time(eval_time)
 
   n <- nrow(resamples)
 
@@ -433,6 +469,7 @@ nested_tune_grid <- function(
     metrics = metrics,
     param_info = param_info,
     event_level = event_level,
+    eval_time = eval_time,
     call = rlang::current_env()
   )
 
@@ -456,7 +493,8 @@ nested_fold_fit <- function(
   grid,
   metrics,
   param_info = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   set_fold_seed(seeds[[1L]])
 
@@ -472,6 +510,7 @@ nested_fold_fit <- function(
         param_info = param_info,
         grid = grid,
         metrics = metrics,
+        eval_time = eval_time,
         control = tune::control_grid(
           allow_par = FALSE,
           event_level = event_level
@@ -480,6 +519,13 @@ nested_fold_fit <- function(
       # Resolved from the tuned object rather than from `metrics`, so the same
       # code answers whether the caller supplied a metric set or let tune pick.
       metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
+      # `eval_time` is deliberately not passed on (D-038). Left NULL,
+      # `tune:::choose_eval_time()` reads the evaluation times off `tuned` --
+      # which are the ones this run was tuned at, because the argument reached
+      # `tune_grid()` above -- and `tune:::first_eval_time()` takes element one
+      # of them, the same element passing the argument would name. Selection is
+      # therefore identical either way, and passing it would repeat tune's
+      # "First evaluation time" message once per fold.
       tune::select_best(tuned, metric = metric_name)
     },
     error = function(cnd) cnd
@@ -508,6 +554,7 @@ nested_fold_fit <- function(
         final_wf,
         split = split,
         metrics = metrics,
+        eval_time = eval_time,
         control = tune::control_last_fit(
           event_level = event_level,
           allow_par = FALSE

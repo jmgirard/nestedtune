@@ -535,10 +535,119 @@ cls_design_rsets <- function(nested) {
   c(list(nested), as.list(nested$inner_resamples))
 }
 
+# The censored-regression fixture (M41), which exists so `eval_time` can be
+# shown to change an answer rather than merely to arrive.
+#
+# The failure times are a mixture on purpose. A fraction `p_early` fail almost
+# immediately -- a burst of early failures no log-normal density can reproduce,
+# since a log-normal's density goes to zero as t goes to zero -- and the rest
+# come from a long-tailed log-normal that no exponential can match late. So the
+# grid's three distributions are ranked differently at an early evaluation time
+# than at a late one, which is the property AC3 and AC4 rest on: at
+# `srv_eval_times()[[1]]` the log-normal is the best of the three and at
+# `srv_eval_times()[[2]]` it is the worst. Censoring is uniform and starts after
+# the early time, so both times keep observations at risk and events on either
+# side of them -- without which a Brier score comparison is vacuous.
+srv_data <- function(n = 180, seed = 51, p_early = 0.45) {
+  set.seed(seed)
+  x1 <- rnorm(n)
+  x2 <- rnorm(n)
+  lp <- 0.9 * x1 - 0.6 * x2
+  early <- rbinom(n, 1, p_early)
+  event_time <- ifelse(
+    early == 1,
+    runif(n, 0.02, 0.6) * exp(-lp / 6),
+    rlnorm(n, meanlog = log(15) - lp, sdlog = 0.8)
+  )
+  censor_time <- runif(n, 3, 60)
+  data.frame(
+    time = pmin(event_time, censor_time),
+    event = as.numeric(event_time <= censor_time),
+    x1 = x1,
+    x2 = x2
+  )
+}
+
+# The two times every eval_time test probes with. One early, one late, chosen
+# because the fixture's ranking reverses between them (see srv_data()).
+srv_eval_times <- function() c(0.5, 10)
+
+# A deterministic censored-regression engine: `survival::survreg()` behind
+# parsnip's `survival_reg()`, whose one tunable is the distribution. Nothing on
+# this path draws, so a run is reproducible from the recorded seeds alone and a
+# reference fit can be compared to it exactly.
+srv_workflow <- function(data) {
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::survival_reg(dist = tune::tune()),
+      "survival"
+    ),
+    "censored regression"
+  )
+  workflows::workflow(
+    survival::Surv(time, event) ~ x1 + x2,
+    spec
+  )
+}
+
+srv_grid <- function() {
+  data.frame(
+    dist = c("weibull", "lognormal", "exponential"),
+    stringsAsFactors = FALSE
+  )
+}
+
+# A dynamic survival metric -- one evaluated AT a time rather than over all of
+# them -- so its value depends on `eval_time` and an unforwarded argument shows
+# up as an unchanged number.
+srv_metrics <- function() {
+  yardstick::metric_set(yardstick::brier_survival)
+}
+
+# Literal arguments, so nested_final_fit() can re-evaluate the stored call.
+srv_nested <- function(data, seed = 61) {
+  old <- RNGkind()
+  on.exit(RNGkind(old[[1L]], old[[2L]], old[[3L]]), add = TRUE)
+  set.seed(
+    seed,
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  nested_resamples(
+    data,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 3)
+  )
+}
+
+# What makes a Brier comparison at time `t` non-vacuous: someone still at risk
+# at `t`, someone who failed before it, and someone who failed at or after it.
+# Returned as a named vector so a failure names which count was zero rather
+# than reporting that some count was.
+srv_risk_profile <- function(data, t) {
+  c(
+    at_risk = sum(data$time >= t),
+    events_before = sum(data$event == 1 & data$time < t),
+    events_after = sum(data$event == 1 & data$time >= t)
+  )
+}
+
 skip_if_no_engines <- function(stochastic = FALSE) {
   testthat::skip_if_not_installed("recipes")
   testthat::skip_if_not_installed("yardstick")
   if (stochastic) testthat::skip_if_not_installed("ranger")
+}
+
+# The censored-regression fixture's engines and metric (M41). `censored`
+# registers the `survival_reg()` engines parsnip declares but does not carry;
+# `survival` supplies `Surv()`, which the formula names; `yardstick` supplies
+# the dynamic metric that reads `eval_time`. All three are Suggests, so
+# everything downstream of this guard skips where they are absent.
+skip_if_no_censored <- function() {
+  testthat::skip_if_not_installed("censored")
+  testthat::skip_if_not_installed("survival")
+  testthat::skip_if_not_installed("yardstick")
 }
 
 # The suite-level fixture cache (M12).

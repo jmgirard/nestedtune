@@ -16,9 +16,14 @@ rather than silently ignored.}
 default) or return them one row per outer fold (\code{FALSE}).}
 }
 \value{
-A tibble. Summarized, one row per metric with the mean across outer
-folds, the number of folds, and the standard error of that mean.
-Unsummarized, one row per outer fold and metric.
+A tibble. Summarized, one row per metric -- and, for a metric
+measured at evaluation times, per evaluation time -- with the mean across
+outer folds, the number of folds contributing, and the standard error of
+that mean. Unsummarized, one row per outer fold and metric -- and per
+evaluation time, where a metric was measured at several. Both carry a
+\code{.eval_time} column exactly when the run was scored by a dynamic or
+integrated survival metric, as tune's own \code{collect_metrics()} does; on a
+static metric's row beside one, it is \code{NA}.
 }
 \description{
 Collect the metrics from a nested resampling run
@@ -28,10 +33,15 @@ The summarized value is the nested cross-validation estimate: what the
 tune-and-fit procedure achieves on data it never saw. It is not the
 performance of any model you have in hand.
 
-Only the outer folds that completed are summarized, and \code{n} counts them, so
-a run with failures never reports its estimate as though the whole design
-had run. Those folds are dropped with a warning naming them; when no fold
-completed at all, this errors instead of returning \code{NA}.
+Only the outer folds that completed are summarized, and \code{n} counts the folds
+contributing to each row, so a run with failures never reports its estimate
+as though the whole design had run. Those folds are dropped with a warning
+naming them; when no fold completed at all, this errors instead of returning
+\code{NA}.
+
+A metric measured at several evaluation times (\code{eval_time} on
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}) is summarized per time, never averaged across them:
+each row's \code{mean} is over the fold estimates at the time it names.
 }
 \section{Reading \code{std_err}}{
 
