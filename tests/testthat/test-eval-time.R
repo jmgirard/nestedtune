@@ -84,3 +84,110 @@ test_that("the fixture's grid is ranked differently at the two evaluation times"
     expect_gt((scored$mean[[2L]] - scored$mean[[1L]]) / scored$mean[[1L]], 0.005)
   }
 })
+
+# AC1 -------------------------------------------------------------------
+#
+# These run on the regression fixture rather than the censored one: what they
+# assert is the entry check and its position, neither of which consults the
+# mode, and running them without `censored` installed is what makes the refusal
+# testable everywhere the package is.
+
+# The values the check refuses, and why each is here. `-1` is negative,
+# `NA_real_` missing, `Inf` not finite, `"1"` not numeric at all -- a value tune
+# would have coerced -- and `numeric(0)` leaves tune with nothing to evaluate
+# at. `c(1, NA_real_)` is the one that matters most: every other probe has
+# length one, so a check that looked only at `eval_time[[1]]` would pass all of
+# them.
+unusable_eval_times <- function() {
+  list(-1, NA_real_, "1", Inf, numeric(0), c(1, NA_real_))
+}
+
+test_that("AC1: an unusable `eval_time` is refused, naming the function the user called", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d, v = 2)
+
+  for (value in unusable_eval_times()) {
+    cnd <- tryCatch(
+      nested_tune_grid(wf, folds, grid = det_grid(), eval_time = value),
+      error = function(e) e
+    )
+    expect_s3_class(cnd, "rlang_error")
+    expect_match(conditionMessage(cnd), "eval_time", fixed = TRUE)
+    expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_grid")
+
+    cnd <- tryCatch(
+      nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
+      error = function(e) e
+    )
+    expect_s3_class(cnd, "rlang_error")
+    expect_match(conditionMessage(cnd), "eval_time", fixed = TRUE)
+    expect_identical(rlang::call_name(conditionCall(cnd)), "nested_final_fit")
+  }
+
+  # A vector's offending positions are named, not just the fact that one exists.
+  cnd <- tryCatch(
+    nested_tune_grid(
+      wf,
+      folds,
+      grid = det_grid(),
+      eval_time = c(1, NA_real_, 3, -2)
+    ),
+    error = function(e) e
+  )
+  expect_match(conditionMessage(cnd), "2 and 4")
+})
+
+test_that("AC1: the refusal fires before any fitting begins", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d, v = 2)
+
+  # The two functions that begin the fitting, replaced by a signal. A check that
+  # ran after them would raise this sentinel instead of its own message, and an
+  # accepted value has to raise it -- which is what distinguishes "refused
+  # early" from "never got there at all".
+  sentinel <- function(...) {
+    rlang::abort("fitting began", class = "nestedtune_sentinel")
+  }
+  local_mocked_bindings(dispatch_folds = sentinel, final_fit_worker = sentinel)
+
+  for (value in unusable_eval_times()) {
+    expect_error(
+      nested_tune_grid(wf, folds, grid = det_grid(), eval_time = value),
+      class = "rlang_error"
+    )
+    expect_false(inherits(
+      tryCatch(
+        nested_tune_grid(wf, folds, grid = det_grid(), eval_time = value),
+        error = function(e) e
+      ),
+      "nestedtune_sentinel"
+    ))
+    expect_false(inherits(
+      tryCatch(
+        nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
+        error = function(e) e
+      ),
+      "nestedtune_sentinel"
+    ))
+  }
+
+  # The accepting side, including the values tune normalizes rather than
+  # refuses: zero, a repeat, and times out of order (D-038).
+  accepted <- list(NULL, 0, c(0.5, 10), c(10, 0.5, 10))
+  for (value in accepted) {
+    expect_error(
+      nested_tune_grid(wf, folds, grid = det_grid(), eval_time = value),
+      class = "nestedtune_sentinel"
+    )
+    expect_error(
+      nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
+      class = "nestedtune_sentinel"
+    )
+  }
+})

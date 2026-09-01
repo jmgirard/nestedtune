@@ -11,7 +11,8 @@
 test_that("AC1: the three entry points carry `...` after their required arguments", {
   # Written out rather than derived, so a signature that drifts has to be
   # re-agreed here. `param_info`, `grid`, `metrics` and `event_level` all sit
-  # behind the barrier and therefore match by name only.
+  # behind the barrier and therefore match by name only, as does `eval_time`
+  # (M41).
   expect_identical(
     names(formals(nested_tune_grid)),
     c(
@@ -21,7 +22,8 @@ test_that("AC1: the three entry points carry `...` after their required argument
       "param_info",
       "grid",
       "metrics",
-      "event_level"
+      "event_level",
+      "eval_time"
     )
   )
   expect_identical(
@@ -33,7 +35,8 @@ test_that("AC1: the three entry points carry `...` after their required argument
       "param_info",
       "grid",
       "metrics",
-      "event_level"
+      "event_level",
+      "eval_time"
     )
   )
   # All three of `nested_resamples()`'s arguments are required, so its barrier

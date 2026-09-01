@@ -190,7 +190,8 @@ nested_final_fit <- function(
   param_info = NULL,
   grid = 10,
   metrics = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -200,6 +201,7 @@ nested_final_fit <- function(
   check_metrics(metrics)
   check_param_info(param_info)
   check_event_level(event_level)
+  check_eval_time(eval_time)
   inside <- check_inside_spec(resamples)
 
   env <- rlang::caller_env()

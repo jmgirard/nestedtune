@@ -392,7 +392,8 @@ nested_tune_grid <- function(
   param_info = NULL,
   grid = 10,
   metrics = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   rlang::check_dots_empty()
   check_workflow(object)
@@ -402,6 +403,7 @@ nested_tune_grid <- function(
   check_metrics(metrics)
   check_param_info(param_info)
   check_event_level(event_level)
+  check_eval_time(eval_time)
 
   n <- nrow(resamples)
 

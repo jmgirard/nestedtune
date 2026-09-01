@@ -428,6 +428,58 @@ check_param_info <- function(param_info, call = rlang::caller_env()) {
   invisible(param_info)
 }
 
+# `eval_time` is tune's too, and like `event_level` it is passed through
+# untouched (D-038). What is refused here is only what tune has no use for:
+# `tune:::.filter_eval_time()` coerces with `as.numeric()`, drops missing
+# values, keeps what is finite and `>= 0`, uniques the rest, warns about what it
+# dropped, and aborts only when nothing survives. So `0`, duplicates and
+# unsorted times are accepted here and left for tune to normalize -- refusing
+# them would invent a second, stricter rule for tune's own argument -- while a
+# value tune would have thrown away is refused before a whole outer loop is paid
+# for, and before a mirai daemon can raise it in a frame naming tune rather than
+# the function the user called.
+#
+# Whether the mode is one `eval_time` applies to is not consulted, for the
+# reason `check_event_level()` gives below: tune warns about that itself, on its
+# own argument.
+check_eval_time <- function(eval_time, call = rlang::caller_env()) {
+  if (is.null(eval_time)) {
+    return(invisible(eval_time))
+  }
+
+  if (!is.numeric(eval_time) || length(eval_time) == 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg eval_time} must be a numeric vector of evaluation times, or {.code NULL}.",
+        x = if (is.numeric(eval_time)) {
+          "Got an empty vector."
+        } else {
+          "Got {.obj_type_friendly {eval_time}}."
+        }
+      ),
+      call = call
+    )
+  }
+
+  # Every offending position, not the first: a caller who passed a vector wants
+  # to know which of its times is the problem.
+  unusable <- is.na(eval_time) | !is.finite(eval_time) | eval_time < 0
+  if (any(unusable)) {
+    # As character, so cli reads them as a list of items to name rather
+    # than as the quantity a numeric interpolation would set.
+    positions <- as.character(which(unusable))
+    cli::cli_abort(
+      c(
+        "Every element of {.arg eval_time} must be finite, non-missing, and non-negative.",
+        x = "{cli::qty(length(positions))}Element{?s} {positions} {?is/are} not."
+      ),
+      call = call
+    )
+  }
+
+  invisible(eval_time)
+}
+
 # `event_level` is tune's, and it is passed through untouched. tune accepts the
 # setting on a regression workflow and ignores it, so the mode is not consulted
 # here (plan gate, 2026-08-31) -- refusing it there would diverge from tune for

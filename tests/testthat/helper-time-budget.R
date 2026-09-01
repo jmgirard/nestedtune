@@ -357,14 +357,14 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      876L,
+      877L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "dispatch accepts daemons primed with the package"
     ),
     tb_row(
       "test-parallel-classify.R",
-      883L,
+      884L,
       "daemons_load_status",
       60,
       "dispatch accepts daemons primed with the package",
@@ -372,7 +372,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      884L,
+      885L,
       "check_daemons_can_load",
       0,
       "dispatch accepts daemons primed with the package",
