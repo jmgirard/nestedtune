@@ -154,6 +154,9 @@ the outer split — and keep what each fold chose.
   : Collect the metrics from a nested resampling run
 - [`print(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_results.md)
   : Print a nested cross-validation result
+- [`summary(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_results.md)
+  [`print(`*`<summary.nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_results.md)
+  : Summarize a nested cross-validation result
 - [`autoplot(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/autoplot.nested_results.md)
   : Plot a nested cross-validation result
 

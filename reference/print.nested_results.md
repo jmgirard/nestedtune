@@ -1,20 +1,18 @@
 # Print a nested cross-validation result
 
-Reports how much of the requested outer design actually ran, which outer
-folds failed and at which stage, what each fold's inner tuning selected,
-and the estimate across the folds that completed.
-
-The selection lines are the part nothing else in the ecosystem shows.
-When outer folds choose different parameters, the tuning procedure is
-unstable on this data — averaging the metrics hides that, so printing
-marks it.
+Shows the object: its outer folds as the tibble rows they are, the outer
+resampling scheme it came from, how many folds did not complete, and a
+pointer to
+[`summary.nested_results()`](https://nestedtune.tidymodels.org/reference/summary.nested_results.md)
+for what the run means.
 
 Printing also says when the folds were not choosing from the same menu.
 A grid given as a size is expanded per fold, under that fold's own seed,
 so a continuous parameter leaves every fold with its own candidates —
-which changes how the selection lines above should be read. The line
-reports each fold's candidate count and appears only when the sets
-actually differ.
+which changes how the selections
+[`summary.nested_results()`](https://nestedtune.tidymodels.org/reference/summary.nested_results.md)
+reports should be read. The line reports each fold's candidate count and
+appears only when the sets actually differ.
 
 ## Usage
 
@@ -41,6 +39,7 @@ print(x, ...)
 
 ## See also
 
+[`summary.nested_results()`](https://nestedtune.tidymodels.org/reference/summary.nested_results.md),
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 
@@ -70,18 +69,13 @@ res
 #> 
 #> ── Nested cross-validation results ────────────────────────────────────
 #> Outer resamples: 3-fold cross-validation
-#> Outer folds: 3 requested, 3 completed
-#> 
-#> ── Selected parameters ──
-#> 
-#> ! num_comp: 2, 1, 1 (folds disagree)
-#> 
-#> ── Estimate (3 of 3 outer folds) ──
-#> 
-#> rmse (standard): 3.23
-#> rsq (standard): 0.722
-#> 
-#> ℹ A nested estimate describes the tune-and-fit procedure, not a model
-#>   you can deploy. Build that with `nested_final_fit()`, and report
-#>   this estimate as what its procedure achieves.
+#> # A tibble: 3 × 9
+#>   splits          id    .metrics .selected .grid    .notes   .completed
+#>   <list>          <chr> <list>   <list>    <list>   <list>   <lgl>     
+#> 1 <split [21/11]> Fold1 <tibble> <tibble>  <tibble> <tibble> TRUE      
+#> 2 <split [21/11]> Fold2 <tibble> <tibble>  <tibble> <tibble> TRUE      
+#> 3 <split [22/10]> Fold3 <tibble> <tibble>  <tibble> <tibble> TRUE      
+#> # ℹ 2 more variables: .tuning_seed <int>, .outer_fit_seed <int>
+#> ℹ Use `summary()` for what the run means: which folds failed, what
+#>   each one selected, and the estimate across them.
 ```
