@@ -57,15 +57,21 @@ unaffected by it. Ignored for a regression model, as it is in tune.}
 regression model, or \code{NULL} (the default) to leave the choice to tune. It
 reaches every tune call whose answer depends on it, so a dynamic or
 integrated survival metric -- \code{brier_survival()}, \code{roc_auc_survival()} and
-their relatives -- is measured at the times you name. Ignored, with a
-warning from tune, for a model whose mode is not censored regression.
+their relatives -- is measured at the times you name. It is ignored, with
+a warning from tune, whenever the metric set has no metric that reads it:
+tune keys that warning on the metrics rather than on the model's mode, so
+a censored regression model scored only by a static metric such as
+\code{concordance_survival()} draws it too.
 
 Refused here, ahead of tune: anything that is not numeric, an empty
 vector, and any element that is missing, negative or not finite. tune
-discards such values with a warning and carries on; this package refuses
-them at entry, before a whole run is paid for. Zero, repeated times and
-times out of order are all accepted and passed on untouched, since tune
-normalizes those itself.}
+treats those unevenly -- a character value is coerced with \code{as.numeric()}
+and accepted, a missing, negative or infinite element is dropped with a
+warning, and an empty vector aborts -- and this package refuses them all
+at entry, before a whole run is paid for. Zero, repeated times and times
+out of order are accepted and passed on untouched, since tune normalizes
+those itself; a repeated time draws tune's warning that 0 inappropriate
+evaluation time points were removed, once per tune call.}
 }
 \value{
 An object of class \code{nested_final_fit} with elements \code{workflow} (the
