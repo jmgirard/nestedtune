@@ -112,11 +112,19 @@ door_answer <- function(expr, caller_col) {
   )
 }
 
-# The six methods a caller's column reaches the rule through. `rbind` is asked in
-# its row-preserving one-argument shape: `rbind(x, y)` adds rows and sheds the
-# class whatever the column is called, so it could not tell these two apart.
-# `names<-` is the one door where the operation IS the naming, so its probe
-# renames an already-added column to the name under test.
+# The six methods `NAMESPACE` registers whose bodies call `reconstruct_results()`,
+# each in one stated shape -- the shape decides both whether the cell runs and
+# whether it can tell anything apart, so it is pinned rather than left to taste.
+#
+# `rbind` is asked in its row-preserving one-argument form: `rbind(x, x)` adds
+# rows and sheds the class whatever the column is called, so those cells could
+# not separate the fixed code from the broken. `vec_cast` is asked as
+# `vec_cast(y, y)`: casting to a type that lacks the caller's column is a loss
+# of precision and vctrs refuses it, so there is no answer there to compare.
+# `names<-` is asked as an identity assignment over an object that already
+# carries the caller's column, which is what puts that column in front of the
+# rule -- renaming a column TO the tested name would leave the tested name out
+# of the template, and every such cell would be true by construction.
 id_doors <- function() {
   list(
     dplyr_reconstruct = function(x, nm, value) {
@@ -131,8 +139,8 @@ id_doors <- function() {
       vctrs::vec_restore(bare_results(y), y)
     },
     `names<-` = function(x, nm, value) {
-      y <- with_col(x, "caller_column", value)
-      names(y)[names(y) == "caller_column"] <- nm
+      y <- with_col(x, nm, value)
+      names(y) <- names(y)
       y
     },
     rbind = function(x, nm, value) rbind(with_col(x, nm, value)),

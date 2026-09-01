@@ -62,15 +62,25 @@ their own candidate row stay there.
       `dplyr::mutate(res, id = list(c(1, 2), 3, 4))` is a `tbl_df` carrying no
       `nested_results` class and raises no condition — pre-milestone, an
       abort, `unimplemented type 'list' in 'orderVector1'`.
-- [ ] AC4. At each of the four S3 methods `NAMESPACE` registers on
-      `nested_results` that route a caller's column through the rule —
-      `dplyr_reconstruct`, `[`, `vec_restore`, `names<-` — a caller column
+- [ ] AC4. At each of the six methods `NAMESPACE` registers for
+      `nested_results` whose body calls the rule, `reconstruct_results()` —
+      `dplyr_reconstruct`, `[`, `vec_restore`, `names<-`, `rbind` and
+      `vec_cast` (that last registered on the class pair) — a caller column
       carrying each of the five names `id2`, `id0`, `id9`, `ideal` and
       `id_extra` gets the same answer that method gives a caller column named
-      `extra`, on both `res` and `rep_res` and for both an atomic and a
-      list-valued column. `rbind` is the fifth registered method and is
-      excluded from this sweep: it sheds the class whatever the column is
-      called, so its cells cannot tell the fixed code from the broken code.
+      `extra`: the same class vector, the same `grid`, `metrics`,
+      `outer_label`, `folds_attempted`, `folds_completed` and recorded label
+      columns, and the same values in every column but the caller's. Asked on
+      `res` (a 3-fold design) and on `rep_res` (a 3-fold repeated-twice
+      design, the one AC1's second recorded value is measured on), and for
+      both an atomic and a list-valued column — less one (name, design) pair:
+      `id2` is a column a repeated design itself carries, so on `rep_res` that
+      name replaces a recorded column rather than adding a caller's. Each
+      method is asked in one stated shape, with `y` the object carrying the
+      caller's column and `bare` the same object with the class taken off:
+      `dplyr_reconstruct(bare, y)`, `y[rep(TRUE, nrow(y)), ]`,
+      `vec_restore(bare, y)`, `names(y) <- names(y)`, `rbind(y)` and
+      `vec_cast(y, y)`.
 - [ ] AC5. `NEWS.md` and `nested_tune_grid()`'s `@return` state that a column
       you add is read as a fold label only when the resampling design itself
       carries a column of that name, and `NEWS.md`'s M36 sentence narrowing
@@ -110,10 +120,11 @@ their own candidate row stay there.
 - [x] T4. Guard the `do.call(order, ...)` key in `can_reconstruct_results()`
       (`:139-142`) so a recorded column that is not an atomic vector returns
       `FALSE` rather than reaching `order()`.
-- [ ] T5. The AC4 sweep: four methods × five names × {`res`, `rep_res`} ×
-      {atomic, list-valued}, each cell asserting the method's answer equals
-      its answer for `extra`. Fix what it reds.
-- [ ] T6. Mutation check: restore `grep("^id[0-9]*$", names(x))` as the
+- [x] T5. The AC4 sweep: six methods × five names × {`res`, `rep_res`} ×
+      {atomic, list-valued} less the `id2` × `rep_res` pair — 108 cells, each
+      asserting the method's answer equals its answer for `extra`. Fix what it
+      reds.
+- [x] T6. Mutation check: restore `grep("^id[0-9]*$", names(x))` as the
       derivation and record in the work log which of T1's, T2's and T5's tests
       go red.
 - [ ] T7. `NEWS.md` bullet and the `@return` invariants text rewritten to what
@@ -133,7 +144,10 @@ their own candidate row stay there.
 - 2026-08-31: T3, T4 — `new_nested_results()` records `id_columns`, which joins `run_attributes()` and is carried by `stamp_results()` and `copy_results_attributes()` and stripped by `bare_results()`; `id_columns()`, `record_columns()`, `has_results_columns()`, `fold_ids()`, `can_reconstruct_results()` and `template_record()` now take the object rather than a name vector, and `can_reconstruct_results()` reads the record off the template and refuses a label column `order()` cannot take. Six stale comments in `test-dplyr-compat.R` corrected and `repeated_shape()` retired.
 - 2026-08-31: T2 — `tests/testthat/test-id-columns.R` added with three AC1 blocks; `repeated_results()` split into `repeated_design()` + `results_from()` so a design labelled some other way can be built.
 - 2026-08-31: T5's sweep is written in the same file but stays unchecked until the AC4 amendment clears its fresh reader.
-
+- 2026-08-31: AC4 amended at a mini gate. Two exclusions the plan made were measured false: `rbind(x)` keeps the class and separates the fixed code from the broken (`id0` list column on the repeated fixture — bare under the name pattern, kept under the record), and `vec_cast.nested_results.nested_results` is a sixth registered method whose body calls the rule and separates them the same way. The criterion now names six methods anchored to `NAMESPACE` + a `reconstruct_results()` call, states what "the same answer" is a projection over, pins each method's call shape, and names the `rep_res` fixture as AC1's. T5's cell arithmetic moved to T5, where the instrument belongs. `rbind(x, x)` stays out of the sweep because it sheds the class for the rows it adds whatever the column is called.
+- 2026-08-31: the amended AC4 went to a fresh-context [O] reader in **full** mode, five findings, all fixed here: four of six call shapes were unpinned and the choice decided runnability (`vec_cast(y, res)` refuses as a loss of precision) and discrimination (`dplyr_reconstruct` against an un-mutated template passes in the broken code too); "the six methods that route a caller's column through the rule" read as exhaustive with "the rule" undefined; two clauses stated instrument sensitivity rather than class behavior; the `names<-` probe put the tested name only in the data, so all 18 of its cells were true by construction; and "AC1's" mis-cited a fixture AC1 does not name. The `names<-` probe changed to an identity name assignment over an object already carrying the caller's column.
+- 2026-08-31: T5 — the sweep runs 108 cells (six methods × five names × two designs × two forms, less the `id2` × `rep_res` pair), all green; nothing had to be fixed for it.
+- 2026-08-31: T6 — mutation check, the name pattern restored as the derivation. 30 of the sweep's 108 cells go red, five at every one of the six methods, and all 30 are list-valued: no atomic cell separates the two derivations, which is the sweep's weakest axis. Three of T1's four blocks go red (AC2(a), AC2(b), AC2(c)); AC3's does not, because its fault is the `order()` guard rather than the derivation, and it was measured red on the branch point instead. Of T2's three blocks, "recorded under whatever name it has" and "travels with the class" go red; "the constructor records the columns" does not, since the pattern and the record agree on a design rsample named. A second mutation — the constructor stops writing the attribute — reds that block along with thirteen others.
 ## Decisions
 
 ## Review
