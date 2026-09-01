@@ -11,7 +11,8 @@ nested_tune_grid(
   param_info = NULL,
   grid = 10,
   metrics = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 )
 }
 \arguments{
@@ -52,6 +53,20 @@ outer scoring fit, where it decides what the reported metrics mean.
 Metrics that do not distinguish the two levels -- accuracy, \code{roc_auc},
 \code{brier_class} -- are unaffected by it; \code{sens}, \code{spec}, \code{precision} and
 their relatives are not. Ignored for a regression model, as it is in tune.}
+
+\item{eval_time}{A numeric vector of evaluation times for a censored
+regression model, or \code{NULL} (the default) to leave the choice to tune. It
+reaches every tune call whose answer depends on it, so a dynamic or
+integrated survival metric -- \code{brier_survival()}, \code{roc_auc_survival()} and
+their relatives -- is measured at the times you name. Ignored, with a
+warning from tune, for a model whose mode is not censored regression.
+
+Refused here, ahead of tune: anything that is not numeric, an empty
+vector, and any element that is missing, negative or not finite. tune
+discards such values with a warning and carries on; this package refuses
+them at entry, before a whole run is paid for. Zero, repeated times and
+times out of order are all accepted and passed on untouched, since tune
+normalizes those itself.}
 }
 \value{
 An object of class \code{nested_results}: one row per outer fold, with the
@@ -175,13 +190,14 @@ This makes any single fold reproducible by hand. Fold \code{i} is exactly:
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
 tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-                   metrics = metrics,
+                   metrics = metrics, eval_time = eval_time,
                    control = control_grid(allow_par = FALSE,
                                           event_level = event_level))
 final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
 last_fit(final, resamples$splits[[i]], metrics = metrics,
+         eval_time = eval_time,
          control = control_last_fit(event_level = event_level))
 }\if{html}{\out{</div>}}
 
@@ -369,7 +385,16 @@ There is no \code{control} argument. What tune's control objects settle is
 settled here instead by the arguments above, or forced.
 
 Settable: \code{event_level}, which reaches the inner \code{control_grid()} and the
-outer \code{control_last_fit()} alike.
+outer \code{control_last_fit()} alike, and \code{eval_time}, which reaches the inner
+\code{tune_grid()} and the outer \code{last_fit()} the same way. \code{eval_time} is not a
+control slot in tune either -- it is an argument of both those functions --
+and it is offered here for the same reason \code{event_level} is: it changes a
+number the caller is shown.
+
+Not passed on: \code{select_best()} is called without \code{eval_time}. Left unset it
+selects at the first of the evaluation times the tuning run was built with,
+which are the ones named here, so naming them twice would change no choice
+and would repeat tune's message about which time it took.
 
 Forced: both tune calls a fold makes -- the inner tuning run and the outer
 scoring fit -- run at \code{allow_par = FALSE}. Parallelism belongs over the

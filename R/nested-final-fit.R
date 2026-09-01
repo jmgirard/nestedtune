@@ -51,6 +51,20 @@
 #'   distinguish the two levels -- accuracy, `roc_auc`, `brier_class` -- are
 #'   unaffected by it. Ignored for a regression model, as it is in tune.
 #'
+#' @param eval_time A numeric vector of evaluation times for a censored
+#'   regression model, or `NULL` (the default) to leave the choice to tune. It
+#'   reaches every tune call whose answer depends on it, so a dynamic or
+#'   integrated survival metric -- `brier_survival()`, `roc_auc_survival()` and
+#'   their relatives -- is measured at the times you name. Ignored, with a
+#'   warning from tune, for a model whose mode is not censored regression.
+#'
+#'   Refused here, ahead of tune: anything that is not numeric, an empty
+#'   vector, and any element that is missing, negative or not finite. tune
+#'   discards such values with a warning and carries on; this package refuses
+#'   them at entry, before a whole run is paid for. Zero, repeated times and
+#'   times out of order are all accepted and passed on untouched, since tune
+#'   normalizes those itself.
+#'
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
 #'   trained workflow, better reached with [extract_workflow()]), `selected`
 #'   (the parameters chosen), `tuning` (the tuning run they were chosen from),
@@ -109,8 +123,9 @@
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
-#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics, control =
-#'   control_grid(allow_par = FALSE, event_level = event_level))
+#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
+#'   eval_time = eval_time,
+#'   control = control_grid(allow_par = FALSE, event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")

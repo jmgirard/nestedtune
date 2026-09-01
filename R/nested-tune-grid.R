@@ -46,6 +46,20 @@
 #'   `brier_class` -- are unaffected by it; `sens`, `spec`, `precision` and
 #'   their relatives are not. Ignored for a regression model, as it is in tune.
 #'
+#' @param eval_time A numeric vector of evaluation times for a censored
+#'   regression model, or `NULL` (the default) to leave the choice to tune. It
+#'   reaches every tune call whose answer depends on it, so a dynamic or
+#'   integrated survival metric -- `brier_survival()`, `roc_auc_survival()` and
+#'   their relatives -- is measured at the times you name. Ignored, with a
+#'   warning from tune, for a model whose mode is not censored regression.
+#'
+#'   Refused here, ahead of tune: anything that is not numeric, an empty
+#'   vector, and any element that is missing, negative or not finite. tune
+#'   discards such values with a warning and carries on; this package refuses
+#'   them at entry, before a whole run is paid for. Zero, repeated times and
+#'   times out of order are all accepted and passed on untouched, since tune
+#'   normalizes those itself.
+#'
 #' @return An object of class `nested_results`: one row per outer fold, with the
 #'   fold's split and id, the metrics scored on its assessment set
 #'   (`.metrics`), the parameters chosen for it by inner tuning (`.selected`),
@@ -150,13 +164,14 @@
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
-#'                    metrics = metrics,
+#'                    metrics = metrics, eval_time = eval_time,
 #'                    control = control_grid(allow_par = FALSE,
 #'                                           event_level = event_level))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' last_fit(final, resamples$splits[[i]], metrics = metrics,
+#'          eval_time = eval_time,
 #'          control = control_last_fit(event_level = event_level))
 #' ```
 #'
@@ -338,7 +353,16 @@
 #' settled here instead by the arguments above, or forced.
 #'
 #' Settable: `event_level`, which reaches the inner `control_grid()` and the
-#' outer `control_last_fit()` alike.
+#' outer `control_last_fit()` alike, and `eval_time`, which reaches the inner
+#' `tune_grid()` and the outer `last_fit()` the same way. `eval_time` is not a
+#' control slot in tune either -- it is an argument of both those functions --
+#' and it is offered here for the same reason `event_level` is: it changes a
+#' number the caller is shown.
+#'
+#' Not passed on: `select_best()` is called without `eval_time`. Left unset it
+#' selects at the first of the evaluation times the tuning run was built with,
+#' which are the ones named here, so naming them twice would change no choice
+#' and would repeat tune's message about which time it took.
 #'
 #' Forced: both tune calls a fold makes -- the inner tuning run and the outer
 #' scoring fit -- run at `allow_par = FALSE`. Parallelism belongs over the

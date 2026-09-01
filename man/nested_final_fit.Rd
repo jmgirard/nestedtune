@@ -11,7 +11,8 @@ nested_final_fit(
   param_info = NULL,
   grid = 10,
   metrics = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 )
 }
 \arguments{
@@ -51,6 +52,20 @@ where it decides which candidate is selected; the final fit itself scores
 nothing, so there is no second place for it to act. Metrics that do not
 distinguish the two levels -- accuracy, \code{roc_auc}, \code{brier_class} -- are
 unaffected by it. Ignored for a regression model, as it is in tune.}
+
+\item{eval_time}{A numeric vector of evaluation times for a censored
+regression model, or \code{NULL} (the default) to leave the choice to tune. It
+reaches every tune call whose answer depends on it, so a dynamic or
+integrated survival metric -- \code{brier_survival()}, \code{roc_auc_survival()} and
+their relatives -- is measured at the times you name. Ignored, with a
+warning from tune, for a model whose mode is not censored regression.
+
+Refused here, ahead of tune: anything that is not numeric, an empty
+vector, and any element that is missing, negative or not finite. tune
+discards such values with a warning and carries on; this package refuses
+them at entry, before a whole run is paid for. Zero, repeated times and
+times out of order are all accepted and passed on untouched, since tune
+normalizes those itself.}
 }
 \value{
 An object of class \code{nested_final_fit} with elements \code{workflow} (the
@@ -120,8 +135,9 @@ The run is reproducible by hand from those two seeds alone:
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
 inner <- <the design's `inside` specification>(data)
-tuned <- tune_grid(object, inner, grid = grid, metrics = metrics, control =
-  control_grid(allow_par = FALSE, event_level = event_level))
+tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
+  eval_time = eval_time,
+  control = control_grid(allow_par = FALSE, event_level = event_level))
 final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 set.seed(fit$fit_seed, kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")

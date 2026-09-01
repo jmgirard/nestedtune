@@ -538,3 +538,54 @@ test_that("AC4: nested_final_fit() tunes and selects under the caller's evaluati
   expect_false(identical(ranked[[1L]], ranked[[2L]]))
   expect_false(identical(fits[[1L]]$selected$dist, fits[[2L]]$selected$dist))
 })
+
+# AC6 -------------------------------------------------------------------
+#
+# Read from the generated `.Rd` rather than from the roxygen, because what a
+# user opens is the rendered page and a `@param` on the wrong `@rdname` reaches
+# only one of the two. `test_path("..", "..", ...)` resolves outside the source
+# tree under `R CMD check`, so this skips there and fires where the
+# documentation is edited -- the layout note test-dplyr-compat.R records.
+
+rd_text <- function(name) {
+  path <- test_path("..", "..", "man", name)
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  gsub("\\s+", " ", paste(readLines(path, warn = FALSE), collapse = " "))
+}
+
+test_that("AC6: both help pages document `eval_time` and what this package refuses", {
+  pages <- list(
+    nested_tune_grid = rd_text("nested_tune_grid.Rd"),
+    nested_final_fit = rd_text("nested_final_fit.Rd")
+  )
+  skip_if_not(
+    all(vapply(pages, Negate(is.null), logical(1))),
+    "generated help pages absent"
+  )
+
+  for (nm in names(pages)) {
+    text <- pages[[nm]]
+    # The passing control: a page long enough to be the real one, carrying the
+    # argument that was documented the same way before this one.
+    expect_gt(nchar(text), 1000L)
+    expect_match(text, "\\item{event_level}", fixed = TRUE)
+
+    expect_match(text, "\\item{eval_time}", fixed = TRUE)
+    # What this package refuses ahead of tune, and what it lets through.
+    expect_match(text, "Refused here, ahead of tune", fixed = TRUE)
+    expect_match(text, "missing, negative or not finite", fixed = TRUE)
+    expect_match(text, "passed on untouched", fixed = TRUE)
+  }
+
+  # And the section that lists what a caller can set names it beside
+  # `event_level`, which is where a reader looks for the answer.
+  differences <- sub(
+    ".*Differences from calling tune directly",
+    "",
+    pages$nested_tune_grid
+  )
+  expect_match(differences, "Settable: \\code{event_level}", fixed = TRUE)
+  expect_match(differences, "\\code{eval_time}", fixed = TRUE)
+})
