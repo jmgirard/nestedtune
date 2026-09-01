@@ -85,12 +85,12 @@ under D-030.
 
 - [ ] AC8: on a `nested_tune_grid()` run at a multi-element `eval_time`,
       `collect_metrics()`, `summary()` and `print()` report each metric
-      separately per evaluation time — every row names the evaluation time it
-      belongs to, its `mean` is over that time's fold estimates alone, and its
-      `n` counts the folds contributing at that time — and the rows for the
-      two times differ. A run at a scalar `eval_time` and a run at `NULL` on
-      the regression fixture each report one row per metric with `n` equal
-      to the completed folds, as they do now.
+      separately per evaluation time — every row names its evaluation time,
+      its `mean` is over that time's fold estimates alone, and its `n` counts
+      the folds contributing at that time — and the rows for the two times
+      differ. A run at a scalar `eval_time`, and one at `NULL` on the
+      regression fixture, each still report one row per metric with `n` equal
+      to the completed folds.
 
 ## Coverage
 
@@ -137,20 +137,16 @@ under D-030.
 - [x] T8: roxygen on both orchestrators, the "Differences from calling tune
       directly" section, NEWS entry; `devtools::document()`;
       `devtools::check()`.
-- [ ] T9: key `per_fold_metrics()` and `summarize_folds()`
-      (`R/nested-results.R`) on the evaluation time as well as the metric and
-      estimator, carrying `.eval_time` into the summary's rows; decide the
-      column's shape at the implement gate (it changes an exported output);
-      update the `collect_metrics()` roxygen contract and `print()` /
-      `summary()` where they read the summary; AC8 tests on the censored
-      fixture plus the unchanged-shape controls.
+- [ ] T9: key `per_fold_metrics()` and `summarize_folds()` (`R/nested-results.R`)
+      on the evaluation time too, carrying `.eval_time` into the summary rows
+      (column shape decided at the implement gate: it changes an exported
+      output); update the `collect_metrics()` roxygen contract and the
+      `print()` / `summary()` readers; AC8 tests plus the unchanged-shape controls.
 - [ ] T10: reword `@param eval_time` on both pages against tune 2.1.0 as
-      measured in review — `numeric(0)` aborts in tune rather than warning,
-      `"1"` is coerced and accepted, the not-censored warning keys on the
-      metric set, and repeated times draw tune's "0 inappropriate evaluation
-      time points" warning per call (R2–R4); tighten AC6's test so
-      `\code{eval_time}` is asserted inside the "Settable:" sentence (R5);
-      `devtools::document()`.
+      measured in review (R2–R4: `numeric(0)` aborts in tune, `"1"` is coerced
+      and accepted, the not-censored warning keys on the metric set, repeated
+      times draw a "0 inappropriate evaluation time points" warning per call);
+      assert `\code{eval_time}` inside AC6's "Settable:" sentence (R5); `document()`.
 
 ## Work log
 
