@@ -55,13 +55,26 @@
   nestedtune, since `tune` requires it.
 
 - Fixed fold labels in `collect_metrics(summarize = FALSE)` and in the
-  partial-run warning, which pasted in any column whose name began with
-  `id`. Adding a column called `id_extra` to a results object reported
-  the folds as `Fold1, x` rather than `Fold1`. Only the columns the
-  resampling design itself names — `id`, and `id2` for a repeated design
-  — are read as fold labels now. A column you add is left out of them
-  unless you name it `id` or `id` followed by digits, which is how the
-  design spells its own.
+  partial-run warning, and the rule that decides whether an operation
+  keeps the `nested_results` class. Both worked out an object’s
+  fold-label columns from its column names, so a column you added was
+  treated as one of the design’s whenever its name looked like one.
+  Adding `id_extra` reported the folds as `Fold1, x` rather than
+  `Fold1`; adding `id2` to a result from a plain v-fold design and then
+  removing it again returned a plain tibble, where the same round trip
+  on `extra` did not; and adding a list column named `id0` to a result
+  from a repeated design failed with
+  `unimplemented type 'list' in 'listgreater'`. A results object now
+  records the columns its resampling design labelled the folds with, so
+  a column you add is read as a fold label only when the design itself
+  carries a column of that name.
+
+- Fixed an error from replacing a fold-label column with a value that
+  cannot be ordered. `dplyr::mutate(x, id = list(c(1, 2), 3, 4))` failed
+  with `unimplemented type 'list' in 'orderVector1'`, raised from inside
+  the rule and naming nothing the caller had done. It returns a plain
+  tibble now, which is what replacing a column the run is recorded in
+  has always meant.
 
 - Fixed a failure where every outer fold errored under parallel
   processing if the workflow’s recipe used unqualified selectors such as

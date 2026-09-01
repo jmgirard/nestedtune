@@ -163,7 +163,14 @@ the invariants <code>tune</code> declares on its own results objects:</p><ul><li
 <li><p>columns may be added or reordered;</p></li>
 <li><p>every column listed above must still be present, holding the values it
 held.</p></li>
-</ul><p>An operation that stays inside those rules — <code>arrange()</code>, <code>mutate()</code>
+</ul><p>The columns the run is recorded in are the ones the resampling design
+named, and <code>nested_tune_grid()</code> records them when it builds the result. So
+a column you add afterwards is read as a fold label only when the design
+itself carries a column of that name — <code>id</code>, and <code>id2</code> for a repeated
+design. The name you pick decides nothing on its own: adding <code>id2</code> to a
+result from a plain v-fold design leaves the class, the record and the
+fold labels alone, exactly as adding <code>extra</code> does.</p>
+<p>An operation that stays inside those rules — <code>arrange()</code>, <code>mutate()</code>
 adding a column, a join that matches one row apiece — returns a
 <code>nested_results</code> with the call's record intact. Anything else — <code>slice()</code>,
 a <code><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter()</a></code> that drops a fold, <code>bind_rows()</code>, <code>x[1, ]</code>, dropping one of
