@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M39: `print()` shows the object, `summary()` says what it means
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4
-- **Branch/PR:** `m039-print-tibble-summary-split`
+- **Branch/PR:** `m039-print-tibble-summary-split` / https://github.com/tidymodels/nestedtune/pull/48
 
 ## Goal
 
@@ -40,7 +40,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 
 ## Acceptance criteria
 
-- [ ] AC1. Printing a `nested_results` emits, in this order: a header naming
+- [x] AC1. Printing a `nested_results` emits, in this order: a header naming
       the object; a line naming the outer resampling scheme when
       `attr(x, "outer_label")` is non-NULL, and no such line when it is NULL;
       the object's own rows, rendered by the print method its classes dispatch
@@ -49,14 +49,14 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
       zero; the line `print_candidate_sets()` emits when `same_candidates()` is
       FALSE over the completed folds' `.grid`, and no such line when it is TRUE;
       and one line naming `summary()`. It emits no other line.
-- [ ] AC2. `summary()` on a `nested_results` returns an object of class
+- [x] AC2. `summary()` on a `nested_results` returns an object of class
       `summary.nested_results`, and printing that object emits what
       `print_design()`, `print_failures()`, `print_selection()` and
       `print_estimate()` emit today, less `print_selection()`'s call to
       `print_candidate_sets()`, which AC1 keeps in `print()` and which this
       output does not repeat — together with the IP3 sentence
       `print.nested_results()` currently emits after `print_estimate()`.
-- [ ] AC3. `summary()` on a `nested_results` with at least one `.completed`
+- [x] AC3. `summary()` on a `nested_results` with at least one `.completed`
       FALSE signals a condition of class `nestedtune_partial_summary` and still
       returns its object; with every `.completed` TRUE it signals no condition.
       It never aborts, including where every fold failed — `collect_metrics()`'s
@@ -69,17 +69,17 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
       the object no longer carries; and one naming several columns of which
       some are absent — the third being the form `fold_ids()` answers wrongly
       today rather than raising.
-- [ ] AC5. Over the objects that running
+- [x] AC5. Over the objects that running
       `tests/testthat/test-nested-results-print.R` passes to a print or summary
       method, no call to `print.nested_results()` or
       `print.summary.nested_results()` raises, and none warns except where AC3
       requires it. That run is the sweep; the claim is over what it covers.
-- [ ] AC6. Each of the three methods this milestone adds or changes —
+- [x] AC6. Each of the three methods this milestone adds or changes —
       `print.nested_results()`, `summary.nested_results()`,
       `print.summary.nested_results()` — has a roxygen `@return` clause naming
       what it returns, verified by reading the three blocks in
       `R/nested-results-print.R`.
-- [ ] AC7. `cairn/PROFILE.md`'s `verify` slot is clean, and its fuller
+- [x] AC7. `cairn/PROFILE.md`'s `verify` slot is clean, and its fuller
       pre-review check (`check-r-package`) passes.
 
 ## Coverage
@@ -131,6 +131,11 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: all five tasks checked; status to review. Suite 2398 pass / 0 fail / 0 warn / 0 skip; `devtools::check()` 0 errors, 0 warnings, 0 notes; `pkgdown::check_pkgdown()` no problems.
 - 2026-08-31: plan chose fixing M38 review O8 here over leaving it to the `check_nested()` row, because this milestone relocates `print_failures()` and the M33 lesson is that a move invalidates every `file:line` citation the repo's records hold; falsified by the fix proving to need `check_nested()`'s entry-gate refusal to be coherent.
 
+- 2026-08-31: review ran on PR #48. `origin/main` was already merged into the branch's base (0 commits behind), so no re-merge was needed. Six criteria verified with fresh evidence and ticked: AC1 over four objects covering its four switches, AC2 and AC3 over the summary pair, AC5 over an instrumented run of `test-nested-results-print.R` (27 blocks, 127 assertions, 58 print-method calls, 0 warnings), AC6 by reading the three roxygen blocks, AC7 against the five green `check-r-package` legs. `cairn_validate.py` exit 0; `document()` no diff; `check_pkgdown()` no problems; `cairn_impact.py` skipped, no IP/GP principle changed.
+- 2026-08-31: a local `devtools::check()` reports one error, `test-parallel-interrupt.R:102`. Not this branch's: the identical assertion fails with the identical message in a detached worktree at `origin/main`, the test file is untouched by the diff, it passes standalone twice and under `devtools::test()`, and all five CI legs are green. Recorded rather than fixed.
+- 2026-08-31: three-lens review fan-out. Blame-history and prior-review returned no findings. Diff-bug returned nine, all logged with dispositions in the Review section: one rejected as already-true prose, one rejected as pre-existing, two to follow-up rows, three fix-now carried back with this return, one put to the maintainer, and one returning the milestone.
+- 2026-08-31: amendment return: AC4 — "`print()` and `print(summary())` name each failed fold by its row position rather than raising or emitting a truncated label". AC1 requires `print()` to emit a count of incomplete folds and no line naming any fold, so post-split `print()` never calls `fold_ids()` and names no fold by any label; the two criteria contradict each other and the work follows AC1. Status to in-progress for that amendment alone.
+
 ## Decisions
 
 ### Where the unusable-label-record fallback lives
@@ -167,3 +172,224 @@ the plot-side caller of `fold_ids()` is `selection_frame()`
 `plot_selection_frequency()`. Nothing else in that entry changes.
 
 ## Review
+
+Fresh evidence gathered 2026-08-31 on `m039-print-tibble-summary-split` at
+`db159f0`, against PR #48. Every figure below is from a command run this
+session; the scripts live in the session scratchpad and each is described by
+what it did rather than pasted.
+
+### Acceptance criteria
+
+- AC1 — **verified.** Drove `print()` over four hand-built `nested_results`
+  covering the criterion's four switches and read back every emitted line via
+  `cli::cli_fmt()`. Label present + all completed + equal grids: header,
+  `Outer resamples:` line, the tibble rows (`# A tibble: 2 x 6` and two data
+  rows, so the class strip dispatches to tibble's method), the `summary()`
+  pointer — four items, no failure count, no candidate line. `outer_label`
+  NULL: identical less the `Outer resamples:` line. One fold not completed:
+  adds `1 of 2 outer folds did not complete.` between rows and pointer.
+  Differing grids: adds `Candidates searched: 3 5 - the folds did not search
+  the same grid` in the same slot. No line outside the enumeration appeared in
+  any of the four.
+- AC2 — **verified.** `class(summary(x))` is `summary.nested_results`.
+  Printing it emits the four M04 sections in order — `Outer folds: n
+  requested, m completed`; the per-fold `... failed during <stage>.` lines
+  plus the `x$.notes` pointer; the `Selected parameters` heading and its
+  lines; the `Estimate (m of n outer folds)` heading and its metric lines —
+  followed by the procedure sentence naming `nested_final_fit()`. On the
+  differing-grids object whose `print()` emitted the candidate line, the
+  summary output does not repeat it: the disagreement line appears once in the
+  pair, in `print()`.
+- AC3 — **verified.** With one fold not completed, `summary()` signals a
+  condition of class `nestedtune_partial_summary` / `rlang_warning` /
+  `warning` / `condition` and, with the warning muffled, still returns an
+  object of class `summary.nested_results`. With every fold completed, an
+  instrumented handler counting every non-message condition counted 0. With
+  every fold failed it returned a `summary.nested_results` rather than
+  aborting, and printing it emits `0 completed`, both failure lines, `No outer
+  fold completed, so nothing was selected.` and `... so there is no estimate.`
+- AC4 — **not verified; the criterion is wrong (amendment return).** Built the
+  three record forms on an object with one failed fold: a length-zero
+  `id_columns`, one naming a column the object does not carry, and one naming
+  two columns of which one is absent. In all three, `print(summary())` named
+  the failed fold `row 2` and the control with a usable record still named it
+  `Fold2`, so the fallback fires on the unusable record and not otherwise —
+  the `print(summary())` half holds. The `print()` half does not, and cannot:
+  AC4 requires `print()` to "name each failed fold by its row position", while
+  AC1 requires `print()` to emit a *count* of incomplete folds and no line
+  naming any fold. Post-split `print()` never calls `fold_ids()` at all, so it
+  names no fold by any label. The two criteria contradict each other; the work
+  follows AC1, which is the right behaviour, and AC4's `print()` clause is the
+  defect. Measured, not reinterpreted: `print()` on all three forms raised
+  nothing and warned nothing, and the AC4 test block
+  (`test-nested-results-print.R:558-560`) asserts only `expect_no_error()` and
+  `expect_no_warning()` for `print()`, doing its naming assertion on
+  `summary_text()`. Ticking this box would require reading "name each failed
+  fold by its row position" as "does not raise", which is the charitable
+  reading the never-reinterpret rule forbids. Routed to a gated criterion
+  amendment; see the work-log line.
+- AC5 — **verified over the criterion's domain.** Wrapped both print methods
+  with a handler recording every condition, then ran
+  `tests/testthat/test-nested-results-print.R` with `NOT_CRAN=true`: 27 blocks,
+  127 passing assertions, 0 failures, 0 errors, 0 skips; 58 calls into the two
+  methods intercepted. Zero warnings from either method. One raise was
+  recorded, and it is not over an object in the criterion's domain: it is the
+  `check_dots_empty()` abort that `test-nested-results-print.R:441-443` asserts
+  with `expect_error()` on `print(summary(res), foo = 1)` — a rejected `...`
+  argument, not an object the file passes to a print method. No call over an
+  object raised.
+- AC6 — **verified by reading the three roxygen blocks in
+  `R/nested-results-print.R`.** `print.nested_results()` at line 37: "`x`,
+  invisibly." `summary.nested_results()` at line 130: "An object of class
+  `summary.nested_results`: a list holding the outer design's requested and
+  completed fold counts, the failed folds with the stage each failed at, the
+  parameter values the completed folds selected, and the metric estimates
+  averaged across them." `print.summary.nested_results()` at line 150:
+  "`print()` returns `x`, invisibly."
+- AC7 — **verified.** The `verify` slot is clean: `devtools::document()`
+  produced no diff (the only modified path afterwards is this milestone file),
+  and `devtools::test()` exited 0. The fuller pre-review check the criterion
+  names, `check-r-package`, is the `r-lib/actions/check-r-package@v2` step at
+  `.github/workflows/R-CMD-check.yaml:119`, and it passes on all five legs of
+  PR #48 — ubuntu devel (9m48s), ubuntu release (8m54s), ubuntu oldrel-1
+  (9m7s), macOS release (8m13s), Windows release (10m59s) — alongside pkgdown,
+  test-coverage, codecov and format-suggest, all green.
+
+  Recorded because it looks like a failure and is not: a local
+  `devtools::check()` on this machine reports `1 error | 0 warnings | 0 notes`,
+  the error being `test-parallel-interrupt.R:102` ("an interrupted run leaves
+  no fold executing", `interrupted` FALSE where TRUE was expected). It is not
+  this branch's. The same check run in a detached worktree at `origin/main`
+  fails the identical assertion with the identical message
+  (`1 error | 0 warnings | 1 note` there, so the branch is a note better), and
+  the test file is untouched by the diff. It also passes standalone under
+  `test_file()` twice and under `devtools::test()`, so it reproduces only in
+  this machine's `R CMD check` subprocess, where the test signals `SIGINT` to
+  its own pid. CI runs the same check on five platforms and none of them sees
+  it.
+
+### Consistency gate
+
+- `cairn_validate.py`: exit 0, all 16 PASS checks pass (`coverage complete` and
+  `scaffold present` among them), 5 advisory OKs, one WARN — the same 18
+  `references/` pages recording no verification claim, unchanged by this
+  milestone. The `release window` advisory did not fire.
+- `cairn_impact.py`: skipped. The milestone's `DESIGN.md` edit is a bullet in
+  the conventions prose above the numbered blocks (the IP block starts at
+  `DESIGN.md:154`), so no IP/GP principle changed.
+- `devtools::document()`: no diff — the only modified path afterwards is this
+  milestone file.
+- `NAMESPACE` and `man/` regenerate from roxygen; the no-diff `document()` run
+  above is that check.
+- README.Rmd is present and untouched by the diff, so README.md cannot be out
+  of sync with it.
+- `pkgdown::check_pkgdown()`: "No problems found."
+- `NEWS.md` carries three entries for this milestone's user-visible changes,
+  naming no milestone numbers.
+- No new top-level files, so no `.Rbuildignore` entry is owed.
+
+### Independent fresh-context review
+
+Surface tier is user-facing and the diff touches R sources, so the full
+three-lens fan-out ran, each lens on its own evidence base.
+
+- **[S] blame-history** — no findings. It traced the relocated M04 sections,
+  the dropped `check_any_completed()` inheritance, the `fold_ids()` fallback,
+  the moved candidate-set line and the Suggests placement of tibble back to the
+  archived milestone, D-entry or acceptance criterion that anticipated each,
+  and reported no contradiction of prior intent.
+- **[S] prior-review** — no findings. It read the `## Review` sections of the
+  M04, M36 and M38 archives and `LESSONS.md`, and confirmed the diff
+  reintroduces none of M04's F1/F2/F3, none of M36's defects, and is the
+  milestone doing M38's deferred O8 rather than regressing it. Its GitHub probe
+  found one real inline comment in the repo's history, on an unrelated file;
+  per-PR walks of #4, #22, #42, #45 and #47 returned empty.
+- **[O] diff-bug** — nine ranked findings, below.
+
+### Findings and disposition
+
+Ranked as the reviewer ranked them. Every finding is recorded with its
+disposition, including the rejected ones (IP3).
+
+- **O1. `print(summary(x))` points the reader at `x$.notes`, which the printed
+  object does not have.** `print_failures()` (`R/nested-results-print.R:236`)
+  emits ``See `x$.notes` for what went wrong.`` Before the split the printed
+  object was the results object and the advice was executable; the object bound
+  to `x` in `print.summary.nested_results()` is the summary bundle, whose
+  components are `outer_label`, `requested`, `completed`, `failures`,
+  `selection`, `grids` and `estimate`. `s$.notes` is `NULL`. Confirmed in the
+  AC2 evidence above, where the line appears in the summary output.
+  `test-nested-results-print.R:377` asserts the line with
+  `expect_match(txt, "See .*\\$\\.notes")`, so it passes on text that is now
+  misleading. **Disposition: for the maintainer at the gate.** It is a real
+  defect inside an intentional change, so the out-of-scope taxonomy does not
+  cover it — but AC2 pins this output to "what `print_failures()` emits today",
+  so repairing the sentence falsifies AC2 as written. Either the fix rides a
+  second amended clause, or the finding becomes a follow-up row and AC2 stands.
+- **O2. The `DESIGN.md` convention on selection instability was said to be
+  stale.** **Disposition: rejected.** The bullet
+  (`cairn/DESIGN.md:124-126`) reads "default print/summary surfaces
+  disagreement between folds", naming both surfaces; after the split `summary()`
+  surfaces selection disagreement and `print()` surfaces candidate-set
+  disagreement, so the sentence is still true of the pair it names. The
+  neighbouring bullet needed its M39 correction because it said "print methods"
+  and named a sentence that moved; this one does not.
+- **O3. `print_candidate_sets()`'s comment describes a context that no longer
+  exists.** `R/nested-results-print.R:267-276` says the line is "printed here
+  rather than in the design block because it qualifies the lines above it: a
+  reader comparing what each fold selected is entitled to know...". In
+  `print.nested_results()` there are no selection lines above it — those moved
+  behind `summary()`. The comment was true of the caller it had and is false of
+  the caller this diff gave it. **Disposition: fix now, carried to the return** (a comment rewrite, no
+  behaviour change) — the amendment return below stops review before fix-now
+  work is committed, so it travels back to `/milestone-implement` with it.
+- **O4. AC4's `print()` clause contradicts AC1 and cannot be satisfied.**
+  **Disposition: amendment return** — see the AC4 evidence line above and the
+  work-log line. This is the finding that returns the milestone.
+- **O5. `summary()`'s `@return` omits two components it returns, one of which
+  nothing reads.** `R/nested-results-print.R:129-135` enumerates the counts,
+  failures, selections and estimates; the bundle also carries `outer_label`
+  (`:177`) and `grids` (`:185`). Confirmed by grep that `$grids` is read nowhere
+  under `R/` — `print.nested_results()` computes the candidate-set line from
+  `x$.grid[x$.completed]` directly (`:71`). The milestone's Decisions section
+  lists `grids` as deliberate forward-looking state for the
+  selection-frequency candidate row, so it is not dead by accident.
+  **Disposition: fix now, carried to the return** (complete the `@return`;
+  AC6 is satisfied either way, since it asks for a clause naming what is
+  returned and one is present).
+- **O6. `utils::capture.output()` is used with `utils` undeclared in
+  DESCRIPTION.** `R/nested-results-print.R:91`. The reviewer verified this does
+  not trip `R CMD check`, because `tools:::.check_packages_used` excludes
+  standard packages, and the check evidence below agrees. **Disposition:
+  follow-up** — adding `utils` to Imports is a dependency change, and
+  tracking-rules makes any dependency change a question gate plus a D-entry,
+  which is not review-side work.
+- **O7. `print()` raises on an `NA` in `.completed`.** `sum(!x$.completed)` is
+  `NA` and `if (failed == 0L)` errors. **Disposition: rejected as
+  out-of-scope** — the reviewer confirmed `main` raises on the same input at
+  `print_estimate()`, so the diff did not introduce it; it is a pre-existing
+  issue, and the same object shape is what the `check_nested()` candidate row
+  already owns.
+- **O8. Four print snapshots are now pinned to pillar's exact table
+  rendering.** A pillar or tibble release that changes column widths or the
+  `# i N more variables:` line breaks four snapshots for reasons outside this
+  package, and D-037's stated falsifier covers tibble disappearing rather than
+  tibble reformatting. **Disposition: follow-up** — it is the accepted cost of
+  D-037 and belongs on a candidate row as a maintenance tripwire, not in this
+  milestone.
+- **O9. The `@return`/description links to `summary()` resolve to
+  `base::summary`.** `R/nested-results-print.R:24` and `:29` write `[summary()]`,
+  which renders as `\link[=summary]{summary()}`, and
+  `print.nested_results()`'s `@seealso` (`:61`) lists only `nested_tune_grid()`
+  and `collect_metrics()`. Discoverability of the new method is the premise of
+  the split. **Disposition: fix now, carried to the return** (point both at
+  `[summary.nested_results()]` and add it to `@seealso`).
+
+### Outcome
+
+Six of seven criteria verified with fresh evidence and ticked. AC4 is not
+ticked: the criterion as written contradicts AC1, and the work follows AC1.
+That is evidence about the promise rather than about the work, so the milestone
+returns for a gated criterion amendment (`/milestone-implement` step 6) and
+re-review, and the merge gate is not reached. No merge approval was requested
+and none was given.
