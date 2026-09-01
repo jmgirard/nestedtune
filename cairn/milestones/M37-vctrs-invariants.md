@@ -133,6 +133,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: blocked on RB04 — whether AC3 may rest on `vec_cbind_frame_ptype()`, which vctrs marks experimental and internal; raised at the implementation gate and escalated by the maintainer.
 - 2026-08-31: RB04 spawned as a Fable review at the maintainer's approval; RR04 returned advisory findings on all five questions and seven recommendations, ingested here, and the pair is archived.
 - 2026-08-31: RR04 triage — recommendations 1 and 2 applied (keep the method; correct the failure-mode comment), 4 applied as well (the fold counts move off the prototype carriers), 3 and 5 absorbed into the CI-records candidate row as out of this milestone's scope, 6 and 7 rejected on the review's own reasoning. The `nested_results_ptype()` comment finding from Beyond the brief is taken with 2.
+- 2026-08-31: RR04 recommendations 2 and 4 land in code; the ingest commit was tracking-only. The prototype carriers write `grid`, `metrics`, `outer_label` and a private `nestedtune_template_rows`, `vec_restore()`'s third branch reads that in place of `folds_attempted`, `bare_results()` and `stamp_results()` clear it, and the frame-prototype comment names both failure modes. A new `test-vctrs-compat.R` block asserts the token carries the run's description and no fold counts, and fails on the previous code with both counts present; suite 2060 passing, 0 failures, 0 skips.
 
 ## Decisions
 

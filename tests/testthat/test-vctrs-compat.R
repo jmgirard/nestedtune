@@ -132,6 +132,25 @@ test_that("vec_cbind() and bind_cols() adding a column answer the same way", {
   expect_true("extra" %in% names(through_dplyr))
 })
 
+# The type token vctrs assembles a column-add into. It wears the class, so IP4
+# governs what it says about a run: it describes the run it came from and
+# claims no rows of its own. The generic is vctrs' own internal-marked surface
+# -- calling it directly is the only way to hold the token at all (RR04 Q4).
+
+test_that("the frame prototype carries the run's description and no fold counts", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  token <- vctrs::vec_cbind_frame_ptype(res)
+
+  expect_s3_class(token, "nested_results")
+  expect_identical(length(token), 0L)
+  expect_identical(attr(token, "outer_label"), attr(res, "outer_label"))
+  expect_identical(attr(token, "grid"), attr(res, "grid"))
+  expect_null(attr(token, "folds_attempted"))
+  expect_null(attr(token, "folds_completed"))
+})
+
 # AC4. A results object casts down to a table; a table does not cast up to a
 # results object. The refusal is asserted by the condition class vctrs assigns
 # it, not by its message, and `vctrs_error_cast_lossy` is excluded so the

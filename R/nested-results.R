@@ -176,6 +176,9 @@ stamp_results <- function(out, template) {
   # the object was reached.
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
+  # The private carrier is a prototype's, not a caller's: an object with rows
+  # records what it holds in the two counts above and needs no second copy.
+  attr(out, template_rows_attribute()) <- NULL
   out
 }
 
@@ -186,7 +189,7 @@ stamp_results <- function(out, template) {
 # The class is removed by subtraction rather than replaced with tibble's three,
 # which leaves whatever else the object was carrying alone.
 bare_results <- function(data) {
-  for (nm in results_attributes()) {
+  for (nm in c(results_attributes(), template_rows_attribute())) {
     attr(data, nm) <- NULL
   }
   class(data) <- setdiff(class(data), "nested_results")
@@ -209,7 +212,14 @@ as_results_tbl <- function(data) {
 }
 
 results_attributes <- function() {
-  c("grid", "metrics", "outer_label", "folds_attempted", "folds_completed")
+  c(run_attributes(), "folds_attempted", "folds_completed")
+}
+
+# The part of the record that describes the run rather than the rows in hand.
+# These stay true of anything the run produced, a type token included; the two
+# counts do not, which is why they are separated here.
+run_attributes <- function() {
+  c("grid", "metrics", "outer_label")
 }
 
 #' @importFrom dplyr dplyr_reconstruct
@@ -251,7 +261,7 @@ dplyr_reconstruct.nested_results <- function(data, template) {
 # refused because six rows cannot match a three-row template. Where it does
 # not, all that survives is what the prototype's attributes say the run was:
 # the rows in hand must carry a whole record of their own and must number what
-# the template's `folds_attempted` records. That is weaker, and it is the
+# the prototype's private row count records. That is weaker, and it is the
 # weakest place in the class -- but `vec_cbind()` cannot alter an existing
 # column, only add and recycle, so what it can do wrong is exactly what the
 # count catches (recycling a one-fold object up to three rows).
@@ -270,7 +280,7 @@ vec_restore.nested_results <- function(x, to, ...) {
   if (length(x) == 0L && nrow(x) == 0L && length(to) == 0L) {
     return(copy_results_attributes(as_results_tbl(x), to))
   }
-  attempted <- attr(to, "folds_attempted")
+  attempted <- template_rows(to)
   if (
     !has_results_columns(x) ||
       !is.numeric(attempted) ||
@@ -287,22 +297,45 @@ vec_restore.nested_results <- function(x, to, ...) {
 # is ever asked, and the same column-add would then answer differently through
 # vctrs than through `dplyr::bind_cols()` (measured 2026-08-31). The class is
 # kept or shed in one place, which is `vec_restore()` above.
+#
+# That is the lattice vctrs uses inside an operation, not the answer a caller
+# gets. Exported `vctrs::vec_ptype()` and `vctrs::vec_ptype2()` on a
+# `nested_results` both hand back a bare tibble (measured 2026-08-31), because
+# vctrs finalizes what this returns before returning it. The apparent mismatch
+# is not a defect to fix here.
 nested_results_ptype <- function(x) {
   ptype <- vctrs::vec_slice(bare_results(x), 0L)
   class(ptype) <- c("nested_results", class(ptype))
   copy_results_attributes(ptype, x)
 }
 
-# Attributes carried across verbatim rather than restamped. `stamp_results()`
-# reads the counts off the rows, which is right for an object a caller holds
-# and wrong for a type token: a prototype has no rows of its own to describe,
-# and what these carriers are for is telling `vec_restore()` what the operation
-# started from.
+# What a type token carries. `stamp_results()` reads the counts off the rows,
+# which is right for an object a caller holds and wrong for a token: a
+# prototype has no rows of its own to describe. So the two counts do not travel
+# onto one at all -- nothing wearing the class is left claiming a run it does
+# not hold (IP4) -- and the source row count `vec_restore()` checks a
+# combination against travels privately instead, where it describes the
+# operation's source rather than the token's own rows.
 copy_results_attributes <- function(out, from) {
-  for (nm in results_attributes()) {
+  for (nm in run_attributes()) {
     attr(out, nm) <- attr(from, nm)
   }
+  attr(out, template_rows_attribute()) <- template_rows(from)
   out
+}
+
+# The source's row count, from whichever carrier holds it: an object a caller
+# holds records it as `folds_attempted`, a prototype privately.
+template_rows <- function(x) {
+  n <- attr(x, "folds_attempted")
+  if (is.null(n)) {
+    return(attr(x, template_rows_attribute()))
+  }
+  n
+}
+
+template_rows_attribute <- function() {
+  "nestedtune_template_rows"
 }
 
 # `vec_cbind()` does not reach the prototype above on its own. It builds the
@@ -313,9 +346,11 @@ copy_results_attributes <- function(out, from) {
 # through vctrs than through `dplyr::bind_cols()` (measured 2026-08-31).
 #
 # The generic is documented `[Experimental]` and vctrs says to expect changes,
-# so this is the one method in the file resting on an interface that may move.
-# If it moves, `vec_cbind()` falls back to the default and drops the class, and
-# test-vctrs-compat.R's AC3 block is what says so out loud.
+# so this is the one method in the file resting on an interface that may move
+# (D-033). It can move in two directions, and neither is silent for long. If
+# vctrs stops consulting the generic, `vec_cbind()` falls back to the default
+# and drops the class, which test-vctrs-compat.R's AC3 block says out loud. If vctrs stops exporting it, the `importFrom` below fails the package
+# at load, everywhere, immediately (RR04 recommendation 2).
 #' @importFrom vctrs vec_cbind_frame_ptype
 #' @export
 vec_cbind_frame_ptype.nested_results <- function(x, ...) {

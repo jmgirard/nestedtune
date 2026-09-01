@@ -96,15 +96,21 @@
 #'   ten-fold design it was cut from, so it stops describing itself at all and
 #'   hands back the data.
 #'
-#'   The rule is enforced where dplyr asks for it, in a `dplyr_reconstruct()`
-#'   method, which the verbs above and `[` all reach. An operation that never
-#'   gets there is outside it, and two do. `rename()` is implemented as
-#'   `set_names()` and reaches the object through **vctrs**, so renaming one of
-#'   the columns listed above returns a `nested_results` that no longer has it.
-#'   `rbind()` likewise goes through **vctrs** rather than dplyr, so it adds
-#'   rows and keeps the class, leaving the counts describing the object it was
-#'   built from. Treat both as gaps rather than as further invariants; the
-#'   vctrs methods that would close them are not written yet.
+#'   It is one rule, reached through four doors. dplyr's verbs and `[` reach it
+#'   through a `dplyr_reconstruct()` method; **vctrs**' own verbs —
+#'   `vec_slice()`, `vec_rbind()`, `vec_c()`, `vec_cbind()`, `vec_ptype()` and
+#'   `vec_cast()` — reach it through `vec_restore()`; and `rbind()` and
+#'   `rename()`, which reach neither generic, have methods of their own. So
+#'   `rbind(x, x)` and a `rename()` that moves one of the columns above hand
+#'   back a bare tibble, the same answer `slice()` gives, rather than an object
+#'   whose record has stopped describing its own rows.
+#'
+#'   Three verbs sit outside all of it. `group_by()`, `rowwise()` and
+#'   `tibble::as_tibble()` return a grouped, a rowwise and a plain tibble
+#'   respectively — none of them a `nested_results` — and each carries the
+#'   attributes across, so `attr(dplyr::group_by(x, id), "outer_label")` still
+#'   answers with the run's scheme. Nothing they hand back claims to be a
+#'   results object; the record is along for the ride.
 #'
 #' @section Reproducibility:
 #'

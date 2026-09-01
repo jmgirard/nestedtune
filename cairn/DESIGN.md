@@ -306,3 +306,13 @@ execution in RR01, and tune 1.x seeded differently (D-012).
   its nightly run depends on the repository's default workflow token being
   writable; that setting could not be read at review. The moving-tag half is
   carried by the standing candidate row that tracks the pkgdown deploy pin.
+
+- `dplyr::group_by()`, `dplyr::rowwise()` and `tibble::as_tibble()` leave the
+  run's recorded attributes readable on the object they return. None of the
+  three returns a `nested_results` — the classes are `grouped_df`, `rowwise_df`
+  and `tbl_df` (measured 2026-08-31) — so nothing they hand back claims to be a
+  results object, and rsample's own `rset` behaves the same way. M37 documented
+  this rather than intercepting three further entry points to strip attributes
+  off objects that have already stopped answering for the run. The **Value**
+  section of `?nested_tune_grid` states it, and `test-vctrs-compat.R` asserts
+  it.
