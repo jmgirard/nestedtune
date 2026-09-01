@@ -23,6 +23,7 @@ Imports:
     rlang,
     rsample,
     tune (>= 2.0.0),
+    vctrs (>= 0.6.1),
     workflows
 Suggests:
     dials,
@@ -36,6 +37,7 @@ Suggests:
     recipes,
     rmarkdown,
     testthat (>= 3.0.0),
+    tibble,
     vdiffr,
     yardstick
 VignetteBuilder: knitr

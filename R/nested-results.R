@@ -158,6 +158,13 @@ reconstruct_results <- function(data, template) {
   if (!inherits(out, "nested_results")) {
     class(out) <- c("nested_results", class(out))
   }
+  stamp_results(out, template)
+}
+
+# What describes the call comes from the template; what describes the rows is
+# read off the rows. Split out of reconstruct_results() so vec_restore()'s
+# prototype branch writes the same record rather than a second version of it.
+stamp_results <- function(out, template) {
   # `metrics` is absent rather than NULL when none was supplied, and assigning
   # NULL to an attribute removes it, so this preserves the distinction.
   attr(out, "grid") <- attr(template, "grid")
@@ -169,6 +176,12 @@ reconstruct_results <- function(data, template) {
   # the object was reached.
   attr(out, "folds_attempted") <- nrow(out)
   attr(out, "folds_completed") <- sum(out$.completed)
+  # The private carriers are a prototype's, not a caller's: an object with rows
+  # records what it holds in the two counts above, and its own names say which
+  # columns the record is in.
+  for (nm in template_attributes()) {
+    attr(out, nm) <- NULL
+  }
   out
 }
 
@@ -179,7 +192,7 @@ reconstruct_results <- function(data, template) {
 # The class is removed by subtraction rather than replaced with tibble's three,
 # which leaves whatever else the object was carrying alone.
 bare_results <- function(data) {
-  for (nm in results_attributes()) {
+  for (nm in c(results_attributes(), template_attributes())) {
     attr(data, nm) <- NULL
   }
   class(data) <- setdiff(class(data), "nested_results")
@@ -202,7 +215,14 @@ as_results_tbl <- function(data) {
 }
 
 results_attributes <- function() {
-  c("grid", "metrics", "outer_label", "folds_attempted", "folds_completed")
+  c(run_attributes(), "folds_attempted", "folds_completed")
+}
+
+# The part of the record that describes the run rather than the rows in hand.
+# These stay true of anything the run produced, a type token included; the two
+# counts do not, which is why they are separated here.
+run_attributes <- function() {
+  c("grid", "metrics", "outer_label")
 }
 
 #' @importFrom dplyr dplyr_reconstruct
@@ -217,6 +237,303 @@ dplyr_reconstruct.nested_results <- function(data, template) {
 # class rather than of whichever `[` NextMethod() happened to reach.
 #' @export
 `[.nested_results` <- function(x, i, j, ...) {
+  out <- NextMethod()
+  if (!is.data.frame(out)) {
+    return(out)
+  }
+  reconstruct_results(out, x)
+}
+
+# The vctrs door, and the two doors that are neither.
+#
+# `vec_slice()`, `vec_rbind()`, `vec_c()`, `vec_cbind()`, `vec_ptype()` and
+# `vec_cast()` all finish at `vec_restore()` and never reach
+# `dplyr_reconstruct()`, so one method there covers them the way one
+# `dplyr_reconstruct()` method covers the verbs (measured 2026-08-31, on a
+# tibble subclass carrying each method set in turn). `rbind()` and dplyr's
+# `rename()` reach neither generic and are routed explicitly below.
+
+# What `vec_restore()` is handed as `template` is not always the object the
+# operation started from. `vec_slice()` passes the original, so the rule can
+# compare the record column by column. Combining and column-binding pass a
+# PROTOTYPE instead -- zero rows, and for `vec_cbind()` zero columns -- and the
+# rule cannot compare a record against a template that holds none.
+#
+# The two cases are separated rather than run through one weakened check. Where
+# the template carries the record, the full rule decides, and a combination is
+# refused because six rows cannot match a three-row template. Where it does
+# not, all that survives is what the prototype's attributes say the source was,
+# which is the weakest place in the class.
+#' @importFrom vctrs vec_restore
+#' @export
+vec_restore.nested_results <- function(x, to, ...) {
+  if (has_results_columns(to)) {
+    return(reconstruct_results(x, to))
+  }
+  # The empty container `vec_cbind()` assembles into, on its way past
+  # `vec_cbind_frame_ptype()`. Nothing about a run can be checked here, because
+  # what carries the class through has no columns to check: `x[0]` drops every
+  # column and keeps the rows. The result assembled into it comes back through
+  # this same function with its columns, below, and is checked there.
+  #
+  # The container is not private. `vctrs::vec_cbind_frame_ptype(x)` is exported,
+  # and calling it directly hands back a columnless object wearing the class and
+  # the run's description, which `print()` reports as a run it does not hold
+  # before erroring on the missing columns (measured 2026-08-31). vctrs
+  # documents that generic as experimental and keyword-internal, which is the
+  # ground the RB04 review judged the exposure negligible on; no verb reaches
+  # it. Recorded in the milestone's review as R2.
+  if (length(x) == 0L && nrow(x) == 0L && length(to) == 0L) {
+    return(copy_results_attributes(as_results_tbl(x), to))
+  }
+  # The rows in hand must carry a whole record of their own, under the names the
+  # source kept it in, and must number what the source had. `vec_cbind()` cannot
+  # alter an existing column, only add, recycle and REPAIR NAMES, so what it can
+  # do wrong is exactly what these two catch: recycling a one-fold object up to
+  # three rows, and renaming a record column out from under the record.
+  attempted <- template_rows(to)
+  required <- template_record(to)
+  if (
+    !has_results_columns(x) ||
+      !is.numeric(attempted) ||
+      !is.character(required) ||
+      !all(required %in% names(x)) ||
+      !identical(nrow(x), as.integer(attempted))
+  ) {
+    return(bare_results(x))
+  }
+  stamp_results(as_results_tbl(x), to)
+}
+
+# The common type of a `nested_results` with a table carries BOTH sides'
+# columns. The union is what makes a combination with a table whose columns
+# differ answer at all: vctrs casts every input to the common type and then
+# assigns the columns positionally, so a common type omitting the other side's
+# columns leaves the cast returning fewer columns than the container has and
+# vctrs raising its own internal error (`dplyr::bind_rows(x,
+# tibble::tibble(other = 1))`, measured 2026-08-31).
+#
+# It wears the `nested_results` class only where the results object is the
+# FIRST argument. The class is what makes `vec_cbind()` reach `vec_restore()`
+# at all -- a bare prototype takes the class off before the rule is ever asked
+# -- so this is what decides whether a column add keeps the class, and
+# `dplyr::bind_cols()` keeps it on the first argument's type and no other
+# (measured 2026-08-31, both orders). A caller cannot see which door a verb
+# uses, so the doors answer alike; the cost is that these ten methods are not
+# mirror images of each other, which vctrs asks a `vec_ptype2()` lattice to be.
+# Nothing here reaches the asymmetry: `vec_rbind()` and `vec_c()` finalize a
+# `nested_results` to a bare tibble before any of them is dispatched on
+# (measured 2026-08-31), leaving `vec_cbind()`, which combines in argument
+# order. The class is kept or shed in one place, which is `vec_restore()`
+# above.
+#
+# That is the lattice vctrs uses inside an operation, not the answer a caller
+# gets. Exported `vctrs::vec_ptype()` and `vctrs::vec_ptype2()` on a
+# `nested_results` both hand back a bare tibble (measured 2026-08-31), because
+# vctrs finalizes what this returns before returning it. The apparent mismatch
+# is not a defect to fix here.
+results_ptype <- function(base, from) {
+  class(base) <- c("nested_results", class(base))
+  copy_results_attributes(base, from)
+}
+
+# What a type token carries. `stamp_results()` reads the counts off the rows,
+# which is right for an object a caller holds and wrong for a token: a
+# prototype has no rows of its own to describe. So the two counts do not travel
+# onto one at all -- nothing wearing the class is left claiming a run it does
+# not hold (IP4) -- and what `vec_restore()` checks a combination against
+# travels privately instead, describing the operation's SOURCE rather than the
+# token's own rows: how many rows that source had, and which of its columns the
+# record was in.
+copy_results_attributes <- function(out, from) {
+  for (nm in run_attributes()) {
+    attr(out, nm) <- attr(from, nm)
+  }
+  attr(out, template_rows_attribute()) <- template_rows(from)
+  attr(out, template_record_attribute()) <- template_record(from)
+  out
+}
+
+# The source's row count, from whichever carrier holds it: an object a caller
+# holds records it as `folds_attempted`, a prototype privately.
+template_rows <- function(x) {
+  n <- attr(x, "folds_attempted")
+  if (is.null(n)) {
+    return(attr(x, template_rows_attribute()))
+  }
+  n
+}
+
+# The names of the source's record columns, from whichever carrier holds them:
+# an object with columns says so in its own names, a prototype privately. A
+# prototype has none of the source's columns left to read -- `vec_cbind()`'s is
+# a frame with no columns at all -- so without this the assembled result could
+# be missing a record column and nothing downstream would know (`vec_cbind(x,
+# tibble::tibble(splits = 1:3))`, whose name repair renames `splits` away).
+template_record <- function(x) {
+  nms <- names(x)[record_columns(names(x))]
+  if (length(nms) == 0L) {
+    return(attr(x, template_record_attribute()))
+  }
+  nms
+}
+
+template_rows_attribute <- function() {
+  "nestedtune_template_rows"
+}
+
+template_record_attribute <- function() {
+  "nestedtune_template_record"
+}
+
+template_attributes <- function() {
+  c(template_rows_attribute(), template_record_attribute())
+}
+
+# `vec_cbind()` does not reach the prototype above on its own. It builds the
+# output's container by calling `x[0]` through `vec_cbind_frame_ptype()`, and a
+# zero-column subset of a `nested_results` is a bare tibble by the rule -- so
+# without a method here the class is gone before `vec_ptype2()` or
+# `vec_restore()` is ever asked, and the same column-add answers differently
+# through vctrs than through `dplyr::bind_cols()` (measured 2026-08-31).
+#
+# The generic is documented `[Experimental]` and vctrs says to expect changes,
+# so this is the one method in the file resting on an interface that may move
+# (D-033). It can move in two directions, and neither is silent for long. If
+# vctrs stops consulting the generic, `vec_cbind()` falls back to the default
+# and drops the class, which test-vctrs-compat.R's AC3 block says out loud. If vctrs stops exporting it, the `importFrom` below fails the package
+# at load, everywhere, immediately (RR04 recommendation 2).
+#' @importFrom vctrs vec_cbind_frame_ptype
+#' @export
+vec_cbind_frame_ptype.nested_results <- function(x, ...) {
+  results_ptype(bare_results(x)[0], x)
+}
+
+#' @importFrom vctrs vec_ptype2
+#' @export
+vec_ptype2.nested_results.nested_results <- function(x, y, ...) {
+  results_ptype(vctrs::tib_ptype2(bare_results(x), bare_results(y), ...), x)
+}
+
+#' @export
+vec_ptype2.nested_results.tbl_df <- function(x, y, ...) {
+  results_ptype(vctrs::tib_ptype2(bare_results(x), y, ...), x)
+}
+
+#' @export
+vec_ptype2.tbl_df.nested_results <- function(x, y, ...) {
+  vctrs::tib_ptype2(x, bare_results(y), ...)
+}
+
+#' @export
+vec_ptype2.nested_results.data.frame <- function(x, y, ...) {
+  results_ptype(vctrs::tib_ptype2(bare_results(x), y, ...), x)
+}
+
+#' @export
+vec_ptype2.data.frame.nested_results <- function(x, y, ...) {
+  vctrs::df_ptype2(x, bare_results(y), ...)
+}
+
+# Casting down is a question the class can answer: the record is dropped along
+# with the claim, and what is left is the data.
+#
+# Casting UP is not. A table carries no record of a run, and building a
+# `nested_results` out of one would be inventing the thing this class exists to
+# report honestly (IP4), so the refusal is vctrs' own incompatible-cast
+# condition rather than a lossy one -- nothing was lost, the conversion was
+# never available. rsample refuses the same way for the same reason.
+#
+# Every one of them casts the COLUMNS across as well. vctrs hands a cast the
+# type it wants back, and assigns what the cast returns into a container built
+# from that same type: a cast handing back the object it was given, over a type
+# holding a column the object does not, is a column short and vctrs raises its
+# own internal error rather than a message a caller can act on (measured
+# 2026-08-31 on `dplyr::bind_rows(x, tibble::tibble(other = 1))`, which returns
+# a plain table on a build with none of these methods registered).
+#' @importFrom vctrs vec_cast
+#' @export
+vec_cast.nested_results.nested_results <- function(x, to, ...) {
+  reconstruct_results(
+    vctrs::tib_cast(bare_results(x), bare_results(to), ...),
+    x
+  )
+}
+
+#' @export
+vec_cast.tbl_df.nested_results <- function(x, to, ...) {
+  vctrs::tib_cast(bare_results(x), to, ...)
+}
+
+#' @export
+vec_cast.data.frame.nested_results <- function(x, to, ...) {
+  vctrs::df_cast(as.data.frame(bare_results(x)), to, ...)
+}
+
+#' @export
+vec_cast.nested_results.tbl_df <- function(
+  x,
+  to,
+  ...,
+  x_arg = "",
+  to_arg = ""
+) {
+  stop_no_cast_to_results(x, to, x_arg, to_arg)
+}
+
+#' @export
+vec_cast.nested_results.data.frame <- function(
+  x,
+  to,
+  ...,
+  x_arg = "",
+  to_arg = ""
+) {
+  stop_no_cast_to_results(x, to, x_arg, to_arg)
+}
+
+stop_no_cast_to_results <- function(x, to, x_arg, to_arg) {
+  vctrs::stop_incompatible_cast(
+    x,
+    to,
+    x_arg = x_arg,
+    to_arg = to_arg,
+    details = paste(
+      "A `nested_results` records a run that happened;",
+      "a table carries no such record to build one from."
+    )
+  )
+}
+
+# `rbind()` consults neither dplyr nor vctrs -- it is base R's own dispatch, and
+# neither rsample nor tune registers a method for it, which is why `rbind(x, x)`
+# on either of their objects hands back six rows still reporting three (measured
+# 2026-08-31). This package cannot leave that standing: an object whose record
+# is untrue of its own rows is what IP4 forbids.
+#
+# The arguments go in stripped, so the `rbind()` inside is base R's data-frame
+# method rather than this one again, and the result is put through the same
+# rule against the first argument as the template.
+#' @export
+rbind.nested_results <- function(..., deparse.level = 1) {
+  args <- list(...)
+  parts <- lapply(args, function(a) {
+    if (is.data.frame(a)) bare_results(a) else a
+  })
+  out <- do.call(base::rbind, c(parts, list(deparse.level = deparse.level)))
+  if (!is.data.frame(out)) {
+    return(out)
+  }
+  reconstruct_results(out, args[[1L]])
+}
+
+# `dplyr::rename()` is `set_names()`, so it reaches the class through `names<-`
+# and no generic either package dispatches on. Renaming a column the record is
+# kept in leaves an object missing that column and still claiming the run, and
+# this is the only place that can be caught. rsample closes it with the same
+# method, written the same way.
+#' @export
+`names<-.nested_results` <- function(x, value) {
   out <- NextMethod()
   if (!is.data.frame(out)) {
     return(out)

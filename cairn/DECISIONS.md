@@ -959,6 +959,137 @@ Falsified by a caller needing a slot other than `event_level`, or by the inner
 tuning run being retained on `nested_results`, which would give `save_pred` and
 `extract` something to act on.
 
+### D-032 (2026-08-31): `vctrs` joins Imports, and the two doors that reach no generic — `rbind()` and `rename()` — get methods of their own — extends the dependency set D-031 last touched, and completes for vctrs the invariant D-031 fixed for dplyr
+
+**Context:** #32 asked for the invariants tune declares on its results objects
+through both of the interfaces a caller can reach them by. D-031 took the dplyr
+half and parked the vctrs half. Three things had to be settled before the rest
+could be written: how `vctrs` is depended on, which methods carry the rule, and
+what to do about the operations that consult neither dplyr nor vctrs and so
+reach no rule at all.
+
+**Decision:** `vctrs (>= 0.6.1)` joins Imports, the minimum `tune` states;
+`dplyr`, already an Import, requires a newer one, so no install changes.
+`vec_restore.nested_results()` carries the same rule
+`dplyr_reconstruct.nested_results()` carries, and the `vec_ptype2` and
+`vec_cast` pairs among `nested_results`, `tbl_df` and `data.frame` are
+registered to what each entry point was measured to reach.
+`rbind.nested_results()` and `names<-.nested_results()` are written as well:
+base `rbind()` and dplyr's `rename()` reach no generic either package
+dispatches on, so without them an operation that doubles the rows, or renames
+a column the record is kept in, returns an object still reporting the run it
+came from. Considered and rejected: `vctrs` in Suggests with the methods
+registered at load time (every test of these invariants would skip vacuously
+where it is absent, and `dplyr` requires `vctrs` anyway); leaving `rbind()` as
+rsample and tune both leave it, and saying so in the help page instead (an
+untrue record is not traded away by documenting it).
+
+**Consequences:** this package diverges from both upstream packages on three
+operations, deliberately. `rbind()` stops returning a results object where
+rsample's and tune's keep theirs; `vec_cbind()` keeps the class here, matching
+what `bind_cols()` does through the other door, where rsample drops it; and a
+plain table does not cast up to a `nested_results`, so combining one with a
+bare tibble refuses rather than quietly producing a table. The divergences are
+raised with the upstream maintainer on #32. `vctrs` in Imports means the
+package may use its functions internally without further argument. Falsified
+by a coherence requirement in vctrs that the registered pairs violate, or by a
+downstream package depending on any of the three upstream behaviors.
+
+### D-033 (2026-08-31): `vec_cbind()` keeping the class rests on vctrs' experimental `vec_cbind_frame_ptype()`, and stays there — annotates the `vec_cbind` divergence D-032 fixed, on RR04's review
+
+**Context:** D-032 fixed that a column added through vctrs keeps the class
+exactly as one added through `dplyr::bind_cols()` does, so the answer does not
+depend on which door the caller used. Implementation then found that
+`vec_cbind()` consults neither of the vctrs generics that decision assumed: it
+builds its output container through `vec_cbind_frame_ptype()`, which vctrs
+exports but documents as experimental and keyword-internal, saying to expect
+changes. Whether a user-facing invariant may rest there was escalated as RB04
+and reviewed in `cairn/reviews/archive/RR04-vctrs-cbind-hook.md`.
+
+**Decision:** the method stays registered. The review found no other mechanism
+— `vec_restore()` dispatches on the template, so with no frame-prototype
+method none of this package's code runs on the call at all — and found the
+generic load-bearing inside vctrs itself for its `sf` support, with an
+unchanged contract since 2020. The dependency's two failure directions are
+both acceptable: a generic that stops being consulted drops the class, which
+is the honest direction and the behavior rsample and tune already have, and a
+generic that stops being exported fails the package at load, which is loud.
+Removing the method instead was rejected on the review's ground that it buys
+with certainty the state keeping it merely risks. Two further recommendations
+are scheduled rather than taken here: a check leg against development vctrs,
+and asking upstream to stabilize the generic or to restore `vec_cbind()`'s
+output against its first input's type the way `dplyr::bind_cols()` already
+patches in; both live on a ROADMAP candidate row. Rejected outright: a
+load-time self-check probing whether the class still survives, which would
+warn users who cannot act on it.
+
+**Consequences:** one method in the package depends on an interface its own
+package marks unstable, and the test asserting the behavior is what names the
+day it moves. `dplyr::bind_cols()` is itself `vec_cbind()` followed by the
+same reconstruction this package registers, so the two doors were never as
+separate as the divergence from rsample suggested. Falsified by a vctrs
+release that changes the generic's contract rather than removing it — a
+silently different container shape is the one failure direction neither guard
+covers.
+
+### D-034 (2026-08-31): `tibble` joins Suggests, for the tests alone — extends the dependency set D-032 last touched
+
+**Context:** `R CMD check` warns that the test suite calls `tibble::tibble()`
+and `tibble::as_tibble()` while the package declares no dependency on tibble.
+The calls are in `tests/testthat/test-vctrs-compat.R` only; M37's acceptance
+criteria name them by hand, because the invariants under test are about what
+happens when a tibble meets a `nested_results`. No code under `R/` uses tibble
+— `new_tbl()` builds one by hand for exactly this reason.
+
+**Decision:** `tibble` goes into Suggests, not Imports. Suggests is where a
+package declares what its tests need, and this is a test dependency; keeping
+`R/` free of tibble keeps the choice `new_tbl()` made. Rewriting the tests to
+avoid tibble was rejected: it would mean amending three acceptance criteria to
+say something other than what the invariant is about.
+
+**Consequences:** nothing changes for anyone installing the package — tibble
+already arrives with dplyr and tune, both Imports — and a contributor running
+the tests needs it present, which `devtools` installs from Suggests. Falsified
+by a test needing tibble outside the compatibility file, which would be a
+signal that `R/` wants it too.
+
+### D-035 (2026-08-31): a column added through `vec_cbind()` keeps the class only where the results object is the first argument, and combining with a table whose columns differ produces a table rather than refusing — annotates the two divergences D-032 recorded, on the defect returns M37's review made
+
+**Context:** D-032 recorded three deliberate divergences from rsample and tune
+and named its own falsifier as a coherence requirement in vctrs that the
+registered pairs violate. The review of that work found one: the `vec_ptype2`
+and `vec_cast` methods answered with one side's type rather than the type
+holding both sides' columns, so combining a results object with a table whose
+columns differ raised vctrs' own internal error where the package without any
+of these methods returned a plain table. The same review found that a column
+add kept the class in either argument position through vctrs while
+`dplyr::bind_cols()` kept it only on the first argument's type.
+
+**Decision:** the common type of a results object and a table carries both
+sides' columns, and every cast reconciles its columns to the type it is asked
+for. The common type wears the results class only where the results object is
+the first argument, matching what `bind_cols()` already did, so the two doors
+answer alike in both positions. The prototype these methods travel on carries
+the source's record column names privately, and an assembled result missing
+any of them sheds the class — which is what `vec_cbind()`'s name repair can do
+to a record column, and the one thing that operation can do wrong that a row
+count does not catch. Considered and rejected: keeping the class on both sides
+and documenting the difference from `bind_cols()` (a caller cannot see which
+door a verb uses, which is the property the help page states).
+
+**Consequences:** two of the three divergences D-032 recorded read differently
+now. A column added through `vec_cbind()` keeps the class where the results
+object leads and not otherwise, so the divergence from rsample is narrower
+than D-032 states; and combining a results object with a bare tibble produces
+a plain table rather than refusing, which is what the acceptance criteria ask
+for and not what D-032's Consequences paragraph says. The ten `vec_ptype2` and
+`vec_cast` methods are no longer mirror images of each other, which vctrs asks
+a lattice to be; the measurements showing nothing in the package reaches that
+asymmetry are in `cairn/milestones/M37-vctrs-invariants.md`. Falsified by a
+vctrs version that combines three or more tables in an order-dependent way
+through this lattice, or by `dplyr::bind_cols()` changing which argument's
+type it builds on.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

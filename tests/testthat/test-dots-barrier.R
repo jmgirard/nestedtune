@@ -73,7 +73,30 @@ test_that("AC2: nested_resamples() refuses an argument it does not know", {
 # The domain is read from what the package actually registers, not from a list
 # kept here: a tenth method added next year is in the probe the day it is
 # registered, and the only way out is to name it as an exemption below.
-DOTS_EXEMPT_METHODS <- "[.nested_results"
+DOTS_EXEMPT_METHODS <- c(
+  "[.nested_results",
+  # The compatibility methods M37 registers. Their `...` is not this package's
+  # to fence: vctrs passes `x_arg`, `y_arg` and `call` through the `...` of a
+  # `vec_ptype2()` or `vec_cast()` method, base `rbind()`'s `...` IS the data
+  # being combined, and a fence in any of them would abort a call the generic
+  # made correctly. `names<-` is exempt for a different reason -- it is a
+  # replacement function with no `...` at all, and the probe below cannot call
+  # one without a `value` to assign.
+  "vec_restore.nested_results",
+  "vec_ptype2.nested_results.nested_results",
+  "vec_ptype2.nested_results.tbl_df",
+  "vec_ptype2.tbl_df.nested_results",
+  "vec_ptype2.nested_results.data.frame",
+  "vec_ptype2.data.frame.nested_results",
+  "vec_cast.nested_results.nested_results",
+  "vec_cast.tbl_df.nested_results",
+  "vec_cast.data.frame.nested_results",
+  "vec_cast.nested_results.tbl_df",
+  "vec_cast.nested_results.data.frame",
+  "vec_cbind_frame_ptype.nested_results",
+  "rbind.nested_results",
+  "names<-.nested_results"
+)
 
 # The registry the package's own NAMESPACE writes, read back from the loaded
 # namespace: one row per `S3method()` directive, generic and class.
