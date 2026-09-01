@@ -99,10 +99,9 @@ under D-030.
 - AC3 → T4, T6
 - AC4 → T5, T6
 - AC5 → T4, T7
-- AC6 → T8
+- AC6 → T8, T10
 - AC7 → T1, T8
 - AC8 → T9
-- AC6 → T10
 
 ## Tasks
 
