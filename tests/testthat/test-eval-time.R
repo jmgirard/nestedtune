@@ -220,3 +220,28 @@ test_that("AC1: an accepted `eval_time` reaches the outer loop untouched", {
     expect_identical(seen$value, list(value))
   }
 })
+
+test_that("AC1: an accepted `eval_time` reaches the final fit untouched", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d, v = 2)
+
+  seen <- new.env(parent = emptyenv())
+  local_mocked_bindings(
+    final_fit_worker = function(..., eval_time) {
+      seen$value <- list(eval_time)
+      rlang::abort("captured", class = "nestedtune_sentinel")
+    }
+  )
+
+  for (value in list(NULL, 0, c(0.5, 10), c(10, 0.5, 10))) {
+    seen$value <- NULL
+    expect_error(
+      nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
+      class = "nestedtune_sentinel"
+    )
+    expect_identical(seen$value, list(value))
+  }
+})

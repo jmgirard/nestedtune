@@ -227,6 +227,7 @@ nested_final_fit <- function(
     metrics,
     param_info = param_info,
     event_level = event_level,
+    eval_time = eval_time,
     call = rlang::current_env()
   )
 }
@@ -253,6 +254,7 @@ final_fit_worker <- function(
   metrics,
   param_info = NULL,
   event_level = "first",
+  eval_time = NULL,
   call = rlang::caller_env()
 ) {
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
@@ -269,6 +271,7 @@ final_fit_worker <- function(
     param_info = param_info,
     grid = grid,
     metrics = metrics,
+    eval_time = eval_time,
     control = tune::control_grid(
       allow_par = FALSE,
       event_level = event_level
@@ -277,6 +280,9 @@ final_fit_worker <- function(
   # Resolved from the tuned object rather than from `metrics`, so the same code
   # answers whether the caller supplied a metric set or let tune pick.
   metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
+  # Not passed on, for the reason `nested_fold_fit()` gives at the same call
+  # (D-038): left NULL, tune reads the evaluation times off `tuned` -- the ones
+  # this run was tuned at -- and selects at the first of them either way.
   selected <- tune::select_best(tuned, metric = metric_name)
   final_wf <- tune::finalize_workflow(object, selected)
 
