@@ -686,8 +686,10 @@ skip_if_no_censored <- function() {
 # stands for its name, since its contents are not what distinguishes one fixture
 # from another; and a cycle is cut the second time it is reached. Everything
 # else keeps its value and its attributes, which is what keeps the form
-# discriminating rather than merely stable. test-fixture-cache.R pins that: it
-# asserts every distinct fixture signature in this suite keys differently.
+# discriminating rather than merely stable. test-fixture-cache.R pins that: for
+# every formal argument the two orchestrators declare, read from `formals()` at
+# test time, it asserts that two requests differing only in that argument key
+# differently.
 canonical_form <- function(x, depth = 0L, seen = list()) {
   if (depth > 40L) {
     return("<depth>")
@@ -843,14 +845,45 @@ inside_spec_bindings <- function(args, env) {
 # Arguments are sorted by name so that writing them in a different order is not
 # a different fixture. Exposed on its own so test-fixture-cache.R can check what
 # it separates without building anything.
+#
+# A request is refused, not keyed, when any argument's canonical form reaches
+# `canonical_form()`'s depth cut: past the cut the form is truncated, so two
+# arguments differing only below it would share a key and one test would be
+# served the other's fixture. Every fixture family this suite builds sits well
+# inside the cut (workflows at most 28 levels against a cut of 40, measured
+# 2026-09-01 at M42's plan), so a hit means a new fixture shape, and the remedy
+# is raising the cut rather than hashing a truncated form.
 fixture_key <- function(fn, args, env = parent.frame()) {
   ordered <- if (is.null(names(args))) args else args[order(names(args))]
+  form <- canonical_form(ordered)
+  if (has_depth_marker(form)) {
+    deep <- names(ordered)[vapply(
+      seq_along(ordered),
+      function(i) has_depth_marker(canonical_form(ordered[i])),
+      logical(1)
+    )]
+    rlang::abort(
+      sprintf(
+        "fixture_key(): argument(s) %s nest past canonical_form()'s depth cut, so the request cannot be keyed without truncation.",
+        toString(sprintf("`%s`", deep))
+      ),
+      class = "fixture_key_depth"
+    )
+  }
   rlang::hash(list(
     canonical_form(fn),
-    canonical_form(ordered),
+    form,
     canonical_form(inside_spec_bindings(args, env)),
     canonical_form(fixture_rng_state())
   ))
+}
+
+# Whether a canonical form carries the `"<depth>"` marker anywhere in it.
+has_depth_marker <- function(form) {
+  if (is.list(form)) {
+    return(any(vapply(form, has_depth_marker, logical(1))))
+  }
+  identical(form, "<depth>")
 }
 
 memoised <- function(expr) {

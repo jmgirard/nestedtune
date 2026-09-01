@@ -102,7 +102,7 @@ Surface tier: internal — the deliverable is test tooling under
       name `eval_time`), and mutate `fixture_key()` to drop `eval_time` from
       `args` before hashing (expect the `eval_time` pair's expectation to
       fail). Both must be red for the reason claimed, not merely red.
-- [ ] T3: Add the depth guard to `fixture_key()`: scan the canonical form of
+- [x] T3: Add the depth guard to `fixture_key()`: scan the canonical form of
       the sorted arguments for the `"<depth>"` marker
       (`rapply(..., how = "unlist")` or a recursive walk) and
       `rlang::abort()` naming the argument that carried it. Unit test with an
@@ -123,6 +123,7 @@ Surface tier: internal — the deliverable is test tooling under
 - 2026-09-01: plan-time measurement — canonical-form depth of every fixture family's workflow, design and metric set: workflows 22-28, designs 10-12, metric sets 12, the orchestrators 8; no `"<depth>"` marker on any.
 - 2026-09-01: T1 — the hand-listed test replaced by the derived axis test (7 formals × 2 orchestrators, each pair keyed at seed 2); the `param_info` variant is built inline from `dials::num_comp()` since no `narrow_param_info()` helper exists. File header comment updated to match.
 - 2026-09-01: T2 — defect A (registry without `eval_time`) red: 2 failures, "nested_tune_grid() has formal(s) with no registered variant value: `eval_time`" and the same for `nested_final_fit()`. Defect B (`fixture_key()` drops `eval_time` before hashing) was GREEN on the first test shape: `fixture_key()` forces `args` lazily and `det_nested()` reseeds, so a request built inside the call keyed on RNG state, and two `det_workflow()` builds without a reseed carried different `step_pca()` ids — every pair separated on something other than the axis. Test amended to seed before each build and key pre-built requests; defect B then red on exactly the `eval_time` pair for both orchestrators (2 failures, 45 pass); clean run 47 pass.
+- 2026-09-01: T3 — `fixture_key()` scans the sorted arguments' canonical form for `"<depth>"` and aborts (class `fixture_key_depth`) naming the argument(s), located by re-forming each argument alone on the failure path only. Unit test: a 45-level list under `object` errors naming `object`; the 30-level control keys to a 32-hex hash. Guard disabled (`has_depth_marker()` forced FALSE): the error expectation alone red (1 failure, 48 pass). Full `devtools::test()`: no failures, no skips, 43 signatures / 43 builds / 170 requests, no depth error on any real request.
 
 ## Decisions
 

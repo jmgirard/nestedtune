@@ -320,6 +320,32 @@ test_that("the key separates every formal argument of both orchestrators", {
   }
 })
 
+test_that("a request nested past the depth cut is refused, naming the argument", {
+  # `canonical_form()` stops at 40 levels and writes "<depth>" in place of
+  # whatever lies below. A key built over that form would be blind to
+  # everything past the cut, so the request is refused instead. Past 40 levels
+  # of a bare list the only thing under test is the cut itself; no fixture in
+  # this suite comes within 12 levels of it.
+  nest <- function(n) {
+    x <- 1L
+    for (i in seq_len(n)) x <- list(x)
+    x
+  }
+
+  set.seed(3)
+  expect_error(
+    fixture_key(fake_fit, list(object = nest(45L), resamples = "shallow")),
+    "argument\\(s\\) `object` nest past",
+    class = "fixture_key_depth"
+  )
+
+  # The control: the same request with the deep argument inside the cut keys
+  # normally, and is a hash rather than anything else.
+  set.seed(3)
+  key <- fixture_key(fake_fit, list(object = nest(30L), resamples = "shallow"))
+  expect_match(key, "^[0-9a-f]{32}$")
+})
+
 test_that("the same signature keys the same way twice, so it is built once", {
   skip_if_no_engines()
 
