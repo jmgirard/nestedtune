@@ -191,3 +191,32 @@ test_that("AC1: the refusal fires before any fitting begins", {
     )
   }
 })
+
+test_that("AC1: an accepted `eval_time` reaches the outer loop untouched", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d, v = 2)
+
+  # What each entry point hands on, captured where the fitting would have
+  # begun. `expect_identical()` rather than a comparison of sorted unique
+  # values: nothing on this path is allowed to normalize the vector, since
+  # deciding what tune does with a repeat or an unsorted pair is tune's job.
+  seen <- new.env(parent = emptyenv())
+  local_mocked_bindings(
+    dispatch_folds = function(..., eval_time) {
+      seen$value <- list(eval_time)
+      rlang::abort("captured", class = "nestedtune_sentinel")
+    }
+  )
+
+  for (value in list(NULL, 0, c(0.5, 10), c(10, 0.5, 10))) {
+    seen$value <- NULL
+    expect_error(
+      nested_tune_grid(wf, folds, grid = det_grid(), eval_time = value),
+      class = "nestedtune_sentinel"
+    )
+    expect_identical(seen$value, list(value))
+  }
+})

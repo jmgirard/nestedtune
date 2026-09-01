@@ -351,7 +351,8 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
       grid,
       metrics,
       param_info,
-      event_level
+      event_level,
+      eval_time
     ) {
       seed <- payload$seeds[[1L]]
       file.create(file.path(
@@ -370,7 +371,8 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
         grid = grid,
         metrics = metrics,
         param_info = param_info,
-        event_level = event_level
+        event_level = event_level,
+        eval_time = eval_time
       )
     }
   )

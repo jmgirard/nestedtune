@@ -606,14 +606,14 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      439L,
+      441L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with param_info supplied"
     ),
     tb_row(
       "test-parallel-identity.R",
-      492L,
+      494L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with a two-class fixture at event_level second"
@@ -667,7 +667,7 @@ time_budget_ledger <- function() {
     # --- test-parallel-interrupt.R ------------------------------------------
     tb_row(
       "test-parallel-interrupt.R",
-      50L,
+      51L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "an interrupted run leaves no fold executing"
@@ -682,7 +682,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-interrupt.R",
-      129L,
+      131L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a completed run is not disturbed by the unconditional cancel"

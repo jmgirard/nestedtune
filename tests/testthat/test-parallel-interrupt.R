@@ -23,7 +23,8 @@ completed_fold_task <- function(
   grid,
   metrics,
   param_info,
-  event_level
+  event_level,
+  eval_time
 ) {
   list(
     completed = TRUE,
@@ -60,7 +61,8 @@ test_that("an interrupted run leaves no fold executing", {
       grid,
       metrics,
       param_info,
-      event_level
+      event_level,
+      eval_time
     ) {
       file.create(payload$marker)
       Sys.sleep(60)

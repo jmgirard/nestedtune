@@ -435,6 +435,7 @@ nested_tune_grid <- function(
     metrics = metrics,
     param_info = param_info,
     event_level = event_level,
+    eval_time = eval_time,
     call = rlang::current_env()
   )
 
@@ -458,7 +459,8 @@ nested_fold_fit <- function(
   grid,
   metrics,
   param_info = NULL,
-  event_level = "first"
+  event_level = "first",
+  eval_time = NULL
 ) {
   set_fold_seed(seeds[[1L]])
 
@@ -474,6 +476,7 @@ nested_fold_fit <- function(
         param_info = param_info,
         grid = grid,
         metrics = metrics,
+        eval_time = eval_time,
         control = tune::control_grid(
           allow_par = FALSE,
           event_level = event_level
@@ -482,6 +485,13 @@ nested_fold_fit <- function(
       # Resolved from the tuned object rather than from `metrics`, so the same
       # code answers whether the caller supplied a metric set or let tune pick.
       metric_name <- tune::.get_tune_metric_names(tuned)[[1L]]
+      # `eval_time` is deliberately not passed on (D-038). Left NULL,
+      # `tune:::choose_eval_time()` reads the evaluation times off `tuned` --
+      # which are the ones this run was tuned at, because the argument reached
+      # `tune_grid()` above -- and `tune:::first_eval_time()` takes element one
+      # of them, the same element passing the argument would name. Selection is
+      # therefore identical either way, and passing it would repeat tune's
+      # "First evaluation time" message once per fold.
       tune::select_best(tuned, metric = metric_name)
     },
     error = function(cnd) cnd
@@ -510,6 +520,7 @@ nested_fold_fit <- function(
         final_wf,
         split = split,
         metrics = metrics,
+        eval_time = eval_time,
         control = tune::control_last_fit(
           event_level = event_level,
           allow_par = FALSE
