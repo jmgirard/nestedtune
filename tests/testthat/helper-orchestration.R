@@ -686,10 +686,13 @@ skip_if_no_censored <- function() {
 # stands for its name, since its contents are not what distinguishes one fixture
 # from another; and a cycle is cut the second time it is reached. Everything
 # else keeps its value and its attributes, which is what keeps the form
-# discriminating rather than merely stable. test-fixture-cache.R pins that: for
-# every formal argument the two orchestrators declare, read from `formals()` at
-# test time, it asserts that two requests differing only in that argument key
-# differently.
+# discriminating rather than merely stable. test-fixture-cache.R pins the
+# per-argument half of that: for every formal argument the two orchestrators
+# declare, read from `formals()` at test time, it asserts that two requests
+# differing only in that argument key differently. The attribute and
+# environment clauses above are not what that test exercises -- its variants
+# differ from the base request in class or top-level value -- so a change to
+# either clause leaves it green (measured 2026-09-01 at M42).
 canonical_form <- function(x, depth = 0L, seen = list()) {
   if (depth > 40L) {
     return("<depth>")

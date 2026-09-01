@@ -230,9 +230,6 @@ test_that("a different seed rebuilds rather than serving the first result", {
 })
 
 test_that("the key separates every formal argument of both orchestrators", {
-  skip_if_no_engines(stochastic = TRUE)
-  skip_if_not_installed("dials")
-
   d <- make_reg_data()
 
   # A base request naming every formal at its default, so that a variant can
@@ -310,6 +307,17 @@ test_that("the key separates every formal argument of both orchestrators", {
         toString(sprintf("`%s`", stale))
       )
     )
+  }
+
+  # The enumeration checks above build nothing, so they run on every machine;
+  # only the keying below needs the engines the fixtures fit and `dials` for
+  # the `param_info` variant.
+  skip_if_no_engines(stochastic = TRUE)
+  skip_if_not_installed("dials")
+
+  for (fn_name in names(orchestrators)) {
+    f <- orchestrators[[fn_name]]
+    axes <- setdiff(names(formals(f)), "...")
 
     for (axis in intersect(axes, names(signature_variants))) {
       # Both requests are built before either is keyed, each from the same
@@ -390,7 +398,7 @@ test_that("a request nested past the depth cut is refused, naming the argument",
   )
 
   # The cut itself: the first refused depth is 40, the last keyed 39, and two
-  # requests inside the cut differing only below the 38th level key apart.
+  # requests inside the cut that first differ at the 39th level key apart.
   expect_error(keyed(nest(40L)), class = "fixture_key_depth")
   expect_match(keyed(nest(39L)), "^[0-9a-f]{32}$")
   expect_false(identical(keyed(nest(39L)), keyed(nest(38L))))
