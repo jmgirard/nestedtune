@@ -60,43 +60,140 @@
 print.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
+  s <- new_summary_nested_results(x)
+  print_design(s)
+  print_failures(s)
+  print_selection(s)
+  print_candidate_sets(s$grids)
+  print_estimate(s)
+  print_procedure_note()
+  invisible(x)
+}
+
+#' Summarize a nested cross-validation result
+#'
+#' @description
+#' Answers what the run means: how much of the requested outer design ran,
+#' which outer folds failed and at which stage, what each fold's inner tuning
+#' selected, and the estimate across the folds that completed.
+#'
+#' The selection lines are the part nothing else in the ecosystem shows. When
+#' outer folds choose different parameters, the tuning procedure is unstable on
+#' this data — averaging the metrics hides that, so the summary marks it.
+#'
+#' Summarizing a run that only partly completed warns, and still returns the
+#' summary: the folds that ran are described, and the warning says the design
+#' asked for more. Summarizing a run where nothing completed does neither one
+#' nor the other — it reports a failed run, which is what there is to report.
+#'
+#' @param object A `nested_results` object from [nested_tune_grid()].
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored.
+#'
+#' @return An object of class `summary.nested_results`: a list holding the
+#'   outer design's requested and completed fold counts, the failed folds with
+#'   the stage each failed at, the parameter values the completed folds
+#'   selected, and the metric estimates averaged across them. Printing it is
+#'   what most callers want; the components are there for a caller that needs a
+#'   number rather than a line of text.
+#'
+#' @seealso [nested_tune_grid()], [collect_metrics()]
+#' @export
+summary.nested_results <- function(object, ...) {
+  rlang::check_dots_empty()
+  # The partial-run warning belongs to being asked what the run MEANS, which is
+  # this method and collect_metrics(). It never travelled with print(), which
+  # only describes the object in hand.
+  warn_partial_summary(object)
+  new_summary_nested_results(object)
+}
+
+#' @rdname summary.nested_results
+#' @param x A `summary.nested_results` object from [summary.nested_results()].
+#' @return `print()` returns `x`, invisibly.
+#' @export
+print.summary.nested_results <- function(x, ...) {
+  rlang::check_dots_empty()
+  cli::cli_h1("Nested cross-validation results")
   print_design(x)
   print_failures(x)
   print_selection(x)
   print_estimate(x)
+  print_procedure_note()
+  invisible(x)
+}
 
-  # IP3, and the reason this method exists at all: the number above is a
-  # property of the procedure, and the sentence saying so travels with it
-  # rather than living in documentation the reader has to go and find.
+# Everything the two print methods report, computed once from the columns.
+#
+# Derived at summary time rather than read off the counts stamped at
+# construction: the stamped counts describe the run the rows came from, and a
+# subset's rows are their own run (IP4). Nothing here raises and nothing here
+# warns -- warning is summary()'s job, and it does it before calling this.
+new_summary_nested_results <- function(x) {
+  completed <- which(x$.completed)
+  failed <- which(!x$.completed)
+  ids <- fold_ids(x)
+  selected <- x$.selected[completed]
+
+  structure(
+    list(
+      outer_label = attr(x, "outer_label"),
+      requested = nrow(x),
+      completed = length(completed),
+      failures = list(
+        id = ids[failed],
+        stage = vapply(x$.notes[failed], fold_failure_stage, character(1))
+      ),
+      selection = summary_selection(selected),
+      grids = x$.grid[completed],
+      estimate = if (length(completed) > 0L) {
+        summarize_folds(per_fold_metrics(x))
+      }
+    ),
+    class = "summary.nested_results"
+  )
+}
+
+# One entry per parameter any completed fold chose a value for, each holding
+# one string per completed fold in fold order. Empty when nothing completed and
+# when the workflow had nothing to tune -- two cases the printing tells apart.
+summary_selection <- function(selected) {
+  params <- selection_params(selected)
+  out <- lapply(params, function(p) selection_values(selected, p))
+  names(out) <- params
+  out
+}
+
+# IP3, and the reason these methods exist at all: the number above is a
+# property of the procedure, and the sentence saying so travels with it rather
+# than living in documentation the reader has to go and find.
+print_procedure_note <- function() {
   cli::cli_text("")
   cli::cli_bullets(c(
     i = "A nested estimate describes the tune-and-fit procedure, not a model \\
          you can deploy. Build that with {.fn nested_final_fit}, and report \\
          this estimate as what its procedure achieves."
   ))
-  invisible(x)
-}
-
-print_design <- function(x) {
-  label <- attr(x, "outer_label")
-  if (!is.null(label)) {
-    cli::cli_text("Outer resamples: {label}")
-  }
-  requested <- nrow(x)
-  completed <- sum(x$.completed)
-  cli::cli_text("Outer folds: {requested} requested, {completed} completed")
   invisible(NULL)
 }
 
-print_failures <- function(x) {
-  failed <- which(!x$.completed)
-  if (length(failed) == 0L) {
+print_design <- function(s) {
+  if (!is.null(s$outer_label)) {
+    cli::cli_text("Outer resamples: {s$outer_label}")
+  }
+  cli::cli_text(
+    "Outer folds: {s$requested} requested, {s$completed} completed"
+  )
+  invisible(NULL)
+}
+
+print_failures <- function(s) {
+  if (length(s$failures$id) == 0L) {
     return(invisible(NULL))
   }
-  ids <- fold_ids(x)
-  for (i in failed) {
-    id <- ids[[i]]
-    stage <- fold_failure_stage(x$.notes[[i]])
+  for (i in seq_along(s$failures$id)) {
+    id <- s$failures$id[[i]]
+    stage <- s$failures$stage[[i]]
     cli::cli_bullets(c(x = "{id} failed during {stage}."))
   }
   cli::cli_bullets(c(i = "See {.code x$.notes} for what went wrong."))
@@ -113,29 +210,20 @@ fold_failure_stage <- function(notes) {
   notes$location[[1L]]
 }
 
-print_selection <- function(x) {
+print_selection <- function(s) {
   cli::cli_h2("Selected parameters")
 
-  completed <- which(x$.completed)
-  if (length(completed) == 0L) {
+  if (s$completed == 0L) {
     cli::cli_bullets(c(i = "No outer fold completed, so nothing was selected."))
     return(invisible(NULL))
   }
-
-  selected <- x$.selected[completed]
-  params <- selection_params(selected)
-  if (length(params) == 0L) {
+  if (length(s$selection) == 0L) {
     cli::cli_bullets(c(i = "No tuned parameters."))
     return(invisible(NULL))
   }
-  for (param in params) {
-    print_one_parameter(
-      param,
-      selection_values(selected, param),
-      length(completed)
-    )
+  for (param in names(s$selection)) {
+    print_one_parameter(param, s$selection[[param]], s$completed)
   }
-  print_candidate_sets(x$.grid[completed])
   invisible(NULL)
 }
 
@@ -313,9 +401,9 @@ print_one_parameter <- function(param, values, n) {
   invisible(NULL)
 }
 
-print_estimate <- function(x) {
-  requested <- nrow(x)
-  completed <- sum(x$.completed)
+print_estimate <- function(s) {
+  requested <- s$requested
+  completed <- s$completed
 
   if (completed == 0L) {
     cli::cli_h2("Estimate")
@@ -326,7 +414,7 @@ print_estimate <- function(x) {
   # The fold count sits in the heading rather than beside each number, so a
   # partial run cannot be read as a whole one however far down the reader gets.
   cli::cli_h2("Estimate ({completed} of {requested} outer fold{?s})")
-  summarized <- summarize_folds(per_fold_metrics(x))
+  summarized <- s$estimate
   for (i in seq_len(nrow(summarized))) {
     metric <- summarized$.metric[[i]]
     estimator <- summarized$.estimator[[i]]

@@ -94,7 +94,7 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 
 ## Tasks
 
-- [ ] T1. `summary.nested_results()` returning a classed object, and
+- [x] T1. `summary.nested_results()` returning a classed object, and
       `print.summary.nested_results()` rendering it: move `print_design()`,
       `print_failures()`, `print_selection()`, `print_estimate()` and the IP3
       sentence (`R/nested-results-print.R:71-76`) behind them, and route
@@ -124,6 +124,8 @@ siblings. A tabular selection-frequency API → issue #36's candidate row, which
 - 2026-08-31: implementation gate chose the shared `fold_ids()` as the fallback site over a print-path-only repair; recorded in Decisions with its out-of-scope consequence.
 - 2026-08-31: minor amendment, task order — T3 runs first (independent of the split and leaves the suite green), then T1, then T2 and T4 in one commit because T2's rewrite invalidates the print blocks T4 re-points and the verify slot must be clean at each check-off, then T5. No task's content changed.
 - 2026-08-31: T3 done. `fold_ids()` (`R/nested-results.R`) falls back to `paste("row", seq_len(nrow(x)))` when the recorded `id_columns` is empty or names any column the object no longer carries; measured before the fix, the three forms gave `character(0)`, `NULL` and the truncated `"Repeat1, "`. Four new assertions plus a passing control in `tests/testthat/test-id-columns.R`, red before and green after. Suite: 2334 pass, 0 fail, 0 warn, 0 skip.
+- 2026-08-31: implementation gate chose a returned bundle of computed pieces over a thin wrapper recomputing at print time; recorded in Decisions, and it binds M40's mirror.
+- 2026-08-31: T1 done. `summary.nested_results()` and `print.summary.nested_results()` added in `R/nested-results-print.R`; the four section builders now read from the bundle `new_summary_nested_results()` computes, and `warn_partial_summary()` routes to `summary()` without `check_any_completed()`. `print.nested_results()` renders through the same bundle and its output is unchanged at this task — the existing snapshot passing un-rerecorded is the control. Six new blocks in `tests/testthat/test-nested-results-print.R`. Suite: 2366 pass, 0 fail, 0 warn, 0 skip.
 - 2026-08-31: plan chose fixing M38 review O8 here over leaving it to the `check_nested()` row, because this milestone relocates `print_failures()` and the M33 lesson is that a move invalidates every `file:line` citation the repo's records hold; falsified by the fix proving to need `check_nested()`'s entry-gate refusal to be coherent.
 
 ## Decisions
@@ -143,5 +145,22 @@ list — stop raising or emitting a truncated label on such an object as a side
 effect, earlier than the `check_nested()` candidate row planned. No work is
 done at those sites and none of them is tested here; the candidate row keeps
 the entry-gate refusal it owns.
+
+### The shape `summary()` returns
+
+`summary.nested_results()` returns a list of class `summary.nested_results`
+holding the pieces its printing renders — `requested`, `completed`,
+`failures` (id and stage per failed fold), `selection` (one character vector
+per tuned parameter, one entry per completed fold), `grids` and `estimate` —
+computed once by `new_summary_nested_results()`. Chosen at the implementation
+gate over a thin wrapper around the results object that recomputes at print
+time: a caller reaching for a number gets one without re-deriving it, and the
+selection-frequency candidate row has something to build on. M40 mirrors this
+shape for `nested_final_fit`.
+
+Correcting the entry above, which named a function this package does not have:
+the plot-side caller of `fold_ids()` is `selection_frame()`
+(`R/nested-results-plot.R`) and the fold-level factor beside it, not
+`plot_selection_frequency()`. Nothing else in that entry changes.
 
 ## Review

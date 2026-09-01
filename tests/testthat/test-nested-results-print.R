@@ -492,3 +492,125 @@ test_that("printed output holds its shape", {
   expect_snapshot(print(nothing))
   expect_snapshot(print(differing))
 })
+
+# The split (M39): print() describes the object, summary() says what it means.
+#
+# The blocks above pin what printing owes. These pin what summary() owes, and
+# the one thing the split must not do -- lose a section on the way across.
+
+test_that("summary() returns a classed object carrying the run's numbers", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+  s <- summary(res)
+
+  expect_s3_class(s, "summary.nested_results")
+  expect_identical(s$requested, 3L)
+  expect_identical(s$completed, 3L)
+  expect_identical(s$failures$id, character(0))
+  expect_named(s$selection, "num_comp")
+  expect_length(s$selection$num_comp, 3L)
+  expect_identical(s$estimate, summarize_folds(collect_metrics(res, summarize = FALSE)))
+})
+
+test_that("printing the summary carries every section print() used to emit", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+  txt <- print_text(suppressWarnings(summary(res)))
+
+  # The design block, the failure block, the selection block, the estimate
+  # block, and the sentence that says what the estimate is a property of.
+  expect_match(txt, "3-fold cross-validation")
+  expect_match(txt, "3 requested, 2 completed")
+  expect_match(txt, "failed during outer fit")
+  expect_match(txt, "See .*\\$\\.notes")
+  expect_match(txt, "Selected parameters")
+  expect_match(txt, "num_comp")
+  expect_match(txt, "2 of 3 outer folds")
+  expect_match(txt, "rmse")
+  expect_match(txt, "describes the tune-and-fit procedure")
+})
+
+test_that("summary() warns on a partial run and still returns its object", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+
+  expect_warning(s <- summary(res), class = "nestedtune_partial_summary")
+  expect_s3_class(s, "summary.nested_results")
+  expect_identical(s$completed, 2L)
+})
+
+test_that("summary() of a run where every fold failed reports it rather than aborting", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_every_fold(det_nested(d)),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+
+  # collect_metrics() aborts here; summary() is a description of a failed run,
+  # which is exactly what there is to describe.
+  expect_error(collect_metrics(res), class = "rlang_error")
+  expect_warning(s <- summary(res), class = "nestedtune_partial_summary")
+  expect_identical(s$completed, 0L)
+  expect_null(s$estimate)
+
+  txt <- print_text(s)
+  expect_match(txt, "0 completed")
+  expect_match(txt, "nothing was selected")
+  expect_match(txt, "no estimate")
+})
+
+test_that("summary() of a run where every fold completed signals nothing", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+
+  expect_no_warning(s <- summary(res))
+  expect_no_condition(print_text(s))
+})
+
+test_that("summary() and its print method reject arguments they do not take", {
+  skip_if_no_engines()
+  res <- repeated_results()
+
+  expect_error(summary(res, foo = 1), class = "rlib_error_dots_nonempty")
+  expect_error(
+    print(summary(res), foo = 1),
+    class = "rlib_error_dots_nonempty"
+  )
+})
