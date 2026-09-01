@@ -1,6 +1,6 @@
 # M41: `eval_time` reaches the metrics that need it
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -145,6 +145,7 @@ under D-030.
 - 2026-09-01: T7 — BC8 in `test-parallel-identity.R`: the censored fixture at the late evaluation time, serial against a two-daemon pool, asserting the recorded `.eval_time` on every fold before the whole-object identity so a run that had lost the argument on both sides could not pass. Its `start_daemons()` bound declared in `helper-time-budget.R`. Discrimination checked by replacing the lean wrapper's forwarded `eval_time` with `NULL`, which reddens two of BC8's assertions and nothing else in that file.
 - 2026-09-01: T8 — `@param eval_time` on both pages saying what this package refuses ahead of tune and what it passes on untouched; the "Differences from calling tune directly" section names it beside `event_level` and states why `select_best()` is not given it; both by-hand reproduction recipes in the roxygen now carry the argument, which they had silently stopped describing once it was threaded. NEWS entry written. AC6 asserted against the generated `.Rd` files rather than the roxygen, since a `@param` on the wrong `@rdname` would reach only one page.
 - 2026-09-01: AC7 evidence — `devtools::check()` clean, 0 errors / 0 warnings / 0 notes, tests `[76s/119s]`. A second run under `_R_CHECK_DEPENDS_ONLY_=true` is also 0/0/0 with FAIL 0, SKIP 85, PASS 2229; the six `test-eval-time.R` blocks that need the new dependencies skip with "{censored} is not installed" and BC8 skips with mirai, so nothing fails where the Suggests are absent.
+- 2026-09-01: all eight tasks done, `devtools::test()` clean (FAIL 0, WARN 0, SKIP 0, PASS 2645) and `devtools::check()` clean; status to review.
 - 2026-09-01: a second criteria-audit pass over the revised wording (full mode, fresh reader) returned four defects, all fixed: AC3's planted-defect clause was unsatisfiable — verified against `tune:::choose_eval_time()` and `tune:::first_eval_time()`, which take element 1 whether the argument is passed or falls back to the run's own times, so forwarding to `select_best()` discriminates nothing and is now recorded as Out; AC1's probes were all length ≤ 1, admitting an implementation that validates only `eval_time[1]`, and gained `c(1, NA_real_)`; AC1's "before any fold is dispatched" had no referent on the final-fit path, which dispatches no folds, and now names `final_fit_worker()`; AC2's second oracle was satisfied by computing and discarding the value, and now has to agree to tolerance. AC4-AC7 were clean on all five questions.
 
 ## Decisions
