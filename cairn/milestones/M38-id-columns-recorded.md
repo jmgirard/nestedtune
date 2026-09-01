@@ -1,11 +1,11 @@
 # M38: A results object's own fold-label columns, recorded rather than guessed
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** —
+- **Branch/PR:** `m038-id-columns-recorded`
 
 ## Goal
 
@@ -91,7 +91,7 @@ their own candidate row stay there.
 
 ## Tasks
 
-- [ ] T1. Regression tests for AC2(a), AC2(b), AC2(c) and AC3, red on the
+- [x] T1. Regression tests for AC2(a), AC2(b), AC2(c) and AC3, red on the
       current tree, each recording in a comment the output measured
       2026-08-31 (`tests/testthat/test-dplyr-compat.R`, beside the M36 cases
       at `:101`, `:223` and `:428`).
@@ -127,6 +127,8 @@ their own candidate row stay there.
 - 2026-08-31: created by /milestone-plan.
 - 2026-08-31: criteria audit ran in **full** mode (user-facing tier), fresh-context [O] reader, eleven findings. Fixed here: AC2's mandated test comment and AC1's "asserted on two designs" bound instruments, not the deliverable; AC2(a) was unsatisfiable, since `collect_metrics(summarize = FALSE)` returns one row per fold *and* metric and the fixture uses two, so `$id` is six values; AC4 cited the `@return` as enumerating five doors where it says four; AC5's removal clause named two files but the M36 sentence is only in `NEWS.md`; AC1 mapped only to an implementation task; AC4's matrix varied door and name but not form, omitting the repeated-design and list-column axes the M36 defects arrived on; AC4's `rbind` cell could not discriminate; AC4's "at every door" and its five spellings were bounded by recall, now by `NAMESPACE` and by a stated list; AC1's "every site reads that record" was a source-structure property over an unenumerated domain. Sent to the gate: whether every column the constructor copies is a fold-label column.
 - 2026-08-31: plan gate chose recording the constructor's own column set over deriving the label set from a narrower rule, because any narrowing rule is a name pattern again and three M36 review rounds each bought only the next name; falsified by a design whose non-`splits`/`inner_resamples` columns are not all fold labels, which `check_nested()` currently admits (sent to a candidate row).
+- 2026-08-31: implement gate — the sweep's `id2` × `rep_res` cell was dropped (a repeated design carries `id2` itself, so writing it there replaces a recorded column rather than adding a caller's), and the two-label-column fixture is built through the constructor from a real repeated design rather than by restamping a fitted three-fold run.
+- 2026-08-31: T1 — four regression tests added to `test-dplyr-compat.R`, all red on the branch point; `repeated_results()` added to `helper-orchestration.R`. Measured on the default branch: AC2(a) gave `c("Fold1, x", "Fold2, x", "Fold3, x")`, AC2(b) a `tbl_df`, AC2(c) an abort `unimplemented type 'list' in 'listgreater'`, AC3 an abort `unimplemented type 'list' in 'orderVector1'`.
 - 2026-08-31: plan gate chose one attribute travelling in `run_attributes()` over a second private carrier beside `nestedtune_template_record`, because the record describes the call rather than the rows and the three copy sites already carry `run_attributes()` whole; falsified by a path that must preserve the record onto a prototype without the run's description.
 
 ## Decisions

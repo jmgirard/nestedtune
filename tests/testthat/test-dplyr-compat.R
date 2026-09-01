@@ -477,3 +477,84 @@ test_that("a column the caller added is not pasted into the fold labels", {
   expect_s3_class(out, "nested_results")
   expect_identical(collect_metrics(out, summarize = FALSE)$id, labels)
 })
+
+# The four forms that survived M36, all of them the same fault: the design's own
+# label columns were found by matching `^id[0-9]*$` against whatever names the
+# object happened to carry, so a caller's column landed in the set whenever its
+# name fell inside the pattern -- and a design column the caller replaced fell
+# out of it. Since M38 the constructor records the names it took off the rset
+# and every reader asks that record, so no name decides anything.
+
+# `id2` is what rsample calls the second label column of a REPEATED design, so
+# on a plain three-fold run it is a name a caller may use and the pattern caught
+# it anyway. Measured on the default branch 2026-08-31:
+# `unique(collect_metrics(dplyr::mutate(res, id2 = "x"), summarize = FALSE)$id)`
+# was `c("Fold1, x", "Fold2, x", "Fold3, x")`.
+test_that("a column named `id2` on a plain design is not pasted into the fold labels", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  # The passing control: the same call on the object with nothing added.
+  expect_identical(
+    unique(collect_metrics(res, summarize = FALSE)$id),
+    c("Fold1", "Fold2", "Fold3")
+  )
+
+  out <- dplyr::mutate(res, id2 = "x")
+  expect_identical(
+    unique(collect_metrics(out, summarize = FALSE)$id),
+    c("Fold1", "Fold2", "Fold3")
+  )
+})
+
+# "Columns may be added" implies the caller may take one away again, and the
+# answer cannot depend on the spelling. Measured on the default branch
+# 2026-08-31: `dplyr::select(dplyr::mutate(res, id2 = 1), -id2)` was a `tbl_df`
+# where the same round trip on `extra` was a `nested_results`.
+test_that("a column named `id2` on a plain design can be removed again", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  # The passing control: the same round trip under a name no pattern matched.
+  expect_kept(dplyr::select(dplyr::mutate(res, extra = 1), -extra), res)
+
+  out <- dplyr::select(dplyr::mutate(res, id2 = 1), -id2)
+  expect_kept(out, res)
+  expect_false("id2" %in% names(out))
+})
+
+# A caller's list column becomes an ordering key only where the rule mistakes it
+# for one of the design's own. It takes a repeated design to reach: `id` ties
+# across a repeat, so the second key is actually compared. Measured on the
+# default branch 2026-08-31:
+# `dplyr::mutate(rep_res, id0 = as.list(seq_len(nrow(rep_res))))` aborted with
+# `unimplemented type 'list' in 'listgreater'`, raised from inside the rule.
+test_that("a list column named `id0` survives a verb on a repeated design", {
+  skip_if_no_engines()
+  rep_res <- repeated_results()
+
+  # The passing control: the same list column under a name no pattern matched.
+  expect_kept(
+    dplyr::mutate(rep_res, extra = as.list(seq_len(nrow(rep_res)))),
+    rep_res
+  )
+
+  out <- dplyr::mutate(rep_res, id0 = as.list(seq_len(nrow(rep_res))))
+  expect_kept(out, rep_res)
+  expect_true("id0" %in% names(out))
+})
+
+# The other direction: a label column the design DID name, replaced by something
+# `order()` cannot take. The record no longer matches, so the honest answer is a
+# bare tibble -- and the rule has to reach that answer rather than die on the
+# way to it. Measured on the default branch 2026-08-31:
+# `dplyr::mutate(res, id = list(c(1, 2), 3, 4))` aborted with
+# `unimplemented type 'list' in 'orderVector1'`, naming no function the caller
+# had heard of.
+test_that("replacing a fold-label column with an unorderable value returns a bare tibble", {
+  skip_if_no_engines()
+  res <- compat_results()
+
+  expect_no_condition(out <- dplyr::mutate(res, id = list(c(1, 2), 3, 4)))
+  expect_bare(out)
+})

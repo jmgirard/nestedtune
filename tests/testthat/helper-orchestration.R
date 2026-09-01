@@ -379,6 +379,43 @@ as_fold_subset <- function(x, i) {
   out
 }
 
+# A results object from a design that labels its folds with TWO columns.
+#
+# rsample gives a repeated v-fold design `id` and `id2`, and the second column
+# is what makes the ordering key in `can_reconstruct_results()` get compared at
+# all -- `id` ties across a repeat. test-dplyr-compat.R used to reach the shape
+# by overwriting a fitted three-fold run's label columns, which cannot carry
+# what the constructor recorded about the design; this builds the real design
+# and puts it through the constructor, so the record is the code's and not the
+# fixture's (M38).
+#
+# Nothing here fits a model. Every test that asks for this shape asks about the
+# label columns and never about what a fold scored, so the per-fold records are
+# stand-ins -- which is also why this needs no cache entry.
+repeated_results <- function(v = 3, repeats = 2, seed = 11) {
+  set.seed(seed)
+  design <- nested_resamples(
+    make_reg_data(),
+    outside = rsample::vfold_cv(v = v, repeats = repeats),
+    inside = rsample::vfold_cv(v = v)
+  )
+  n <- nrow(design)
+  folds <- lapply(seq_len(n), function(i) {
+    list(
+      completed = TRUE,
+      metrics = data.frame(
+        .metric = c("rmse", "rsq"),
+        .estimator = "standard",
+        .estimate = c(1, 0.5)
+      ),
+      selected = data.frame(num_comp = 1L),
+      grid = det_grid(),
+      notes = NULL
+    )
+  })
+  new_nested_results(design, folds, seq_len(2L * n), det_grid(), reg_metrics())
+}
+
 # The two-class fixture (M35).
 #
 # `event_level` names a factor level, so nothing in the regression fixtures
