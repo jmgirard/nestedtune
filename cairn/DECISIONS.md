@@ -1032,6 +1032,27 @@ release that changes the generic's contract rather than removing it — a
 silently different container shape is the one failure direction neither guard
 covers.
 
+### D-034 (2026-08-31): `tibble` joins Suggests, for the tests alone — extends the dependency set D-032 last touched
+
+**Context:** `R CMD check` warns that the test suite calls `tibble::tibble()`
+and `tibble::as_tibble()` while the package declares no dependency on tibble.
+The calls are in `tests/testthat/test-vctrs-compat.R` only; M37's acceptance
+criteria name them by hand, because the invariants under test are about what
+happens when a tibble meets a `nested_results`. No code under `R/` uses tibble
+— `new_tbl()` builds one by hand for exactly this reason.
+
+**Decision:** `tibble` goes into Suggests, not Imports. Suggests is where a
+package declares what its tests need, and this is a test dependency; keeping
+`R/` free of tibble keeps the choice `new_tbl()` made. Rewriting the tests to
+avoid tibble was rejected: it would mean amending three acceptance criteria to
+say something other than what the invariant is about.
+
+**Consequences:** nothing changes for anyone installing the package — tibble
+already arrives with dplyr and tune, both Imports — and a contributor running
+the tests needs it present, which `devtools` installs from Suggests. Falsified
+by a test needing tibble outside the compatibility file, which would be a
+signal that `R/` wants it too.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

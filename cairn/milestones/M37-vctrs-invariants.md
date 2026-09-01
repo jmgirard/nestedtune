@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M37: The vctrs half, so `rbind()` stops claiming a design it never ran
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -111,7 +111,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - [x] T4 Roxygen: correct the `@return` gap paragraph (`R/nested-tune-grid.R`);
       add the `group_by()`/`rowwise()`/`as_tibble()` limitation to `DESIGN.md`'s
       Known issues; NEWS entries; `devtools::document()`.
-- [ ] T5 Run `devtools::test()` and `devtools::check()`.
+- [x] T5 Run `devtools::test()` and `devtools::check()`.
 
 ## Work log
 
@@ -135,6 +135,9 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: RR04 triage — recommendations 1 and 2 applied (keep the method; correct the failure-mode comment), 4 applied as well (the fold counts move off the prototype carriers), 3 and 5 absorbed into the CI-records candidate row as out of this milestone's scope, 6 and 7 rejected on the review's own reasoning. The `nested_results_ptype()` comment finding from Beyond the brief is taken with 2.
 - 2026-08-31: RR04 recommendations 2 and 4 land in code; the ingest commit was tracking-only. The prototype carriers write `grid`, `metrics`, `outer_label` and a private `nestedtune_template_rows`, `vec_restore()`'s third branch reads that in place of `folds_attempted`, `bare_results()` and `stamp_results()` clear it, and the frame-prototype comment names both failure modes. A new `test-vctrs-compat.R` block asserts the token carries the run's description and no fold counts, and fails on the previous code with both counts present; suite 2060 passing, 0 failures, 0 skips.
 - 2026-08-31: T4 — the `@return` gap paragraph is replaced (one rule, four doors, and the three verbs outside it), the `group_by()`/`rowwise()`/`as_tibble()` behavior is a DESIGN.md Known issues entry, three NEWS entries cover the vctrs verbs, `rbind()`, `rename()` and the `vctrs` dependency, and `devtools::document()` rewrote `man/nested_tune_grid.Rd`. Landed in the same commit as the RR04 code, which had swept them in; the work is separated here rather than in git.
+- 2026-08-31: implementation gate chose `tibble` in Suggests over rewriting the tests away from it, because three acceptance criteria name `tibble::tibble()` and `tibble::as_tibble()` and the invariants under test are about what those types do when they meet the class; D-034 records it, and nothing changes for an installing user.
+- 2026-08-31: T5 — `devtools::test()` 2060 passing, 0 failures, 0 skips; `devtools::check()` first returned 1 WARNING (unstated `tibble` dependency in tests) and, after the gate above, `Status: OK` — 0 errors, 0 warnings, 0 notes.
+- 2026-08-31: all tasks checked; status to `review`.
 
 ## Decisions
 
