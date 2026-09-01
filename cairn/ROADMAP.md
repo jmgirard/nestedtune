@@ -7,6 +7,7 @@ _Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M42 | The fixture key's separation test, derived from the orchestrators' own arguments | planned | — | normal | milestones/M42-fixture-key-derived.md |
 | M41 | `eval_time` reaches the metrics that need it | done | — | normal | milestones/archive/M41-eval-time.md |
 | M39 | `print()` shows the object, `summary()` says what it means | done | — | normal | milestones/archive/M39-print-tibble-summary-split.md |
 | M40 | A `nested_final_fit` answers `summary()` the way its sibling does | done | M39 | normal | milestones/archive/M40-final-fit-summary.md |
