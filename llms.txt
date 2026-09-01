@@ -170,6 +170,9 @@ the results.
   : Fit the final model after nested cross-validation
 - [`print(`*`<nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_final_fit.md)
   : Print a final fit
+- [`summary(`*`<nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_final_fit.md)
+  [`print(`*`<summary.nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_final_fit.md)
+  : Summarize a final fit
 - [`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md)
   : Extract the tuning run a final fit was selected from
 - [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)

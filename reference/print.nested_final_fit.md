@@ -35,6 +35,7 @@ print(x, ...)
 
 ## See also
 
+[`summary.nested_final_fit()`](https://nestedtune.tidymodels.org/reference/summary.nested_final_fit.md),
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 [`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md),

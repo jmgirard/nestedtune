@@ -2,6 +2,20 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`summary()`](https://rdrr.io/r/base/summary.html) on a
+  `nested_final_fit` returns a `summary.nested_final_fit` object holding
+  the full-data tuning run’s resampling scheme, the number of candidates
+  that run scored, the parameter values selection chose, and an
+  `estimate` component that is always `NULL` — so a caller can reach a
+  value without re-deriving it from the fit. Printing it reports those
+  under headings and says, where the number would be, that this model
+  has no performance estimate of its own and that the nested estimate is
+  the one to report. Previously
+  [`summary()`](https://rdrr.io/r/base/summary.html) on a final fit fell
+  through to the default method and printed a table of the object’s five
+  internal components. [`print()`](https://rdrr.io/r/base/print.html) on
+  a final fit is unchanged.
+
 - Breaking: printing a `nested_results` now shows the object — its outer
   folds as the tibble rows they are, the resampling scheme it came from,
   a count of the folds that did not complete, and a note when the folds
