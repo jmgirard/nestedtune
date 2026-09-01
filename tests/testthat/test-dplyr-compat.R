@@ -547,3 +547,20 @@ test_that("replacing a fold-label column with an unorderable value returns a bar
   expect_no_condition(out <- dplyr::mutate(res, id = list(c(1, 2), 3, 4)))
   expect_bare(out)
 })
+
+# The same answer for a label column `order()` takes but cannot compare under.
+# A matrix is atomic, so `is.atomic()` alone let it through; `order()` then reads
+# it column by column and hands back a permutation twice the object's length,
+# which indexes both sides out to the same NA padding and made identical() vouch
+# for a record it never compared. Measured before the guard learned about `dim`:
+# `dplyr::mutate(m, extra = 1)` on a results object whose `id` is a 3x2 matrix
+# returned a `nested_results` (2026-08-31, M38 review O4).
+test_that("a fold-label column with a dim is refused rather than compared", {
+  skip_if_no_engines()
+  res <- compat_results()
+  res$id <- matrix(seq_len(2L * nrow(res)), nrow = nrow(res))
+
+  expect_true(is.atomic(res$id))
+  expect_no_condition(out <- dplyr::mutate(res, extra = 1))
+  expect_bare(out)
+})

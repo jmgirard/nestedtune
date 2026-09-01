@@ -154,8 +154,19 @@ can_reconstruct_results <- function(data, template) {
   # 'list' in 'orderVector1'" (measured 2026-08-31). A label column replaced by
   # something unorderable is a record that no longer matches, which the rule has
   # an answer for -- it just has to reach it rather than die on the way (M38).
+  #
+  # `is.atomic()` alone is not that test. A matrix is atomic, and `order()` takes
+  # it column by column: a 3x2 matrix yields a length-6 permutation, which then
+  # indexes the 3-row record columns out to six NA-padded values on both sides,
+  # so the comparison below is identical() between two paddings and vouches for
+  # a record it never checked (measured 2026-08-31, M38 review O4). A column with
+  # a `dim` is refused with the rest.
   orderable <- function(x) {
-    all(vapply(id_cols, function(nm) is.atomic(x[[nm]]), logical(1)))
+    all(vapply(
+      id_cols,
+      function(nm) is.atomic(x[[nm]]) && is.null(dim(x[[nm]])),
+      logical(1)
+    ))
   }
   if (!orderable(data) || !orderable(template)) {
     return(FALSE)

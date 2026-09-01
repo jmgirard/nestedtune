@@ -62,7 +62,7 @@ their own candidate row stay there.
       `dplyr::mutate(res, id = list(c(1, 2), 3, 4))` is a `tbl_df` carrying no
       `nested_results` class and raises no condition — pre-milestone, an
       abort, `unimplemented type 'list' in 'orderVector1'`.
-- [ ] AC4. At each of the six methods `NAMESPACE` registers for
+- [x] AC4. At each of the six methods `NAMESPACE` registers for
       `nested_results` whose body calls the rule, `reconstruct_results()` —
       `dplyr_reconstruct`, `[`, `vec_restore`, `names<-`, `rbind` and
       `vec_cast` (that last registered on the class pair) — a caller column
@@ -86,7 +86,7 @@ their own candidate row stay there.
       carries a column of that name, and `NEWS.md`'s M36 sentence narrowing
       the claim to "unless you name it `id` or `id` followed by digits" is
       gone.
-- [ ] AC6. The `verify` slot of `cairn/PROFILE.md` is clean —
+- [x] AC6. The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::test()` passing and `devtools::document()` run — and
       `devtools::check()` is clean at review (0 errors, 0 warnings).
 
@@ -150,6 +150,8 @@ their own candidate row stay there.
 - 2026-08-31: T6 — mutation check, the name pattern restored as the derivation. 30 of the sweep's 108 cells go red, five at every one of the six methods, and all 30 are list-valued: no atomic cell separates the two derivations, which is the sweep's weakest axis. Three of T1's four blocks go red (AC2(a), AC2(b), AC2(c)); AC3's does not, because its fault is the `order()` guard rather than the derivation, and it was measured red on the branch point instead. Of T2's three blocks, "recorded under whatever name it has" and "travels with the class" go red; "the constructor records the columns" does not, since the pattern and the record agree on a design rsample named. A second mutation — the constructor stops writing the attribute — reds that block along with thirteen others.
 - 2026-08-31: T7, T8 — the M36 `NEWS.md` bullet rewritten to what the code now does and a second bullet added for the `order()` fault, the `@return` invariants section given the sentence AC5 asks for, `devtools::document()` run, `air format .` clean; D-036 recorded. A doc block in `test-id-columns.R` guards the promise in all three files and the removal of M36's narrowing sentence.
 - 2026-08-31: all tasks done, status to review. `devtools::document()` produces no diff, `air format .` clean, `cairn_validate` all checks passed (18 references-staleness advisories, unchanged), and `devtools::check()` was OK — 0 errors, 0 warnings, 0 notes, 10m26s — run on the tree at `a89741b` plus one comment-only edit in `R/nested-results.R`.- 2026-08-31: review started; PR #47 opened as a draft. AC1, AC2, AC3 and AC5 verified with fresh evidence; AC4 and AC6 pending the test suite and `devtools::check()`, both running.
+- 2026-08-31: correcting the T6 entry above (IP4: superseded, not edited). Re-running the same mutation — `id_columns()` back to `grep("^id[0-9]*$", names(x), value = TRUE)` — over the sweep's own doors reds **60 of 108 cells, 30 atomic and 30 list**, not the 30 list-valued cells that entry recorded. The atomic cells do separate the two derivations, through the `id_columns` projection `door_answer()` compares (`tests/testthat/test-id-columns.R:105`), so the entry's conclusion that "no atomic cell separates the two derivations, which is the sweep's weakest axis" is wrong in both halves. Mutating only the copy the package's internals call, and leaving the copy the sweep's comparison resolves to, reproduces the recorded 30 exactly; mutating both gives 60 (M38 review O2).
+- 2026-08-31: review fix-now work — `orderable()` in `can_reconstruct_results()` now refuses a label column carrying a `dim`, with a regression test for the matrix case (M38 review O4); the T6 mutation figure superseded above (O2); O1 and O8 absorbed into the existing `check_nested()` candidate row. `devtools::test()` 2330 passing, `devtools::check()` OK, `cairn_validate` all checks passed.
 
 ## Decisions
 
@@ -175,6 +177,18 @@ https://github.com/tidymodels/nestedtune/pull/47.
 - AC3 — `mutate(res, id = list(c(1, 2), 3, 4))` returns class
   `c("tbl_df", "tbl", "data.frame")`, does not inherit `nested_results`, and a
   `withCallingHandlers` trap over every condition class caught none.
+- AC4 — the six methods the criterion names are exactly the six whose bodies
+  call `reconstruct_results()`: `dplyr_reconstruct` (`R/nested-results.R:256`),
+  `[` (`:265`), `vec_restore` (`:295`), `vec_cast.nested_results.nested_results`
+  (`:482`), `rbind` (`:544`) and `names<-` (`:562`); `NAMESPACE:3-27` registers
+  each. The sweep in `tests/testthat/test-id-columns.R:154` runs
+  5 names x 2 forms x 6 methods on `res` plus 4 x 2 x 6 on `rep_res` = 108
+  comparison cells, each `expect_identical` against the method's answer for
+  `extra` over the projection at `:96-107`. Run alone: 132 expectations, 0
+  failed — the 108 cells plus the 24 reference controls asserting the reference
+  answer kept the class. Its discrimination was re-measured at review by
+  restoring `grep("^id[0-9]*$", names(x), value = TRUE)` as the derivation: 60
+  of the 108 cells go red, 30 atomic and 30 list.
 - AC5 — `NEWS.md:43-60` carries the sentence "A results object now records the
   columns its resampling design labelled the folds with, so a column you add is
   read as a fold label only when the design itself carries a column of that
@@ -183,3 +197,84 @@ https://github.com/tidymodels/nestedtune/pull/47.
   `R/nested-tune-grid.R`) says the same. `grep -rn "followed by digits|unless
   you name it" NEWS.md man/ R/` returns nothing, so M36's narrowing sentence is
   gone.
+- AC6 — on the tree carrying the review fix below: `devtools::test()` gives
+  `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 2330 ]`, exit 0 (2326 before the fix's
+  test); `devtools::document()` exit 0 leaving `man/` and `NAMESPACE` with no
+  git diff; `devtools::check()` `Status: OK` in 9m 59.5s — 0 errors, 0 warnings,
+  0 notes.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0 — all 16 checks PASS, 5 advisories OK, one WARN
+(`references staleness`, the same 18 pages, unchanged by this milestone); the
+`release window` advisory did not fire. `DESIGN.md` is untouched, so
+`cairn_impact.py --changed` does not apply. Toolchain half, from the
+`consistency-gate` slot of `cairn/PROFILE.md`: `devtools::document()` produces
+no diff; `NAMESPACE`/`man/` are generated, not hand-edited; README.Rmd and
+README.md are untouched by the diff and unchanged; `pkgdown::check_pkgdown()`
+passes; `NEWS.md` carries the two user-visible entries; no new top-level files,
+and `check()` reports no NOTEs.
+
+### Independent review
+
+Three fresh-context reviewers, none of which wrote the code, on distinct
+evidence: an [O] diff-bug lens on `git diff main...HEAD` against the criteria,
+DESIGN.md and DECISIONS.md; an [S] blame-history lens on `git log`/`git blame`
+of the modified lines; an [S] prior-review lens on the archived `## Review`
+sections touching these files. The history lens and the prior-review lens each
+reported no findings; the prior-review lens ran the GitHub probe, found one real
+inline comment on an unrelated file, walked PRs #45–47 and got empty threads.
+The [O] lens reported ten, ranked. Every one is logged below with its
+disposition.
+
+- **O1 — a classed object with no `id_columns` record corrupts
+  `collect_metrics(summarize = FALSE)`.** Confirmed by measurement: stripping
+  the attribute off a classed object gives a returned tibble reporting 0 rows
+  with column lengths 0, 6, 6, 6, because `fold_ids()` (`R/nested-results.R:824`)
+  answers `character(0)` and `per_fold_metrics()` builds `new_tbl()` from it.
+  The only path to such an object is deserializing one built before this branch,
+  or hand-building one past `new_nested_results()`. **Follow-up** — absorbed,
+  with O8, into the existing candidate row for tightening `check_nested()`
+  (search-first: same pass over the entry gate and the constructor), rather than
+  a new row, which would have put `ROADMAP.md` over its line cap.
+- **O2 — the T6 mutation figure in the work log is wrong.** Confirmed by
+  re-running the mutation: 60 of 108 cells red, 30 atomic and 30 list, not the
+  30 list-valued cells recorded, and the atomic cells do discriminate. **Fixed
+  now** — superseding work-log line above (IP4: the T6 entry is not edited).
+- **O3 — a design column that is not a fold label is now recorded as one.**
+  Confirmed: a design carrying an extra `note` column gives
+  `id_columns = c("id", "note")` and fold labels `"Fold1, a"`. **Rejected** —
+  out-of-scope taxonomy: this is the intentional change the plan called for,
+  stated in Scope Out, recorded in D-036's consequences, and filed as its own
+  candidate row for tightening `check_nested()`.
+- **O4 — the new `order()` guard admits a matrix.** Confirmed:
+  `is.atomic()` is `TRUE` for a matrix, `order()` on a 3x2 matrix returns a
+  length-6 permutation, both sides index out to the same NA padding, and
+  `mutate()` on such an object returned a `nested_results`. A defect inside an
+  intentional change. **Fixed now** — `is.null(dim(...))` added to `orderable()`
+  (`R/nested-results.R:164-170`), with a regression test asserting the matrix
+  case is bare (`tests/testthat/test-dplyr-compat.R:551`); the pre-fix
+  measurement above is its planted defect.
+- **O5 — `vec_ptype2` copies one side's record when two differently-labelled
+  runs meet.** **Rejected** — the same shape the pre-existing `grid`/`metrics`
+  copying has, latent by the reviewer's own account, and D-035's measurements
+  record nothing in the package reaching the lattice asymmetry.
+- **O6 — `has_results_columns()`'s defaulted `id_cols` could be misread by a
+  future call site.** **Rejected** — both existing call sites pass the
+  template's record; a hypothetical future mistake is not a defect in the diff.
+- **O7 — the attribute name `id_columns` is unprefixed.** **Rejected** —
+  `grid`, `metrics` and `outer_label` set that precedent on the same object; no
+  partial-match hazard exists.
+- **O8 — the constructor accepts a design with no label columns.** **Follow-up**
+  — absorbed into the same candidate row as O1.
+- **O9 — AC5's doc guard skips under `R CMD check`.** **Rejected as already
+  handled** — true and the test says so in its own comment, but AC5's evidence
+  above is a direct read of `NEWS.md` and `man/nested_tune_grid.Rd` plus a grep
+  for the removed sentence, not the check run.
+- **O10 — `results_from()` sets `.notes = NULL` rather than tune's 0-row
+  tibbles.** **Rejected** — a fixture nit on a helper nothing in the sweep or
+  the AC blocks reads.
+
+No finding demonstrates an acceptance criterion failing, so the return floor is
+not reached: O4 falls outside AC3's domain (a matrix is a value `order()` takes,
+which is why the guard let it past), and O1, O2 and O3 name no criterion.
