@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4
-- **Branch/PR:** `m037-vctrs-invariants`
+- **Branch/PR:** `m037-vctrs-invariants` / [#46](https://github.com/tidymodels/nestedtune/pull/46)
 
 ## Goal
 
@@ -45,35 +45,35 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 
 ## Acceptance criteria
 
-- [ ] AC1 Each of `vctrs::vec_slice(x, 1)`, `vctrs::vec_rbind(x, x)`,
+- [x] AC1 Each of `vctrs::vec_slice(x, 1)`, `vctrs::vec_rbind(x, x)`,
       `vctrs::vec_c(x, x)`, `rbind(x, x)` and `dplyr::rename(x, fold = id)`
       applied to a completed 3-fold `nested_results` returns an object carrying
       neither class `nested_results` nor any attribute named by
       `results_attributes()`, asserted form by form in
       `tests/testthat/test-vctrs-compat.R`.
-- [ ] AC2 `vctrs::vec_slice(x, c(2, 1, 3))` returns an object carrying class
+- [x] AC2 `vctrs::vec_slice(x, c(2, 1, 3))` returns an object carrying class
       `nested_results` whose `outer_label`, `grid` and `metrics` are identical
       to the source object's and whose `id` column holds the source's three
       values in the order asked for.
-- [ ] AC3 `vctrs::vec_cbind(x, tibble::tibble(extra = 1:3))` and
+- [x] AC3 `vctrs::vec_cbind(x, tibble::tibble(extra = 1:3))` and
       `dplyr::bind_cols(x, tibble::tibble(extra = 1:3))` each return an object
       carrying class `nested_results`, and their class vectors are identical,
       so the same operation answers the same way through either door.
-- [ ] AC4 `vctrs::vec_cast(x, tibble::as_tibble(vctrs::vec_ptype(x)))` returns
+- [x] AC4 `vctrs::vec_cast(x, tibble::as_tibble(vctrs::vec_ptype(x)))` returns
       an object carrying no `nested_results` class, and casting that same
       prototype to `x` raises a condition inheriting `vctrs_error_cast` but not
       `vctrs_error_cast_lossy`, so the refusal to build one is distinguished
       from an ordinary lossy failure rather than asserted by message text.
-- [ ] AC5 `vctrs::vec_ptype2()` returns a prototype rather than raising, on
+- [x] AC5 `vctrs::vec_ptype2()` returns a prototype rather than raising, on
       each of the five ordered pairs combining a `nested_results` with a
       `nested_results`, a `tbl_df` or a `data.frame`, asserted pair by pair.
-- [ ] AC6 `?nested_tune_grid`'s `@return` no longer says the vctrs methods
+- [x] AC6 `?nested_tune_grid`'s `@return` no longer says the vctrs methods
       would close the `rbind()` gap. It states that `group_by()`, `rowwise()`
       and `tibble::as_tibble()` return an object on which the run's recorded
       attributes stay readable, and a test asserts that on a `nested_results`
       directly. `NEWS.md` records the `rename()` and `rbind()` changes and the
       new behavior of `vec_slice()`, `vec_rbind()` and `vec_c()`.
-- [ ] AC7 `cairn/PROFILE.md`'s verify slot is clean (`devtools::test()`), and
+- [x] AC7 `cairn/PROFILE.md`'s verify slot is clean (`devtools::test()`), and
       the fuller pre-review check it names (`devtools::check()`) passes with 0
       errors and 0 warnings, any NOTE justified in the review record.
 
@@ -138,6 +138,7 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
 - 2026-08-31: implementation gate chose `tibble` in Suggests over rewriting the tests away from it, because three acceptance criteria name `tibble::tibble()` and `tibble::as_tibble()` and the invariants under test are about what those types do when they meet the class; D-034 records it, and nothing changes for an installing user.
 - 2026-08-31: T5 — `devtools::test()` 2060 passing, 0 failures, 0 skips; `devtools::check()` first returned 1 WARNING (unstated `tibble` dependency in tests) and, after the gate above, `Status: OK` — 0 errors, 0 warnings, 0 notes.
 - 2026-08-31: all tasks checked; status to `review`.
+- 2026-08-31: /milestone-review — PR #46 opened, `main` unmoved at `b26eb77`. All seven criteria pass on fresh evidence; `cairn_validate` exit 0 and the r-package consistency gate clean. Three review lenses ran; the [O] diff lens returned eleven findings, six of them reproduced here, F1 measured as a regression against `main`.
 
 ## Decisions
 
@@ -163,3 +164,104 @@ and `vec_ptype_abbr()`, which tune does not register either → not planned.
   attribute carries it without any object claiming a run it does not hold.
   `grid`, `metrics` and `outer_label` still travel: they describe the run, and
   are true of any object from it.
+
+## Review
+
+Reviewed 2026-08-31 against `main` at `b26eb77`, which has not moved since the
+branch was cut, so no merge was needed. PR
+[#46](https://github.com/tidymodels/nestedtune/pull/46).
+
+### Acceptance criteria — fresh evidence
+
+- AC1 — `devtools::load_all()` + `testthat::test_file("test-vctrs-compat.R")`:
+  the five blocks (`vec_slice(x, 1)`, `vec_rbind(x, x)`, `vec_c(x, x)`,
+  `rbind(x, x)`, `rename(x, fold = id)`) all pass, 0 skips. Each asserts the
+  class is gone and every `results_attributes()` name reads `NULL`.
+- AC2 — same run: the reorder block passes, with its passing control
+  (`res$id[c(2, 1, 3)]` differs from `res$id`) also green, so an implementation
+  handing back the source unchanged would fail it.
+- AC3 — same run: `vec_cbind(x, tibble(extra = 1:3))` and
+  `bind_cols(x, tibble(extra = 1:3))` both keep the class and have identical
+  class vectors. Measured directly as well: both return
+  `nested_results/tbl_df/tbl/data.frame`, 10 columns, 3 rows.
+- AC4 — same run: the downward cast returns a bare tibble with the source's
+  names; the upward cast raises a condition inheriting `vctrs_error_cast` and
+  not `vctrs_error_cast_lossy`.
+- AC5 — same run: all five ordered pairs return a zero-row data frame rather
+  than raising, asserted pair by pair.
+- AC6 — `man/nested_tune_grid.Rd` (regenerated by `devtools::document()` with
+  no diff): the gap paragraph is gone; the four-doors paragraph and the
+  `group_by()`/`rowwise()`/`as_tibble()` paragraph are present. The AC6 test
+  block passes on a `nested_results`, with its passing control green. `NEWS.md`
+  carries three entries naming `rename()`, `rbind()`, `vec_slice()`,
+  `vec_rbind()`, `vec_c()`, `vec_cbind()` and the `vctrs` dependency.
+- AC7 — `devtools::test()`: `FAIL 0 | WARN 0 | SKIP 0 | PASS 2060`.
+  `devtools::check()`: `Status: OK`, 0 errors, 0 warnings, 0 notes (3m 36s).
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all checks PASS; 18 advisory warnings, all the
+standing `references staleness` ones, unchanged by this milestone. No
+`DESIGN.md` principle changed (the diff adds a Known issues entry), so
+`cairn_impact.py` was not run. Toolchain slot: `devtools::document()` produces
+no diff; `NAMESPACE` and `man/` regenerate clean; README.md is newer than
+README.Rmd; `pkgdown::check_pkgdown()` reports no problems; `NEWS.md` has the
+entries; no new top-level files; `devtools::check()` clean as above.
+
+### Independent review — three lenses, findings and disposition
+
+[S] blame-history: no findings. [S] prior-review record: no findings; the
+archived M36 review, LESSONS and the RB/RR pairs were read, and the one
+non-bot GitHub inline comment on record is on unrelated workflow files.
+
+[O] diff-bug returned eleven ranked findings. Five were reproduced directly
+against `devtools::load_all()` on this branch before triage; F1 was also
+reproduced against a `git archive main` checkout to establish it as a
+regression rather than a pre-existing state.
+
+- F1 (confirmed, regression) — the `vec_cast` methods return `x` without
+  reconciling to `to`'s columns, so combining a `nested_results` with a table
+  whose columns differ raises vctrs' internal error.
+  `dplyr::bind_rows(x, tibble::tibble(other = 1))` returns a 4-row, 10-column
+  bare tibble on `main` and on this branch raises `Can't assign 9 columns to
+  df of length 10 … This is an internal error … Please report it at
+  <https://github.com/r-lib/vctrs/issues>`. `vctrs::vec_rbind()` the same. No
+  acceptance criterion reaches it: AC4 casts only to the object's own
+  prototype, an identical column set.
+- F2 (confirmed) — `vec_cbind(x, tibble::tibble(splits = 1:3))` returns an
+  object still classed `nested_results` with `outer_label` and
+  `folds_attempted` set, while name repair has renamed `splits` to
+  `splits...1`. `dplyr::bind_cols()` sheds on the same call. An object claiming
+  a run whose record column is gone is the IP4 state the class exists to
+  prevent, and it is an AC3-shaped parity break AC3 does not reach.
+- F3 (confirmed) — argument order changes the answer:
+  `vec_cbind(tibble(extra = 1:3), x)` keeps the class, `bind_cols(tibble(extra
+  = 1:3), x)` drops it. AC3 asserts the parity only with `x` first.
+- F4 (confirmed, mechanism of F1) — the `vec_ptype2` methods return one side's
+  prototype rather than the union, so the common type omits `y`'s columns.
+  This is D-032's own recorded falsifier for the ptype2 lattice.
+- F5 (confirmed) — `dplyr::bind_rows(x)` keeps the class; `vctrs::vec_rbind(x)`
+  and `vctrs::vec_c(x)` drop it, on a call that changes no rows. The `@return`
+  text this milestone wrote says the two doors reach one rule.
+- F8 (confirmed) — `vctrs::vec_restore(tibble::tibble(),
+  vctrs::vec_cbind_frame_ptype(x))` returns a zero-column object classed
+  `nested_results` carrying the run's attributes, so the comment saying that
+  branch "reaches no caller" is not true as written.
+- F6 — `test-vctrs-compat.R` calls `tibble::` in eight blocks with no
+  `skip_if_not_installed("tibble")`, while D-034 put `tibble` in Suggests.
+- F7 — `expect_no_record()` loops `results_attributes()` only, so the private
+  `nestedtune_template_rows` carrier is not asserted absent on the shedding
+  path.
+- F9 — D-032's Consequences paragraph says combining with a bare tibble
+  "refuses rather than quietly producing a table"; measured, the same-columns
+  case quietly produces a bare tibble, which is what AC1 requires.
+- F10 — `rbind.nested_results()` templates on `args[[1]]` positionally and
+  promotes every data-frame argument to a tibble.
+- F11 — `names<-.nested_results()` runs the full sort-and-compare rule on every
+  internal name assignment; cost only.
+
+Disposition is the maintainer's at the merge gate. The review's recommendation
+is a return: F1 is a measured regression on a documented public verb, and F2 is
+an IP4 violation reachable through a public vctrs call, and neither is repaired
+by a wording change. F3, F4 and F5 are the same coherence gap seen from other
+sides. F6–F11 are follow-up or reject material.
