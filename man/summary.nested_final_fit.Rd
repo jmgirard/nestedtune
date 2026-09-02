@@ -25,7 +25,9 @@ tuner that ran (\code{tuner}, \code{"tune_grid"} or \code{"tune_bayes"}), the nu
 candidates that run scored (\code{candidates}), the Bayesian counts (\code{initial}
 and \code{initial_requested}, \code{iterations_completed} and
 \code{iterations_requested}, each \code{NULL} on a grid fit; the scored figures are
-read from the candidate record, the requested ones from the procedure), the
+read from the candidate record, the requested ones from the procedure, and
+a run whose candidate record cannot be derived reports its scored figures
+as zero rather than failing to print), the
 parameter values selection chose (\code{selection}), and an \code{estimate}
 component that is always \code{NULL}. Printing it is what most callers want;
 the components are there for a caller that needs a value rather than a

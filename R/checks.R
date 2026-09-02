@@ -247,7 +247,15 @@ check_grid <- function(grid, call = rlang::caller_env()) {
 # one. tune raises exactly this, but per fold, and M03 records fold failures
 # instead of re-raising them; without this check a malformed grid would surface
 # as an entire design failing rather than as the call error it is (GP3).
-check_grid_params <- function(object, grid, call = rlang::caller_env()) {
+# `recorded = TRUE` is the final fit's reading: the grid came off the results
+# object and is the fixed side, so the message names `object` -- the workflow
+# handed over -- rather than a `grid` argument the caller never wrote (D-041).
+check_grid_params <- function(
+  object,
+  grid,
+  call = rlang::caller_env(),
+  recorded = FALSE
+) {
   if (!is.data.frame(grid)) {
     return(invisible(grid))
   }
@@ -263,6 +271,17 @@ check_grid_params <- function(object, grid, call = rlang::caller_env()) {
 
   unknown <- setdiff(names(grid), ids)
   if (length(unknown) > 0L) {
+    if (recorded) {
+      cli::cli_abort(
+        c(
+          "{.arg object} does not tune {length(unknown)} parameter{?s} the \\
+           recorded grid has {?a column/columns} for: {.val {unknown}}.",
+          i = "Hand over the workflow the nested run in {.arg results} was \\
+               built around."
+        ),
+        call = call
+      )
+    }
     cli::cli_abort(
       c(
         "{.arg grid} has {length(unknown)} column{?s} not marked for tuning: \\
@@ -276,6 +295,17 @@ check_grid_params <- function(object, grid, call = rlang::caller_env()) {
 
   missing <- setdiff(ids, names(grid))
   if (length(missing) > 0L) {
+    if (recorded) {
+      cli::cli_abort(
+        c(
+          "{.arg object} tunes {length(missing)} parameter{?s} the recorded \\
+           grid has no column for: {.val {missing}}.",
+          i = "Hand over the workflow the nested run in {.arg results} was \\
+               built around."
+        ),
+        call = call
+      )
+    }
     cli::cli_abort(
       c(
         "{.arg grid} has no column for {length(missing)} tuned parameter{?s}: \\
@@ -323,13 +353,13 @@ check_results_record <- function(results, call = rlang::caller_env()) {
   inside <- attr(results, "inside")
   procedure <- attr(results, "procedure")
   if (!rlang::is_call(inside) || !is.list(procedure)) {
-    missing <- c(
+    absent <- c(
       if (!rlang::is_call(inside)) "inner resampling specification",
       if (!is.list(procedure)) "tuning procedure"
     )
     cli::cli_abort(
       c(
-        "{.arg results} carries no {missing} to re-run.",
+        "{.arg results} carries no {absent} to re-run.",
         x = "It was built by an earlier version of nestedtune, or from a \\
              design assembled by hand rather than by {.fn nested_resamples} \\
              or {.fn rsample::nested_cv}, which store the specification as \\

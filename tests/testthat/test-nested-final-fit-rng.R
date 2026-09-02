@@ -252,10 +252,13 @@ test_that("the same seed produces the same Bayesian final fit, a different seed 
   wf <- stoch_workflow(d)
   res <- bayes_stoch_final_results(d)
 
+  # Called directly, as the grid strand is: the fixture cache keys on the RNG
+  # state, and a net-zero call leaves the second `set.seed(77)` at the first's
+  # key, so a memoised pair would compare one object with itself (M46 review).
   set.seed(77)
-  first <- memoised(nested_final_fit(wf, res))
+  first <- nested_final_fit(wf, res)
   set.seed(77)
-  second <- memoised(nested_final_fit(wf, res))
+  second <- nested_final_fit(wf, res)
   set.seed(78)
   other <- memoised(nested_final_fit(wf, res))
 
@@ -346,14 +349,16 @@ test_that("the caller's RNG state and kind survive a Bayesian final fit", {
   set.seed(404)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
-  invisible(memoised(nested_final_fit(wf, res)))
+  invisible(nested_final_fit(wf, res))
 
   expect_identical(.Random.seed, before_seed)
   expect_identical(RNGkind(), before_kind)
 
+  # Direct calls: a memoised second call at the same state is a cache hit
+  # that runs nothing, so the identity below could not fail (M46 review).
   set.seed(404)
   with_call <- {
-    invisible(memoised(nested_final_fit(wf, res)))
+    invisible(nested_final_fit(wf, res))
     runif(3)
   }
   set.seed(404)

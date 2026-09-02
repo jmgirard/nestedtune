@@ -36,9 +36,14 @@ test_that("the workflow checks are wired into the final fit", {
   # The recorded grid is judged against the workflow handed over, as the
   # orchestrator judged it: a workflow tuning a parameter the grid has no
   # column for is refused here, not by tune one tuning run later.
+  # The message names `object`, the side the user wrote, and `results`, the
+  # side the grid came from -- never a `grid` argument this signature lacks.
   other <- cont_workflow(d)
   cnd <- tryCatch(nested_final_fit(other, res), error = function(e) e)
-  expect_match(conditionMessage(cnd), "not marked for tuning|no column for")
+  expect_match(conditionMessage(cnd), "`object`")
+  expect_match(conditionMessage(cnd), "recorded grid")
+  expect_match(conditionMessage(cnd), "`results`")
+  expect_no_match(conditionMessage(cnd), "`grid`")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
 })
 

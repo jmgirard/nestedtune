@@ -286,10 +286,11 @@ independence from the ambient generator testable, since the entry draw itself
 is kind-dependent and so cannot be.
 
 `new_nested_final_fit()` assembles a plain list carrying the trained workflow,
-the selection, the tuning run, both seeds, and the procedure re-run. The tuning run travels with it as
-the record of what selection saw; its metrics are selection-time quantities, so
-nothing in the package's own surface turns them into a claim — the print method
-shows no number from it, and tune's ranking generics are left unregistered.
+the selection, the tuning run, both seeds, and the procedure re-run. The tuning
+run travels with it as the record of what selection saw; its metrics are
+selection-time quantities, so nothing in the package's own surface turns them
+into a claim — the print method shows no number from it, and tune's ranking
+generics are left unregistered.
 
 The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows,
 parsnip, and ggplot2 _(ggplot2 added 2026-07-26 at M08, D-019: the first Import

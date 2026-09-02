@@ -90,7 +90,9 @@ print.nested_final_fit <- function(x, ...) {
 #' candidates that run scored (`candidates`), the Bayesian counts (`initial`
 #' and `initial_requested`, `iterations_completed` and
 #' `iterations_requested`, each `NULL` on a grid fit; the scored figures are
-#' read from the candidate record, the requested ones from the procedure), the
+#' read from the candidate record, the requested ones from the procedure, and
+#' a run whose candidate record cannot be derived reports its scored figures
+#' as zero rather than failing to print), the
 #' parameter values selection chose (`selection`), and an `estimate`
 #' component that is always `NULL`. Printing it is what most callers want;
 #' the components are there for a caller that needs a value rather than a

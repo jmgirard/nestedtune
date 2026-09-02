@@ -204,7 +204,7 @@ nested_final_fit <- function(object, results, ...) {
   # so a workflow other than the one the estimate was built around is refused
   # here rather than by tune, one full tuning run later (GP3).
   if (identical(procedure$tuner, "tune_grid")) {
-    check_grid_params(object, procedure$grid)
+    check_grid_params(object, procedure$grid, recorded = TRUE)
   }
   inside <- attr(results, "inside")
   # Absent rather than NULL when the run was given none; either way tune picks.

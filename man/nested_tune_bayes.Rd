@@ -137,7 +137,9 @@ operation on the result may do.
 \details{
 The estimate this returns describes the whole search-and-fit \emph{procedure},
 not any single fitted model, exactly as for \code{\link[=nested_tune_grid]{nested_tune_grid()}}; report it
-for that procedure.
+for that procedure. No final model is returned here: build that with
+\code{\link[=nested_final_fit]{nested_final_fit()}}, which takes this result and runs the search it
+recorded again with the whole dataset in hand.
 }
 \section{Reproducibility}{
 
@@ -244,5 +246,6 @@ if (rlang::is_installed(c("recipes", "yardstick"))) {
 
 }
 \seealso{
-\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=nested_resamples]{nested_resamples()}}, \code{\link[tune:tune_bayes]{tune::tune_bayes()}}
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=nested_resamples]{nested_resamples()}}, \code{\link[=nested_final_fit]{nested_final_fit()}},
+\code{\link[tune:tune_bayes]{tune::tune_bayes()}}
 }

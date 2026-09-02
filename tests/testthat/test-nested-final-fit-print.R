@@ -306,7 +306,7 @@ test_that("the counts read what ran, not what was asked for", {
   # Built by hand, so the scored counts can differ from the requested ones
   # without an engine: a record holding two initial candidates where three
   # were requested, stopping at iteration 1 of 4 (IP4, RR05 Q2).
-  frame <- function(config, value, iter) {
+  frame <- function(config, value) {
     data.frame(
       df1 = value,
       .metric = "rmse",
@@ -354,6 +354,22 @@ test_that("the counts read what ran, not what was asked for", {
     print_text(final),
     "2 initial candidates \\(3 requested\\), 1 iteration completed \\(4 requested\\)"
   )
+
+  # One initial candidate: the other singular branch of the Bayesian line.
+  one_initial <- final
+  one_initial$tuning$.metrics[[1L]] <- frame("pre1", 1L)
+  expect_identical(summary(one_initial)$initial, 1L)
+  expect_match(
+    print_text(one_initial),
+    "1 initial candidate \\(3 requested\\), 1 iteration completed"
+  )
+
+  # And the grid line at one candidate.
+  one_grid <- final
+  one_grid$tuning <- list(.metrics = list(frame("pre1", 1L)))
+  one_grid$procedure <- list(tuner = "tune_grid", grid = 1)
+  expect_identical(summary(one_grid)$candidates, 1L)
+  expect_match(print_text(one_grid), "grid search, 1 candidate scored")
 })
 
 test_that("a grid final fit carries the Bayesian counts as NULL and names its search", {

@@ -13,7 +13,9 @@
 #'
 #' The estimate this returns describes the whole search-and-fit *procedure*,
 #' not any single fitted model, exactly as for [nested_tune_grid()]; report it
-#' for that procedure.
+#' for that procedure. No final model is returned here: build that with
+#' [nested_final_fit()], which takes this result and runs the search it
+#' recorded again with the whole dataset in hand.
 #'
 #' @inheritParams nested_tune_grid
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
@@ -165,7 +167,8 @@
 #' }
 #' }
 #'
-#' @seealso [nested_tune_grid()], [nested_resamples()], [tune::tune_bayes()]
+#' @seealso [nested_tune_grid()], [nested_resamples()], [nested_final_fit()],
+#'   [tune::tune_bayes()]
 #' @export
 nested_tune_bayes <- function(
   object,
