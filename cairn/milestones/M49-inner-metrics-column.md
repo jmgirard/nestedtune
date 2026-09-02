@@ -1,6 +1,6 @@
 # M49: Each outer fold keeps its inner search's metrics in place of `.grid`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -102,7 +102,7 @@ for that generic → not planned; a user control on the inner run → M48.
       from `param_info`, else the workflow's dials set; add `.eval_time` only when the metric set carries a dynamic or
       integrated survival metric; tests on a regression run given `eval_time`, a static-only censored run, and an engine
       parameter with no dials object, each asserting the prototype identical in names and types to a completed fold's.
-- [ ] T8: `candidate_set()` and `.eval_time` (F3): decide whether the final-fit accessor keeps base's `.eval_time`
+- [x] T8: `candidate_set()` and `.eval_time` (F3): decide whether the final-fit accessor keeps base's `.eval_time`
       column on a dynamic-survival fit or the drop is intended; amend AC6's wording at the step-6 gate to match (and to
       name the assertions, not the file, as what stays unchanged), with a censored test either way.
 - [x] T9: `fake_tuning()` cleanup (F4) and the `show_best()` roxygen sentence (F7): scope the S3 registration to the
@@ -125,6 +125,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: T8 amended-AC6 wording went to two fresh [O] readers in full mode before the mini gate: the first returned seven findings (zero-candidate case, the survival trigger, an instrument-bound and factually off evidence clause, an unasserted ordering clause, unbounded domain, D-043 staleness, direction narrowing); the second, on the revised text, eight (dynamic metric unnamed on the survival fit, the base column's meaning, the zero-candidate clause unasserted, D-043, GP1 wants the drop said on the help page, the Bayesian probe checks `.iter` only, base-commit provenance on the regression assertions, NEWS). All applied except the first reader's "dynamic or integrated", contradicted by measurement; the gate decides the drop.
 - 2026-09-02: amendment (substantive, narrowing) — AC6 rewritten at a mini gate, the user choosing the `.eval_time` drop over restoring the base column: base identity gives way to a named column set on three fit kinds, the evidence named per assertion, the help page and NEWS told to say the column is dropped. Twice audited by fresh [O] readers before writing (the line above).
 - 2026-09-02: T8 code landed: the help page's `@return` names the per-metric columns dropped, `.eval_time` among them, and points at `collect_metrics(extract_tune_results(x))`; NEWS names the dropped column; a survival column-set test in `test-nested-final-fit-extract.R` and a Bayesian column-set assertion in `test-nested-final-fit-oracles.R`. The three touched files are green; checkpoint while the full suite runs, the T8 tick and status waiting on it.
+- 2026-09-02: T8 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, full `devtools::test()` clean with no failure, warning or skip line. All of T7–T9 done; status → review for the second round.
 
 ## Decisions
 
