@@ -110,7 +110,7 @@ is missing is the table.
 
 ## Tasks
 
-- [ ] T1: `R/nested-results-agreement.R`: generic, default aborting through a
+- [x] T1: `R/nested-results-agreement.R`: generic, default aborting through a
       helper shaped like `abort_no_extract_method()`
       (`R/nested-final-fit-extract.R:181`) with class
       `nestedtune_no_agreement_method`, and the method: `check_dots_empty()`,
@@ -120,7 +120,7 @@ is missing is the table.
       `vctrs::vec_count()` or `dplyr::count()` preserving first-appearance
       order, sort by `n` descending stably, `prop = n / completed`, return
       `new_tbl()`. Tests for AC1 and AC2 in `test-nested-results-agreement.R`.
-- [ ] T2: Edge tests (AC3–AC5): the two-column, reordered and `.config`-edited
+- [x] T2: Edge tests (AC3–AC5): the two-column, reordered and `.config`-edited
       objects built by editing the three-fold fixture's `.selected` elements
       as `test-nested-results-print.R:620-680` does; the partial-parameter and
       NA-selected shapes; `break_fold()` / `break_every_fold()` for AC5.
@@ -128,7 +128,7 @@ is missing is the table.
       message says "table" here; `check_any_completed()` gets an `action` for
       this caller if it needs one. Any missing-parameter subtlety a test finds
       is recorded in the work log, not silently resolved.
-- [ ] T3: Roxygen with `@return`, the IP3 sentence, an `@examplesIf` block
+- [x] T3: Roxygen with `@return`, the IP3 sentence, an `@examplesIf` block
       mirroring `R/nested-results-print.R`'s; `_pkgdown.yml` row; NEWS entry;
       `DESIGN.md` Function Families gains the method beside `collect_metrics()`.
 - [ ] T4: `air format .`; `devtools::document()`, `devtools::test()`,
@@ -143,6 +143,9 @@ is missing is the table.
 - 2026-09-01: plan gate chose aborting on an all-failed run, through `check_any_completed()`, over warning and returning an empty table, because `collect_metrics()`, `summary()` and `autoplot()` already refuse there (IP4); falsified by a caller who needs an empty table to loop over.
 - 2026-09-01: the gate declined a long-form `tidy()` method; no candidate row, at the user's choice.
 - 2026-09-01: checkpoint, half-done: `R/nested-results-agreement.R`, its 68-expectation test file (AC1–AC5 all asserted and passing on the file alone), `warn_partial_summary(noun)`, the pkgdown row, NEWS entry and DESIGN line are written; T1–T3 stay unticked until the full `devtools::test()` run finishes clean.
+- 2026-09-01: T1 done — generic, default (`abort_no_agreement_method()`, class `nestedtune_no_agreement_method`) and method; counting by `vctrs::vec_count(sort = "location")` then a stable `order(-count)`, folds stacked with `vctrs::vec_rbind()` over one-row frames so a fold lacking a parameter fills `NA` by common type. Full `devtools::test()`: 2816 pass, 0 fail, 0 warn.
+- 2026-09-01: T2 done — AC3–AC5 tests; `warn_partial_summary()` gained `noun = "summary"`, `check_any_completed()` is called with `action = "tabulate"`. One subtlety found: `rbind()` of two row-subsets sheds the class (the vctrs template rule), so the reordered fixture is built by the single subset `paired[c(2, 1, 3), ]` the criterion names. No missing-parameter subtlety beyond the planned `NA` row.
+- 2026-09-01: T3 done — roxygen (claims checked against the example's output: two rows, `num_comp` 1 then 2, `n` 2 and 1, `prop` 0.667 and 0.333), `_pkgdown.yml` row, NEWS entry, DESIGN Function Families line; D-039 was written at planning.
 
 ## Decisions
 
