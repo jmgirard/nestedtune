@@ -97,7 +97,7 @@ has passed.
 
 ## Tasks
 
-- [ ] T1: Reword the advice line in `print_failures()`
+- [x] T1: Reword the advice line in `print_failures()`
       (`R/nested-results-print.R:241`); replace the
       `expect_match(txt, "See .*\\$\\.notes")` assertion in
       `test-nested-results-print.R` with AC1's two assertions on both failed
@@ -129,6 +129,7 @@ has passed.
 - 2026-09-01: plan gate chose named `n`/`width` after `...` with the fence kept over forwarding `...` to tibble's print, because a mistyped argument would then be ignored silently and the registry probe would need an exemption; falsified by a user needing a tibble print option beyond `n` and `width`.
 - 2026-09-01: plan gate chose scrubbing tibble's body from the four print snapshots (header and cli lines kept) over leaving them pinned, because the body is a dependency's rendering; falsified by a print regression the header line and the in-words assertions fail to catch.
 - 2026-09-01: plan gate chose rewording only the summary's advice line over one shared sentence at all four `.notes` sites, because the other three name the right object; falsified by a second site found wrong.
+- 2026-09-01: T1 done — advice line now reads ``See the `.notes` column of the results object for what went wrong.``; the print-side control assertion moved from `\$\.notes` (which the tibble body could never match anyway) to `what went wrong`; AC1's two assertions plus a block-position check on both failed fixtures; two summary snapshots re-recorded, diff read: the one line each.
 
 ## Decisions
 

@@ -152,7 +152,7 @@
       Outer resamples: 3-fold cross-validation
       Outer folds: 3 requested, 2 completed
       x Fold2 failed during outer fit.
-      i See `x$.notes` for what went wrong.
+      i See the `.notes` column of the results object for what went wrong.
       
       -- Selected parameters --
       
@@ -179,7 +179,7 @@
       x Fold1 failed during inner tuning.
       x Fold2 failed during inner tuning.
       x Fold3 failed during inner tuning.
-      i See `x$.notes` for what went wrong.
+      i See the `.notes` column of the results object for what went wrong.
       
       -- Selected parameters --
       

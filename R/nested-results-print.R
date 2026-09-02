@@ -238,7 +238,13 @@ print_failures <- function(s) {
     stage <- s$failures$stage[[i]]
     cli::cli_bullets(c(x = "{id} failed during {stage}."))
   }
-  cli::cli_bullets(c(i = "See {.code x$.notes} for what went wrong."))
+  # The results object, not `x`: what is bound to `x` here is the summary
+  # bundle, which has no `.notes`. The column lives on the object the caller
+  # summarized, and the sentence names it by the column alone (M43).
+  cli::cli_bullets(c(
+    i = "See the {.code .notes} column of the results object for what went \\
+         wrong."
+  ))
   invisible(NULL)
 }
 

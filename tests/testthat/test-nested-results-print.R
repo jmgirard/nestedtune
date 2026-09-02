@@ -96,7 +96,7 @@ test_that("printing counts the folds that did not complete, and only then", {
   # and is summary()'s to say -- asserted here so the two cannot silently merge
   # back together.
   expect_no_match(txt, "failed during")
-  expect_no_match(txt, "\\$\\.notes")
+  expect_no_match(txt, "what went wrong")
 
   # The passing control: a whole run says nothing at all rather than "0 of 3",
   # so the line's presence is itself the signal.
@@ -363,7 +363,7 @@ test_that("printing the summary carries every section print() used to emit", {
   expect_match(txt, "3-fold cross-validation")
   expect_match(txt, "3 requested, 2 completed")
   expect_match(txt, "failed during outer fit")
-  expect_match(txt, "See .*\\$\\.notes")
+  expect_match(txt, "See the `.notes` column", fixed = TRUE)
   expect_match(txt, "Selected parameters")
   expect_match(txt, "num_comp")
   expect_match(txt, "2 of 3 outer folds")
@@ -373,6 +373,43 @@ test_that("printing the summary carries every section print() used to emit", {
   # The one section that did NOT come across: the candidate-set line stays in
   # print(), where it qualifies the object, and is not repeated here.
   expect_no_match(txt, "Candidates searched")
+})
+
+test_that("the failure advice names the results object's `.notes` column, never `x$`", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  # `x` inside the summary's print method is the summary bundle, which has no
+  # `.notes`; before M43 the advice read `x$.notes` and named nothing a reader
+  # could evaluate. Asserted on both failed fixtures -- one fold down and every
+  # fold down -- since the block is reached by each and the line closes both.
+  set.seed(2)
+  partial <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+  set.seed(2)
+  nothing <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_every_fold(det_nested(d)),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+
+  for (res in list(partial, nothing)) {
+    lines <- strsplit(summary_text(res), "\n")[[1L]]
+    advice <- grep("what went wrong", lines, value = TRUE)
+    # One advice line, and it is the line that ends the failure block: the
+    # previous line is a failure line, the next opens the next section.
+    expect_length(advice, 1L)
+    expect_match(advice, "`.notes` column of the results object", fixed = TRUE)
+    expect_no_match(advice, "x$", fixed = TRUE)
+    at <- match(advice, lines)
+    expect_match(lines[[at - 1L]], "failed during")
+    expect_no_match(lines[[at + 1L]], "failed during")
+  }
 })
 
 test_that("summary() warns on a partial run and still returns its object", {
