@@ -70,11 +70,13 @@ naming convention.
   generic tabulating how often each selected parameter combination was chosen
   across the outer folds (D-039). The suffix names the inner tuning method
   (D-010).
-- **Final fit** — `nested_final_fit()`, returning a `nested_final_fit` object
-  reached with `extract_workflow()`. It runs the same procedure the estimate
-  describes over the whole dataset, and answers none of tune's ranking or
-  collecting generics, so no number it holds can be read as the model's score
-  (D-014).
+- **Final fit** — `nested_final_fit(object, results)`, returning a
+  `nested_final_fit` object reached with `extract_workflow()`. It re-runs the
+  procedure the results object recorded — the design's `inside` call, the
+  tuner and its arguments — over the whole dataset, so the model and the
+  estimate come from one search by construction (D-041), and answers none of
+  tune's ranking or collecting generics, so no number it holds can be read as
+  the model's score (D-014).
 
 ## Conventions
 
@@ -266,11 +268,16 @@ inherit `tune_results`: that would bring `show_best()` and `select_best()`
 along, and both would rank outer folds, which is the reading IP3 forbids
 (D-010). `collect_metrics()` is registered against tune's generic.
 
-`nested_final_fit()` (`R/nested-final-fit.R`) is the deployment path. It reuses
-the same argument checks, then draws two seeds and hands everything to
-`final_fit_worker()`, which sets the tuning seed, re-evaluates the design's
-stored `inside` call against the full data, tunes, selects, finalizes, sets the
-fit seed, and fits on every row. The seed scope is D-016: building an `rset`
+`nested_final_fit()` (`R/nested-final-fit.R`) is the deployment path. It
+takes the workflow and the `nested_results`, refuses a results object that is
+not one, carries no `inside`/`procedure` record or has no rows
+(`check_results_record()`, one class `nestedtune_bad_results`), rebuilds the
+tuner description from the `procedure` attribute (`procedure_tuner()`,
+`R/tuner.R`), then draws two seeds and hands everything to
+`final_fit_worker()`, which sets the tuning seed, re-evaluates the recorded
+`inside` call against the full data, runs the recorded tuner through the same
+`run_tuner()` the loop uses, selects, finalizes, sets the fit seed, and fits
+on every row. The seed scope is D-016: building an `rset`
 draws from the RNG, so the construction sits inside the tuning seed's scope
 rather than before it, and the run is reproducible from the two seeds alone.
 The worker exists as a separate function for the same reason `nested_fold_fit()`
@@ -279,10 +286,11 @@ independence from the ambient generator testable, since the entry draw itself
 is kind-dependent and so cannot be.
 
 `new_nested_final_fit()` assembles a plain list carrying the trained workflow,
-the selection, the tuning run, and both seeds. The tuning run travels with it as
-the record of what selection saw; its metrics are selection-time quantities, so
-nothing in the package's own surface turns them into a claim — the print method
-shows no number from it, and tune's ranking generics are left unregistered.
+the selection, the tuning run, both seeds, and the procedure re-run. The tuning
+run travels with it as the record of what selection saw; its metrics are
+selection-time quantities, so nothing in the package's own surface turns them
+into a claim — the print method shows no number from it, and tune's ranking
+generics are left unregistered.
 
 The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows,
 parsnip, and ggplot2 _(ggplot2 added 2026-07-26 at M08, D-019: the first Import

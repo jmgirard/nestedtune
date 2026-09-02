@@ -17,9 +17,9 @@ The stored \code{tune_results} object, unchanged. It is tune's own object,
 so tune's generics apply to it directly.
 }
 \description{
-Returns the \code{\link[tune:tune_grid]{tune::tune_grid()}} result that \code{\link[=nested_final_fit]{nested_final_fit()}} chose its
-parameters from — the record of what selection saw when the procedure was
-re-run on the complete dataset.
+Returns the \code{\link[tune:tune_grid]{tune::tune_grid()}} or \code{\link[tune:tune_bayes]{tune::tune_bayes()}} result that
+\code{\link[=nested_final_fit]{nested_final_fit()}} chose its parameters from — the record of what
+selection saw when the procedure was re-run on the complete dataset.
 }
 \section{What its numbers are, and are not}{
 
@@ -30,8 +30,9 @@ quantity: it was computed on the resamples that chose the candidate it
 describes, which makes it optimistically biased as a claim about the model
 this final fit produced. Nothing in that object is this model's performance.
 
-Report the nested estimate instead — \code{collect_metrics()} on the
-\code{\link[=nested_tune_grid]{nested_tune_grid()}} result. That number is measured on data no part of the
+Report the nested estimate instead — \code{collect_metrics()} on the results
+object the fit was built from, the \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result. That number is measured on data no part of the
 tune-and-fit procedure ever saw, which is what makes it an honest description
 of the procedure that produced your model.
 
@@ -57,8 +58,10 @@ folds <- nested_resamples(
   inside = rsample::vfold_cv(v = 3)
 )
 
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 set.seed(3)
-final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+final <- nested_final_fit(wf, res)
 
 extract_tune_results(final)
 \dontshow{\}) # examplesIf}

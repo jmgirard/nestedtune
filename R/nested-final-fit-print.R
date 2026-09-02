@@ -16,8 +16,15 @@
 #'
 #' No performance number is shown. The tuning run stored on the object has
 #' metrics, but they were consumed by selection and are optimistically biased as
-#' a claim about this model; the nested estimate from [nested_tune_grid()] is
-#' the one to report (IP3).
+#' a claim about this model; the nested estimate on the results object the fit
+#' was built from -- the [nested_tune_grid()] or [nested_tune_bayes()] result
+#' -- is the one to report (IP3).
+#'
+#' The procedure line says what the full-data search was, as what ran beside
+#' what was asked for: for a grid procedure the candidates scored; for a
+#' Bayesian one the initial candidates scored and requested, and the
+#' iterations completed and requested, since [tune::tune_bayes()] may score
+#' fewer initial candidates than `initial` names and stop short of `iter`.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
 #' @param ... Not used; must be empty. An argument passed here is an error
@@ -32,12 +39,15 @@
 print.nested_final_fit <- function(x, ...) {
   rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation final fit")
+  # The menu selection picked from, before what it picked: the same sentence
+  # for both tuners, so one kind of object has one shape of print (RR05 Q2).
+  cli::cli_text("Procedure: {procedure_label(new_summary_nested_final_fit(x))}")
   cli::cli_text("Selected: {selected_label(x$selected)}")
   cli::cli_text("")
   cli::cli_bullets(c(
     i = "This model has no performance estimate of its own. Report the nested \\
-         estimate from {.code collect_metrics()} on the {.fn nested_tune_grid} \\
-         result, which describes the procedure that produced it.",
+         estimate from {.code collect_metrics()} on the results object this \\
+         fit was built from, which describes the procedure that produced it.",
     i = "Compare the parameters above with {.code .selected} from that run. \\
          Outer folds choosing differently is selection instability, and it is \\
          information about the procedure rather than noise.",
@@ -56,15 +66,18 @@ print.nested_final_fit <- function(x, ...) {
 #'
 #' @description
 #' Answers what the final fit means: the full-data tuning run the selection
-#' came from, how many candidates that run scored, which parameter values it
-#' selected, and where this model's honest performance estimate lives.
+#' came from, which procedure ran it and at what counts, how many candidates
+#' that run scored, which parameter values it selected, and where this
+#' model's honest performance estimate lives.
 #'
 #' The estimate component is always `NULL`, and that is the point. The tuning
 #' run stored on the object has metrics, but selection consumed them and they
 #' are optimistically biased as a claim about this model; the nested estimate
-#' from [nested_tune_grid()] is the one to report (IP3). The absence is carried
-#' as a component rather than left out, so a caller reading the summary meets a
-#' recorded fact instead of a missing name.
+#' on the results object the fit was built from -- the [nested_tune_grid()] or
+#' [nested_tune_bayes()] result -- is the one to report (IP3). The absence is
+#' carried as a component rather than left out, so a caller reading the
+#' summary meets a recorded fact instead of a missing name; the four Bayesian
+#' counts are carried as `NULL` on a grid fit for the same reason.
 #'
 #' @param object A `nested_final_fit` object from [nested_final_fit()].
 #' @param ... Not used; must be empty. An argument passed here is an error
@@ -72,10 +85,17 @@ print.nested_final_fit <- function(x, ...) {
 #'
 #' @return
 #' `summary()` returns an object of class `summary.nested_final_fit`: a list
-#' holding the full-data tuning run's resampling label, the number of
-#' candidates that run scored, the parameter values selection chose, and an
-#' `estimate` component that is always `NULL`. Printing it is what most callers
-#' want; the components are there for a caller that needs a value rather than a
+#' holding the full-data tuning run's resampling label (`tuning_label`), the
+#' tuner that ran (`tuner`, `"tune_grid"` or `"tune_bayes"`), the number of
+#' candidates that run scored (`candidates`), the Bayesian counts (`initial`
+#' and `initial_requested`, `iterations_completed` and
+#' `iterations_requested`, each `NULL` on a grid fit; the scored figures are
+#' read from the candidate record, the requested ones from the procedure, and
+#' a run whose candidate record cannot be derived reports its scored figures
+#' as zero rather than failing to print), the
+#' parameter values selection chose (`selection`), and an `estimate`
+#' component that is always `NULL`. Printing it is what most callers want;
+#' the components are there for a caller that needs a value rather than a
 #' line of text.
 #'
 #' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
@@ -96,7 +116,9 @@ print.nested_final_fit <- function(x, ...) {
 #' )
 #'
 #' set.seed(2)
-#' final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+#' res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+#' set.seed(3)
+#' final <- nested_final_fit(wf, res)
 #'
 #' summary(final)
 #'
@@ -135,14 +157,78 @@ print.summary.nested_final_fit <- function(x, ...) {
 # same habit IP4 asks of the loop: what is true is written down, never left to
 # be inferred from a name that is not there.
 new_summary_nested_final_fit <- function(x) {
+  candidates <- scored_candidates(x$tuning)
+  counts <- procedure_counts(candidates, x$procedure)
   structure(
-    list(
-      tuning_label = tuning_scheme_label(x$tuning),
-      candidates = nrow(scored_candidates(x$tuning)),
-      selection = summary_final_selection(x$selected),
-      estimate = NULL
+    c(
+      list(
+        tuning_label = tuning_scheme_label(x$tuning),
+        tuner = x$procedure$tuner,
+        candidates = nrow(candidates)
+      ),
+      counts,
+      list(
+        selection = summary_final_selection(x$selected),
+        estimate = NULL
+      )
     ),
     class = "summary.nested_final_fit"
+  )
+}
+
+# What the search was, in counts: for a Bayesian run, the initial candidates
+# and the iterations, each as what ran beside what was asked for (IP4, RR05
+# Q2). `tune_bayes()` can score fewer initial candidates than `initial` names
+# -- a space-filling design on a small integer space deduplicates -- and can
+# stop short of `iter`, so the scored figures are read off the candidate
+# record: the `.iter == 0` rows, and the largest `.iter`. A grid run has none
+# of these, and carries the four as NULL rather than leaving them out, in the
+# habit `estimate = NULL` set. `procedure` is NULL on an object built by hand
+# without one, and then every count is too.
+procedure_counts <- function(candidates, procedure) {
+  none <- list(
+    initial = NULL,
+    initial_requested = NULL,
+    iterations_completed = NULL,
+    iterations_requested = NULL
+  )
+  if (!identical(procedure$tuner, "tune_bayes")) {
+    return(none)
+  }
+  iters <- candidates[[".iter"]]
+  list(
+    initial = if (is.null(iters)) 0L else sum(iters == 0L),
+    initial_requested = as.integer(procedure$initial),
+    iterations_completed = if (length(iters) == 0L) 0L else max(iters),
+    iterations_requested = as.integer(procedure$iter)
+  )
+}
+
+# The procedure on one line, rendered from the summary's components so the
+# print method and the summary cannot describe one search differently.
+procedure_label <- function(s) {
+  if (identical(s$tuner, "tune_bayes")) {
+    return(sprintf(
+      "Bayesian optimization, %d initial candidate%s (%d requested), %d iteration%s completed (%d requested)",
+      s$initial,
+      if (s$initial == 1L) "" else "s",
+      s$initial_requested,
+      s$iterations_completed,
+      if (s$iterations_completed == 1L) "" else "s",
+      s$iterations_requested
+    ))
+  }
+  if (identical(s$tuner, "tune_grid")) {
+    return(sprintf(
+      "grid search, %d candidate%s scored",
+      s$candidates,
+      if (s$candidates == 1L) "" else "s"
+    ))
+  }
+  sprintf(
+    "%d candidate%s scored",
+    s$candidates,
+    if (s$candidates == 1L) "" else "s"
   )
 }
 
@@ -224,6 +310,7 @@ print_final_design <- function(s) {
   if (!is.null(s$tuning_label)) {
     cli::cli_text("Full-data tuning: {s$tuning_label}")
   }
+  cli::cli_text("Procedure: {procedure_label(s)}")
   cli::cli_text("Candidates scored: {s$candidates}")
   invisible(NULL)
 }
@@ -248,8 +335,8 @@ print_final_estimate <- function(s) {
   cli::cli_h2("Estimate")
   cli::cli_bullets(c(
     i = "This model has no performance estimate of its own. Report the nested \\
-         estimate from {.code collect_metrics()} on the {.fn nested_tune_grid} \\
-         result, which describes the procedure that produced it.",
+         estimate from {.code collect_metrics()} on the results object this \\
+         fit was built from, which describes the procedure that produced it.",
     i = "The tuning run above has metrics, but selection consumed them. \\
          {.fn extract_tune_results} reaches them, and every one is a \\
          selection-time quantity, optimistically biased as a claim about this \\

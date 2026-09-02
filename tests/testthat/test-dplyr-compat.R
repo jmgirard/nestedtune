@@ -58,6 +58,7 @@ expect_kept <- function(out, src) {
   testthat::expect_identical(attr(out, "grid"), attr(src, "grid"))
   testthat::expect_identical(attr(out, "metrics"), attr(src, "metrics"))
   testthat::expect_identical(attr(out, "procedure"), attr(src, "procedure"))
+  testthat::expect_identical(attr(out, "inside"), attr(src, "inside"))
   testthat::expect_identical(attr(out, "folds_attempted"), nrow(out))
   testthat::expect_identical(attr(out, "folds_completed"), sum(out$.completed))
   invisible(out)

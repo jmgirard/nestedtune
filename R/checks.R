@@ -247,7 +247,15 @@ check_grid <- function(grid, call = rlang::caller_env()) {
 # one. tune raises exactly this, but per fold, and M03 records fold failures
 # instead of re-raising them; without this check a malformed grid would surface
 # as an entire design failing rather than as the call error it is (GP3).
-check_grid_params <- function(object, grid, call = rlang::caller_env()) {
+# `recorded = TRUE` is the final fit's reading: the grid came off the results
+# object and is the fixed side, so the message names `object` -- the workflow
+# handed over -- rather than a `grid` argument the caller never wrote (D-041).
+check_grid_params <- function(
+  object,
+  grid,
+  call = rlang::caller_env(),
+  recorded = FALSE
+) {
   if (!is.data.frame(grid)) {
     return(invisible(grid))
   }
@@ -263,6 +271,17 @@ check_grid_params <- function(object, grid, call = rlang::caller_env()) {
 
   unknown <- setdiff(names(grid), ids)
   if (length(unknown) > 0L) {
+    if (recorded) {
+      cli::cli_abort(
+        c(
+          "{.arg object} does not tune {length(unknown)} parameter{?s} the \\
+           recorded grid has {?a column/columns} for: {.val {unknown}}.",
+          i = "Hand over the workflow the nested run in {.arg results} was \\
+               built around."
+        ),
+        call = call
+      )
+    }
     cli::cli_abort(
       c(
         "{.arg grid} has {length(unknown)} column{?s} not marked for tuning: \\
@@ -276,6 +295,17 @@ check_grid_params <- function(object, grid, call = rlang::caller_env()) {
 
   missing <- setdiff(ids, names(grid))
   if (length(missing) > 0L) {
+    if (recorded) {
+      cli::cli_abort(
+        c(
+          "{.arg object} tunes {length(missing)} parameter{?s} the recorded \\
+           grid has no column for: {.val {missing}}.",
+          i = "Hand over the workflow the nested run in {.arg results} was \\
+               built around."
+        ),
+        call = call
+      )
+    }
     cli::cli_abort(
       c(
         "{.arg grid} has no column for {length(missing)} tuned parameter{?s}: \\
@@ -289,30 +319,71 @@ check_grid_params <- function(object, grid, call = rlang::caller_env()) {
   invisible(grid)
 }
 
-# The design's inner resampling specification, which the final fit re-runs over
-# every row.
+# The record a final fit re-runs (D-041, RR05 Q3): a `nested_results` carrying
+# the design's inner resampling specification and the procedure that ran, with
+# at least one row to read the data off. One class for every shape, as the
+# Bayesian arguments are refused (`nestedtune_bad_<arg>`): what a caller does
+# is the same on each -- stop, and go back to an object the orchestrator
+# produced -- and the message carries which shape it was.
 #
-# `nested_resamples()` and `rsample::nested_cv()` both store it as an
-# unevaluated call, and that is the whole reason a final fit can be built from
-# the design alone: the procedure the nested estimate describes can be run
-# again. A design assembled some other way carries no such call and cannot be
-# re-run, which is worth saying here rather than letting the re-evaluation fail
-# on something else.
-check_inside_spec <- function(resamples, call = rlang::caller_env()) {
-  inside <- attr(resamples, "inside")
-  if (!rlang::is_call(inside)) {
+# Three origins reach here, and the messages name them. An operation outside
+# the class's invariants -- rows added or removed -- returns a bare tibble
+# (R/nested-results.R), so `res[0, ]` and `filter(res, ...)` arrive as "not a
+# nested_results", never as a classed object missing its record. A classed
+# object with no `inside` has two indistinguishable origins, because an
+# attribute cannot hold NULL: a result built before the specification was
+# recorded, and one built from a design that carried none. And a classed
+# object with the record and no rows is a prototype: it describes a run and
+# holds no data to re-run it on.
+check_results_record <- function(results, call = rlang::caller_env()) {
+  if (!inherits(results, "nested_results")) {
     cli::cli_abort(
       c(
-        "{.arg resamples} carries no inner resampling specification to re-run.",
-        x = "Its {.field inside} attribute is \\
-             {.obj_type_friendly {inside}}, not a call.",
-        i = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
-             always carry one; a design assembled by hand does not."
+        "{.arg results} must be a {.cls nested_results} from \\
+         {.fn nested_tune_grid} or {.fn nested_tune_bayes}.",
+        x = "Got {.obj_type_friendly {results}}.",
+        i = "An operation that adds or removes rows returns a plain tibble \\
+             without the run's record; hand over the object the \\
+             orchestrator returned."
       ),
+      class = "nestedtune_bad_results",
       call = call
     )
   }
-  invisible(inside)
+  inside <- attr(results, "inside")
+  procedure <- attr(results, "procedure")
+  if (!rlang::is_call(inside) || !is.list(procedure)) {
+    absent <- c(
+      if (!rlang::is_call(inside)) "inner resampling specification",
+      if (!is.list(procedure)) "tuning procedure"
+    )
+    cli::cli_abort(
+      c(
+        "{.arg results} carries no {absent} to re-run.",
+        x = "It was built by an earlier version of nestedtune, or from a \\
+             design assembled by hand rather than by {.fn nested_resamples} \\
+             or {.fn rsample::nested_cv}, which store the specification as \\
+             a call.",
+        i = "Re-run {.fn nested_tune_grid} or {.fn nested_tune_bayes} on \\
+             this version, on a design from one of those constructors; a \\
+             results object is not migrated."
+      ),
+      class = "nestedtune_bad_results",
+      call = call
+    )
+  }
+  if (nrow(results) == 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg results} has no rows, so there is no data to re-run the \\
+         procedure on.",
+        x = "A prototype describes a run but cannot re-run it."
+      ),
+      class = "nestedtune_bad_results",
+      call = call
+    )
+  }
+  invisible(results)
 }
 
 # Re-evaluate that specification against the whole data.

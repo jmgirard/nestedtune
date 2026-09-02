@@ -14,71 +14,42 @@
 
 #' Fit the final model after nested cross-validation
 #'
-#' `nested_final_fit()` runs the tuning procedure once more with the whole
-#' dataset in hand: it re-evaluates the design's inner resampling specification
-#' against every row, tunes with [tune::tune_grid()], selects the best
-#' candidate, finalizes the workflow, and fits it on all the data. The result is
-#' the model to deploy.
+#' `nested_final_fit()` runs the tuning procedure a nested run recorded once
+#' more, with the whole dataset in hand: it re-evaluates the design's inner
+#' resampling specification against every row, tunes with [tune::tune_grid()]
+#' or [tune::tune_bayes()] under the arguments the results object carries,
+#' selects the best candidate, finalizes the workflow, and fits it on all the
+#' data. The result is the model to deploy, built by the same search the
+#' estimate you report describes.
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
-#'   for tuning with [tune::tune()]. Ordinarily the same workflow passed to
-#'   [nested_tune_grid()].
-#' @param ... Not used; must be empty. Everything after it is matched by name,
-#'   so a mistyped or unsupported argument is an error rather than a silent
-#'   positional match.
-#' @param resamples A nested resampling design, from [nested_resamples()] or
-#'   [rsample::nested_cv()]. Only its inner specification and its data are
-#'   *used* — the outer folds play no part in a final fit — but the whole design
-#'   is still checked, so a design [nested_tune_grid()] refuses is refused here
-#'   too: its `splits` column must hold `rsplit` objects and its
-#'   `inner_resamples` column an `rset` per outer fold. The reverse does not
-#'   follow: this function additionally needs the design's stored inner
-#'   specification, which the loop never re-runs, so a design with none is
-#'   refused here and runs perfectly well there.
-#' @param param_info A [dials::parameters()] object, or `NULL` to let tune
-#'   derive one from the workflow. Passed unchanged to [tune::tune_grid()], so a
-#'   restricted range restricts the grid the final fit's tuning run searches.
-#' @param grid A data frame of candidate parameter values, or a positive whole
-#'   number giving the size of a grid to generate. Passed to
-#'   [tune::tune_grid()].
-#' @param metrics A [yardstick::metric_set()], or `NULL` to use tune's defaults
-#'   for the model's mode. The first metric in the set selects the best
-#'   candidate.
-#' @param event_level `"first"` (the default) or `"second"`, naming which level
-#'   of a two-class outcome factor is the event. It reaches the tuning run,
-#'   where it decides which candidate is selected; the final fit itself scores
-#'   nothing, so there is no second place for it to act. Metrics that do not
-#'   distinguish the two levels -- accuracy, `roc_auc`, `brier_class` -- are
-#'   unaffected by it. Ignored for a regression model, as it is in tune.
-#'
-#' @param eval_time A numeric vector of evaluation times for a censored
-#'   regression model, or `NULL` (the default) to leave the choice to tune. It
-#'   reaches every tune call whose answer depends on it, so a dynamic or
-#'   integrated survival metric -- `brier_survival()`, `roc_auc_survival()` and
-#'   their relatives -- is measured at the times you name. It is ignored, with
-#'   a warning from tune, whenever the metric set has no metric that reads it.
-#'   tune keys that warning on the metrics rather than on the model's mode: a
-#'   set with no survival metric draws one saying the argument is only used
-#'   for censored regression, and a censored regression model scored only by a
-#'   static metric such as `concordance_survival()` draws a different one,
-#'   saying it is only used for dynamic or integrated survival metrics.
-#'
-#'   Refused here, ahead of tune: anything that is not numeric, an empty
-#'   vector, and any element that is missing, negative or not finite. tune
-#'   treats those unevenly, and only once a metric reads the times -- a
-#'   character value that reads as a number, such as `"1"`, is coerced with
-#'   `as.numeric()` and accepted, one that does not becomes missing; a
-#'   missing, negative or infinite element is dropped with a warning; and an
-#'   empty vector, or one that dropping has emptied, aborts -- and this package
-#'   refuses them all at entry, before a whole run is paid for. Zero, repeated
-#'   times and times out of order are accepted and passed on untouched, since
-#'   tune normalizes those itself; a repeated time draws tune's warning that 0
-#'   inappropriate evaluation time points were removed, once per tune call.
+#'   for tuning with [tune::tune()]: the workflow the nested run was built
+#'   around. For a grid procedure it is checked against the recorded grid the
+#'   way [nested_tune_grid()] checked it, so a different workflow is refused
+#'   here rather than by tune one tuning run later.
+#' @param results The `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()] whose estimate you will report for this model.
+#'   Everything the re-run needs is read from it: the design's inner
+#'   resampling specification, recorded on the result as the design stored it;
+#'   the data, which every split references; and the procedure -- the tuner
+#'   and its own arguments (`grid`, or `iter`, `initial` and `objective`) with
+#'   `param_info`, `event_level` and `eval_time`, and the metric set. A results
+#'   object that carries no such record (one built by an earlier version of
+#'   nestedtune, or from a design assembled by hand rather than by
+#'   [nested_resamples()] or [rsample::nested_cv()]), one that is no longer a
+#'   `nested_results` (an operation that added or removed rows returns a plain
+#'   tibble), and one with no rows are each refused before any fitting, with
+#'   condition class `nestedtune_bad_results`.
+#' @param ... Not used; must be empty. An argument passed here is an error
+#'   rather than silently ignored -- in particular the former `grid`,
+#'   `param_info`, `metrics`, `event_level` and `eval_time` arguments, which
+#'   now come from `results`.
 #'
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
 #'   trained workflow, better reached with [extract_workflow()]), `selected`
 #'   (the parameters chosen), `tuning` (the tuning run they were chosen from),
-#'   and `tuning_seed` and `fit_seed` (the two seeds that reproduce it).
+#'   `tuning_seed` and `fit_seed` (the two seeds that reproduce it), and
+#'   `procedure` (the record re-run, as `results` carried it).
 #'
 #' @details
 #' The procedure a nested estimate describes is "resample this dataset by the
@@ -93,8 +64,11 @@
 #'
 #' @section What to report:
 #'
-#' Report the estimate from [collect_metrics()] on the [nested_tune_grid()]
-#' result as this model's performance. That number estimates the k-fold test
+#' Report the estimate from [collect_metrics()] on the results object you
+#' handed over -- the [nested_tune_grid()] or [nested_tune_bayes()] result --
+#' as this model's performance. The model and the estimate come from one
+#' search by construction: the procedure is read from that object and cannot
+#' be restated here. That number estimates the k-fold test
 #' error of the whole tune-and-fit procedure that produced this model, measured
 #' on data no part of the procedure ever touched. Expect it to run slightly
 #' pessimistic: each outer fold trains on its analysis rows alone, so every
@@ -127,15 +101,26 @@
 #' inner resamples *and* tuning; the second covers the final fit. Both are
 #' applied with the generator kind pinned, and both are returned on the object.
 #'
-#' The run is reproducible by hand from those two seeds alone:
+#' The run is reproducible by hand from those two seeds and the record on
+#' `fit$procedure`, every value below being one that record holds (or, for
+#' `metrics`, `attr(results, "metrics")`); the tuning call is the one the
+#' record names:
 #'
 #' ```
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
-#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
-#'   eval_time = eval_time,
+#' # a grid procedure
+#' tuned <- tune_grid(object, inner, grid = grid, param_info = param_info,
+#'   metrics = metrics, eval_time = eval_time,
 #'   control = control_grid(allow_par = FALSE, event_level = event_level))
+#' # a Bayesian procedure: the Gaussian process is seeded from the tuning
+#' # seed, the rule nested_tune_bayes() fixes for every fold
+#' tuned <- tune_bayes(object, inner, iter = iter, initial = initial,
+#'   objective = objective, param_info = param_info, metrics = metrics,
+#'   eval_time = eval_time,
+#'   control = control_bayes(allow_par = FALSE, event_level = event_level,
+#'                           seed = fit$tuning_seed))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -158,9 +143,10 @@
 #'
 #' @section The inner specification is re-evaluated:
 #'
-#' A nested design stores its `inside` argument as an unevaluated call, and this
-#' function evaluates it again — against the whole dataset, in the environment
-#' you call from, not the one the design was built in.
+#' A nested design stores its `inside` argument as an unevaluated call, the
+#' nested run records it on its result, and this function evaluates it again
+#' — against the whole dataset, in the environment you call from, not the one
+#' the design was built in.
 #'
 #' Write it with literal arguments. `inside = vfold_cv(v = 5)` is re-evaluated
 #' identically anywhere. `inside = vfold_cv(v = k)` is not: if `k` is gone by
@@ -193,7 +179,7 @@
 #'
 #' # The model: what you deploy. Report the estimate above for it.
 #' set.seed(3)
-#' final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+#' final <- nested_final_fit(wf, res)
 #' final
 #'
 #' predict(extract_workflow(final), new_data = mtcars[1:3, ])
@@ -206,31 +192,26 @@
 #' examples of cross-validation for model development and evaluation in health
 #' care: Tutorial. *JMIR AI*, 2, e49023.
 #'
-#' @seealso [nested_tune_grid()], [extract_workflow()]
+#' @seealso [nested_tune_grid()], [nested_tune_bayes()], [extract_workflow()]
 #' @export
-nested_final_fit <- function(
-  object,
-  resamples,
-  ...,
-  param_info = NULL,
-  grid = 10,
-  metrics = NULL,
-  event_level = "first",
-  eval_time = NULL
-) {
+nested_final_fit <- function(object, results, ...) {
   rlang::check_dots_empty()
   check_workflow(object)
-  check_nested(resamples)
-  check_grid(grid)
-  check_grid_params(object, grid)
-  check_metrics(metrics)
-  check_param_info(param_info)
-  check_event_level(event_level)
-  check_eval_time(eval_time)
-  inside <- check_inside_spec(resamples)
+  check_results_record(results)
+
+  procedure <- attr(results, "procedure")
+  # The grid is judged against the workflow as the orchestrator judged it,
+  # so a workflow other than the one the estimate was built around is refused
+  # here rather than by tune, one full tuning run later (GP3).
+  if (identical(procedure$tuner, "tune_grid")) {
+    check_grid_params(object, procedure$grid, recorded = TRUE)
+  }
+  inside <- attr(results, "inside")
+  # Absent rather than NULL when the run was given none; either way tune picks.
+  metrics <- attr(results, "metrics")
 
   env <- rlang::caller_env()
-  data <- split_data(resamples)
+  data <- split_data(results)
 
   # The same snapshot-and-restore contract the loop gives (D-011): what is put
   # back is the caller's state on entry, and `sample.int()` below initializes a
@@ -248,11 +229,11 @@ nested_final_fit <- function(
     env,
     seeds,
     object,
-    tuner_grid(grid),
+    procedure_tuner(procedure),
     metrics,
-    param_info = param_info,
-    event_level = event_level,
-    eval_time = eval_time,
+    param_info = procedure$param_info,
+    event_level = procedure$event_level,
+    eval_time = procedure$eval_time,
     call = rlang::current_env()
   )
 }
@@ -312,7 +293,16 @@ final_fit_worker <- function(
   set_fold_seed(seeds[[2L]])
   fitted <- parsnip::fit(final_wf, data = data)
 
-  new_nested_final_fit(fitted, selected, tuned, seeds)
+  # The same record the results object carries, rebuilt from what this worker
+  # was handed, so the object names the procedure it ran (IP4) and the print
+  # method has the requested counts to show beside the scored ones.
+  procedure <- new_procedure(
+    tuner,
+    param_info = param_info,
+    event_level = event_level,
+    eval_time = eval_time
+  )
+  new_nested_final_fit(fitted, selected, tuned, seeds, procedure)
 }
 
 # The final-fit object.
@@ -324,14 +314,15 @@ final_fit_worker <- function(
 # carry is any method that would turn that run into a performance claim: tune's
 # ranking and collecting generics are left unregistered, so they error rather
 # than answer, exactly as they do for `nested_results` (D-010, RR02 Q7).
-new_nested_final_fit <- function(workflow, selected, tuning, seeds) {
+new_nested_final_fit <- function(workflow, selected, tuning, seeds, procedure) {
   structure(
     list(
       workflow = workflow,
       selected = selected,
       tuning = tuning,
       tuning_seed = seeds[[1L]],
-      fit_seed = seeds[[2L]]
+      fit_seed = seeds[[2L]],
+      procedure = procedure
     ),
     class = "nested_final_fit"
   )

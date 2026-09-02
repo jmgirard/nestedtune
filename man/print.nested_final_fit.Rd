@@ -22,8 +22,15 @@ that reach what selection saw.
 
 No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically biased as
-a claim about this model; the nested estimate from \code{\link[=nested_tune_grid]{nested_tune_grid()}} is
-the one to report (IP3).
+a claim about this model; the nested estimate on the results object the fit
+was built from -- the \code{\link[=nested_tune_grid]{nested_tune_grid()}} or \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result
+-- is the one to report (IP3).
+
+The procedure line says what the full-data search was, as what ran beside
+what was asked for: for a grid procedure the candidates scored; for a
+Bayesian one the initial candidates scored and requested, and the
+iterations completed and requested, since \code{\link[tune:tune_bayes]{tune::tune_bayes()}} may score
+fewer initial candidates than \code{initial} names and stop short of \code{iter}.
 }
 \seealso{
 \code{\link[=summary.nested_final_fit]{summary.nested_final_fit()}}, \code{\link[=nested_final_fit]{nested_final_fit()}},

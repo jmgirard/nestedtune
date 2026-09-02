@@ -239,6 +239,63 @@ reference_final_fit <- function(
   list(seeds = seeds, selected = best, workflow = fitted, tuned = tuned)
 }
 
+# The hand-rolled reference final fit for the Bayesian path (M46 AC2). What
+# it adds to the grid reference is the rule that is the Bayesian path's own
+# (D-040): `control_bayes(seed = <the tuning seed>)`, built after `set.seed()`
+# on that same number, with the initial set drawn inside `tune_bayes()` from
+# the same stream. The rset is built after the tuning seed is set (D-016).
+# `save_workflow = TRUE` is set on the test's own tuner call alone, so the O5
+# strand can run `tune::fit_best()` on this run (RR02 Q5, RR05 Q1).
+reference_bayes_final_fit <- function(
+  wf,
+  data,
+  iter,
+  initial,
+  objective,
+  param_info,
+  metrics,
+  seed,
+  metric_name,
+  v = 3
+) {
+  set.seed(seed)
+  seeds <- sample.int(.Machine$integer.max, 2L)
+
+  set.seed(
+    seeds[[1L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  inner <- rsample::vfold_cv(data, v = v)
+  tuned <- tune::tune_bayes(
+    wf,
+    resamples = inner,
+    iter = iter,
+    initial = initial,
+    objective = objective,
+    param_info = param_info,
+    metrics = metrics,
+    control = tune::control_bayes(
+      seed = seeds[[1L]],
+      allow_par = FALSE,
+      save_workflow = TRUE
+    )
+  )
+  best <- tune::select_best(tuned, metric = metric_name)
+  final_wf <- tune::finalize_workflow(wf, best)
+
+  set.seed(
+    seeds[[2L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  fitted <- parsnip::fit(final_wf, data = data)
+
+  list(seeds = seeds, selected = best, workflow = fitted, tuned = tuned)
+}
+
 ref_field <- function(ref, field) {
   vapply(ref, function(x) x[[field]], integer(1))
 }
@@ -302,6 +359,35 @@ final_nested <- function(data, seed = 11) {
     data,
     outside = rsample::vfold_cv(v = 2),
     inside = rsample::vfold_cv(v = 3)
+  )
+}
+
+# The results objects a final fit is built from (M46, D-041): one nested run
+# on `final_nested()`, served from the cache, carrying the procedure the final
+# fit re-runs. The deterministic one is the default; the stochastic sibling
+# runs ranger over `stoch_grid()`. `seed` is the run's entry seed, set here
+# after every argument is built so the cache key is the same wherever the
+# object is asked for; the final fit's own seed is the caller's to set, after
+# this returns.
+final_results <- function(
+  data,
+  wf = det_workflow(data),
+  grid = det_grid(),
+  metrics = reg_metrics(),
+  seed = 22
+) {
+  folds <- final_nested(data)
+  set.seed(seed)
+  memoised(nested_tune_grid(wf, folds, grid = grid, metrics = metrics))
+}
+
+stoch_final_results <- function(data, seed = 23) {
+  final_results(
+    data,
+    wf = stoch_workflow(data),
+    grid = stoch_grid(),
+    metrics = reg_metrics(),
+    seed = seed
   )
 }
 
@@ -800,6 +886,43 @@ bayes_stoch_param_info <- function(wf) {
   )
 }
 
+# The Bayesian results objects a final fit is built from (M46): the suite's
+# Bayesian arguments (`iter = 2`, `initial = 3`) on `final_nested()`, whose
+# inner specification is literal and so survives the re-run. The
+# deterministic one carries `bayes_workflow()`'s integer-only parameter set;
+# the stochastic sibling runs ranger over `bayes_stoch_param_info()`.
+bayes_final_results <- function(data, iter = 2, initial = 3, seed = 24) {
+  wf <- bayes_workflow(data)
+  folds <- final_nested(data)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+  set.seed(seed)
+  memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = iter,
+    initial = initial,
+    param_info = p,
+    metrics = ms
+  ))
+}
+
+bayes_stoch_final_results <- function(data, seed = 25) {
+  wf <- stoch_workflow(data)
+  folds <- final_nested(data)
+  p <- bayes_stoch_param_info(wf)
+  ms <- reg_metrics()
+  set.seed(seed)
+  memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  ))
+}
+
 skip_if_no_bayes_fixture <- function(stochastic = FALSE) {
   skip_if_no_engines(stochastic = stochastic)
   testthat::skip_if_not_installed("dials")
@@ -985,7 +1108,9 @@ replay_condition <- function(cnd) {
 # A name bound nowhere is recorded as unbound rather than skipped, so a request
 # from a frame that supplies it never shares a key with one that does not.
 inside_spec_bindings <- function(args, env) {
-  design <- args$resamples
+  # The design for an orchestrator, the results object for the final fit
+  # (D-041): both carry the specification under the same attribute name.
+  design <- if (is.null(args$results)) args$resamples else args$results
   inside <- if (is.null(design)) NULL else attr(design, "inside")
   if (!is.call(inside)) {
     return("<no inside spec>")

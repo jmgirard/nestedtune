@@ -229,6 +229,12 @@ test_that("a Bayesian run records its procedure and carries no grid attribute", 
   expect_identical(recorded$object, expected$object)
   expect_identical(procedure$event_level, "first")
   expect_null(procedure$eval_time)
+
+  # The design's inner specification rides beside the procedure (M46).
+  expect_identical(
+    attr(res, "inside"),
+    attr(det_nested(make_reg_data()), "inside")
+  )
 })
 
 test_that("the procedure is part of the run's record", {

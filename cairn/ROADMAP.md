@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
-| M46 | `nested_final_fit()` re-runs the procedure a result recorded | planned | M45 | normal | milestones/M46-final-fit-recorded-procedure.md |
+| M46 | `nested_final_fit()` re-runs the procedure a result recorded | review | M45 | normal | milestones/M46-final-fit-recorded-procedure.md |
 | M44 | `agreement()` tabulates what the outer folds selected | done | — | normal | milestones/archive/M44-agreement.md |
 | M43 | The print and summary follow-ups M39 left behind | done | — | normal | milestones/archive/M43-print-summary-followups.md |
 | M42 | The fixture key's separation test, derived from the orchestrators' own arguments | done | — | normal | milestones/archive/M42-fixture-key-derived.md |

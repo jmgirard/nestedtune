@@ -21,9 +21,9 @@
 
 #' Extract the tuning run a final fit was selected from
 #'
-#' Returns the [tune::tune_grid()] result that [nested_final_fit()] chose its
-#' parameters from — the record of what selection saw when the procedure was
-#' re-run on the complete dataset.
+#' Returns the [tune::tune_grid()] or [tune::tune_bayes()] result that
+#' [nested_final_fit()] chose its parameters from — the record of what
+#' selection saw when the procedure was re-run on the complete dataset.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
 #' @param ... Not used; must be empty. An argument passed here is an error
@@ -40,8 +40,9 @@
 #' describes, which makes it optimistically biased as a claim about the model
 #' this final fit produced. Nothing in that object is this model's performance.
 #'
-#' Report the nested estimate instead — `collect_metrics()` on the
-#' [nested_tune_grid()] result. That number is measured on data no part of the
+#' Report the nested estimate instead — `collect_metrics()` on the results
+#' object the fit was built from, the [nested_tune_grid()] or
+#' [nested_tune_bayes()] result. That number is measured on data no part of the
 #' tune-and-fit procedure ever saw, which is what makes it an honest description
 #' of the procedure that produced your model.
 #'
@@ -65,8 +66,10 @@
 #'   inside = rsample::vfold_cv(v = 3)
 #' )
 #'
+#' set.seed(2)
+#' res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 #' set.seed(3)
-#' final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+#' final <- nested_final_fit(wf, res)
 #'
 #' extract_tune_results(final)
 #'
@@ -101,7 +104,9 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #'
 #' Returns the candidate parameter settings that [nested_final_fit()]'s tuning
 #' run actually evaluated — the full-data counterpart of the `.grid` column
-#' [nested_tune_grid()] records for each outer fold.
+#' [nested_tune_grid()] and [nested_tune_bayes()] record for each outer fold,
+#' derived the same way, so a Bayesian final fit's table carries the `.iter`
+#' column that path's `.grid` does.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
 #' @param ... Not used; must be empty. An argument passed here is an error
@@ -142,8 +147,10 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #'   inside = rsample::vfold_cv(v = 3)
 #' )
 #'
+#' set.seed(2)
+#' res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 #' set.seed(3)
-#' final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+#' final <- nested_final_fit(wf, res)
 #'
 #' extract_scored_candidates(final)
 #'

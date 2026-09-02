@@ -34,7 +34,9 @@ itself — \code{tune::collect_notes(extract_tune_results(x))}.
 \description{
 Returns the candidate parameter settings that \code{\link[=nested_final_fit]{nested_final_fit()}}'s tuning
 run actually evaluated — the full-data counterpart of the \code{.grid} column
-\code{\link[=nested_tune_grid]{nested_tune_grid()}} records for each outer fold.
+\code{\link[=nested_tune_grid]{nested_tune_grid()}} and \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} record for each outer fold,
+derived the same way, so a Bayesian final fit's table carries the \code{.iter}
+column that path's \code{.grid} does.
 }
 \examples{
 \dontshow{if (rlang::is_installed(c("recipes", "yardstick"))) withAutoprint(\{ # examplesIf}
@@ -54,8 +56,10 @@ folds <- nested_resamples(
   inside = rsample::vfold_cv(v = 3)
 )
 
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 set.seed(3)
-final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+final <- nested_final_fit(wf, res)
 
 extract_scored_candidates(final)
 \dontshow{\}) # examplesIf}

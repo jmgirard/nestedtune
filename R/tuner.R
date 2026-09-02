@@ -112,3 +112,13 @@ new_procedure <- function(tuner, param_info, event_level, eval_time) {
     )
   )
 }
+
+# The tuner description rebuilt from a results object's record, for the final
+# fit (D-041): the record is the description plus the three shared arguments,
+# so everything that is neither the tuner's name nor one of those is the
+# tuner's own argument. Read by name rather than by position so a record
+# whose shared arguments were reordered still rebuilds the same description.
+procedure_tuner <- function(procedure) {
+  shared <- c("tuner", "param_info", "event_level", "eval_time")
+  new_tuner(procedure$tuner, procedure[setdiff(names(procedure), shared)])
+}

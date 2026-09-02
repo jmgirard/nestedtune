@@ -166,13 +166,21 @@ test_that("the key separates what the design's inner spec resolves in the caller
       inside = rsample::vfold_cv(v = v)
     )
   })
+  # The results object the final fit is keyed against -- built once, so both
+  # branches below key the same results value and differ only in whether `v`
+  # is bound in the frame the inner specification is re-evaluated in.
+  res_parameterised <- memoised(nested_tune_grid(
+    det_workflow(d),
+    parameterised,
+    grid = det_grid()
+  ))
 
   with_v <- local({
     v <- 3
     set.seed(2)
     fixture_key(
       nested_final_fit,
-      list(object = det_workflow(d), resamples = parameterised),
+      list(object = det_workflow(d), results = res_parameterised),
       env = environment()
     )
   })
@@ -180,7 +188,7 @@ test_that("the key separates what the design's inner spec resolves in the caller
     set.seed(2)
     fixture_key(
       nested_final_fit,
-      list(object = det_workflow(d), resamples = parameterised),
+      list(object = det_workflow(d), results = res_parameterised),
       env = environment()
     )
   })
@@ -232,38 +240,66 @@ test_that("a different seed rebuilds rather than serving the first result", {
 test_that("the key separates every formal argument of both orchestrators", {
   d <- make_reg_data()
 
-  # A base request naming every formal at its default, so that a variant can
-  # differ from it in exactly one argument and nothing else.
-  base_request <- function() {
-    list(
-      object = det_workflow(d),
-      resamples = det_nested(d),
-      param_info = NULL,
+  # nested_final_fit()'s results object, built through the loop -- the base
+  # value and the one variant value its axis needs, per registry entry below.
+  final_fit_results <- function(nested = det_nested(d)) {
+    set.seed(2)
+    memoised(nested_tune_grid(
+      det_workflow(d),
+      nested,
       grid = det_grid(),
-      metrics = reg_metrics(),
-      event_level = "first",
-      eval_time = NULL
-    )
+      metrics = reg_metrics()
+    ))
+  }
+
+  # A base request naming every formal at its default, so that a variant can
+  # differ from it in exactly one argument and nothing else. The two
+  # orchestrators no longer share a signature past `object` -- nested_final_fit()
+  # takes a `results` object where nested_tune_grid() takes `resamples` and the
+  # rest of the procedure -- so the request is built per function.
+  base_request <- function(fn_name) {
+    if (identical(fn_name, "nested_final_fit")) {
+      list(object = det_workflow(d), results = final_fit_results())
+    } else {
+      list(
+        object = det_workflow(d),
+        resamples = det_nested(d),
+        param_info = NULL,
+        grid = det_grid(),
+        metrics = reg_metrics(),
+        event_level = "first",
+        eval_time = NULL
+      )
+    }
   }
 
   # One alternate value per formal. The domain below is read from the
   # orchestrators themselves, so an argument added to either without an entry
   # here fails the test naming it -- a hand-written list of signatures missed
   # `event_level` and `eval_time` when each arrived.
-  signature_variants <- list(
-    object = function() stoch_workflow(d),
-    resamples = function() det_nested(d, v = 4),
-    param_info = function() {
-      update(
-        tune::extract_parameter_set_dials(det_workflow(d)),
-        num_comp = dials::num_comp(c(1L, 2L))
+  signature_variants <- function(fn_name) {
+    if (identical(fn_name, "nested_final_fit")) {
+      list(
+        object = function() stoch_workflow(d),
+        results = function() final_fit_results(det_nested(d, v = 4))
       )
-    },
-    grid = function() data.frame(num_comp = 1:2),
-    metrics = function() NULL,
-    event_level = function() "second",
-    eval_time = function() 1
-  )
+    } else {
+      list(
+        object = function() stoch_workflow(d),
+        resamples = function() det_nested(d, v = 4),
+        param_info = function() {
+          update(
+            tune::extract_parameter_set_dials(det_workflow(d)),
+            num_comp = dials::num_comp(c(1L, 2L))
+          )
+        },
+        grid = function() data.frame(num_comp = 1:2),
+        metrics = function() NULL,
+        event_level = function() "second",
+        eval_time = function() 1
+      )
+    }
+  }
 
   orchestrators <- list(
     nested_tune_grid = nested_tune_grid,
@@ -273,12 +309,17 @@ test_that("the key separates every formal argument of both orchestrators", {
   for (fn_name in names(orchestrators)) {
     f <- orchestrators[[fn_name]]
     axes <- setdiff(names(formals(f)), "...")
+    variants <- signature_variants(fn_name)
 
     # One fact held independently of `formals()`: the enumeration above can
     # silently empty (an orchestrator rewritten over `...` would drop every
     # axis with the loop below never running), so the two arguments every
     # orchestrator takes are expected by name.
-    absent <- setdiff(c("object", "resamples"), axes)
+    expected <- c(
+      "object",
+      if (identical(fn_name, "nested_final_fit")) "results" else "resamples"
+    )
+    absent <- setdiff(expected, axes)
     expect(
       length(absent) == 0L,
       sprintf(
@@ -288,7 +329,7 @@ test_that("the key separates every formal argument of both orchestrators", {
       )
     )
 
-    unregistered <- setdiff(axes, names(signature_variants))
+    unregistered <- setdiff(axes, names(variants))
     expect(
       length(unregistered) == 0L,
       sprintf(
@@ -298,7 +339,7 @@ test_that("the key separates every formal argument of both orchestrators", {
       )
     )
 
-    stale <- setdiff(names(signature_variants), axes)
+    stale <- setdiff(names(variants), axes)
     expect(
       length(stale) == 0L,
       sprintf(
@@ -318,8 +359,9 @@ test_that("the key separates every formal argument of both orchestrators", {
   for (fn_name in names(orchestrators)) {
     f <- orchestrators[[fn_name]]
     axes <- setdiff(names(formals(f)), "...")
+    variants <- signature_variants(fn_name)
 
-    for (axis in intersect(axes, names(signature_variants))) {
+    for (axis in intersect(axes, names(variants))) {
       # Both requests are built before either is keyed, each from the same
       # seed. The builders draw from the RNG -- `det_nested()` seeds it, and
       # `recipes::step_pca()` draws its step id -- and `fixture_key()` forces
@@ -328,10 +370,10 @@ test_that("the key separates every formal argument of both orchestrators", {
       # would carry different step ids. Either would separate every pair on
       # something other than the argument under test.
       set.seed(2)
-      base <- base_request()
+      base <- base_request(fn_name)
       set.seed(2)
-      variant <- base_request()
-      variant[axis] <- list(signature_variants[[axis]]())
+      variant <- base_request(fn_name)
+      variant[axis] <- list(variants[[axis]]())
 
       # Keyed at the same RNG state, so the argument is all that can separate
       # them -- if they collided, the cache would serve one test the other's run.

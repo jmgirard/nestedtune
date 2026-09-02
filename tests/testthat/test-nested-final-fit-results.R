@@ -4,21 +4,16 @@ test_that("the final fit returns a trained workflow inside its own object", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- det_workflow(d)
+  res <- final_results(d)
 
   set.seed(3)
-  final <- memoised(nested_final_fit(
-    wf,
-    folds,
-    grid = det_grid(),
-    metrics = reg_metrics()
-  ))
+  final <- memoised(nested_final_fit(wf, res))
 
   expect_s3_class(final, "nested_final_fit")
   expect_named(
     final,
-    c("workflow", "selected", "tuning", "tuning_seed", "fit_seed")
+    c("workflow", "selected", "tuning", "tuning_seed", "fit_seed", "procedure")
   )
 
   extracted <- extract_workflow(final)
@@ -44,11 +39,11 @@ test_that("the fitted workflow predicts on new data", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- det_workflow(d)
+  res <- final_results(d)
 
   set.seed(3)
-  final <- memoised(nested_final_fit(wf, folds, grid = det_grid()))
+  final <- memoised(nested_final_fit(wf, res))
 
   preds <- predict(extract_workflow(final), new_data = d[1:5, ])
   expect_identical(nrow(preds), 5L)
@@ -59,11 +54,11 @@ test_that("the final fit trains on every row, not on an outer analysis set", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- det_workflow(d)
+  res <- final_results(d)
 
   set.seed(3)
-  final <- memoised(nested_final_fit(wf, folds, grid = det_grid()))
+  final <- memoised(nested_final_fit(wf, res))
 
   # The mould records how many rows the workflow was fitted on. Any outer
   # analysis set would be smaller, so this is what separates a final fit from

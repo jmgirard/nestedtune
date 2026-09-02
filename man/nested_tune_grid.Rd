@@ -189,8 +189,9 @@ parameters rather than discarding them.
 The estimate this returns describes the whole tune-and-fit \emph{procedure}, not
 any single fitted model. It is not the performance of a model you can deploy,
 and no final model is returned here: build that with \code{\link[=nested_final_fit]{nested_final_fit()}},
-which runs the same procedure again with the whole dataset in hand. The
-estimate from this function is what you report for it.
+which takes this result and runs the procedure it recorded again with the
+whole dataset in hand. The estimate from this function is what you report
+for it.
 
 For a Bayesian inner loop -- \code{\link[tune:tune_bayes]{tune::tune_bayes()}} proposing candidates one
 at a time -- see \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, which runs this same outer loop with

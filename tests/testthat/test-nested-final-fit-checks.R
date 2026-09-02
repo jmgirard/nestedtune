@@ -1,102 +1,276 @@
-# Every cli_abort() branch on the final-fit path, fired once (AC5, AC11).
+# Every cli_abort() branch on the final-fit path, fired once (M05 AC5, AC11;
+# re-cut at M46 AC1 for the `(object, results)` signature, D-041).
 #
-# The shared checks are exercised through nested_final_fit() rather than assumed
-# from nested_tune_grid()'s suite: a check that is not wired into the new
-# function passes its own tests and refuses nothing here.
+# The workflow check is exercised through nested_final_fit() rather than
+# assumed from the orchestrators' suites: a check that is not wired into this
+# function passes its own tests and refuses nothing here. The design checks
+# no longer apply -- the final fit takes a results object, and what it asks of
+# that object is `check_results_record()`'s three refusals below.
 
-valid_folds <- function(d, v = 2) {
-  set.seed(1)
-  nested_resamples(
-    d,
-    outside = rsample::vfold_cv(v = v),
-    inside = rsample::vfold_cv(v = 3)
-  )
-}
-
-test_that("the shared argument checks are wired into the final fit", {
+test_that("the workflow checks are wired into the final fit", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- valid_folds(d)
+  res <- final_results(d)
   wf <- det_workflow(d)
 
-  expect_error(nested_final_fit("not a workflow", folds), "must be a")
+  expect_error(nested_final_fit("not a workflow", res), "must be a")
   expect_error(
     nested_final_fit(
       parsnip::fit(
         workflows::workflow(y ~ x1 + x2 + x3 + x4, parsnip::linear_reg()),
         data = d
       ),
-      folds
+      res
     ),
     "already be fitted"
   )
-  expect_error(nested_final_fit(wf, "not a design"), "nested resampling design")
-  expect_error(nested_final_fit(wf, folds[0, ]), "no outer folds")
-  expect_error(
-    nested_final_fit(wf, folds, grid = data.frame(nope = 1:2)),
-    "not marked for tuning"
-  )
-  expect_error(nested_final_fit(wf, folds, grid = 0), "positive whole number")
-  expect_error(nested_final_fit(wf, folds, metrics = "rmse"), "metric_set")
 
   prep_only <- workflows::workflow(
     recipes::recipe(y ~ x1 + x2 + x3 + x4, data = d)
   )
-  expect_error(nested_final_fit(prep_only, folds), "no model specification")
-  cnd <- tryCatch(nested_final_fit(prep_only, folds), error = function(e) e)
+  expect_error(nested_final_fit(prep_only, res), "no model specification")
+  cnd <- tryCatch(nested_final_fit(prep_only, res), error = function(e) e)
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+
+  # The recorded grid is judged against the workflow handed over, as the
+  # orchestrator judged it: a workflow tuning a parameter the grid has no
+  # column for is refused here, not by tune one tuning run later.
+  # The message names `object`, the side the user wrote, and `results`, the
+  # side the grid came from -- never a `grid` argument this signature lacks.
+  other <- cont_workflow(d)
+  cnd <- tryCatch(nested_final_fit(other, res), error = function(e) e)
+  expect_match(conditionMessage(cnd), "`object`")
+  expect_match(conditionMessage(cnd), "recorded grid")
+  expect_match(conditionMessage(cnd), "`results`")
+  expect_no_match(conditionMessage(cnd), "`grid`")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
 })
 
-test_that("the remaining shared abort branches fire through the final fit too", {
+test_that("the former procedure arguments are refused as unknown", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- valid_folds(d)
+  res <- final_results(d)
   wf <- det_workflow(d)
 
-  # A design with the two required columns but no id column.
-  no_id <- data.frame(row.names = seq_len(nrow(folds)))
-  no_id$splits <- folds$splits
-  no_id$inner_resamples <- folds$inner_resamples
-  attr(no_id, "inside") <- attr(folds, "inside")
-  expect_error(nested_final_fit(wf, no_id, grid = det_grid()), "no id column")
-
-  # rsample only warns for an outer bootstrap, so the design is reachable.
-  suppressWarnings(
-    boot_folds <- rsample::nested_cv(
-      d,
-      outside = rsample::bootstraps(times = 3),
-      inside = rsample::vfold_cv(v = 3)
-    )
+  # Each of the five formals D-041 removed. They come from `results` now, so
+  # passing one is the dots error rather than a silent positional match.
+  former <- list(
+    grid = det_grid(),
+    param_info = NULL,
+    metrics = reg_metrics(),
+    event_level = "first",
+    eval_time = 1
   )
-  expect_error(nested_final_fit(wf, boot_folds), "cannot use a bootstrap")
+  for (nm in names(former)) {
+    # Spliced rather than `do.call()`, which would put the function object in
+    # the condition's call and leave nothing for `call_name()` to read.
+    cnd <- rlang::catch_cnd(rlang::inject(nested_final_fit(
+      wf,
+      res,
+      !!!former[nm]
+    )))
+    expect_s3_class(cnd, "rlib_error_dots_nonempty")
+    expect_identical(rlang::call_name(conditionCall(cnd)), "nested_final_fit")
+  }
+})
 
-  expect_error(
-    nested_final_fit(wf, folds, grid = det_grid()[0, , drop = FALSE]),
-    "at least one candidate"
+# The results-record refusals (AC1, RR05 Q3): one class, a message per
+# origin, the user's call named, and nothing fitted or drawn first.
+
+expect_bad_results <- function(expr, pattern) {
+  cnd <- tryCatch(expr, error = function(e) e)
+  testthat::expect_s3_class(cnd, "nestedtune_bad_results")
+  testthat::expect_match(conditionMessage(cnd), pattern)
+  testthat::expect_identical(
+    conditionCall(cnd)[[1]],
+    as.name("nested_final_fit")
+  )
+  invisible(cnd)
+}
+
+test_that("an object that is not a nested_results is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  res <- final_results(d)
+  wf <- det_workflow(d)
+
+  expect_bad_results(nested_final_fit(wf, "not a run"), "must be a")
+  expect_bad_results(nested_final_fit(wf, final_nested(d)), "must be a")
+
+  # The invariant rule returns a bare tibble for an operation that changed
+  # the rows, so a subset arrives here with the class and the record both
+  # gone -- never as a classed object missing its record -- and the message
+  # says which door it came through.
+  subset <- res[1L, ]
+  expect_false(inherits(subset, "nested_results"))
+  expect_bad_results(nested_final_fit(wf, subset), "plain tibble")
+  expect_bad_results(nested_final_fit(wf, res[0L, ]), "plain tibble")
+})
+
+test_that("a results object carrying no inner specification is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  # A design assembled by hand carries no `inside` call, and the loop runs it
+  # without complaint; the result then records none. An attribute cannot hold
+  # NULL, so this object is what a result built before the specification was
+  # recorded looks like too, and the message names both origins.
+  folds <- final_nested(d)
+  attr(folds, "inside") <- NULL
+  set.seed(22)
+  res <- memoised(nested_tune_grid(wf, folds, grid = det_grid()))
+  expect_null(attr(res, "inside"))
+
+  cnd <- expect_bad_results(
+    nested_final_fit(wf, res),
+    "no inner resampling specification"
+  )
+  expect_match(conditionMessage(cnd), "earlier version")
+  expect_match(conditionMessage(cnd), "assembled by hand")
+  expect_match(conditionMessage(cnd), "not migrated")
+
+  # A specification that is present but is not a call cannot be re-run
+  # either, and lands in the same refusal.
+  not_call <- final_results(d)
+  attr(not_call, "inside") <- "vfold_cv(v = 3)"
+  expect_bad_results(
+    nested_final_fit(wf, not_call),
+    "no inner resampling specification"
   )
 })
 
-test_that("a tuned parameter with no grid column is refused by the final fit", {
-  skip_if_no_engines(stochastic = TRUE)
-  skip_if_not_installed("dials")
+test_that("a results object carrying no procedure is refused", {
+  skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- valid_folds(d)
-  spec <- parsnip::set_mode(
-    parsnip::set_engine(
-      parsnip::rand_forest(min_n = tune::tune(), trees = tune::tune()),
-      "ranger",
-      num.threads = 1
-    ),
-    "regression"
-  )
-  wf <- workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)
+  wf <- det_workflow(d)
 
-  expect_error(
-    nested_final_fit(wf, folds, grid = data.frame(min_n = c(2L, 10L))),
-    "no column for"
+  # Only an object from before the procedure was recorded looks like this;
+  # it is reached here by removing the attribute, which no verb does.
+  res <- final_results(d)
+  attr(res, "procedure") <- NULL
+  expect_s3_class(res, "nested_results")
+
+  cnd <- expect_bad_results(nested_final_fit(wf, res), "no tuning procedure")
+  expect_match(conditionMessage(cnd), "earlier version")
+
+  # Both missing at once names both, in the order the record lists them.
+  attr(res, "inside") <- NULL
+  expect_bad_results(
+    nested_final_fit(wf, res),
+    "no inner resampling specification and tuning procedure"
+  )
+})
+
+test_that("a results object with the record and no rows is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- final_results(d)
+
+  # Reachable only by surgery: `res[0, ]` and `vctrs::vec_ptype(res)` both
+  # hand back a bare tibble (measured 2026-09-02), so a classed zero-row
+  # object wearing the record is a prototype, built here as the private
+  # branch of `vec_restore()` would stamp one.
+  empty <- res[0L, ]
+  for (nm in results_attributes()) {
+    attr(empty, nm) <- attr(res, nm)
+  }
+  class(empty) <- c("nested_results", class(empty))
+  expect_identical(nrow(empty), 0L)
+
+  cnd <- expect_bad_results(nested_final_fit(wf, empty), "has no rows")
+  expect_match(conditionMessage(cnd), "prototype")
+})
+
+test_that("the record refusals fire before anything is drawn", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- final_results(d)
+  attr(res, "inside") <- NULL
+
+  # The seed draw sits after the check block; a reordering that moved the
+  # check below it would leave the caller's stream advanced by a refusal.
+  set.seed(1)
+  before <- .Random.seed
+  expect_error(nested_final_fit(wf, res), class = "nestedtune_bad_results")
+  expect_identical(.Random.seed, before)
+})
+
+# The specification is re-run in the caller's frame, so a design built with a
+# variable that is gone by now fails there -- two frames below the user's call
+# -- and the abort still names that call (M05, RR02 B1).
+
+test_that("an inner specification that cannot be re-evaluated names itself and the call", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  # Built inside a function, so `v` is gone by the time the final fit tries
+  # to re-evaluate the call the design stored and the result recorded. The
+  # loop never re-evaluates it, so the results object builds fine.
+  gone <- local({
+    v <- 3
+    set.seed(1)
+    nested_resamples(
+      d,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = v)
+    )
+  })
+  set.seed(22)
+  res <- memoised(nested_tune_grid(wf, gone, grid = det_grid()))
+  expect_true(all(res$.completed))
+
+  cnd <- tryCatch(nested_final_fit(wf, res), error = function(e) e)
+  expect_match(conditionMessage(cnd), "could not be\\s+re-evaluated")
+  # The message names the call it tried, which is the only way a reader can
+  # tell which variable went missing.
+  expect_match(conditionMessage(cnd), "vfold_cv")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})
+
+test_that("an inner specification that is not an rset is refused, naming the call", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- final_results(d)
+
+  # Evaluates cleanly and hands back something that is not a resampling
+  # object, which is a different failure from one that errors outright.
+  attr(res, "inside") <- quote(data.frame())
+
+  cnd <- tryCatch(nested_final_fit(wf, res), error = function(e) e)
+  expect_match(conditionMessage(cnd), "did not produce an")
+  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+})
+
+test_that("a run that recorded no metric set re-runs under tune's defaults", {
+  skip_if_no_engines()
+
+  # `attr(x, "metrics")` is absent rather than NULL for such a run; the
+  # rebuilt procedure passes NULL on and tune picks, exactly as the loop did
+  # (RR05 B4). Not a refusal case.
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- final_results(d, metrics = NULL)
+  expect_false("metrics" %in% names(attributes(res)))
+
+  set.seed(5)
+  final <- memoised(nested_final_fit(wf, res))
+  expect_identical(
+    sort(unique(tune::collect_metrics(final$tuning)$.metric)),
+    c("rmse", "rsq")
   )
 })
 
@@ -107,7 +281,7 @@ test_that("a missing engine package is refused by the final fit", {
   skip_if(rlang::is_installed("kknn"))
 
   d <- make_reg_data()
-  folds <- valid_folds(d)
+  res <- final_results(d)
   missing_engine <- workflows::workflow(
     y ~ x1 + x2 + x3 + x4,
     parsnip::set_mode(
@@ -119,173 +293,5 @@ test_that("a missing engine package is refused by the final fit", {
     )
   )
 
-  expect_error(
-    nested_final_fit(missing_engine, folds, grid = data.frame(neighbors = 3L)),
-    "not installed"
-  )
-})
-
-test_that("a design carrying no inner specification is refused", {
-  skip_if_no_engines()
-
-  d <- make_reg_data()
-  folds <- valid_folds(d)
-  wf <- det_workflow(d)
-
-  # What a hand-assembled design looks like: the columns are all there, so
-  # every other check passes, and only the missing specification stops it.
-  attr(folds, "inside") <- NULL
-
-  expect_error(
-    nested_final_fit(wf, folds),
-    "no inner resampling specification"
-  )
-})
-
-test_that("an inner specification that cannot be re-evaluated names itself", {
-  skip_if_no_engines()
-
-  d <- make_reg_data()
-  wf <- det_workflow(d)
-
-  # Built inside a function, so `v` is gone by the time the final fit tries to
-  # re-evaluate the call the design stored (RR02 B1).
-  folds <- local({
-    v <- 3
-    set.seed(1)
-    nested_resamples(
-      d,
-      outside = rsample::vfold_cv(v = 2),
-      inside = rsample::vfold_cv(v = v)
-    )
-  })
-
-  expect_error(
-    nested_final_fit(wf, folds),
-    "could not be\\s+re-evaluated"
-  )
-  # The message names the call it tried, which is the only way a reader can
-  # tell which variable went missing.
-  expect_error(nested_final_fit(wf, folds), "vfold_cv")
-})
-
-test_that("an inner specification that is not an rset is refused", {
-  skip_if_no_engines()
-
-  d <- make_reg_data()
-  wf <- det_workflow(d)
-  folds <- valid_folds(d)
-
-  # Evaluates cleanly and hands back something that is not a resampling
-  # object, which is a different failure from one that errors outright.
-  attr(folds, "inside") <- quote(data.frame())
-
-  expect_error(nested_final_fit(wf, folds), "did not produce an")
-})
-
-# The design-column checks reach the final fit too (M19).
-#
-# The final fit reads only `splits[[1]]$data` and never touches
-# `inner_resamples` at all, so neither of these refusals is needed to make it
-# work. They are here because "is this design valid" gets one answer, not one
-# per entry point: a user who saw every outer fold fail should not then be
-# handed a model built from the same object. What stays final-fit-only is the
-# check the loop genuinely has no use for -- `check_inside_spec()`.
-
-test_that("a non-rset element of inner_resamples is refused by the final fit", {
-  skip_if_no_engines()
-
-  d <- make_reg_data()
-  wf <- det_workflow(d)
-  bad <- valid_folds(d)
-  bad$inner_resamples[[2]] <- "not an rset"
-
-  expect_error(nested_final_fit(wf, bad, grid = det_grid()), "inner_resamples")
-  cnd <- tryCatch(
-    nested_final_fit(wf, bad, grid = det_grid()),
-    error = function(e) e
-  )
-  # The position and the type held, asserted here and not only through the
-  # loop's suite: a wrong index or a dropped type reddens both drivers or
-  # neither, and only the loop's copy would have caught it.
-  expect_match(conditionMessage(cnd), "Element 2")
-  expect_match(conditionMessage(cnd), "string")
-  expect_match(conditionMessage(cnd), "`resamples`")
-  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
-})
-
-test_that("a non-rsplit element of splits is refused by the final fit", {
-  skip_if_no_engines()
-
-  d <- make_reg_data()
-  wf <- det_workflow(d)
-  bad <- valid_folds(d)
-  bad$splits[[1]] <- "not an rsplit"
-
-  # Before this the final fit reached split_data() and died in base R:
-  # "$ operator is invalid for atomic vectors", naming no argument of ours.
-  cnd <- tryCatch(
-    nested_final_fit(wf, bad, grid = det_grid()),
-    error = function(e) e
-  )
-  expect_match(conditionMessage(cnd), "rsplit")
-  expect_match(conditionMessage(cnd), "Element 1")
-  expect_match(conditionMessage(cnd), "string")
-  expect_match(conditionMessage(cnd), "`resamples`")
-  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
-})
-
-test_that("a workflow with a model but no preprocessor is refused by the final fit", {
-  skip_if_no_engines(stochastic = TRUE)
-
-  d <- make_reg_data()
-  folds <- valid_folds(d)
-  spec <- parsnip::set_mode(
-    parsnip::set_engine(
-      parsnip::rand_forest(min_n = tune::tune(), trees = 10),
-      "ranger",
-      num.threads = 1
-    ),
-    "regression"
-  )
-  model_only <- workflows::add_model(workflows::workflow(), spec)
-
-  cnd <- tryCatch(
-    nested_final_fit(model_only, folds, grid = data.frame(min_n = c(2L, 10L))),
-    error = function(e) e
-  )
-  expect_match(conditionMessage(cnd), "no preprocessor")
-  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
-})
-
-# eval_inside_spec()'s two aborts named final_fit_worker() -- an internal frame
-# the user never wrote -- where check_inside_spec() beside it already named the
-# user's call. Same defect class M18 removed from check_workflow().
-
-test_that("the inner-specification aborts name the user's call", {
-  skip_if_no_engines()
-
-  d <- make_reg_data()
-  wf <- det_workflow(d)
-
-  # Could not be re-evaluated: `v` is gone by the time the design is re-run.
-  gone <- local({
-    v <- 3
-    set.seed(1)
-    nested_resamples(
-      d,
-      outside = rsample::vfold_cv(v = 2),
-      inside = rsample::vfold_cv(v = v)
-    )
-  })
-  cnd <- tryCatch(nested_final_fit(wf, gone), error = function(e) e)
-  expect_match(conditionMessage(cnd), "could not be\\s+re-evaluated")
-  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
-
-  # Evaluated cleanly, produced something that is not an rset.
-  not_rset <- valid_folds(d)
-  attr(not_rset, "inside") <- quote(data.frame())
-  cnd <- tryCatch(nested_final_fit(wf, not_rset), error = function(e) e)
-  expect_match(conditionMessage(cnd), "did not produce an")
-  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+  expect_error(nested_final_fit(missing_engine, res), "not installed")
 })

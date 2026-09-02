@@ -135,17 +135,15 @@ test_that("AC1: a value that names no level is refused, by both orchestrators", 
   )
 
   for (value in bad) {
-    for (fn in list(nested_tune_grid, nested_final_fit)) {
-      cnd <- tryCatch(
-        fn(wf, folds, grid = det_grid(), event_level = value),
-        error = function(e) e
-      )
-      expect_s3_class(cnd, "rlang_error")
-      expect_match(
-        conditionMessage(cnd),
-        "must be .*first.* or .*second"
-      )
-    }
+    cnd <- tryCatch(
+      nested_tune_grid(wf, folds, grid = det_grid(), event_level = value),
+      error = function(e) e
+    )
+    expect_s3_class(cnd, "rlang_error")
+    expect_match(
+      conditionMessage(cnd),
+      "must be .*first.* or .*second"
+    )
   }
 
   # The abort names the function the user called, not a check helper.
@@ -155,13 +153,6 @@ test_that("AC1: a value that names no level is refused, by both orchestrators", 
   )
   expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_grid")
   expect_match(conditionMessage(cnd), "third", fixed = TRUE)
-
-  cnd <- tryCatch(
-    nested_final_fit(wf, folds, grid = det_grid(), event_level = 1L),
-    error = function(e) e
-  )
-  expect_identical(rlang::call_name(conditionCall(cnd)), "nested_final_fit")
-  expect_match(conditionMessage(cnd), "an integer", fixed = TRUE)
 })
 
 test_that("AC1: the refusal fires before anything is fitted", {
@@ -175,15 +166,6 @@ test_that("AC1: the refusal fires before anything is fitted", {
   before <- .Random.seed
   expect_error(
     nested_tune_grid(wf, folds, grid = det_grid(), event_level = "third")
-  )
-  expect_identical(.Random.seed, before)
-
-  # And on the other orchestrator, whose seed draw sits after its check block:
-  # a reordering that moved the check below it would go unnoticed otherwise.
-  set.seed(1)
-  before <- .Random.seed
-  expect_error(
-    nested_final_fit(wf, folds, grid = det_grid(), event_level = "third")
   )
   expect_identical(.Random.seed, before)
 })
@@ -258,22 +240,25 @@ test_that("AC4: nested_final_fit() tunes under the caller's event level", {
   nested <- cls_nested(d)
   wf <- cls_workflow(d)
 
-  set.seed(11)
-  at_first <- memoised(nested_final_fit(
+  res_first <- memoised(nested_tune_grid(
     wf,
     nested,
     grid = cls_grid(),
     metrics = cls_metrics(),
     event_level = "first"
   ))
-  set.seed(11)
-  at_second <- memoised(nested_final_fit(
+  res_second <- memoised(nested_tune_grid(
     wf,
     nested,
     grid = cls_grid(),
     metrics = cls_metrics(),
     event_level = "second"
   ))
+
+  set.seed(11)
+  at_first <- memoised(nested_final_fit(wf, res_first))
+  set.seed(11)
+  at_second <- memoised(nested_final_fit(wf, res_second))
 
   # The inner rset nested_final_fit() draws is not reachable from the design --
   # it is built inside the tuning seed's scope, from the full data -- so the
