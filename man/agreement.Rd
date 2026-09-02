@@ -13,18 +13,23 @@ agreement(x, ...)
 rather than silently ignored.}
 }
 \value{
-A tibble with one column per tuned parameter, holding the values as
-the folds selected them, followed by \code{n}, the number of completed outer
-folds that selected that combination, and \code{prop}, \code{n} divided by the number
-of completed outer folds. Rows are ordered by \code{n} decreasing, ties in the
-order the combination first appears among the object's rows, so \code{sum(n)}
-is the number of completed folds. tune's \code{.config} label is not a column:
-it names a candidate within one fold's own tuning run, and folds can search
-different grids.
+A tibble with one column per parameter any completed fold's
+selection recorded, holding the values as the folds selected them,
+followed by \code{n}, the number of completed outer folds that selected that
+combination, and \code{prop}, \code{n} divided by the number of completed outer
+folds. Rows are ordered by \code{n} decreasing, ties in the order the
+combination first appears among the object's rows. Every completed fold is
+counted once, so when the table has rows \code{sum(n)} is the number of
+completed folds. tune's \code{.config} label is not a column: it names a
+candidate within one fold's own tuning run, and folds can search different
+grids.
 
 A completed fold whose selection carries no value for a parameter is
-counted under \code{NA} for that parameter. A workflow with nothing to tune
-gives a tibble with columns \code{n} and \code{prop} and no rows.
+counted under \code{NA} for that parameter, in the same row as a fold that
+selected \code{NA} for it; \code{\link[=summary.nested_results]{summary.nested_results()}} reports the two apart. A
+workflow with nothing to tune gives a tibble with columns \code{n} and \code{prop}
+and no rows. A parameter whose id is \code{n} or \code{prop} cannot be tabulated,
+because its column would collide with the counts, and is an error.
 
 A run in which some outer folds failed is tabulated over the folds that
 completed, with a warning saying so; a run in which no fold completed is an

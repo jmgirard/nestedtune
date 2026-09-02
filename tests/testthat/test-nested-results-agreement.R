@@ -51,6 +51,23 @@ test_that("agreement() refuses objects that are not nested results, naming both"
   expect_match(extract_msg, "a <tune_results> object", fixed = TRUE)
 
   expect_error(agreement(res, foo = 1), class = "rlib_error_dots_nonempty")
+
+  # A parameter whose id is one of the count columns would be overwritten by
+  # them silently; it is refused instead, naming the id.
+  collide <- res
+  for (i in seq_len(nrow(collide))) {
+    names(collide$.selected[[i]])[
+      names(collide$.selected[[i]]) == "num_comp"
+    ] <-
+      "n"
+  }
+  cnd <- rlang::catch_cnd(
+    agreement(collide),
+    "nestedtune_agreement_name_collision"
+  )
+  expect_s3_class(cnd, "nestedtune_agreement_name_collision")
+  expect_match(conditionMessage(cnd), "\"n\"", fixed = TRUE)
+  expect_match(conditionMessage(cnd), "prop", fixed = TRUE)
 })
 
 # ---- the table (AC2) --------------------------------------------------------
@@ -305,6 +322,35 @@ test_that("a run with nothing tuned is a table with no rows and no warning", {
   expect_no_condition(agreement(untuned), class = "nestedtune_partial_summary")
   tab <- agreement(untuned)
   expect_s3_class(tab, "tbl_df")
+  expect_named(tab, c("n", "prop"))
+  expect_identical(nrow(tab), 0L)
+})
+
+test_that("a partial run with nothing tuned still warns, then gives no rows", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+  expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
+
+  # The warning is about the folds, not the table, so it fires before the
+  # zero-row return: a caller learns the design fell short even when there was
+  # nothing to tabulate.
+  untuned <- res
+  for (i in which(untuned$.completed)) {
+    untuned$.selected[[i]] <- untuned$.selected[[i]][, ".config", drop = FALSE]
+  }
+  cnd <- rlang::catch_cnd(agreement(untuned), "nestedtune_partial_summary")
+  expect_s3_class(cnd, "nestedtune_partial_summary")
+  expect_match(conditionMessage(cnd), "2 of 3 outer folds", fixed = TRUE)
+
+  tab <- suppressWarnings(agreement(untuned))
   expect_named(tab, c("n", "prop"))
   expect_identical(nrow(tab), 0L)
 })

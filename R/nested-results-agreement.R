@@ -25,18 +25,23 @@
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored.
 #'
-#' @return A tibble with one column per tuned parameter, holding the values as
-#'   the folds selected them, followed by `n`, the number of completed outer
-#'   folds that selected that combination, and `prop`, `n` divided by the number
-#'   of completed outer folds. Rows are ordered by `n` decreasing, ties in the
-#'   order the combination first appears among the object's rows, so `sum(n)`
-#'   is the number of completed folds. tune's `.config` label is not a column:
-#'   it names a candidate within one fold's own tuning run, and folds can search
-#'   different grids.
+#' @return A tibble with one column per parameter any completed fold's
+#'   selection recorded, holding the values as the folds selected them,
+#'   followed by `n`, the number of completed outer folds that selected that
+#'   combination, and `prop`, `n` divided by the number of completed outer
+#'   folds. Rows are ordered by `n` decreasing, ties in the order the
+#'   combination first appears among the object's rows. Every completed fold is
+#'   counted once, so when the table has rows `sum(n)` is the number of
+#'   completed folds. tune's `.config` label is not a column: it names a
+#'   candidate within one fold's own tuning run, and folds can search different
+#'   grids.
 #'
 #'   A completed fold whose selection carries no value for a parameter is
-#'   counted under `NA` for that parameter. A workflow with nothing to tune
-#'   gives a tibble with columns `n` and `prop` and no rows.
+#'   counted under `NA` for that parameter, in the same row as a fold that
+#'   selected `NA` for it; [summary.nested_results()] reports the two apart. A
+#'   workflow with nothing to tune gives a tibble with columns `n` and `prop`
+#'   and no rows. A parameter whose id is `n` or `prop` cannot be tabulated,
+#'   because its column would collide with the counts, and is an error.
 #'
 #' A run in which some outer folds failed is tabulated over the folds that
 #' completed, with a warning saying so; a run in which no fold completed is an
@@ -90,6 +95,17 @@ agreement.nested_results <- function(x, ...) {
   selected <- x$.selected[x$.completed]
   completed <- length(selected)
   params <- selection_params(selected)
+  clash <- intersect(params, c("n", "prop"))
+  if (length(clash) > 0L) {
+    cli::cli_abort(
+      c(
+        "{.fn agreement} cannot tabulate a parameter with id {.val {clash}}.",
+        i = "The table's count columns are {.code n} and {.code prop}; give \\
+             the parameter another id in {.fn tune::tune}."
+      ),
+      class = "nestedtune_agreement_name_collision"
+    )
+  }
   if (length(params) == 0L) {
     return(new_tbl(list(n = integer(), prop = double())))
   }

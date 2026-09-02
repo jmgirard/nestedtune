@@ -148,6 +148,7 @@ is missing is the table.
 - 2026-09-01: T3 done — roxygen (claims checked against the example's output: two rows, `num_comp` 1 then 2, `n` 2 and 1, `prop` 0.667 and 0.333), `_pkgdown.yml` row, NEWS entry, DESIGN Function Families line; D-039 was written at planning.
 - 2026-09-01: T4 done — `air format .` and `devtools::document()` leave no diff, `devtools::check()` 0 errors, 0 warnings, 0 notes, `pkgdown::check_pkgdown()` no problems. Status → review.
 - 2026-09-01: review opened on PR #53; AC1–AC6 verified by command (checkpoint, AC7's full check and suite and the three reviewers still running).
+- 2026-09-01: gate triage — O1, O2, O6, O7 fixed on the branch, O3–O5 rejected; merge of PR #53 approved, awaiting the re-run check.
 
 ## Decisions
 
@@ -174,3 +175,5 @@ Fresh-context review (three lenses, PR #53). [S] blame-history: no conflict with
 - O5: the all-failed test's `expect_identical(class(ours), class(theirs))` compares the classes every `cli_abort()` shares. AC5 asks "of the same class" and the message assertions beside it pin the identity. Proposed: reject — the criterion is met as written.
 - O6: the untuned run's "no partial warning" assertion cannot fail, its fixture having no failed fold; the warning firing before the zero-row return on a partial untuned run is untested. Reviewer-verified: it warns and returns 0 × 2. Proposed: fix now — one test pinning that pairing.
 - O7: the help page says `sum(n)` is the completed count unconditionally, two sentences before the zero-row case, and "one column per tuned parameter" is really one per parameter any completed fold recorded. Proposed: fix now — reword the two clauses.
+
+Triage at the gate (2026-09-01, user's choice): O1, O2, O6, O7 fixed now; O3, O4, O5 rejected with the reasons recorded above. Fixes: a parameter id `n` or `prop` is refused with class `nestedtune_agreement_name_collision` naming the id (O1, with a test); the help page says a fold with no value shares its `NA` row with a fold that selected `NA` and points at `summary()` (O2), scopes `sum(n)` to a table with rows and says one column per parameter any completed fold recorded (O7); a test pins that a partial run with nothing tuned warns and then returns zero rows (O6). Agreement test file after the fixes: 11 tests, 76 expectations, 0 failed. Merge approved at the gate for PR #53, pending the re-run check.
