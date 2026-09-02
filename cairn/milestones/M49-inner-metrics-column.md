@@ -128,6 +128,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: T8 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, full `devtools::test()` clean with no failure, warning or skip line. All of T7–T9 done; status → review for the second round.
 
 - 2026-09-02: review round 2 opened: branch pushed, PR #59 still draft; AC1–AC7 evidenced and ticked on a clean 3,675-pass suite; gate checks green save `devtools::check()`, still running; three reviewers returned (G1–G12, one [S] overlap with G3); checkpoint before the check lands and the gate.
+- 2026-09-02: review step 6 checkpoint: `devtools::check()` clean; consistency gate green in full; G1–G12 to the gate.
 ## Decisions
 
 - 2026-09-02: a record column altered under the class — `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class after without consulting the reconstruct rule — passes `[` and `rbind()`, which compare the object against itself; the template-taking doors refuse it. Pre-existing for every record column, recorded at the rule (`R/nested-results.R`) rather than fixed: intercepting `$<-` and `[[<-` is a fifth and sixth door the invariants D-031 fixed do not name, a candidate for a later milestone if a user meets it.
@@ -149,7 +150,7 @@ _Round 2, evidence gathered 2026-09-02 on branch `m049-inner-metrics-column` at 
 ### Consistency gate
 
 - `cairn_validate.py`: all checks passed, 18 references-staleness advisories only (the standing set). No IP/GP text changed, so `cairn_impact.py --changed` is skipped.
-- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, no milestone number in user-facing text. No new top-level files. `devtools::check()`: pending at this write.
+- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, no milestone number in user-facing text. No new top-level files. `devtools::check()`: 0 errors, 0 warnings, 0 notes (16 min).
 
 ### Independent review
 
