@@ -365,6 +365,13 @@ test_that("the loop still accepts a design with no inner specification", {
 
   res <- memoised(nested_tune_grid(wf, folds, grid = det_grid()))
   expect_identical(res$.completed, c(TRUE, TRUE))
+
+  # And the result records no specification either: an attribute cannot hold
+  # NULL, so this object is indistinguishable from one built before the
+  # specification was recorded at all, which is why `nested_final_fit()`'s
+  # refusal of it names both origins (M46, RR05 B1).
+  expect_null(attr(res, "inside"))
+  expect_false("inside" %in% names(attributes(res)))
 })
 
 test_that("a workflow with a model but no preprocessor is refused", {

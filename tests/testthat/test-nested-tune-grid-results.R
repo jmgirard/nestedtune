@@ -255,6 +255,37 @@ test_that("the evaluated-candidate record travels with the rows it describes", {
   expect_identical(subset$.grid, res$.grid[2:3])
 })
 
+test_that("the object records the design's inner specification (M46)", {
+  skip_if_no_engines()
+
+  # The final fit re-runs the procedure from the results object alone (D-041),
+  # so the design's stored `inside` call travels onto the result as the same
+  # unevaluated call, and it describes the call rather than the rows: kept
+  # through an operation the invariants allow, shed with the class.
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  set.seed(1)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 3)
+  )
+  set.seed(55)
+  res <- memoised(nested_tune_grid(wf, folds, grid = det_grid()))
+
+  expect_identical(attr(res, "inside"), quote(rsample::vfold_cv(v = 3)))
+  expect_identical(attr(res, "inside"), attr(folds, "inside"))
+  expect_true("inside" %in% run_attributes())
+
+  reordered <- res[rev(seq_len(nrow(res))), ]
+  expect_s3_class(reordered, "nested_results")
+  expect_identical(attr(reordered, "inside"), attr(folds, "inside"))
+
+  narrowed <- res[, setdiff(names(res), ".grid")]
+  expect_false(inherits(narrowed, "nested_results"))
+  expect_null(attr(narrowed, "inside"))
+})
+
 test_that("a run given no metric set carries no metrics attribute", {
   skip_if_no_engines()
 

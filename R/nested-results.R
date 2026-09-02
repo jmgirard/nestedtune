@@ -41,6 +41,13 @@ new_nested_results <- function(
   # Bayesian path has no `grid` to record and the attribute above is absent
   # for it; this one is present on every result.
   attr(out, "procedure") <- procedure
+  # The design's inner resampling specification, the unevaluated call
+  # `nested_resamples()` and `rsample::nested_cv()` store on the design, so a
+  # final fit can re-run the procedure from the results object alone (D-041).
+  # An attribute cannot hold NULL, so a design that carried none leaves this
+  # absent -- indistinguishable from a result built before it was recorded,
+  # which is why the final fit's refusal names both origins (RR05 B1).
+  attr(out, "inside") <- attr(resamples, "inside")
   attr(out, "outer_label") <- outer_scheme_label(resamples)
   # Which columns the design named its folds with, recorded rather than
   # recognized later. See id_columns().
@@ -215,6 +222,7 @@ stamp_results <- function(out, template) {
   attr(out, "grid") <- attr(template, "grid")
   attr(out, "metrics") <- attr(template, "metrics")
   attr(out, "procedure") <- attr(template, "procedure")
+  attr(out, "inside") <- attr(template, "inside")
   attr(out, "outer_label") <- attr(template, "outer_label")
   # Which columns the design named its folds with travels the same way, and for
   # the same reason: it describes the call, not the rows in hand (M38).
@@ -271,7 +279,7 @@ results_attributes <- function() {
 # These stay true of anything the run produced, a type token included; the two
 # counts do not, which is why they are separated here.
 run_attributes <- function() {
-  c("grid", "metrics", "procedure", "outer_label", "id_columns")
+  c("grid", "metrics", "procedure", "inside", "outer_label", "id_columns")
 }
 
 #' @importFrom dplyr dplyr_reconstruct
