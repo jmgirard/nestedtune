@@ -53,10 +53,9 @@ rules in tracking-rules:
   at 30, `test-coverage` its job at 20; re-read them with `grep -n timeout-minutes
   .github/workflows/*.yaml` (six hits, four workflows; those three are the audited ones). The step
   bound is the guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 minutes
-  under `R CMD check` and 40 under `covr` — one per gating workflow, hence the two scopes). It was
-  20 until M48 (2026-09-02): the windows step ran 13.2–17.9 minutes on main's last three runs and
-  was killed at 20 three runs in a row mid-suite. 30 is not free headroom either; a leg nearing it
-  is a suite to make faster, not a cap to raise. 60 is the devel leg's
+  under `R CMD check` and 40 under `covr`, hence the two scopes). It was 20 until M48 (2026-09-02):
+  the windows step ran 13.2–17.9 minutes on main's last three runs, then was killed at 20 three runs
+  in a row mid-suite. 30 is not free headroom; a leg nearing it is a suite to make faster. 60 is the devel leg's
   from-source build of 129 dependencies, which a 20-minute job cap killed before cache-save; it
   leaves every non-check step bounded only by the job. **A `workflow_dispatch`-only stress
   workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand, invisible to `ci-usage.py` for
