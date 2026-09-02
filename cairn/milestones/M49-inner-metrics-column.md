@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** IP4, GP4
 - **Resolves:** #57 closes
-- **Branch/PR:** m049-inner-metrics-column
+- **Branch/PR:** m049-inner-metrics-column · https://github.com/tidymodels/nestedtune/pull/59
 
 ## Goal
 
@@ -100,6 +100,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: T2–T5 code landed together (a fold worker writing `.inner_metrics` leaves the readers and invariants red until they read it): `inner_metrics()` records `collect_metrics()` or a workflow-built zero-row prototype, `candidate_set()` derives the candidate set from a table and serves the final fit through `scored_candidates()`, `join_iteration()` and the per-resample pooling retired; readers and invariants swapped; the `.grid` sweep ran and the AC2 grep is empty; T5 probes written; T6 NEWS and DESIGN drafted. Checkpoint while the full suite runs; checkboxes wait on the verify slot. AC5's change-through-`[`-and-`rbind()` clause found unconstructible (those doors self-template); amended wording out to a fresh [O] reader before the mini gate.
 - 2026-09-02: amendment (substantive, narrowing) — AC5 rewritten at a mini gate: the change-through-`[`-and-`rbind()` clause was unconstructible, those doors taking the object they act on as their own template. Two fresh [O] readings in full mode: the first returned four findings (probe forms and fold location, `vec_restore()` call form, the two doors' constructions split, a home for the self-template gap), the second two findings and an ambiguity (exact `[` subset, single-argument `rbind()`, a completed fold); all applied, the final text user-approved. Two hand-built-run tests (final-fit print counts, the bookkeeping wrapper) rewritten over a `fake_tuning()` stand-in whose `collect_metrics()` is a table given by hand.
 - 2026-09-02: T2–T6 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, `devtools::test()` clean in full (an earlier full run failed the three daemon files whose hand-built fold records still carried `grid`, and `test-suite-hygiene.R` on the time-budget ledger's `test-parallel-classify.R` line numbers, which `fake_fold_record()`'s eight new lines had shifted — both fixed). AC2 grep matches nothing; the AC3 diff and snapshot diff are empty. Status → review.
+- 2026-09-02: review opened: PR #59 drafted; AC evidence gathering in progress (suite, check and three reviewers running).
 
 ## Decisions
 
