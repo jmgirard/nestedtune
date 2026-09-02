@@ -1,19 +1,18 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 18 references pages record no verification claim, and no release window is open. Line caps hold: ROADMAP.md 52 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M44 archive summary 25. Both byte budgets stay over: ROADMAP.md ~39,600 B against 24,000, LESSONS.md ~30,000 B against 20,000. This pass pruned M39's terminal row; no findings were deferred, so no candidate row was added or extended. LESSONS gained M44's line (a table's own columns silently overwrite a same-named parameter column) and lost the M10 `options()["name"]` line as the stalest. Closing the byte gap still means graduating or dropping candidates — a user call, now ten passes overdue. Since the last check: M44 shipped `agreement()`, archived after one review round with four gate fixes.)_
+_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open, and the M45 sizing tripwire is now archived with it. Line caps hold: ROADMAP.md 54 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M45 archive summary 25. Both byte budgets stay over: ROADMAP.md ~40,700 B against 24,000, LESSONS.md ~30,359 B against 20,000. This pass pruned M40's terminal row; no finding was deferred, so no candidate row was added or extended. LESSONS extended the M05 inlining line with M45's repeat of it (`rlang::call2()` over values) rather than adding one; no line pruned. Closing the byte gap still means graduating or dropping candidates — a user call, now eleven passes overdue. Since the last check: M45 shipped `nested_tune_bayes()` and the tuner description, archived after one review round with eight gate fixes.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | review | — | normal | milestones/M45-nested-tune-bayes.md |
+| M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
 | M46 | `nested_final_fit()` re-runs the procedure a result recorded | planned | M45 | normal | milestones/M46-final-fit-recorded-procedure.md |
 | M44 | `agreement()` tabulates what the outer folds selected | done | — | normal | milestones/archive/M44-agreement.md |
 | M43 | The print and summary follow-ups M39 left behind | done | — | normal | milestones/archive/M43-print-summary-followups.md |
 | M42 | The fixture key's separation test, derived from the orchestrators' own arguments | done | — | normal | milestones/archive/M42-fixture-key-derived.md |
 | M41 | `eval_time` reaches the metrics that need it | done | — | normal | milestones/archive/M41-eval-time.md |
-| M40 | A `nested_final_fit` answers `summary()` the way its sibling does | done | M39 | normal | milestones/archive/M40-final-fit-summary.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
