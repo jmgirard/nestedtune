@@ -57,8 +57,16 @@ for that generic → not planned; a user control on the inner run → M48.
       the same table with one row dropped; `[` returns a bare tibble for the column subset
       `setdiff(names(x), ".inner_metrics")`, and a single-argument `rbind()` for a still-classed object from which the
       column was removed beforehand; and a frame lacking the column fails `has_results_columns()`; asserted by tests.
-- [ ] AC6: `extract_scored_candidates()` on a `nested_final_fit` returns what it returns at the base commit (its existing
-      tests unchanged), and its help page describes its shape without reference to `.grid`.
+- [ ] AC6: `extract_scored_candidates()` on a regression grid fit, a Bayesian fit and a censored-regression fit
+      scoring a dynamic survival metric returns one row per candidate the fit's tuning run scored, carrying the
+      tuned-parameter columns and `.config`, `.iter` added on the Bayesian fit, and no other column — so the `.eval_time`
+      column the base commit's accessor carried on the survival fit, the first pooled row's evaluation time per
+      `.config`, is absent; asserted for the regression fit by
+      `expect_setequal(names(cand), c("num_comp", ".config"))` and `expect_identical(nrow(cand), nrow(det_grid()))` in
+      `test-nested-final-fit-extract.R`, for the Bayesian fit by a column-set assertion beside the `.iter` assertion in
+      `test-nested-final-fit-oracles.R`, and for the survival fit by a column-set test. Its help page describes that
+      shape without reference to `.grid`, says the evaluation-time column is dropped and points at
+      `collect_metrics(extract_tune_results(x))` for it, and NEWS names the dropped column.
 - [x] AC7: The profile's verify slot is clean; NEWS carries the breaking-change entry; DESIGN.md's results-object
       description names `.inner_metrics`; D-043 is appended.
 
@@ -115,10 +123,13 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: review step 7: gate declined the merge; defect return 1 of M49 — [O] F1 and F2 demonstrate AC1's zero-row clause failing (prototype columns and types diverge from a completed fold's on `eval_time` without a dynamic survival metric and on an engine parameter without a dials object), F3 demonstrates AC6 failing on a dynamic-survival final fit (`.eval_time` dropped); F4 and F7 fix on the same return; F5 rejected (unreachable), F6 resolved by measurement, F8 rejected (tracking prose), F9 noted, F10 rejected (cosmetic). Tasks T7–T9 added; status → in-progress; PR #59 stays draft.
 - 2026-09-02: T7: `empty_inner_metrics()` types each parameter column from the grid data frame, else `param_info`, else the workflow's dials set, and adds `.eval_time` only when the metric set holds a dynamic survival metric (or none was given on a censored-regression workflow, tune's default there being `brier_survival`); T7's "dynamic or integrated" was measured wrong on tune 2.1.0 — an integrated-only set gets no `.eval_time` — so the code and tests follow the measurement. Three tests in `test-nested-tune-grid-failures.R` (regression given `eval_time`; censored static-only, with dynamic and default-metric controls; ranger `max.depth` typed integer and double from the grid) were red on the branch before the fix and green after. T9: `fake_tuning()` schedules the method's removal from tune's S3 table on the calling block's exit, with a test that it leaves; the `show_best()` roxygen sentence now says ranking by `mean` reproduces `.selected` except on ties, which `select_best()` resolved. `devtools::document()` regenerated `nested_tune_grid.Rd`; `air format .` clean; full `devtools::test()` clean.
 - 2026-09-02: T8 amended-AC6 wording went to two fresh [O] readers in full mode before the mini gate: the first returned seven findings (zero-candidate case, the survival trigger, an instrument-bound and factually off evidence clause, an unasserted ordering clause, unbounded domain, D-043 staleness, direction narrowing); the second, on the revised text, eight (dynamic metric unnamed on the survival fit, the base column's meaning, the zero-candidate clause unasserted, D-043, GP1 wants the drop said on the help page, the Bayesian probe checks `.iter` only, base-commit provenance on the regression assertions, NEWS). All applied except the first reader's "dynamic or integrated", contradicted by measurement; the gate decides the drop.
+- 2026-09-02: amendment (substantive, narrowing) — AC6 rewritten at a mini gate, the user choosing the `.eval_time` drop over restoring the base column: base identity gives way to a named column set on three fit kinds, the evidence named per assertion, the help page and NEWS told to say the column is dropped. Twice audited by fresh [O] readers before writing (the line above).
+- 2026-09-02: T8 code landed: the help page's `@return` names the per-metric columns dropped, `.eval_time` among them, and points at `collect_metrics(extract_tune_results(x))`; NEWS names the dropped column; a survival column-set test in `test-nested-final-fit-extract.R` and a Bayesian column-set assertion in `test-nested-final-fit-oracles.R`. The three touched files are green; checkpoint while the full suite runs, the T8 tick and status waiting on it.
 
 ## Decisions
 
 - 2026-09-02: a record column altered under the class — `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class after without consulting the reconstruct rule — passes `[` and `rbind()`, which compare the object against itself; the template-taking doors refuse it. Pre-existing for every record column, recorded at the rule (`R/nested-results.R`) rather than fixed: intercepting `$<-` and `[[<-` is a fifth and sixth door the invariants D-031 fixed do not name, a candidate for a later milestone if a user meets it.
+- 2026-09-02: D-043's sentence that the final-fit accessor keeps its candidate shape means the parameter columns and `.config`: on a survival fit the base accessor also carried `.eval_time`, one arbitrary time per candidate, which `candidate_set()` drops with the other per-metric columns. Not a shape the accessor promised, so D-043 stands unannotated; NEWS and the help page name the dropped column.
 
 ## Review
 

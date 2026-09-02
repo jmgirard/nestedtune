@@ -18,7 +18,12 @@ tuned parameter plus tune's \code{.config} label for the candidate, and \code{.i
 on a Bayesian fit. It is the distinct parameter rows of the run's
 \code{\link[tune:collect_metrics]{tune::collect_metrics()}} table with those labels — the same shape one
 element of a result's \code{.inner_metrics} column reduces to when its metric
-columns are dropped — so the two can be compared directly.
+columns are dropped — so the two can be compared directly. Everything
+tune wrote per metric goes with them: \code{.metric}, \code{.estimator}, \code{mean},
+\code{n}, \code{std_err}, and on a fit that scored a dynamic survival metric the
+\code{.eval_time} column too, so a candidate has one row here however many
+evaluation times it was scored at. The times and the scores are in
+\code{collect_metrics(extract_tune_results(x))}.
 
 This is what was \strong{scored}, not what was \strong{asked for}. A \code{grid} given as
 a size is expanded by tune and may reach fewer candidates than the number

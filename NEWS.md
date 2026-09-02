@@ -11,8 +11,11 @@
   tuned and then failed its outer fit keeps its table; a fold that scored
   nothing carries a zero-row table under a completed fold's columns. The
   column is part of the record the dplyr and vctrs invariants check, as
-  `.grid` was. `.selected` is unchanged, and `extract_scored_candidates()`
-  on a `nested_final_fit` keeps its candidate shape (#57).
+  `.grid` was. `.selected` is unchanged. `extract_scored_candidates()` on a
+  `nested_final_fit` keeps its candidate columns and `.config`, and no longer
+  carries `.eval_time` on a fit that scored a dynamic survival metric -- the
+  column held one arbitrary evaluation time per candidate; the times are in
+  `collect_metrics(extract_tune_results(x))` (#57).
 
 * `nested_tune_grid()` and `nested_tune_bayes()` now take a control object
   through `...` -- `control = tune::control_grid(...)` on the first,

@@ -120,7 +120,12 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #'   on a Bayesian fit. It is the distinct parameter rows of the run's
 #'   [tune::collect_metrics()] table with those labels — the same shape one
 #'   element of a result's `.inner_metrics` column reduces to when its metric
-#'   columns are dropped — so the two can be compared directly.
+#'   columns are dropped — so the two can be compared directly. Everything
+#'   tune wrote per metric goes with them: `.metric`, `.estimator`, `mean`,
+#'   `n`, `std_err`, and on a fit that scored a dynamic survival metric the
+#'   `.eval_time` column too, so a candidate has one row here however many
+#'   evaluation times it was scored at. The times and the scores are in
+#'   `collect_metrics(extract_tune_results(x))`.
 #'
 #'   This is what was **scored**, not what was **asked for**. A `grid` given as
 #'   a size is expanded by tune and may reach fewer candidates than the number

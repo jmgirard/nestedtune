@@ -112,6 +112,39 @@ test_that("what the accessors return agrees with what the loop records", {
   expect_setequal(from_fit$.config, from_loop$.config)
 })
 
+test_that("a survival fit's candidates carry no evaluation-time column", {
+  skip_if_no_censored()
+
+  # A dynamic survival metric is scored once per evaluation time, so the
+  # run's own table has `.eval_time` and as many rows per candidate as there
+  # are times. The accessor reports candidates, one row each, with the
+  # per-metric columns -- `.eval_time` among them -- dropped (AC6).
+  #
+  # Two evaluation times draw tune's notice that the first is the one
+  # selection uses -- once per fold and once at the final fit, the
+  # documented behavior -- and that notice is not under test.
+  data <- srv_data()
+  workflow <- srv_workflow(data)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    workflow,
+    srv_nested(data),
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = srv_eval_times()
+  )))
+  set.seed(11)
+  final <- suppressWarnings(memoised(nested_final_fit(workflow, res)))
+
+  scored <- tune::collect_metrics(extract_tune_results(final))
+  expect_true(".eval_time" %in% names(scored))
+  expect_identical(nrow(scored), nrow(srv_grid()) * length(srv_eval_times()))
+
+  cand <- extract_scored_candidates(final)
+  expect_setequal(names(cand), c("dist", ".config"))
+  expect_identical(nrow(cand), nrow(srv_grid()))
+  expect_setequal(cand$dist, srv_grid()$dist)
+})
+
 test_that("both accessors refuse an object they cannot answer for", {
   skip_if_no_engines()
 
