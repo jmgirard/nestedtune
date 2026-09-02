@@ -14,7 +14,7 @@ record_handoffs <- function(wf, folds, grid, metrics) {
     inner,
     seeds,
     object,
-    grid,
+    tuner,
     metrics,
     param_info,
     event_level,

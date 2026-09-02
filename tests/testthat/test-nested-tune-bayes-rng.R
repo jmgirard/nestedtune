@@ -1,17 +1,20 @@
-# IP2 -- reproducible results. M02 ships no parallelism, so there is no backend
-# to exercise the "regardless of workers" half of IP2. What is checkable
-# serially is that a fold's result depends on its position and its seeds and on
-# nothing else: not on the order folds run in, not on the RNG state or
-# generator kind that happens to be active when a fold starts. Those are the
-# conditions a fresh worker process presents, simulated in one session (RR01
-# Q8). Every test that could pass vacuously under a deterministic engine uses
-# ranger instead, whose fits draw from R's RNG.
+# IP2 for the Bayesian path (M45 AC4). The eight properties
+# test-nested-tune-grid-rng.R holds the grid path to, asserted on
+# nested_tune_bayes(), plus the one rule that is this path's own: the
+# Gaussian-process seed is the fold's tuning seed, and the control carrying it
+# is built inside that seed's scope. Every test that could pass vacuously under
+# a deterministic engine uses ranger, whose fits draw from R's RNG; the
+# proposals themselves draw too, through tune's own `set.seed(control$seed +
+# i)` calls, which is what the seed rule fixes.
+
+bayes_tuner <- function() tuner_bayes(2, 3, tune::exp_improve())
 
 test_that("the same seed produces the same result", {
-  skip_if_no_engines(stochastic = TRUE)
+  skip_if_no_bayes_fixture(stochastic = TRUE)
 
   d <- make_reg_data()
   wf <- stoch_workflow(d)
+  p <- bayes_stoch_param_info(wf)
   ms <- reg_metrics()
 
   set.seed(3)
@@ -22,20 +25,36 @@ test_that("the same seed produces the same result", {
   )
 
   set.seed(77)
-  first <- nested_tune_grid(wf, folds, grid = stoch_grid(), metrics = ms)
+  first <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  )
   set.seed(77)
-  second <- nested_tune_grid(wf, folds, grid = stoch_grid(), metrics = ms)
+  second <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  )
 
   expect_identical(first$.metrics, second$.metrics)
   expect_identical(first$.selected, second$.selected)
+  expect_identical(first$.grid, second$.grid)
   expect_identical(first$.tuning_seed, second$.tuning_seed)
 })
 
 test_that("a different seed produces different numbers", {
-  skip_if_no_engines(stochastic = TRUE)
+  skip_if_no_bayes_fixture(stochastic = TRUE)
 
   d <- make_reg_data()
   wf <- stoch_workflow(d)
+  p <- bayes_stoch_param_info(wf)
   ms <- reg_metrics()
 
   set.seed(3)
@@ -46,9 +65,23 @@ test_that("a different seed produces different numbers", {
   )
 
   set.seed(77)
-  first <- nested_tune_grid(wf, folds, grid = stoch_grid(), metrics = ms)
+  first <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  )
   set.seed(78)
-  other <- nested_tune_grid(wf, folds, grid = stoch_grid(), metrics = ms)
+  other <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  )
 
   # Without this the same-seed test above would pass for a driver that ignored
   # the seed entirely.
@@ -57,10 +90,11 @@ test_that("a different seed produces different numbers", {
 })
 
 test_that("fold results do not depend on the order folds are run in", {
-  skip_if_no_engines(stochastic = TRUE)
+  skip_if_no_bayes_fixture(stochastic = TRUE)
 
   d <- make_reg_data()
   wf <- stoch_workflow(d)
+  p <- bayes_stoch_param_info(wf)
   ms <- reg_metrics()
 
   set.seed(4)
@@ -71,7 +105,14 @@ test_that("fold results do not depend on the order folds are run in", {
   )
 
   set.seed(88)
-  res <- nested_tune_grid(wf, folds, grid = stoch_grid(), metrics = ms)
+  res <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  )
 
   # Drive the same per-fold worker directly, last fold first. A scheduler is
   # free to do exactly this; the results must not notice.
@@ -82,8 +123,9 @@ test_that("fold results do not depend on the order folds are run in", {
       inner = folds$inner_resamples[[i]],
       seeds = c(res$.tuning_seed[[i]], res$.outer_fit_seed[[i]]),
       object = wf,
-      tuner = tuner_grid(stoch_grid()),
-      metrics = ms
+      tuner = bayes_tuner(),
+      metrics = ms,
+      param_info = p
     )
   })
   names(out) <- as.character(reversed)
@@ -91,14 +133,16 @@ test_that("fold results do not depend on the order folds are run in", {
   for (i in seq_len(nrow(res))) {
     expect_identical(out[[as.character(i)]]$metrics, res$.metrics[[i]])
     expect_identical(out[[as.character(i)]]$selected, res$.selected[[i]])
+    expect_identical(out[[as.character(i)]]$grid, res$.grid[[i]])
   }
 })
 
 test_that("fold results do not depend on the ambient RNG state or kind", {
-  skip_if_no_engines(stochastic = TRUE)
+  skip_if_no_bayes_fixture(stochastic = TRUE)
 
   d <- make_reg_data()
   wf <- stoch_workflow(d)
+  p <- bayes_stoch_param_info(wf)
   ms <- reg_metrics()
 
   set.seed(5)
@@ -120,8 +164,9 @@ test_that("fold results do not depend on the ambient RNG state or kind", {
       inner = folds$inner_resamples[[1]],
       seeds = seeds,
       object = wf,
-      tuner = tuner_grid(stoch_grid()),
-      metrics = ms
+      tuner = bayes_tuner(),
+      metrics = ms,
+      param_info = p
     )
   }
 
@@ -143,11 +188,61 @@ test_that("fold results do not depend on the ambient RNG state or kind", {
   expect_identical(from_midstream, from_default)
 })
 
-test_that("the caller's RNG state and kind survive the call untouched", {
-  skip_if_no_engines()
+test_that("the Gaussian-process seed is the fold's tuning seed, set inside its scope", {
+  skip_if_no_bayes_fixture()
 
   d <- make_reg_data()
-  wf <- det_workflow(d)
+  wf <- bayes_workflow(d)
+  p <- bayes_param_info(wf)
+
+  set.seed(6)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 3)
+  )
+  seeds <- c(4321L, 8765L)
+
+  # The control's construction is observed where it happens, through the
+  # package's own seam: what seed it was handed, and what the generator's state
+  # was at that moment.
+  seen <- new.env(parent = emptyenv())
+  real <- tuner_control
+  local_mocked_bindings(
+    tuner_control = function(tuner, event_level, seed) {
+      seen$seed <- seed
+      seen$state <- get(".Random.seed", envir = globalenv())
+      real(tuner, event_level = event_level, seed = seed)
+    }
+  )
+
+  fold <- nested_fold_fit(
+    split = folds$splits[[1]],
+    inner = folds$inner_resamples[[1]],
+    seeds = seeds,
+    object = wf,
+    tuner = bayes_tuner(),
+    metrics = reg_metrics(),
+    param_info = p
+  )
+  expect_true(fold$completed)
+
+  # The seed handed to control_bayes() is the fold's tuning seed ...
+  expect_identical(seen$seed, seeds[[1L]])
+
+  # ... and the control was built with the generator exactly where
+  # `set_fold_seed()` on that seed leaves it: nothing was drawn in between, so
+  # the control sits inside the seed's scope rather than after some of it.
+  set_fold_seed(seeds[[1L]])
+  expect_identical(seen$state, get(".Random.seed", envir = globalenv()))
+})
+
+test_that("the caller's RNG state and kind survive the call untouched", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  p <- bayes_param_info(wf)
   ms <- reg_metrics()
 
   set.seed(6)
@@ -160,7 +255,14 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   set.seed(404)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
-  invisible(nested_tune_grid(wf, folds, grid = det_grid(), metrics = ms))
+  invisible(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 1,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  ))
 
   expect_identical(.Random.seed, before_seed)
   expect_identical(RNGkind(), before_kind)
@@ -169,7 +271,14 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   # what they would have drawn had the call not been there.
   set.seed(404)
   with_call <- {
-    invisible(nested_tune_grid(wf, folds, grid = det_grid(), metrics = ms))
+    invisible(nested_tune_bayes(
+      wf,
+      folds,
+      iter = 1,
+      initial = 3,
+      param_info = p,
+      metrics = ms
+    ))
     runif(3)
   }
   set.seed(404)
@@ -178,16 +287,12 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   expect_identical(with_call, without_call)
 })
 
-# Two properties, not one. Before M03 a failing fold aborted the call, so a
-# single test covered both the failure and the error exit. Now a fold failure
-# is recorded and the call returns, which leaves the error path needing its
-# own vehicle -- and the on.exit() restore has to hold on both.
-
 test_that("the RNG state is restored when folds fail but the run completes", {
-  skip_if_no_engines()
+  skip_if_no_bayes_fixture()
 
   d <- make_reg_data()
-  wf <- det_workflow(d)
+  wf <- bayes_workflow(d)
+  p <- bayes_param_info(wf)
 
   set.seed(7)
   folds <- nested_resamples(
@@ -197,8 +302,7 @@ test_that("the RNG state is restored when folds fail but the run completes", {
   )
 
   # Both folds engineered to fail: the seeds are drawn, every fold fails inside
-  # tune, and the failures are recorded rather than raised. (A malformed grid
-  # would not do here -- that is refused up front now, before any seed is drawn.)
+  # tune, and the failures are recorded rather than raised.
   folds <- break_fold(break_fold(folds, 1L, "inner tuning"), 2L, "inner tuning")
 
   set.seed(505)
@@ -206,19 +310,27 @@ test_that("the RNG state is restored when folds fail but the run completes", {
   before_kind <- RNGkind()
 
   res <- suppressWarnings(
-    nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics())
+    nested_tune_bayes(
+      wf,
+      folds,
+      iter = 1,
+      initial = 3,
+      param_info = p,
+      metrics = reg_metrics()
+    )
   )
   expect_identical(attr(res, "folds_completed"), 0L)
+  expect_false(any(res$.completed))
 
   expect_identical(.Random.seed, before_seed)
   expect_identical(RNGkind(), before_kind)
 })
 
 test_that("the RNG state is restored when the call itself errors", {
-  skip_if_no_engines()
+  skip_if_no_bayes_fixture()
 
   d <- make_reg_data()
-  wf <- det_workflow(d)
+  wf <- bayes_workflow(d)
 
   set.seed(7)
   folds <- nested_resamples(
@@ -228,8 +340,8 @@ test_that("the RNG state is restored when the call itself errors", {
   )
 
   # The worker is stubbed to throw, so the error escapes the loop rather than
-  # being recorded -- which is the only remaining way out of the call after the
-  # seeds have been drawn, and the case on.exit() exists for.
+  # being recorded -- the only remaining way out of the call after the seeds
+  # have been drawn, and the case on.exit() exists for.
   testthat::local_mocked_bindings(
     nested_fold_fit = function(...) stop("engineered worker failure")
   )
@@ -239,7 +351,13 @@ test_that("the RNG state is restored when the call itself errors", {
   before_kind <- RNGkind()
 
   expect_error(
-    nested_tune_grid(wf, folds, grid = det_grid(), metrics = reg_metrics()),
+    nested_tune_bayes(
+      wf,
+      folds,
+      iter = 1,
+      initial = 3,
+      metrics = reg_metrics()
+    ),
     "engineered worker failure"
   )
 
@@ -248,10 +366,11 @@ test_that("the RNG state is restored when the call itself errors", {
 })
 
 test_that("a session with no RNG state is left with a valid one", {
-  skip_if_no_engines()
+  skip_if_no_bayes_fixture()
 
   d <- make_reg_data()
-  wf <- det_workflow(d)
+  wf <- bayes_workflow(d)
+  p <- bayes_param_info(wf)
 
   set.seed(8)
   folds <- nested_resamples(
@@ -265,7 +384,7 @@ test_that("a session with no RNG state is left with a valid one", {
   rm(".Random.seed", envir = globalenv())
 
   expect_no_error(
-    nested_tune_grid(wf, folds, grid = det_grid())
+    nested_tune_bayes(wf, folds, iter = 1, initial = 3, param_info = p)
   )
   # Nothing to restore, so the state the call created stays -- removing it
   # would leave the session worse off than it was found.

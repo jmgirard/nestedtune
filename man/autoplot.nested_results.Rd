@@ -7,7 +7,8 @@
 \method{autoplot}{nested_results}(object, type = c("parameters", "performance"), ...)
 }
 \arguments{
-\item{object}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}}.}
+\item{object}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}.}
 
 \item{type}{Which view to draw: \code{"parameters"} (the default) or
 \code{"performance"}.}

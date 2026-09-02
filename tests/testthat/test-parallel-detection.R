@@ -277,7 +277,7 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
   fold_record <- function(
     payload,
     object,
-    grid,
+    tuner,
     metrics,
     param_info,
     event_level,
@@ -301,7 +301,7 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
   warnings <- character()
   out <- withCallingHandlers(
     without_pkgload_warning(
-      dispatch_folds(payloads, object = NULL, grid = NULL, metrics = NULL)
+      dispatch_folds(payloads, object = NULL, tuner = NULL, metrics = NULL)
     ),
     nestedtune_pool_not_cancellable = function(cnd) {
       warnings <<- c(warnings, conditionMessage(cnd))

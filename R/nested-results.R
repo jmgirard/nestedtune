@@ -5,7 +5,14 @@
 # looks authoritative and means nothing, since there is nothing to select at
 # the outer level. Refusing the class makes them error instead (D-010).
 
-new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
+new_nested_results <- function(
+  resamples,
+  folds,
+  seeds,
+  grid,
+  metrics,
+  procedure
+) {
   n <- length(folds)
   id_cols <- setdiff(names(resamples), c("splits", "inner_resamples"))
 
@@ -30,6 +37,10 @@ new_nested_results <- function(resamples, folds, seeds, grid, metrics) {
   out <- new_tbl(cols)
   attr(out, "grid") <- grid
   attr(out, "metrics") <- metrics
+  # What ran, as the tuner and its static arguments (IP4; R/tuner.R). The
+  # Bayesian path has no `grid` to record and the attribute above is absent
+  # for it; this one is present on every result.
+  attr(out, "procedure") <- procedure
   attr(out, "outer_label") <- outer_scheme_label(resamples)
   # Which columns the design named its folds with, recorded rather than
   # recognized later. See id_columns().
@@ -203,6 +214,7 @@ stamp_results <- function(out, template) {
   # NULL to an attribute removes it, so this preserves the distinction.
   attr(out, "grid") <- attr(template, "grid")
   attr(out, "metrics") <- attr(template, "metrics")
+  attr(out, "procedure") <- attr(template, "procedure")
   attr(out, "outer_label") <- attr(template, "outer_label")
   # Which columns the design named its folds with travels the same way, and for
   # the same reason: it describes the call, not the rows in hand (M38).
@@ -259,7 +271,7 @@ results_attributes <- function() {
 # These stay true of anything the run produced, a type token included; the two
 # counts do not, which is why they are separated here.
 run_attributes <- function() {
-  c("grid", "metrics", "outer_label", "id_columns")
+  c("grid", "metrics", "procedure", "outer_label", "id_columns")
 }
 
 #' @importFrom dplyr dplyr_reconstruct
@@ -605,7 +617,8 @@ new_tbl <- function(cols) {
 
 #' Collect the metrics from a nested resampling run
 #'
-#' @param x A `nested_results` object from [nested_tune_grid()].
+#' @param x A `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()].
 #' @param summarize Whether to average the per-fold metrics (`TRUE`, the
 #'   default) or return them one row per outer fold (`FALSE`).
 #' @param ... Not used; must be empty. An argument passed here is an error

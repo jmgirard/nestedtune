@@ -122,6 +122,71 @@ reference_nested_loop <- function(
   })
 }
 
+# The hand-rolled reference loop for the Bayesian path (M45 AC2), written
+# from the same seed contract and never from the driver's output. What it adds
+# to the grid reference is the one rule that is the Bayesian path's own: the
+# Gaussian process is seeded from the fold's tuning seed through
+# `control_bayes(seed = )`, built after `set.seed()` on that same number
+# (D-040).
+reference_nested_bayes_loop <- function(
+  wf,
+  nested,
+  iter,
+  initial,
+  objective,
+  param_info,
+  metrics,
+  seed,
+  metric_name
+) {
+  set.seed(seed)
+  n <- nrow(nested)
+  seeds <- sample.int(.Machine$integer.max, 2L * n)
+
+  lapply(seq_len(n), function(i) {
+    tuning_seed <- seeds[[2L * i - 1L]]
+    outer_seed <- seeds[[2L * i]]
+
+    set.seed(
+      tuning_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    tuned <- tune::tune_bayes(
+      wf,
+      resamples = nested$inner_resamples[[i]],
+      iter = iter,
+      initial = initial,
+      objective = objective,
+      param_info = param_info,
+      metrics = metrics,
+      control = tune::control_bayes(seed = tuning_seed, allow_par = FALSE)
+    )
+    best <- tune::select_best(tuned, metric = metric_name)
+    final_wf <- tune::finalize_workflow(wf, best)
+
+    set.seed(
+      outer_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    fitted <- tune::last_fit(
+      final_wf,
+      split = nested$splits[[i]],
+      metrics = metrics
+    )
+
+    list(
+      metrics = tune::collect_metrics(fitted),
+      selected = best,
+      tuning_seed = tuning_seed,
+      outer_fit_seed = outer_seed
+    )
+  })
+}
+
 # The hand-rolled reference final fit (AC2/AC9).
 #
 # Written from the documented contract, never from the object: its own
@@ -419,7 +484,19 @@ results_from <- function(design) {
       notes = NULL
     )
   })
-  new_nested_results(design, folds, seq_len(2L * n), det_grid(), reg_metrics())
+  new_nested_results(
+    design,
+    folds,
+    seq_len(2L * n),
+    det_grid(),
+    reg_metrics(),
+    procedure = new_procedure(
+      tuner_grid(det_grid()),
+      param_info = NULL,
+      event_level = "first",
+      eval_time = NULL
+    )
+  )
 }
 
 repeated_results <- function(v = 3, repeats = 2, seed = 11) {
@@ -637,6 +714,95 @@ skip_if_no_engines <- function(stochastic = FALSE) {
   testthat::skip_if_not_installed("recipes")
   testthat::skip_if_not_installed("yardstick")
   if (stochastic) testthat::skip_if_not_installed("ranger")
+}
+
+# The Bayesian fixtures (M45).
+#
+# Two integer-valued tunables on the deterministic path, and both of them
+# matter. Two rather than one: `dials::grid_space_filling()` draws a
+# single-parameter design from the RNG -- over `num_comp(c(1L, 4L))` at size 3
+# four seeds gave four different sets, and over `deg_free(c(1L, 12L))` at size
+# 4 one set in two row orders -- while a two-parameter design comes from sfd's
+# precomputed tables: the same rows in the same order under every seed, and no
+# draw at all (measured 2026-09-01, dials 1.4.x). That is what lets AC3 hand
+# `nested_tune_grid()` one `grid_space_filling(p, size = k)` and expect every
+# fold's Bayesian run at `iter = 0` to have scored exactly it. Ten levels
+# apiece rather than `num_comp`'s four: tune's search stops early, with an
+# error printed to the console and no note recorded, once no unscored
+# candidate remains, and `initial = 3, iter = 2` over 100 candidates never
+# gets near that (measured on the 4-level `num_comp` at `initial = 2`).
+#
+# The stochastic sibling is `stoch_workflow()` as it stands: `min_n` is
+# integer-valued over 39 levels, and the reference loop fixes what AC2 asserts
+# about it, seed by seed, so it needs no seed-independent design.
+bayes_workflow <- function(data) {
+  rec <- recipes::step_ns(
+    recipes::step_ns(
+      recipes::recipe(y ~ x1 + x2 + x3 + x4, data = data),
+      x1,
+      deg_free = tune::tune("df1")
+    ),
+    x2,
+    deg_free = tune::tune("df2")
+  )
+  workflows::workflow(rec, parsnip::linear_reg())
+}
+
+# Finalized and integer-only, the property AC3 rests on. `update()` on the
+# extracted set rather than a fresh `parameters()`, so the ids are the
+# workflow's own.
+bayes_param_info <- function(wf) {
+  update(
+    tune::extract_parameter_set_dials(wf),
+    df1 = dials::deg_free(c(1L, 10L)),
+    df2 = dials::deg_free(c(1L, 10L))
+  )
+}
+
+# The suite's Bayesian run, spelled once so every file that asks for it is
+# served from the cache (M12): the same data, workflow, design, arguments and
+# entry seed, in the same order, so the key agrees wherever it is requested.
+# Built from `make_reg_data()` outward, which seeds the generator itself, so
+# the recipe step ids the workflow draws are the same on every request too.
+# `set.seed(20)` sits after every argument is built, so the run's entry state
+# is that seed's and a reference loop started from `seed = 20` reproduces it.
+bayes_results <- function() {
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- det_nested(d)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+  set.seed(20)
+  memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  ))
+}
+
+# The stochastic sibling's parameter set: ranger's `min_n`, integer-valued,
+# over 2..25 rather than dials' default 2..40. `stoch_workflow()` is the
+# sibling; this narrows the space it searches, for one reason. The fixture's
+# inner analysis sets hold 40 rows, a candidate at `min_n = 40` predicts a
+# constant, yardstick warns that R-squared is undefined, and tune files the
+# warning as a note carrying a backtrace -- which the host and a daemon render
+# differently (`?nested_tune_grid`, "Parallel execution"), so BC10's
+# whole-object identity would fail on the trace and on nothing else, and the
+# whole-record identities in test-nested-tune-bayes-rng.R with it. 25 is the
+# largest value `stoch_grid()` has always scored without a note.
+bayes_stoch_param_info <- function(wf) {
+  update(
+    tune::extract_parameter_set_dials(wf),
+    min_n = dials::min_n(c(2L, 25L))
+  )
+}
+
+skip_if_no_bayes_fixture <- function(stochastic = FALSE) {
+  skip_if_no_engines(stochastic = stochastic)
+  testthat::skip_if_not_installed("dials")
 }
 
 # The censored-regression fixture's engines and metric (M41). `censored`

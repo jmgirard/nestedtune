@@ -1,4 +1,4 @@
-# Argument validation for nested_tune_grid().
+# Argument validation for the orchestrators and the final fit.
 #
 # GP3: a provably invalid design is refused rather than warned about. Each of
 # these fires before any fitting, so a misspecified call fails in a second
@@ -506,4 +506,91 @@ check_event_level <- function(event_level, call = rlang::caller_env()) {
     ),
     call = call
   )
+}
+
+# The Bayesian orchestrator's own three arguments (D-040). All three are
+# tune's, and each is refused here only where tune's own check is looser than
+# a whole outer loop can afford: tune's `check_iter()` accepts `2.5`, and its
+# `check_initial()` accepts a `tune_results` in place of a count. The classes
+# are this package's, so a caller can catch the refusal as a refusal of that
+# argument rather than by matching its message.
+
+check_iter <- function(iter, call = rlang::caller_env()) {
+  if (is_whole_number(iter) && iter >= 0) {
+    return(invisible(iter))
+  }
+  cli::cli_abort(
+    c(
+      "{.arg iter} must be a single non-negative whole number.",
+      x = if (is_single_number(iter)) {
+        "Got {.val {iter}}."
+      } else {
+        "Got {.obj_type_friendly {iter}}."
+      }
+    ),
+    class = "nestedtune_bad_iter",
+    call = call
+  )
+}
+
+# A count only. tune also takes the result of an earlier `tune_grid()` run
+# here, and that is refused rather than passed on: one tuning run cannot serve
+# every outer fold, and its candidates were scored on resamples of data that
+# may hold a fold's assessment rows -- the leak IP1 exists to forbid (D-040).
+check_initial <- function(initial, call = rlang::caller_env()) {
+  if (inherits(initial, "tune_results")) {
+    cli::cli_abort(
+      c(
+        "{.arg initial} must be a number of candidates, not a \\
+         {.cls tune_results}.",
+        x = "One tuning run cannot serve every outer fold: its candidates \\
+             were scored on resamples that may hold a fold's assessment rows.",
+        i = "Give the number of candidates to score before the first \\
+             iteration, and each fold generates and scores its own."
+      ),
+      class = "nestedtune_bad_initial",
+      call = call
+    )
+  }
+  if (is_whole_number(initial) && initial >= 2) {
+    return(invisible(initial))
+  }
+  cli::cli_abort(
+    c(
+      "{.arg initial} must be a single whole number of at least 2.",
+      x = if (is_single_number(initial)) {
+        "Got {.val {initial}}."
+      } else {
+        "Got {.obj_type_friendly {initial}}."
+      }
+    ),
+    class = "nestedtune_bad_initial",
+    call = call
+  )
+}
+
+check_objective <- function(objective, call = rlang::caller_env()) {
+  if (inherits(objective, "acquisition_function")) {
+    return(invisible(objective))
+  }
+  cli::cli_abort(
+    c(
+      "{.arg objective} must be an acquisition function from tune.",
+      x = "Got {.obj_type_friendly {objective}}.",
+      i = "Use {.fn tune::exp_improve}, {.fn tune::prob_improve} or \\
+           {.fn tune::conf_bound}."
+    ),
+    class = "nestedtune_bad_objective",
+    call = call
+  )
+}
+
+is_whole_number <- function(x) {
+  is_single_number(x) && is.finite(x) && x == trunc(x)
+}
+
+# Whether there is a value worth naming in the refusal: `2.5` is, a data frame
+# is not.
+is_single_number <- function(x) {
+  is.numeric(x) && length(x) == 1L && !is.na(x)
 }

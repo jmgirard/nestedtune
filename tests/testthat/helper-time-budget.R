@@ -625,6 +625,15 @@ time_budget_ledger <- function() {
       START_DAEMONS_BOUND_S(),
       "the identity holds with a censored fixture at a named eval_time"
     ),
+    tb_row(
+      "test-parallel-identity.R",
+      595L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the Bayesian path matches serial at two above-threshold daemon counts",
+      times = 2L,
+      note = "inside for (n in c(2L, 3L)) (M45)"
+    ),
 
     # --- test-parallel-metrics.R --------------------------------------------
     # One pool start, and that is the whole file's declared waiting. The two
@@ -643,7 +652,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-payload.R",
-      287L,
+      295L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a daemon receives the payload rehydrated, not the leaned one"

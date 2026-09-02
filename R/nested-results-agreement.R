@@ -21,7 +21,8 @@
 #' model to deploy comes from [nested_final_fit()], which runs the same
 #' procedure once more on the whole dataset and selects for itself.
 #'
-#' @param x A `nested_results` object from [nested_tune_grid()].
+#' @param x A `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()].
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored.
 #'
@@ -145,7 +146,7 @@ abort_no_agreement_method <- function(x, call = rlang::caller_env()) {
     c(
       "{.fn agreement} has no method for {.obj_type_friendly {x}}.",
       i = "It answers for a {.cls nested_results} object, from \\
-           {.fn nested_tune_grid}."
+           {.fn nested_tune_grid} or {.fn nested_tune_bayes}."
     ),
     class = "nestedtune_no_agreement_method",
     call = call

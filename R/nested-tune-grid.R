@@ -14,6 +14,10 @@
 #' which runs the same procedure again with the whole dataset in hand. The
 #' estimate from this function is what you report for it.
 #'
+#' For a Bayesian inner loop -- [tune::tune_bayes()] proposing candidates one
+#' at a time -- see [nested_tune_bayes()], which runs this same outer loop with
+#' the inner tuner swapped.
+#'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
 #' @param ... Not used; must be empty. Everything after it is matched by name,
@@ -102,6 +106,14 @@
 #'   `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
 #'   than `NULL` when none was supplied. `.grid` is a column, so it travels
 #'   with the fold it describes.
+#'
+#'   `attr(x, "procedure")` records what ran, on the result of either
+#'   orchestrator: a named list giving the tuner (`"tune_grid"` here,
+#'   `"tune_bayes"` from [nested_tune_bayes()]), that tuner's own arguments
+#'   (`grid` here; `iter`, `initial` and `objective` there), and `param_info`,
+#'   `event_level` and `eval_time` on both. A Bayesian result carries the
+#'   `procedure` attribute and no `grid` attribute, and its `.grid` tables
+#'   carry an `.iter` column; [nested_tune_bayes()] documents both.
 #'
 #'   **What an operation on the object may and may not do.** The result carries
 #'   the invariants `tune` declares on its own results objects:
@@ -417,7 +429,8 @@
 #' }
 #' }
 #'
-#' @seealso [nested_resamples()], [nested_final_fit()], [tune::tune_grid()]
+#' @seealso [nested_tune_bayes()], [nested_resamples()], [nested_final_fit()],
+#'   [tune::tune_grid()]
 #' @export
 nested_tune_grid <- function(
   object,
@@ -439,6 +452,40 @@ nested_tune_grid <- function(
   check_event_level(event_level)
   check_eval_time(eval_time)
 
+  nested_loop(
+    object,
+    resamples,
+    tuner = tuner_grid(grid),
+    metrics = metrics,
+    param_info = param_info,
+    event_level = event_level,
+    eval_time = eval_time,
+    grid = grid,
+    call = rlang::current_env()
+  )
+}
+
+# The outer loop, shared by both orchestrators (D-040): what differs between
+# them is the tuner description and the entry checks, and both of those are
+# settled before this is reached. Every argument has been forced by the
+# caller's `check_*()` calls, so the RNG snapshot below is taken after the
+# caller's own evaluation is complete and nothing lazy can draw inside it.
+#
+# `call` is the orchestrator's frame, so the run's warnings and the daemon
+# pre-flight's refusals name the function the user called rather than this one.
+# `grid` is recorded on the object as it was given, for the grid path alone;
+# the Bayesian path passes NULL and carries no such attribute.
+nested_loop <- function(
+  object,
+  resamples,
+  tuner,
+  metrics,
+  param_info,
+  event_level,
+  eval_time,
+  grid,
+  call
+) {
   n <- nrow(resamples)
 
   # Snapshot before drawing, so what is restored is the caller's state on
@@ -465,23 +512,30 @@ nested_tune_grid <- function(
   folds <- dispatch_folds(
     payloads,
     object = object,
-    grid = grid,
+    tuner = tuner,
     metrics = metrics,
     param_info = param_info,
     event_level = event_level,
     eval_time = eval_time,
-    call = rlang::current_env()
+    call = call
   )
 
-  out <- new_nested_results(resamples, folds, seeds, grid, metrics)
-  warn_failed_folds(out, call = rlang::current_env())
+  procedure <- new_procedure(
+    tuner,
+    param_info = param_info,
+    event_level = event_level,
+    eval_time = eval_time
+  )
+  out <- new_nested_results(resamples, folds, seeds, grid, metrics, procedure)
+  warn_failed_folds(out, call = call)
   out
 }
 
 # One outer fold, start to finish.
 #
 # Everything this needs is an argument: the split, the inner resamples, the two
-# seeds, and the static inputs. Nothing is read from the enclosing loop and
+# seeds, the tuner description and the static inputs. Nothing is read from the
+# enclosing loop and
 # nothing is drawn here, so the fold's result depends on its position in the
 # design and not on when or where it runs -- which is what makes the loop safe
 # to reorder or, later, to parallelize (IP2).
@@ -490,7 +544,7 @@ nested_fold_fit <- function(
   inner,
   seeds,
   object,
-  grid,
+  tuner,
   metrics,
   param_info = NULL,
   event_level = "first",
@@ -504,17 +558,19 @@ nested_fold_fit <- function(
   tuned <- NULL
   selected <- tryCatch(
     {
-      tuned <- tune::tune_grid(
-        object,
+      # The tuner's own call -- `tune_grid()` or `tune_bayes()` -- assembled
+      # from the description the orchestrator built (R/tuner.R). The fold's
+      # tuning seed goes in with it, because `control_bayes()` is seeded from
+      # it and has to be built inside this seed's scope.
+      tuned <- run_tuner(
+        tuner,
+        object = object,
         resamples = inner,
         param_info = param_info,
-        grid = grid,
         metrics = metrics,
         eval_time = eval_time,
-        control = tune::control_grid(
-          allow_par = FALSE,
-          event_level = event_level
-        )
+        event_level = event_level,
+        seed = seeds[[1L]]
       )
       # Resolved from the tuned object rather than from `metrics`, so the same
       # code answers whether the caller supplied a metric set or let tune pick.
@@ -617,8 +673,10 @@ scored_candidates <- function(tuned) {
   #
   # No raising input is known HERE, and the reason is narrower than it looks:
   # the ordering below runs on `key[first]`, which is `.config` or a pasted
-  # string, never on a parameter column. `order()` DOES raise on a list-valued
-  # parameter column, which is why `candidate_key()` in nested-results-print.R
+  # string, and on `.iter` where a frame carries one, which is tune's integer
+  # iteration counter -- never on a parameter column. `order()` DOES raise on
+  # a list-valued parameter column, which is why `candidate_key()` in
+  # nested-results-print.R
   # renders rows before ordering them -- an earlier comment here claimed the
   # opposite, having measured this function and concluded something about that
   # one (M21 review F1, F2).
@@ -661,9 +719,19 @@ scored_candidates_impl <- function(tuned) {
   # happened to score a candidate first: a candidate missing from the first
   # resample and present in the second would otherwise land last. tune
   # zero-pads `.config` past nine candidates, so ordering it lexically is
-  # ordering it numerically.
-  ordered <- order(key[first])
-  new_tbl(lapply(candidates[first, , drop = FALSE], function(col) col[ordered]))
+  # ordering it numerically. A Bayesian run's record is ordered by `.iter`
+  # first, so the initial candidates come before the proposals and the
+  # proposals follow in the order they were made; tune labels those `iter1`,
+  # `iter2`, ... without padding, and the iteration number is what puts the
+  # tenth after the ninth. A grid run's frames carry no `.iter`, and its order
+  # is the key's alone, as before.
+  kept <- candidates[first, , drop = FALSE]
+  ordered <- if (".iter" %in% keep) {
+    order(kept[[".iter"]], key[first])
+  } else {
+    order(key[first])
+  }
+  new_tbl(lapply(kept, function(col) col[ordered]))
 }
 
 # The per-resample metric frames that hold at least one scored candidate.
@@ -675,7 +743,37 @@ scored_metric_frames <- function(tuned) {
   if (!is.list(metrics)) {
     return(list())
   }
+  metrics <- join_iteration(metrics, tuned)
   Filter(function(m) is.data.frame(m) && nrow(m) > 0L, metrics)
+}
+
+# The search iteration each candidate was scored in, joined onto the
+# per-resample frames (M45, IP4).
+#
+# A `tune_bayes()` result records the iteration once per row at the top level,
+# in an `.iter` column beside `.metrics` -- `0` for the rows that scored the
+# initial candidates, `i` for the rows of the `i`-th proposal -- and its
+# per-resample frames carry no such column (measured 2026-09-01, tune 2.1.0).
+# So the frames are stamped from their row before they are pooled, and the
+# candidate record comes out with the iteration as one more column. A result
+# with no `.iter` -- every `tune_grid()` result -- is returned untouched, and a
+# frame already carrying the column keeps what it has.
+join_iteration <- function(metrics, tuned) {
+  iters <- tuned[[".iter"]]
+  if (is.null(iters) || length(iters) != length(metrics)) {
+    return(metrics)
+  }
+  Map(
+    function(m, i) {
+      if (!is.data.frame(m) || ".iter" %in% names(m)) {
+        return(m)
+      }
+      m[[".iter"]] <- rep(i, nrow(m))
+      m
+    },
+    metrics,
+    iters
+  )
 }
 
 # A fold that scored no candidate at all. Bare rather than typed: a fold that

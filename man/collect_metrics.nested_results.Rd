@@ -7,7 +7,8 @@
 \method{collect_metrics}{nested_results}(x, ..., summarize = TRUE)
 }
 \arguments{
-\item{x}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}}.}
+\item{x}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}.}
 
 \item{...}{Not used; must be empty. An argument passed here is an error
 rather than silently ignored.}

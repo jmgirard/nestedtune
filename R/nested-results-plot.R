@@ -27,7 +27,8 @@
 #' assessment set, with a rule at the nested estimate: the same value
 #' [collect_metrics()] reports.
 #'
-#' @param object A `nested_results` object from [nested_tune_grid()].
+#' @param object A `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()].
 #' @param type Which view to draw: `"parameters"` (the default) or
 #'   `"performance"`.
 #' @param ... Not used; must be empty. An argument passed here is an error

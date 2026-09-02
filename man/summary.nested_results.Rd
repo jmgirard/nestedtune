@@ -10,7 +10,8 @@
 \method{print}{summary.nested_results}(x, ...)
 }
 \arguments{
-\item{object}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}}.}
+\item{object}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}.}
 
 \item{...}{Not used; must be empty. An argument passed here is an error
 rather than silently ignored.}

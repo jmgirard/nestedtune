@@ -32,6 +32,7 @@ reference:
     the outer split — and keep what each fold chose.
   contents:
   - nested_tune_grid
+  - nested_tune_bayes
   - collect_metrics.nested_results
   - print.nested_results
   - summary.nested_results

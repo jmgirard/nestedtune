@@ -248,7 +248,7 @@ nested_final_fit <- function(
     env,
     seeds,
     object,
-    grid,
+    tuner_grid(grid),
     metrics,
     param_info = param_info,
     event_level = event_level,
@@ -275,7 +275,7 @@ final_fit_worker <- function(
   env,
   seeds,
   object,
-  grid,
+  tuner,
   metrics,
   param_info = NULL,
   event_level = "first",
@@ -290,17 +290,15 @@ final_fit_worker <- function(
   # passing.
   set_fold_seed(seeds[[1L]])
   inner <- eval_inside_spec(inside, data, env, call = call)
-  tuned <- tune::tune_grid(
-    object,
+  tuned <- run_tuner(
+    tuner,
+    object = object,
     resamples = inner,
     param_info = param_info,
-    grid = grid,
     metrics = metrics,
     eval_time = eval_time,
-    control = tune::control_grid(
-      allow_par = FALSE,
-      event_level = event_level
-    )
+    event_level = event_level,
+    seed = seeds[[1L]]
   )
   # Resolved from the tuned object rather than from `metrics`, so the same code
   # answers whether the caller supplied a metric set or let tune pick.
