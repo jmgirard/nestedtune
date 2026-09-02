@@ -71,7 +71,7 @@ differ.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'nested_results'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, n <span class="op">=</span> <span class="cn">NULL</span>, width <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -84,7 +84,22 @@ differ.</p>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Not used; must be empty. An argument passed here is an error
-rather than silently ignored.</p></dd>
+rather than silently ignored, so <code>n</code> and <code>width</code> must be spelled out in
+full.</p></dd>
+
+
+<dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
+<dd><p>Number of rows to show, passed to the tibble printing of the outer
+folds. <code>NULL</code>, the default, leaves it to tibble: every row when there are
+fewer than the <code>print_max</code> option allows, and otherwise the <code>print_min</code>
+option's count with a footer saying how many more there are. <code>Inf</code> shows
+every fold.</p></dd>
+
+
+<dt id="arg-width">width<a class="anchor" aria-label="anchor" href="#arg-width"></a></dt>
+<dd><p>Width of text output to generate for the rows, passed to the
+tibble printing. <code>NULL</code>, the default, uses the <code>width</code> option. Columns that
+do not fit are listed in the footer under their names.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -45,13 +45,14 @@ print(x, ...)
 
 ## Value
 
-An object of class `summary.nested_results`: a list holding the outer
-resampling scheme's label, the outer design's requested and completed
-fold counts, the failed folds with the stage each failed at, the
-parameter values the completed folds selected, the candidate grid each
-completed fold searched, and the metric estimates averaged across them.
-Printing it is what most callers want; the components are there for a
-caller that needs a number rather than a line of text.
+[`summary()`](https://rdrr.io/r/base/summary.html) returns an object of
+class `summary.nested_results`: a list holding the outer resampling
+scheme's label, the outer design's requested and completed fold counts,
+the failed folds with the stage each failed at, the parameter values the
+completed folds selected, the candidate grid each completed fold
+searched, and the metric estimates averaged across them. Printing it is
+what most callers want; the components are there for a caller that needs
+a number rather than a line of text.
 
 [`print()`](https://rdrr.io/r/base/print.html) returns `x`, invisibly.
 
@@ -60,3 +61,45 @@ caller that needs a number rather than a line of text.
 [`print.nested_results()`](https://nestedtune.tidymodels.org/reference/print.nested_results.md),
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+
+## Examples
+
+``` r
+data(mtcars)
+
+rec <- recipes::step_pca(
+  recipes::recipe(mpg ~ ., data = mtcars),
+  recipes::all_predictors(),
+  num_comp = tune::tune()
+)
+wf <- workflows::workflow(rec, parsnip::linear_reg())
+
+set.seed(1)
+folds <- nested_resamples(
+  mtcars,
+  outside = rsample::vfold_cv(v = 3),
+  inside = rsample::vfold_cv(v = 3)
+)
+
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+
+summary(res)
+#> 
+#> ── Nested cross-validation results ────────────────────────────────────
+#> Outer resamples: 3-fold cross-validation
+#> Outer folds: 3 requested, 3 completed
+#> 
+#> ── Selected parameters ──
+#> 
+#> ! num_comp: 2, 1, 1 (folds disagree)
+#> 
+#> ── Estimate (3 of 3 outer folds) ──
+#> 
+#> rmse (standard): 3.23
+#> rsq (standard): 0.722
+#> 
+#> ℹ A nested estimate describes the tune-and-fit procedure, not a model
+#>   you can deploy. Build that with `nested_final_fit()`, and report
+#>   this estimate as what its procedure achieves.
+```

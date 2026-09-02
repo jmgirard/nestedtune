@@ -18,7 +18,7 @@ appears only when the sets actually differ.
 
 ``` r
 # S3 method for class 'nested_results'
-print(x, ...)
+print(x, ..., n = NULL, width = NULL)
 ```
 
 ## Arguments
@@ -31,7 +31,21 @@ print(x, ...)
 - ...:
 
   Not used; must be empty. An argument passed here is an error rather
-  than silently ignored.
+  than silently ignored, so `n` and `width` must be spelled out in full.
+
+- n:
+
+  Number of rows to show, passed to the tibble printing of the outer
+  folds. `NULL`, the default, leaves it to tibble: every row when there
+  are fewer than the `print_max` option allows, and otherwise the
+  `print_min` option's count with a footer saying how many more there
+  are. `Inf` shows every fold.
+
+- width:
+
+  Width of text output to generate for the rows, passed to the tibble
+  printing. `NULL`, the default, uses the `width` option. Columns that
+  do not fit are listed in the footer under their names.
 
 ## Value
 
