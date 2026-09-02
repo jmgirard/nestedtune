@@ -1,6 +1,6 @@
 # M47: `predict()` and `augment()` on a `nested_final_fit`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -113,7 +113,7 @@ fold failed — stays on its own candidate row.
       (`@return`, "better reached with"), `:185` (`@examples`) and `:195` (`@seealso`); `README.Rmd:121`
       then `devtools::build_readme()`; `vignettes/nested-cv.Rmd:324-328`; `cairn/DESIGN.md:73-74`
       (function family) and the architecture paragraph naming `new_nested_final_fit()`.
-- [ ] T5: Verify slot per `cairn/PROFILE.md`: `document()` no diff, `test()` clean, `check()` with the
+- [x] T5: Verify slot per `cairn/PROFILE.md`: `document()` no diff, `test()` clean, `check()` with the
       NOTE comparison of AC7 recorded in the work log.
 
 ## Work log
@@ -129,6 +129,7 @@ fold failed — stays on its own candidate row.
 - 2026-09-02: T4 — pkgdown row, NEWS entry, `nested_final_fit()` roxygen (`@return`, example, `@seealso`), README.Rmd/README.md (`build_readme()`, one line changed), vignette sentence and chunk, DESIGN function-family line and constructor paragraph; `document()` no further diff, `pkgdown::check_pkgdown()` no problems.
 - 2026-09-02: full-mode criteria audit of the amended AC3/AC6 ([O] fresh reader) returned one minor instrument finding (AC3's "so the name is not asserted" aside) and two failure-identity gaps (AC3's clauses 1 and 2 could not tell parsnip's refusal or the workflow's missing-argument error from one the method raised itself), plus the note that D-010's and D-014's consequences clauses call the refusal "no applicable method"; all three wording recommendations applied, the delegation-pin comparison added to the AC3 test.
 - 2026-09-02: amendment (substantive) accepted at the mini gate: AC3 and AC6 reworded to the failures parsnip 1.6.0 and tune 2.1.0 actually raise (text as now in the Acceptance criteria section); no criterion added, removed or reordered.
+- 2026-09-02: T5 — first `devtools::check()` carried one NOTE (no visible global `predict` in the new method); fixed by calling `stats::predict()`, as `stats::sd()` is already called elsewhere without a DESCRIPTION change. On the committed tree 791c927: `air format .` no change, `devtools::document()` no diff, `devtools::test()` 0 failed / 0 warnings, `devtools::check()` 0 errors / 0 warnings / 0 notes (8m14s) against M46's 0-note baseline. Status → review.
 
 ## Decisions
 
