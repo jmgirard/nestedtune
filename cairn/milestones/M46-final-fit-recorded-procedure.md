@@ -1,6 +1,6 @@
 # M46: `nested_final_fit()` re-runs the procedure a result recorded
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M45
 - **Driving RR:** —
@@ -61,8 +61,8 @@ migrated (pre-1.0).
 - [x] T3: Oracles in `test-nested-final-fit-oracles.R` (provenance header extended to "the test's own tuner call"): the grid reference fed the recorded procedure; `reference_bayes_final_fit()` for AC2, its `tune_bayes()` built with `save_workflow = TRUE`; the AC3 invariant; the O5 strand running `fit_best()` on that reference run (RR05 Q1).
 - [x] T4: `test-nested-final-fit-rng.R` extended with AC4's properties on a Bayesian result, and the corruption test built by attribute surgery (a verb would strip the class, `R/nested-results.R:128-186`).
 - [x] T5: `print.nested_final_fit()` and `summary.nested_final_fit()` (`R/nested-final-fit-print.R`) name the procedure for both tuners (RR05 Q2): one print line, summary components `initial`, `iterations_completed`, `iterations_requested`; scored counts from the candidates, requested from the procedure; the pointer sentence names the results object; M40's pinned constant re-agreed under a new name; `extract_scored_candidates()` on a Bayesian final fit; snapshots rendered and read before approval (M08 lesson).
-- [ ] T6: Roxygen for the new signature on every page that shows the old one (`grep -rn 'nested_final_fit(' R vignettes`), the six `nested_tune_grid()`-only pointer sites RR05 Q2 lists linking both orchestrators, the Reproducibility recipe showing the Bayesian control with `seed = fit$tuning_seed` (RR05 B2), the vignette's final-fit chunk re-run, `NEWS.md`, DESIGN's final-fit family line and architecture paragraph.
-- [ ] T7: `air format .`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T6: Roxygen for the new signature on every page that shows the old one (`grep -rn 'nested_final_fit(' R vignettes`), the six `nested_tune_grid()`-only pointer sites RR05 Q2 lists linking both orchestrators, the Reproducibility recipe showing the Bayesian control with `seed = fit$tuning_seed` (RR05 B2), the vignette's final-fit chunk re-run, `NEWS.md`, DESIGN's final-fit family line and architecture paragraph.
+- [x] T7: `air format .`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -76,6 +76,7 @@ migrated (pre-1.0).
 - 2026-09-02: T1 done; its full-suite run showed 10 failures, all three daemon files, every one naming `check_inside_spec` missing from the daemons, which is the mid-run removal of that function from the tree the daemons load, not T1 (the run had loaded the host before the edit); every other file passed. Checkpoint, mid-task: T2's checks test file rewritten and green (63), the print/summary code (T5) and the documentation sweep (T6: roxygen, DESIGN, NEWS, vignette, README.Rmd) written, `reference_bayes_final_fit()` and the Bayesian fixtures added; eleven test files are being re-pointed by an [S] subagent and README.md is knitting, so the suite is not yet runnable against this tree.
 - 2026-09-02: T2 done. `nested_final_fit(object, results, ...)` with `check_results_record()` (one class, three messages), `procedure_tuner()`, the grid re-checked against the workflow handed over (`check_grid_params()`, kept beyond AC1 on GP3 grounds); the checks file rewritten (63 expectations). Delegated to an [S] subagent: the twelve other callers re-pointed to results objects, the eval_time/event_level/param_info refusals that no longer exist on the final fit removed, the fixture-key axis test split per orchestrator, the dots-barrier formals list updated (593 expectations across the twelve, green); its diffs read. README.md re-knit (predictions unchanged) and its guide link re-pointed from the pre-transfer domain to nestedtune.tidymodels.org in README.Rmd, which had drifted from the hand-edited README.md.
 - 2026-09-02: T3, T4, T5 done. Oracles: `reference_bayes_final_fit()` (`save_workflow = TRUE` on the test's own call), the O3b/O4b/O5 strands recorded in the provenance header, the AC3 invariant on `final_nested()` from one entry seed, `fit_best()` on the reference run under the pinned fit seed (26 expectations). RNG: the five IP2 properties on a Bayesian result plus the read-nothing-but-splits probe by attribute surgery (52). Print: the procedure line for both tuners, the four Bayesian counts as summary components read from the candidate record beside the requested figures, the pointer sentence naming the results object, M40's constant re-agreed as `PRINT_AS_AGREED_M46`, a hand-built record where scored and requested differ, two Bayesian snapshots rendered and read (158). `air format .` run.
+- 2026-09-02: T6, T7 done; status review. Docs: the roxygen sweep (both orchestrators named on every page that named one, the Bayesian by-hand recipe with `seed = fit$tuning_seed`, examples on the new signature), the vignette's final-fit section and README.Rmd on `nested_final_fit(wf, res)`, NEWS, DESIGN's family line and architecture paragraph. Verify on the committed tree 72a2e3d: `devtools::document()` no diff, `devtools::test()` 0 failed / 0 warnings / 0 skipped / 3264 passed, `devtools::check()` 0 errors / 0 warnings / 0 notes (5m33s).
 
 ## Decisions
 
