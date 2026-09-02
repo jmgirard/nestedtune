@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** IP2, IP4, GP3
 - **Resolves:** #33 closes, #35 partial
-- **Branch/PR:** m048-dots-control-passthrough
+- **Branch/PR:** m048-dots-control-passthrough · https://github.com/tidymodels/nestedtune/pull/58
 
 ## Goal
 
@@ -110,6 +110,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: checkpoint with T1–T7 written but unticked: the targeted files (checks, oracles, results, barrier, identity, payload, control-slots) pass and `devtools::document()` is clean; the full `devtools::test()` run had not finished when this was committed, so the ticks wait on it.
 - 2026-09-02: the first full run found two things the targeted files could not: the `nested_fold_fit` stub in `test-nested-tune-grid-leakage.R` lacked the new argument, and the wait ledger in `helper-time-budget.R` keys pool starts by line, which the BC11 insertion and the mock signatures shifted (seven rows moved, one added for BC11). Both fixed; second full run started.
 - 2026-09-02: second full run: two failures, both the M41 doc test in `test-eval-time.R` pinning the old "Settable:" sentence; rewritten to read the "Settable as its own argument" heading's paragraph, and the file passes. The suite is clean by composition of that run and the per-file reruns (leakage, suite-hygiene, identity, eval-time); `devtools::document()` leaves no diff. T1–T7 ticked; status set to review.
+- 2026-09-02: /milestone-review started: branch contains origin/main, pushed; draft PR #58 opened; document() no diff, cairn_validate passes, pkgdown clean; full suite and the three reviewers running.
 
 ## Decisions
 
