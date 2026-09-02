@@ -2,6 +2,32 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  and
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+  now take a control object through `...` –
+  `control = tune::control_grid(...)` on the first,
+  `control = tune::control_bayes(...)` on the second – and pass it to
+  the inner tuning call in every fold;
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  re-runs under the control the result recorded,
+  `attr(res, "procedure")$control`. The slots this package forces are
+  overwritten rather than refused: `allow_par` is `FALSE`, and the
+  Bayesian `seed` is each fold’s tuning seed, so a control setting
+  either yields the run the default gives. `event_level` stays an
+  argument, and a control naming a level that is neither tune’s default
+  nor the argument’s is refused at entry, as is a control that is not
+  what the matching `tune::control_*()` returns (condition class
+  `nestedtune_bad_control`) and any other name or an unnamed value in
+  `...` (`nestedtune_bad_dots`). `no_improve`, `uncertain` and
+  `time_limit` reach
+  [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
+  this way. Each help page now classifies every slot of its control
+  object under one of six headings: forced, settable as its own
+  argument, refused, passed through, not returned, inert
+  ([\#33](https://github.com/tidymodels/nestedtune/issues/33),
+  [\#35](https://github.com/tidymodels/nestedtune/issues/35)).
+
 - Breaking:
   [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   now takes the `nested_results` object in place of the design and the

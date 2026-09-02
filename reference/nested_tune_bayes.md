@@ -59,7 +59,17 @@ nested_tune_bayes(
 
 - ...:
 
-  Not used; must be empty. Everything after it is matched by name, so a
+  A control object as `control` – what
+  [`tune::control_grid()`](https://tune.tidymodels.org/reference/control_grid.html)
+  returns for
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
+  what
+  [`tune::control_bayes()`](https://tune.tidymodels.org/reference/control_bayes.html)
+  returns for `nested_tune_bayes()` – and nothing else. It reaches the
+  inner tuning call in every fold, and in the final fit, with the slots
+  this package forces overwritten; the section on differences from tune
+  says what becomes of each slot. Any other name is an error, as is an
+  unnamed value: everything after `...` is matched by name, so a
   mistyped or unsupported argument is an error rather than a silent
   positional match.
 
@@ -211,19 +221,19 @@ One rule is this function's own.
 has a `seed` slot that drives the Gaussian-process proposals, and tune
 draws it from the stream when it is not given – so left alone, a fold's
 proposals would depend on how much of the stream tune had consumed
-before reaching it. Here the control is built inside the fold's seed
-scope with `seed` set to the fold's tuning seed, the same number
-`.tuning_seed` reports. Fold `i` is exactly:
+before reaching it. Here the control is given `seed` inside the fold's
+seed scope, set to the fold's tuning seed, the same number
+`.tuning_seed` reports; the recorded control carries no `seed` for that
+reason. Fold `i` is exactly:
 
     set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
+    control <- attr(res, "procedure")$control
+    control$seed <- res$.tuning_seed[[i]]
     tuned <- tune_bayes(object, resamples$inner_resamples[[i]],
                         iter = iter, initial = initial, objective = objective,
                         param_info = param_info, metrics = metrics,
-                        eval_time = eval_time,
-                        control = control_bayes(allow_par = FALSE,
-                                                event_level = event_level,
-                                                seed = res$.tuning_seed[[i]]))
+                        eval_time = eval_time, control = control)
     final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
     set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
@@ -237,37 +247,64 @@ serially and in parallel, at any number of daemons.
 
 ## Differences from calling tune directly
 
-There is no `control` argument. What
+There is no `control` formal, but a
 [`tune::control_bayes()`](https://tune.tidymodels.org/reference/control_bayes.html)
-settles is settled here by the arguments above, or forced.
+passed through `...` as `control` reaches the inner `tune_bayes()` in
+every fold, and in the final fit that re-runs the result –
+`control = control_bayes(no_improve = 5, uncertain = 3)`, say, to stop a
+fold's search sooner. What runs is the control passed, or tune's default
+when none is, with the slots this package forces overwritten; the result
+records that effective control, `seed` left out, as
+`attr(res, "procedure")$control`, which is what the recipe above passes.
+Every slot of `control_bayes()` falls under one of six headings.
 
-Settable: `iter`, `initial` and `objective`, which are
+**Forced: `allow_par`, `seed`.** `allow_par = FALSE` on both tune calls
+a fold makes, because parallelism belongs over the outer folds; and
+`seed`, set to the fold's tuning seed inside that seed's scope, as the
+section above describes – whatever the control carries for either.
+
+**Settable as its own argument: `event_level`.** As on
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md):
+the argument is the one place the level is set, a control left at tune's
+default takes it, and a control naming a level that is neither tune's
+default nor the argument's is refused at entry, naming both. `iter`,
+`initial`, `objective` and `eval_time` are
 [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)'s
-own arguments and reach it unchanged; `event_level`, which reaches the
-inner `control_bayes()` and the outer `control_last_fit()` alike; and
-`eval_time`, which reaches the inner `tune_bayes()` and the outer
-`last_fit()`.
+own arguments rather than control slots, offered here as arguments and
+reaching it unchanged. `initial` is a count only: tune also accepts an
+earlier `tune_grid()` result there, and this function refuses one, for
+the reason the argument's description gives.
 
-`initial` is a count only. tune also accepts an earlier `tune_grid()`
-result there, and this function refuses one, for the reason the
-argument's description gives.
+**Refused: none.** No slot is refused on its own. What is refused at
+entry is a control of another class – a `control_grid()`, which tune
+itself would accept here – and the `event_level` conflict above.
 
-Forced: `allow_par = FALSE` on both tune calls a fold makes, because
-parallelism belongs over the outer folds; and `seed`, set to the fold's
-tuning seed and built inside that seed's scope, as the section above
-describes.
-
-Not offered: `no_improve`, `uncertain` and `time_limit`, which keep
-[`tune::control_bayes()`](https://tune.tidymodels.org/reference/control_bayes.html)'s
-defaults – a fold's search stops once ten consecutive iterations have
-brought no improvement (`no_improve = 10`), takes no uncertainty sample
-(`uncertain = Inf`) and runs under no time limit (`time_limit = NA`) –
+**Passed through: `no_improve`, `uncertain`, `time_limit`, `verbose`,
+`verbose_iter`, `save_gp_scoring`, `pkgs`, `parallel_over`,
+`workflow_size`.** Each reaches `tune_bayes()` as given. `no_improve`
+and `uncertain` govern each fold's search as they would a direct call,
 so a fold may stop short of `iter`, and its `.grid` records how far it
-went; `save_gp_scoring`, `verbose` and `verbose_iter`, which write to a
-daemon's temporary directory or print where nothing collects it; and the
-slots that would have nothing to act on here, for the reasons
-[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-gives.
+went. `time_limit` is a wall-clock stop, and a wall-clock stop makes the
+candidate set depend on the machine: two runs under the same seed can
+stop at different iterations, which is outside what the seed contract
+above can promise. `verbose` and `verbose_iter` print from a serial run,
+and from a mirai daemon where nothing shows it. `save_gp_scoring` writes
+its files to the temporary directory of the process that tuned, a
+daemon's own on the parallel path. `pkgs`, `parallel_over` and
+`workflow_size` behave as on
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
+`parallel_over` included: it changes the numbers a stochastic engine
+produces even at `allow_par = FALSE`.
+
+**Not returned: `extract`, `save_pred`, `save_workflow`.** As on
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md):
+each lands on the inner `tune_results` a fold record discards, so on a
+nested run setting them costs the work and returns nothing; the final
+fit keeps its tuning run as `$tuning`, where what they saved is
+reachable.
+
+**Inert: `backend_options`.** Options for a parallel backend, with no
+backend to reach at `allow_par = FALSE`.
 
 ## See also
 

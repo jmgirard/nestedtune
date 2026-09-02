@@ -52,9 +52,18 @@ nested_tune_grid(
 
 - ...:
 
-  Not used; must be empty. Everything after it is matched by name, so a
-  mistyped or unsupported argument is an error rather than a silent
-  positional match.
+  A control object as `control` – what
+  [`tune::control_grid()`](https://tune.tidymodels.org/reference/control_grid.html)
+  returns for `nested_tune_grid()`, what
+  [`tune::control_bayes()`](https://tune.tidymodels.org/reference/control_bayes.html)
+  returns for
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+  – and nothing else. It reaches the inner tuning call in every fold,
+  and in the final fit, with the slots this package forces overwritten;
+  the section on differences from tune says what becomes of each slot.
+  Any other name is an error, as is an unnamed value: everything after
+  `...` is matched by name, so a mistyped or unsupported argument is an
+  error rather than a silent positional match.
 
 - param_info:
 
@@ -264,8 +273,7 @@ This makes any single fold reproducible by hand. Fold `i` is exactly:
              normal.kind = "Inversion", sample.kind = "Rejection")
     tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
                        metrics = metrics, eval_time = eval_time,
-                       control = control_grid(allow_par = FALSE,
-                                              event_level = event_level))
+                       control = attr(res, "procedure")$control)
     final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
     set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")
@@ -468,35 +476,71 @@ worker died.
 
 ## Differences from calling tune directly
 
-There is no `control` argument. What tune's control objects settle is
-settled here instead by the arguments above, or forced.
+There is no `control` formal, but a
+[`tune::control_grid()`](https://tune.tidymodels.org/reference/control_grid.html)
+passed through `...` as `control` reaches the inner `tune_grid()` in
+every fold, and in the final fit that re-runs the result. What runs is
+the control passed, or tune's default when none is, with the slots this
+package forces overwritten; the result records that effective control as
+`attr(res, "procedure")$control`, which is what the recipe above passes.
+Every slot of `control_grid()` falls under one of six headings.
 
-Settable: `event_level`, which reaches the inner `control_grid()` and
-the outer `control_last_fit()` alike, and `eval_time`, which reaches the
-inner `tune_grid()` and the outer `last_fit()` the same way. `eval_time`
-is not a control slot in tune either – it is an argument of both those
-functions – and it is offered here for the same reason `event_level` is:
-it changes a number the caller is shown.
+**Forced: `allow_par`.** Both tune calls a fold makes – the inner tuning
+run and the outer scoring fit – run at `allow_par = FALSE`, whatever the
+control carries. Parallelism belongs over the outer folds, as above, and
+leaving that to a caller would put two pools in contention.
+
+**Settable as its own argument: `event_level`.** The argument reaches
+the inner `control_grid()` and the outer `control_last_fit()` alike, and
+is the one place the level is set: a control left at tune's default
+takes the argument's level, and a control naming a level that is neither
+tune's default nor the argument's is refused at entry, naming both.
+`eval_time` is offered the same way, though it is not a control slot in
+tune either – it is an argument of both `tune_grid()` and `last_fit()` –
+and for the same reason: it changes a number the caller is shown.
+
+**Refused: none.** No slot is refused on its own. What is refused at
+entry is a control of another class – a `control_bayes()`, which tune
+itself would accept here – and the `event_level` conflict above. The
+class is the contract: tune gives
+[`tune::control_resamples()`](https://tune.tidymodels.org/reference/control_grid.html)
+and
+[`tune::control_last_fit()`](https://tune.tidymodels.org/reference/control_last_fit.html)
+the `control_grid` class, so either is accepted as what `control_grid()`
+returns, its slots read under these headings.
+
+**Passed through: `verbose`, `pkgs`, `parallel_over`, `workflow_size`.**
+Each reaches `tune_grid()` as given. `verbose` prints from a serial run,
+beside the progress the outer loop reports, and from a mirai daemon
+where nothing shows it. `pkgs` is required before fitting on the serial
+path as on the parallel one, where the daemon pre-flight has already
+required this package's namespace in every worker. `parallel_over` is
+not inert at `allow_par = FALSE`: it still chooses how tune loops over
+resamples and candidates, and with it the seed each model fit starts
+from, so a stochastic engine's numbers differ between `"resamples"` and
+`"everything"`; left `NULL`, tune takes `"resamples"` when there is more
+than one inner resample. `workflow_size` is the size past which tune
+remarks on a workflow `save_workflow` keeps, so it speaks only beside
+that slot, and only where the run it lands on is kept.
+
+**Not returned: `extract`, `save_pred`, `save_workflow`.** Each lands on
+the inner `tune_results`. A fold record discards that run once the fold
+succeeds – the fold keeps its metrics, its selection and the candidates
+it scored – so on a nested run setting them costs the work and returns
+nothing. The final fit is the exception:
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+re-runs the recorded control and keeps its tuning run as `$tuning`,
+where
+[`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md)
+reaches what these saved.
+
+**Inert: `backend_options`.** Options for a parallel backend, with no
+backend to reach at `allow_par = FALSE`.
 
 Not passed on: `select_best()` is called without `eval_time`. Left unset
 it selects at the first of the evaluation times the tuning run was built
 with, which are the ones named here, so naming them twice would change
 no choice and would repeat tune's message about which time it took.
-
-Forced: both tune calls a fold makes – the inner tuning run and the
-outer scoring fit – run at `allow_par = FALSE`. Parallelism belongs over
-the outer folds, as above, and leaving that to a caller would put two
-pools in contention.
-
-Not offered: the slots that would have nothing to act on here.
-`save_pred`, `extract` and `save_workflow` land on the inner
-`tune_results`, which each fold record discards once the fold succeeds;
-`parallel_over`, `backend_options` and `workflow_size` are inert under
-`allow_par = FALSE`; `pkgs` is redundant serially, and on the parallel
-path the daemon pre-flight has already required this package's namespace
-in every worker; and `verbose` would print from a mirai daemon where
-nothing shows it, and duplicate the progress the outer loop reports
-where the run is serial.
 
 ## See also
 
