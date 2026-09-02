@@ -129,6 +129,8 @@ their M48 Out row.
 
 - 2026-09-02: T6 in progress: help page `?nested_tune_race` shared by the two exports (six-heading classification, by-hand recipe), `test-control-slots.R` reads either "Differences from calling ... directly" title and classifies `control_race()`, the recipe test in `test-nested-tune-race-oracles.R`, `_pkgdown.yml` row, NEWS entry, DESIGN function families and architecture, DESCRIPTION Suggests finetune, lme4, BradleyTerry2 with D-044; per-file suites green, `pkgdown::check_pkgdown()` clean; `devtools::check()` and the full suite after T4 still running at this checkpoint.
 
+- 2026-09-02: first `devtools::check()` failed on one test only: the AC7 wording test matched phrases across an Rd line break, which the installed help database under `R CMD check` wraps where the source file does not; the test now collapses whitespace and matches the two full clauses, verified against both sources; full suite after T4 green (0 failures, no duplicate fixture build); check re-running.
+
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->
 

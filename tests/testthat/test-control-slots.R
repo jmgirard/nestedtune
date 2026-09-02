@@ -156,13 +156,17 @@ test_that("every control_race() slot sits under one heading on the racing page (
 })
 
 test_that("the racing page says what the recorded grid is, and what `n` is (AC7)", {
-  txt <- rd_text(help_rd("nested_tune_race"))
+  # Whitespace collapsed: the Rd wraps its lines, and the installed database
+  # under `R CMD check` wraps them where the source file did not.
+  txt <- gsub("\\s+", " ", rd_text(help_rd("nested_tune_race")))
   # The two records, each named for what it is: the grid as the design
   # offered, `n` as the resamples each candidate was scored on.
-  expect_match(txt, "design the race was", fixed = TRUE)
-  expect_match(txt, "offered", fixed = TRUE)
-  expect_match(txt, "inner resamples each candidate was", fixed = TRUE)
-  expect_match(txt, "scored on", fixed = TRUE)
+  expect_match(txt, "is the design the race was offered, exactly as given", fixed = TRUE)
+  expect_match(
+    txt,
+    "n is the number of inner resamples each candidate was scored on",
+    fixed = TRUE
+  )
 })
 
 test_that("the heading parse can see a slot classified twice, and one left out", {
