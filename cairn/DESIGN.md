@@ -71,7 +71,9 @@ naming convention.
   across the outer folds (D-039). The suffix names the inner tuning method
   (D-010).
 - **Final fit** — `nested_final_fit(object, results)`, returning a
-  `nested_final_fit` object reached with `extract_workflow()`. It re-runs the
+  `nested_final_fit` object that answers `predict()` and `augment()` with the
+  trained workflow's own results (M47) and hands the workflow itself over with
+  `extract_workflow()`. It re-runs the
   procedure the results object recorded — the design's `inside` call, the
   tuner and its arguments — over the whole dataset, so the model and the
   estimate come from one search by construction (D-041), and answers none of
@@ -290,7 +292,10 @@ the selection, the tuning run, both seeds, and the procedure re-run. The tuning
 run travels with it as the record of what selection saw; its metrics are
 selection-time quantities, so nothing in the package's own surface turns them
 into a claim — the print method shows no number from it, and tune's ranking
-generics are left unregistered.
+generics are left unregistered. `predict()` and `augment()` are registered on
+it and delegate to the trained workflow (M47); `augment()` fences its `...`
+where `predict()` forwards them, because parsnip refuses an unknown predict
+argument on the forwarded path while workflows' `augment()` swallows one.
 
 The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows,
 parsnip, and ggplot2 _(ggplot2 added 2026-07-26 at M08, D-019: the first Import

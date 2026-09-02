@@ -34,7 +34,9 @@ now come from \code{results}.}
 }
 \value{
 An object of class \code{nested_final_fit} with elements \code{workflow} (the
-trained workflow, better reached with \code{\link[=extract_workflow]{extract_workflow()}}), \code{selected}
+trained workflow; the object answers \link[=predict.nested_final_fit]{predict()}
+and \code{augment()} directly, and \code{\link[=extract_workflow]{extract_workflow()}} returns the workflow
+itself), \code{selected}
 (the parameters chosen), \code{tuning} (the tuning run they were chosen from),
 \code{tuning_seed} and \code{fit_seed} (the two seeds that reproduce it), and
 \code{procedure} (the record re-run, as \code{results} carried it).
@@ -185,7 +187,7 @@ set.seed(3)
 final <- nested_final_fit(wf, res)
 final
 
-predict(extract_workflow(final), new_data = mtcars[1:3, ])
+predict(final, new_data = mtcars[1:3, ])
 \dontshow{\}) # examplesIf}
 }
 \references{
@@ -197,5 +199,6 @@ examples of cross-validation for model development and evaluation in health
 care: Tutorial. \emph{JMIR AI}, 2, e49023.
 }
 \seealso{
-\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{\link[=extract_workflow]{extract_workflow()}}
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=nested_tune_bayes]{nested_tune_bayes()}},
+\code{\link[=predict.nested_final_fit]{predict.nested_final_fit()}}, \code{\link[=extract_workflow]{extract_workflow()}}
 }

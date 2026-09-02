@@ -102,7 +102,7 @@ fold failed — stays on its own candidate row.
 - [x] T3: `tests/testthat/test-dots-barrier.R:73` — add `predict.nested_final_fit` to
       `DOTS_EXEMPT_METHODS` with a comment giving the reason (its `...` reaches the workflow, where
       parsnip refuses unknown names); `augment.nested_final_fit` stays probed.
-- [ ] T4: Docs: `_pkgdown.yml` row under "The final model"; NEWS entry; `R/nested-final-fit.R:49`
+- [x] T4: Docs: `_pkgdown.yml` row under "The final model"; NEWS entry; `R/nested-final-fit.R:49`
       (`@return`, "better reached with"), `:185` (`@examples`) and `:195` (`@seealso`); `README.Rmd:121`
       then `devtools::build_readme()`; `vignettes/nested-cv.Rmd:324-328`; `cairn/DESIGN.md:73-74`
       (function family) and the architecture paragraph naming `new_nested_final_fit()`.
@@ -119,6 +119,7 @@ fold failed — stays on its own candidate row.
 - 2026-09-02: T1 — `tests/testthat/test-nested-final-fit-predict.R` written on the three fixtures; red on the branch as expected (`predict` falls to no-applicable-method, `augment` not found), 6 fixtures built.
 - 2026-09-02: T2 — `R/nested-final-fit-predict.R` (both methods, one help page `predict.nested_final_fit` with the IP3 caveat and the dots divergence), `augment` re-exported in `R/reexports.R`; `document()` run. T3 — `predict.nested_final_fit` added to `DOTS_EXEMPT_METHODS` with its reason. Predict and dots-barrier files green.
 - 2026-09-02: amendment pending (substantive, AC3 and AC6): parsnip 1.6.0's `check_pred_type_dots()` prints the literal placeholder `bad_args` instead of the argument's name, so AC3's "names `nonesuch`" clause is unsatisfiable; tune 2.1.0 refuses `collect_metrics()`/`show_best()`/`select_best()` through its own default methods ("No `<generic>()` exists for ..."), never R's "no applicable method", so AC6's failure identity was wrong. Tests written to the corrected identities; amended wording sent to a fresh [O] reader for the full-mode audit before the mini gate.
+- 2026-09-02: T4 — pkgdown row, NEWS entry, `nested_final_fit()` roxygen (`@return`, example, `@seealso`), README.Rmd/README.md (`build_readme()`, one line changed), vignette sentence and chunk, DESIGN function-family line and constructor paragraph; `document()` no further diff, `pkgdown::check_pkgdown()` no problems.
 
 ## Decisions
 
