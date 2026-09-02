@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 54 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M46 archive summary 25. Both byte budgets stay over: ROADMAP.md ~41,600 B against 24,000, LESSONS.md ~31,100 B against 20,000. This pass pruned M41's terminal row and added one candidate row from M46's deferred finding (a final fit from a results object whose every fold failed); no finding-absorbing row was touched. LESSONS extended the M42 fixture-key line with M46's cache-hit lesson rather than adding one; no line pruned. Closing the byte gap still means graduating or dropping candidates — a user call, now twelve passes overdue. Since the last check: M46 shipped `nested_final_fit(object, results)`, archived after one review round with eight gate fixes.)_
+_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 53 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M47 archive summary 25. Both byte budgets stay over: ROADMAP.md ~40,900 B against 24,000, LESSONS.md ~31,600 B against 20,000. This pass pruned M42's terminal row; no candidate row added (M47's three unfixed findings were rejected, not deferred) and no finding-absorbing row touched. LESSONS extended the M28 upstream-claims line with M47's refusal-boundary lesson rather than adding one; no line pruned. Closing the byte gap still means graduating or dropping candidates — a user call, now thirteen passes overdue. Since the last check: M47 shipped `predict()`/`augment()` on the final fit, archived after one review round with six gate fixes.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M47 | `predict()` and `augment()` on a `nested_final_fit` | review | — | normal | milestones/M47-final-fit-predict-augment.md |
+| M47 | `predict()` and `augment()` on a `nested_final_fit` | done | — | normal | milestones/archive/M47-final-fit-predict-augment.md |
 | M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
 | M46 | `nested_final_fit()` re-runs the procedure a result recorded | done | M45 | normal | milestones/archive/M46-final-fit-recorded-procedure.md |
 | M44 | `agreement()` tabulates what the outer folds selected | done | — | normal | milestones/archive/M44-agreement.md |
 | M43 | The print and summary follow-ups M39 left behind | done | — | normal | milestones/archive/M43-print-summary-followups.md |
-| M42 | The fixture key's separation test, derived from the orchestrators' own arguments | done | — | normal | milestones/archive/M42-fixture-key-derived.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
