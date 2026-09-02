@@ -141,7 +141,9 @@ test_that("AC2: augment() on the classification fit is the workflow's augmentati
     augment(final, new_data = d),
     augment(extract_workflow(final), new_data = d)
   )
-  expect_true(all(c(".pred_class", ".pred_event") %in% names(augment(final, d))))
+  expect_true(all(
+    c(".pred_class", ".pred_event") %in% names(augment(final, d))
+  ))
 })
 
 test_that("AC2: augment() on the censored fit is the workflow's augmentation", {
