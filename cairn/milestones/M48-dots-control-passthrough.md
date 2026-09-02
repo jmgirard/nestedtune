@@ -1,6 +1,6 @@
 # M48: `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -126,6 +126,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: T13: `forced_bayes_control()` takes `event_level` (default `"first"`) and sets it as `effective_control()` does; the Bayes oracles and final-fit oracles files pass unchanged.
 - 2026-09-02: T11: `reference_nested_loop()` takes `control`, merged by a `forced_grid_control()` helper written from the contract; the grid oracles file gains a `parallel_over = "everything"` run on the stochastic fixture matching the reference under the same control fold by fold, with the no-control run as the discriminating control (measured before writing: fold 2's outer metrics and selection differ, folds 1 and 3 agree).
 - 2026-09-02: T10, T12: both "Not returned" paragraphs now say the final fit keeps its tuning run as `$tuning`, where what `extract`/`save_pred`/`save_workflow` saved is reachable (measured: a final fit under `save_pred = TRUE` carries 270 prediction rows in `extract_tune_results()`), and the grid page's `workflow_size` sentence is reworded against that. `tune::control_last_fit()` is accepted, not refused: tune 2.1.0 gives it and `control_resamples()` the `control_grid` class, the grid page's "Refused" paragraph says so, and the grid checks file asserts both reach fitting beside the refused list. `test-control-slots.R` and the M41 doc test in `test-eval-time.R` pass on the regenerated Rd.
+- 2026-09-02: return scope T8–T13 done; full `devtools::test()` clean (summary reporter, no failures or skips), `devtools::document()` no diff; status set to review for round 2.
 
 ## Decisions
 
