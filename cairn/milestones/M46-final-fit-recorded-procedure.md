@@ -1,12 +1,12 @@
 # M46: `nested_final_fit()` re-runs the procedure a result recorded
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M45
 - **Driving RR:** —
 - **Resolves:** —
 - **Principles touched:** IP2, IP3, IP4, GP2, GP3
-- **Branch/PR:** —
+- **Branch/PR:** m046-final-fit-recorded-procedure
 
 ## Goal
 
@@ -68,6 +68,7 @@ migrated (pre-1.0).
 
 - 2026-09-01: created by /milestone-plan alongside M45, from the same gate; its criteria went through M45's full-mode audit (29 findings over both files; the M46 ones fixed here: `procedure` must carry `metrics`/`param_info`/`event_level`/`eval_time` for a re-run to be the estimate's procedure; a zero-row prototype must be refused; a fitted workflow is compared by selection, splits and predictions; the reference names D-016's order and the internal initial draw; the corruption probe covers every fold-row column but `splits` and is built by attribute surgery; printed iteration counts come from the run, not the request).
 - 2026-09-01: plan gate chose `nested_final_fit(object, results)` over mirroring the orchestrators' arguments with a method switch because the mirror lets a user restate a procedure other than the estimate's, which is the reading IP3 exists to forbid, and over a candidate row because the recorded procedure M45 adds is shaped for this reader; falsified by a user needing a final fit with no nested run in hand, which `tune::fit_best()` and `tune::last_fit()` already serve.
+- 2026-09-02: /milestone-implement started; branch cut from main at 9d84882. Question gate: AC3's O5 strand as written needs `fit_best()` on the final fit's own extracted run, and tune 2.1.0's `fit_best()` refuses a run tuned without `save_workflow = TRUE` (measured 2026-09-02: the package's controls do not set it, and the existing grid O5 strand runs it on the reference's run instead). The user escalated that question via /milestone-brief rather than choosing between saving the workflow on the final-fit path and amending AC3, and folded the other two gate questions into the same brief: whether the grid final fit's print also names its procedure (M40's hand-pinned bytes) and whether the results-record refusal carries one condition class or one per shape. No code written; T1-T7 wait on the report.
 
 ## Decisions
 
