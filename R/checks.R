@@ -665,3 +665,91 @@ is_whole_number <- function(x) {
 is_single_number <- function(x) {
   is.numeric(x) && length(x) == 1L && !is.na(x)
 }
+
+# What `...` accepts on the two orchestrators (D-042): `control` and nothing
+# else. There is no `control` formal -- tune's maintainer reserves that name
+# for a future control of the outer work -- so the object comes through the
+# dots, and every other name is refused here, at entry, with the argument
+# named. An unnamed argument is refused too: everything after `resamples` is
+# matched by name, so a positional value is a call that meant something else.
+# `rlang::list2()` forces the dots, which is where a control the caller built
+# inline draws its own `seed` slot -- before the loop's RNG snapshot, as any
+# argument evaluation is.
+check_dots_control <- function(..., call = rlang::caller_env()) {
+  dots <- rlang::list2(...)
+  nms <- rlang::names2(dots)
+  unknown <- nms[nms != "control"]
+  if (length(unknown) > 0L) {
+    named <- unknown[nzchar(unknown)]
+    n_unnamed <- sum(!nzchar(unknown))
+    cli::cli_abort(
+      c(
+        "{.arg ...} accepts {.arg control} and nothing else.",
+        x = if (length(named) > 0L) "Got {.arg {named}}.",
+        x = if (n_unnamed > 0L) {
+          "Got {n_unnamed} unnamed argument{?s}; everything after {.arg resamples} is matched by name."
+        }
+      ),
+      class = "nestedtune_bad_dots",
+      call = call
+    )
+  }
+  if (sum(nms == "control") > 1L) {
+    cli::cli_abort(
+      c(
+        "{.arg ...} accepts {.arg control} and nothing else.",
+        x = "Got {.arg control} {sum(nms == 'control')} times."
+      ),
+      class = "nestedtune_bad_dots",
+      call = call
+    )
+  }
+  dots[["control"]]
+}
+
+# The control, held to the tuner and to the `event_level` argument, and
+# returned in its effective form (D-042). `tuner` is the tune function's name.
+#
+# Class first: tune's own `condense_control()` reads slots by name and would
+# run `tune_grid()` under a `control_bayes()` without complaint, so what the
+# matching `tune::control_*()` returns is the contract. Then `event_level`:
+# the argument is the one place the level is set, and a control naming a
+# level that is neither tune's default nor the argument's is a visible
+# conflict, refused rather than silently overwritten. A control left at tune's
+# default takes the argument's level -- a control object cannot tell a default
+# "first" from a typed one, and refusing every disagreement would refuse
+# `event_level = "second"` beside every untouched control (M48 gate).
+check_control <- function(
+  control,
+  tuner,
+  event_level,
+  call = rlang::caller_env()
+) {
+  expected <- control_class(tuner)
+  if (!is.null(control) && !inherits(control, expected)) {
+    cli::cli_abort(
+      c(
+        "{.arg control} must be what {.fn tune::{expected}} returns.",
+        x = "Got {.obj_type_friendly {control}}."
+      ),
+      class = "nestedtune_bad_control",
+      call = call
+    )
+  }
+  level <- control[["event_level"]]
+  if (
+    !is.null(control) &&
+      !identical(level, "first") &&
+      !identical(level, event_level)
+  ) {
+    cli::cli_abort(
+      c(
+        "{.arg control} carries {.code event_level = {.val {level}}} while {.arg event_level} is {.val {event_level}}.",
+        i = "Set the level once, as the {.arg event_level} argument; a control left at tune's default takes it."
+      ),
+      class = "nestedtune_bad_control",
+      call = call
+    )
+  }
+  effective_control(tuner, control, event_level)
+}

@@ -305,3 +305,110 @@ test_that("the Bayesian final fit matches tune::fit_best() on the reference run"
     predict(best_fit, new_data = b$d)
   )
 })
+
+
+# The control on the record (M48) ---------------------------------------------
+
+# O3c -- type "live" (reference implementation). Source:
+#   reference_bayes_final_fit() handed the recorded control, applying the same
+#   documented merge the fold reference applies (test-nested-tune-bayes-oracles.R
+#   O4). Pinned by "the final fit re-runs under the recorded control". Satisfies
+#   M48 AC4.
+
+test_that("the procedure records the effective control on both tuners (M48, AC4)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+
+  # A grid run given no control records tune's default with `allow_par` off.
+  grid <- final_results(d)
+  expect_identical(
+    attr(grid, "procedure")$control,
+    tune::control_grid(allow_par = FALSE, event_level = "first")
+  )
+
+  # A Bayesian run given no control records the same, `seed` left out: the
+  # fold record holds the seed each fold ran under.
+  plain <- bayes_final_results(d)
+  expected <- tune::control_bayes(allow_par = FALSE, seed = 1L)
+  expected$seed <- NULL
+  expect_identical(attr(plain, "procedure")$control, expected)
+
+  # A run given a control records that control with the forced slots applied.
+  res <- bayes_control_final_results(d)
+  expected <- ac1_control()
+  expected$allow_par <- FALSE
+  expected$event_level <- "first"
+  expected$seed <- NULL
+  recorded <- attr(res, "procedure")$control
+  expect_identical(recorded, expected)
+  expect_s3_class(recorded, "control_bayes")
+  expect_identical(recorded$no_improve, 2)
+  expect_identical(recorded$uncertain, 2)
+  expect_false("seed" %in% names(recorded))
+
+  # The record's shared slots, and the tuner rebuilt from it: `control` is
+  # shared, so the final fit passes exactly one to the inner call.
+  expect_identical(
+    names(attr(res, "procedure")),
+    c(
+      "tuner",
+      "iter",
+      "initial",
+      "objective",
+      "param_info",
+      "event_level",
+      "eval_time",
+      "control"
+    )
+  )
+  expect_identical(
+    names(procedure_tuner(attr(res, "procedure"))$args),
+    c("iter", "initial", "objective")
+  )
+})
+
+test_that("the final fit re-runs under the recorded control (M48, AC4)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  res <- bayes_control_final_results(d)
+  proc <- attr(res, "procedure")
+
+  set.seed(98)
+  final <- memoised(nested_final_fit(wf, res))
+
+  ref <- reference_bayes_final_fit(
+    wf,
+    d,
+    iter = proc$iter,
+    initial = proc$initial,
+    objective = proc$objective,
+    param_info = proc$param_info,
+    metrics = attr(res, "metrics"),
+    seed = 98,
+    metric_name = "rmse",
+    control = proc$control
+  )
+
+  expect_identical(c(final$tuning_seed, final$fit_seed), ref$seeds)
+  expect_identical(final$selected, ref$selected)
+  expect_identical(in_ids(final$tuning), in_ids(ref$tuned))
+  expect_identical(
+    tune::collect_metrics(final$tuning),
+    tune::collect_metrics(ref$tuned)
+  )
+  expect_identical(
+    predict(extract_workflow(final), new_data = d),
+    predict(ref$workflow, new_data = d)
+  )
+
+  # The fit's own record carries the control it ran under, unchanged.
+  expect_identical(final$procedure$control, proc$control)
+
+  # The search iterated, and `no_improve = 2` was in force: the recorded
+  # candidate count is what tune stopped at, never more than `initial + iter`.
+  expect_true(any(final$tuning$.iter > 0L))
+  expect_lte(nrow(extract_scored_candidates(final)), proc$initial + proc$iter)
+})

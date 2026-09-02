@@ -106,23 +106,25 @@
 #' The run is reproducible by hand from those two seeds and the record on
 #' `fit$procedure`, every value below being one that record holds (or, for
 #' `metrics`, `attr(results, "metrics")`); the tuning call is the one the
-#' record names:
+#' record names, and `control` is the record's own -- the control the run
+#' was given, or tune's default, with the slots the orchestrator forces
+#' already applied:
 #'
 #' ```
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
+#' control <- fit$procedure$control
 #' # a grid procedure
 #' tuned <- tune_grid(object, inner, grid = grid, param_info = param_info,
-#'   metrics = metrics, eval_time = eval_time,
-#'   control = control_grid(allow_par = FALSE, event_level = event_level))
+#'   metrics = metrics, eval_time = eval_time, control = control)
 #' # a Bayesian procedure: the Gaussian process is seeded from the tuning
-#' # seed, the rule nested_tune_bayes() fixes for every fold
+#' # seed, the rule nested_tune_bayes() fixes for every fold, so the
+#' # recorded control -- which carries no seed -- takes it here
+#' control$seed <- fit$tuning_seed
 #' tuned <- tune_bayes(object, inner, iter = iter, initial = initial,
 #'   objective = objective, param_info = param_info, metrics = metrics,
-#'   eval_time = eval_time,
-#'   control = control_bayes(allow_par = FALSE, event_level = event_level,
-#'                           seed = fit$tuning_seed))
+#'   eval_time = eval_time, control = control)
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -237,6 +239,7 @@ nested_final_fit <- function(object, results, ...) {
     param_info = procedure$param_info,
     event_level = procedure$event_level,
     eval_time = procedure$eval_time,
+    control = procedure$control,
     call = rlang::current_env()
   )
 }
@@ -264,8 +267,13 @@ final_fit_worker <- function(
   param_info = NULL,
   event_level = "first",
   eval_time = NULL,
+  control = NULL,
   call = rlang::caller_env()
 ) {
+  # Made effective before anything runs, so the record below and the call
+  # `run_tuner()` makes are one object (D-042); a worker driven without one
+  # runs and records tune's default, as the orchestrator would have.
+  control <- effective_control(tuner$tuner, control, event_level)
   # D-016: the tuning seed's scope is "construct the resamples and tune", so
   # the specification is evaluated *after* the seed is set. Building an rset
   # draws from the RNG, and a draw made outside this scope would leave the run
@@ -282,6 +290,7 @@ final_fit_worker <- function(
     metrics = metrics,
     eval_time = eval_time,
     event_level = event_level,
+    control = control,
     seed = seeds[[1L]]
   )
   # Resolved from the tuned object rather than from `metrics`, so the same code
@@ -303,7 +312,8 @@ final_fit_worker <- function(
     tuner,
     param_info = param_info,
     event_level = event_level,
-    eval_time = eval_time
+    eval_time = eval_time,
+    control = control
   )
   new_nested_final_fit(fitted, selected, tuned, seeds, procedure)
 }

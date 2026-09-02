@@ -27,9 +27,14 @@ whatever its \code{inside} argument returned — so a specification that produce
 no \code{rset} gives a design that cannot be run, where \code{\link[=nested_resamples]{nested_resamples()}}
 refuses one at construction.}
 
-\item{...}{Not used; must be empty. Everything after it is matched by name,
-so a mistyped or unsupported argument is an error rather than a silent
-positional match.}
+\item{...}{A control object as \code{control} -- what \code{\link[tune:control_grid]{tune::control_grid()}}
+returns for \code{nested_tune_grid()}, what \code{\link[tune:control_bayes]{tune::control_bayes()}} returns for
+\code{nested_tune_bayes()} -- and nothing else. It reaches the inner tuning
+call in every fold, and in the final fit, with the slots this package
+forces overwritten; the section on differences from tune says what
+becomes of each slot. Any other name is an error, as is an unnamed
+value: everything after \code{...} is matched by name, so a mistyped or
+unsupported argument is an error rather than a silent positional match.}
 
 \item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
 derive one from the workflow. Passed unchanged to \code{\link[tune:tune_grid]{tune::tune_grid()}} on
@@ -214,8 +219,7 @@ This makes any single fold reproducible by hand. Fold \code{i} is exactly:
          normal.kind = "Inversion", sample.kind = "Rejection")
 tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
                    metrics = metrics, eval_time = eval_time,
-                   control = control_grid(allow_par = FALSE,
-                                          event_level = event_level))
+                   control = attr(res, "procedure")$control)
 final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -404,34 +408,57 @@ discard every completed fold whenever a single worker died.
 \section{Differences from calling tune directly}{
 
 
-There is no \code{control} argument. What tune's control objects settle is
-settled here instead by the arguments above, or forced.
+There is no \code{control} formal, but a \code{\link[tune:control_grid]{tune::control_grid()}} passed through
+\code{...} as \code{control} reaches the inner \code{tune_grid()} in every fold, and in
+the final fit that re-runs the result. What runs is the control passed, or
+tune's default when none is, with the slots this package forces
+overwritten; the result records that effective control as
+\code{attr(res, "procedure")$control}, which is what the recipe above passes.
+Every slot of \code{control_grid()} falls under one of six headings.
 
-Settable: \code{event_level}, which reaches the inner \code{control_grid()} and the
-outer \code{control_last_fit()} alike, and \code{eval_time}, which reaches the inner
-\code{tune_grid()} and the outer \code{last_fit()} the same way. \code{eval_time} is not a
-control slot in tune either -- it is an argument of both those functions --
-and it is offered here for the same reason \code{event_level} is: it changes a
-number the caller is shown.
+\strong{Forced: \code{allow_par}.} Both tune calls a fold makes -- the inner tuning
+run and the outer scoring fit -- run at \code{allow_par = FALSE}, whatever the
+control carries. Parallelism belongs over the outer folds, as above, and
+leaving that to a caller would put two pools in contention.
+
+\strong{Settable as its own argument: \code{event_level}.} The argument reaches the
+inner \code{control_grid()} and the outer \code{control_last_fit()} alike, and is the
+one place the level is set: a control left at tune's default takes the
+argument's level, and a control naming a level that is neither tune's
+default nor the argument's is refused at entry, naming both. \code{eval_time}
+is offered the same way, though it is not a control slot in tune either --
+it is an argument of both \code{tune_grid()} and \code{last_fit()} -- and for the
+same reason: it changes a number the caller is shown.
+
+\strong{Refused: none.} No slot is refused on its own. What is refused at entry
+is a control of another class -- a \code{control_bayes()}, which tune itself
+would accept here -- and the \code{event_level} conflict above.
+
+\strong{Passed through: \code{verbose}, \code{pkgs}, \code{parallel_over}, \code{workflow_size}.}
+Each reaches \code{tune_grid()} as given. \code{verbose} prints from a serial run,
+beside the progress the outer loop reports, and from a mirai daemon where
+nothing shows it. \code{pkgs} is required before fitting on the serial path as
+on the parallel one, where the daemon pre-flight has already required this
+package's namespace in every worker. \code{parallel_over} is not inert at
+\code{allow_par = FALSE}: it still chooses how tune loops over resamples and
+candidates, and with it the seed each model fit starts from, so a
+stochastic engine's numbers differ between \code{"resamples"} and
+\code{"everything"}; left \code{NULL}, tune takes \code{"resamples"} when there is more
+than one inner resample. \code{workflow_size} speaks only when \code{save_workflow}
+is on, as tune's message about the size of the workflow being saved.
+
+\strong{Not returned: \code{extract}, \code{save_pred}, \code{save_workflow}.} Each lands on
+the inner \code{tune_results}, which a fold record discards once the fold
+succeeds: the fold keeps its metrics, its selection and the candidates it
+scored, not the run. Setting them costs the work and returns nothing.
+
+\strong{Inert: \code{backend_options}.} Options for a parallel backend, with no
+backend to reach at \code{allow_par = FALSE}.
 
 Not passed on: \code{select_best()} is called without \code{eval_time}. Left unset it
 selects at the first of the evaluation times the tuning run was built with,
 which are the ones named here, so naming them twice would change no choice
 and would repeat tune's message about which time it took.
-
-Forced: both tune calls a fold makes -- the inner tuning run and the outer
-scoring fit -- run at \code{allow_par = FALSE}. Parallelism belongs over the
-outer folds, as above, and leaving that to a caller would put two pools in
-contention.
-
-Not offered: the slots that would have nothing to act on here. \code{save_pred},
-\code{extract} and \code{save_workflow} land on the inner \code{tune_results}, which each
-fold record discards once the fold succeeds; \code{parallel_over},
-\code{backend_options} and \code{workflow_size} are inert under \code{allow_par = FALSE};
-\code{pkgs} is redundant serially, and on the parallel path the daemon pre-flight
-has already required this package's namespace in every worker; and \code{verbose}
-would print from a mirai daemon where nothing shows it, and duplicate the
-progress the outer loop reports where the run is serial.
 }
 
 \examples{

@@ -158,7 +158,8 @@ test_that("each shared check fires through nested_tune_bayes()", {
   # One refusal per shared check, keyed by the check's name so the table below
   # is held to the derived list rather than the other way round.
   fired <- list(
-    check_dots_empty = function() nested_tune_bayes(wf, folds, 3),
+    check_dots_control = function() nested_tune_bayes(wf, folds, 3),
+    check_control = function() nested_tune_bayes(wf, folds, control = "no"),
     check_workflow = function() nested_tune_bayes(parsnip::linear_reg(), folds),
     check_nested = function() {
       nested_tune_bayes(wf, rsample::vfold_cv(d, v = 2))
@@ -173,7 +174,8 @@ test_that("each shared check fires through nested_tune_bayes()", {
     check_eval_time = function() nested_tune_bayes(wf, folds, eval_time = -1)
   )
   patterns <- c(
-    check_dots_empty = "must be empty",
+    check_dots_control = "accepts `control`",
+    check_control = "control_bayes",
     check_workflow = "must be a",
     check_nested = "nested resampling design",
     check_metrics = "metric_set",
@@ -195,6 +197,68 @@ test_that("each shared check fires through nested_tune_bayes()", {
     expect_match(conditionMessage(cnd), patterns[[nm]], info = nm)
     expect_identical(conditionCall(cnd)[[1L]], as.name("nested_tune_bayes"))
   }
+})
+
+# M48: what `...` accepts, and what a control may carry.
+
+test_that("`...` accepts `control` and nothing else (M48, AC5)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- bayes_folds(d)
+
+  cnd <- refusal(nested_tune_bayes(wf, folds, nonesuch = 1))
+  expect_refused(cnd, "nestedtune_bad_dots", "nonesuch")
+
+  cnd <- refusal(nested_tune_bayes(wf, folds, 3))
+  expect_refused(cnd, "nestedtune_bad_dots", "unnamed")
+
+  cnd <- refusal(nested_tune_bayes(wf, folds, control = ac1_control(), no = 1))
+  expect_refused(cnd, "nestedtune_bad_dots", "`no`")
+})
+
+test_that("`control` must be what tune::control_bayes() returns (M48, AC5)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- bayes_folds(d)
+
+  # The grid control is the one a caller is likeliest to reach for, and tune
+  # itself would accept it (its `condense_control()` reads slots by name).
+  for (bad in list(tune::control_grid(), list(allow_par = FALSE), "no", 1)) {
+    cnd <- refusal(nested_tune_bayes(wf, folds, control = bad))
+    expect_refused(cnd, "nestedtune_bad_control", "control_bayes")
+  }
+})
+
+test_that("a control naming another event level is refused at entry (M48, AC3)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- bayes_folds(d)
+
+  cnd <- refusal(nested_tune_bayes(
+    wf,
+    folds,
+    event_level = "first",
+    control = tune::control_bayes(event_level = "second")
+  ))
+  expect_refused(cnd, "nestedtune_bad_control", "event_level")
+  expect_match(conditionMessage(cnd), "\"first\"")
+  expect_match(conditionMessage(cnd), "\"second\"")
+
+  # A control left at tune's default takes the argument's level instead of
+  # being refused: the entry checks pass and fitting begins.
+  cnd <- refusal(nested_tune_bayes(
+    wf,
+    folds,
+    event_level = "second",
+    control = tune::control_bayes()
+  ))
+  expect_s3_class(cnd, "nestedtune_sentinel")
 })
 
 test_that("a refusal leaves the RNG where it found it", {

@@ -1,14 +1,16 @@
 # The `...` barrier on the exported surface (M34).
 #
-# Three exports and every registered method now take `...` and refuse anything
+# Four exports and every registered method now take `...` and refuse anything
 # that lands in it. What the tests below have to distinguish is a fence from an
 # accident: a method handed `nonesuch = 1` and a stand-in object errors either
 # way, so every probe asserts the *class* of the condition -- rlang's
-# `rlib_error_dots_nonempty` -- and never merely that something went wrong.
+# `rlib_error_dots_nonempty`, or this package's `nestedtune_bad_dots` on the
+# two orchestrators, whose `...` admits `control` and nothing else (M48) --
+# and never merely that something went wrong.
 
 # AC1 -------------------------------------------------------------------
 
-test_that("AC1: the three entry points carry `...` after their required arguments", {
+test_that("AC1: the four entry points carry `...` after their required arguments", {
   # Written out rather than derived, so a signature that drifts has to be
   # re-agreed here. For nested_tune_grid(), `param_info`, `grid`, `metrics` and
   # `event_level` all sit behind the barrier and therefore match by name only,
@@ -22,6 +24,22 @@ test_that("AC1: the three entry points carry `...` after their required argument
       "param_info",
       "grid",
       "metrics",
+      "event_level",
+      "eval_time"
+    )
+  )
+  # Its sibling (M45) puts its own three arguments behind the same barrier.
+  expect_identical(
+    names(formals(nested_tune_bayes)),
+    c(
+      "object",
+      "resamples",
+      "...",
+      "iter",
+      "param_info",
+      "metrics",
+      "initial",
+      "objective",
       "event_level",
       "eval_time"
     )
@@ -43,14 +61,28 @@ test_that("AC1: the three entry points carry `...` after their required argument
 
 # AC2 -------------------------------------------------------------------
 
-# The three entry points are checked one at a time rather than in a loop: a
-# loop over three names would report "one of them" on a failure, and the point
-# of the criterion is that each names its own call.
+# The entry points are checked one at a time rather than in a loop: a loop
+# over four names would report "one of them" on a failure, and the point of
+# the criterion is that each names its own call.
+#
+# The two orchestrators no longer fence with `rlang::check_dots_empty()`: their
+# `...` admits `control` (M48, AC7), so the refusal is this package's own,
+# still at entry and still naming the call. `control` itself passes the fence
+# and is judged by `check_control()` instead -- test-nested-tune-grid-checks.R
+# and its Bayesian sibling hold that contract.
 
 test_that("AC2: nested_tune_grid() refuses an argument it does not know", {
   cnd <- rlang::catch_cnd(nested_tune_grid(1, 2, nonesuch = 1))
-  expect_s3_class(cnd, "rlib_error_dots_nonempty")
+  expect_s3_class(cnd, "nestedtune_bad_dots")
   expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_grid")
+  expect_match(conditionMessage(cnd), "nonesuch")
+})
+
+test_that("AC2: nested_tune_bayes() refuses an argument it does not know", {
+  cnd <- rlang::catch_cnd(nested_tune_bayes(1, 2, nonesuch = 1))
+  expect_s3_class(cnd, "nestedtune_bad_dots")
+  expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_bayes")
+  expect_match(conditionMessage(cnd), "nonesuch")
 })
 
 test_that("AC2: nested_final_fit() refuses an argument it does not know", {

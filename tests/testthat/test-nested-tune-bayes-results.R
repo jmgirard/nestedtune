@@ -182,7 +182,7 @@ test_that("a grid run records its procedure, and its grid and metrics as before"
   expect_type(procedure, "list")
   expect_identical(
     names(procedure),
-    c("tuner", "grid", "param_info", "event_level", "eval_time")
+    c("tuner", "grid", "param_info", "event_level", "eval_time", "control")
   )
   expect_identical(procedure$tuner, "tune_grid")
   expect_identical(procedure$grid, grid)
@@ -211,7 +211,8 @@ test_that("a Bayesian run records its procedure and carries no grid attribute", 
       "objective",
       "param_info",
       "event_level",
-      "eval_time"
+      "eval_time",
+      "control"
     )
   )
   expect_identical(procedure$tuner, "tune_bayes")
@@ -235,6 +236,36 @@ test_that("a Bayesian run records its procedure and carries no grid attribute", 
     attr(res, "inside"),
     attr(det_nested(make_reg_data()), "inside")
   )
+})
+
+test_that("forced slots win: a control setting them yields the default run (M48, AC3)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- det_nested(d)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+
+  # The default run, served from the cache under entry seed 20.
+  plain <- bayes_results()
+
+  # `allow_par` and `seed` are the two slots the package overwrites; a control
+  # setting both draws nothing when built, so the entry state is the same.
+  set.seed(20)
+  forced <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms,
+    control = tune::control_bayes(allow_par = TRUE, seed = 999L)
+  )
+
+  # The whole object, the `procedure` attribute included: the record holds the
+  # effective control, so what was overwritten leaves no trace.
+  expect_identical(forced, plain)
 })
 
 test_that("the procedure is part of the run's record", {

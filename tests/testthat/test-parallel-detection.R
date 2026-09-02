@@ -281,7 +281,8 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
     metrics,
     param_info,
     event_level,
-    eval_time
+    eval_time,
+    control
   ) {
     list(
       completed = TRUE,

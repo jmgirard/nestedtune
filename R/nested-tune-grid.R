@@ -21,9 +21,14 @@
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
-#' @param ... Not used; must be empty. Everything after it is matched by name,
-#'   so a mistyped or unsupported argument is an error rather than a silent
-#'   positional match.
+#' @param ... A control object as `control` -- what [tune::control_grid()]
+#'   returns for `nested_tune_grid()`, what [tune::control_bayes()] returns for
+#'   `nested_tune_bayes()` -- and nothing else. It reaches the inner tuning
+#'   call in every fold, and in the final fit, with the slots this package
+#'   forces overwritten; the section on differences from tune says what
+#'   becomes of each slot. Any other name is an error, as is an unnamed
+#'   value: everything after `...` is matched by name, so a mistyped or
+#'   unsupported argument is an error rather than a silent positional match.
 #' @param resamples A nested resampling design, from [nested_resamples()] or
 #'   [rsample::nested_cv()]. Its `splits` column must hold `rsplit` objects and
 #'   its `inner_resamples` column an `rset` per outer fold. Both are checked
@@ -188,8 +193,7 @@
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' tuned <- tune_grid(object, resamples$inner_resamples[[i]], grid = grid,
 #'                    metrics = metrics, eval_time = eval_time,
-#'                    control = control_grid(allow_par = FALSE,
-#'                                           event_level = event_level))
+#'                    control = attr(res, "procedure")$control)
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -372,34 +376,57 @@
 #'
 #' @section Differences from calling tune directly:
 #'
-#' There is no `control` argument. What tune's control objects settle is
-#' settled here instead by the arguments above, or forced.
+#' There is no `control` formal, but a [tune::control_grid()] passed through
+#' `...` as `control` reaches the inner `tune_grid()` in every fold, and in
+#' the final fit that re-runs the result. What runs is the control passed, or
+#' tune's default when none is, with the slots this package forces
+#' overwritten; the result records that effective control as
+#' `attr(res, "procedure")$control`, which is what the recipe above passes.
+#' Every slot of `control_grid()` falls under one of six headings.
 #'
-#' Settable: `event_level`, which reaches the inner `control_grid()` and the
-#' outer `control_last_fit()` alike, and `eval_time`, which reaches the inner
-#' `tune_grid()` and the outer `last_fit()` the same way. `eval_time` is not a
-#' control slot in tune either -- it is an argument of both those functions --
-#' and it is offered here for the same reason `event_level` is: it changes a
-#' number the caller is shown.
+#' **Forced: `allow_par`.** Both tune calls a fold makes -- the inner tuning
+#' run and the outer scoring fit -- run at `allow_par = FALSE`, whatever the
+#' control carries. Parallelism belongs over the outer folds, as above, and
+#' leaving that to a caller would put two pools in contention.
+#'
+#' **Settable as its own argument: `event_level`.** The argument reaches the
+#' inner `control_grid()` and the outer `control_last_fit()` alike, and is the
+#' one place the level is set: a control left at tune's default takes the
+#' argument's level, and a control naming a level that is neither tune's
+#' default nor the argument's is refused at entry, naming both. `eval_time`
+#' is offered the same way, though it is not a control slot in tune either --
+#' it is an argument of both `tune_grid()` and `last_fit()` -- and for the
+#' same reason: it changes a number the caller is shown.
+#'
+#' **Refused: none.** No slot is refused on its own. What is refused at entry
+#' is a control of another class -- a `control_bayes()`, which tune itself
+#' would accept here -- and the `event_level` conflict above.
+#'
+#' **Passed through: `verbose`, `pkgs`, `parallel_over`, `workflow_size`.**
+#' Each reaches `tune_grid()` as given. `verbose` prints from a serial run,
+#' beside the progress the outer loop reports, and from a mirai daemon where
+#' nothing shows it. `pkgs` is required before fitting on the serial path as
+#' on the parallel one, where the daemon pre-flight has already required this
+#' package's namespace in every worker. `parallel_over` is not inert at
+#' `allow_par = FALSE`: it still chooses how tune loops over resamples and
+#' candidates, and with it the seed each model fit starts from, so a
+#' stochastic engine's numbers differ between `"resamples"` and
+#' `"everything"`; left `NULL`, tune takes `"resamples"` when there is more
+#' than one inner resample. `workflow_size` speaks only when `save_workflow`
+#' is on, as tune's message about the size of the workflow being saved.
+#'
+#' **Not returned: `extract`, `save_pred`, `save_workflow`.** Each lands on
+#' the inner `tune_results`, which a fold record discards once the fold
+#' succeeds: the fold keeps its metrics, its selection and the candidates it
+#' scored, not the run. Setting them costs the work and returns nothing.
+#'
+#' **Inert: `backend_options`.** Options for a parallel backend, with no
+#' backend to reach at `allow_par = FALSE`.
 #'
 #' Not passed on: `select_best()` is called without `eval_time`. Left unset it
 #' selects at the first of the evaluation times the tuning run was built with,
 #' which are the ones named here, so naming them twice would change no choice
 #' and would repeat tune's message about which time it took.
-#'
-#' Forced: both tune calls a fold makes -- the inner tuning run and the outer
-#' scoring fit -- run at `allow_par = FALSE`. Parallelism belongs over the
-#' outer folds, as above, and leaving that to a caller would put two pools in
-#' contention.
-#'
-#' Not offered: the slots that would have nothing to act on here. `save_pred`,
-#' `extract` and `save_workflow` land on the inner `tune_results`, which each
-#' fold record discards once the fold succeeds; `parallel_over`,
-#' `backend_options` and `workflow_size` are inert under `allow_par = FALSE`;
-#' `pkgs` is redundant serially, and on the parallel path the daemon pre-flight
-#' has already required this package's namespace in every worker; and `verbose`
-#' would print from a mirai daemon where nothing shows it, and duplicate the
-#' progress the outer loop reports where the run is serial.
 #'
 #' @examples
 #' \donttest{
@@ -443,7 +470,7 @@ nested_tune_grid <- function(
   event_level = "first",
   eval_time = NULL
 ) {
-  rlang::check_dots_empty()
+  control <- check_dots_control(...)
   check_workflow(object)
   check_nested(resamples)
   check_grid(grid)
@@ -452,6 +479,7 @@ nested_tune_grid <- function(
   check_param_info(param_info)
   check_event_level(event_level)
   check_eval_time(eval_time)
+  control <- check_control(control, "tune_grid", event_level)
 
   nested_loop(
     object,
@@ -461,6 +489,7 @@ nested_tune_grid <- function(
     param_info = param_info,
     event_level = event_level,
     eval_time = eval_time,
+    control = control,
     grid = grid,
     call = rlang::current_env()
   )
@@ -474,8 +503,10 @@ nested_tune_grid <- function(
 #
 # `call` is the orchestrator's frame, so the run's warnings and the daemon
 # pre-flight's refusals name the function the user called rather than this one.
-# `grid` is recorded on the object as it was given, for the grid path alone;
-# the Bayesian path passes NULL and carries no such attribute.
+# `control` is the effective control `check_control()` returned, shared by
+# every fold and recorded as it is. `grid` is recorded on the object as it was
+# given, for the grid path alone; the Bayesian path passes NULL and carries no
+# such attribute.
 nested_loop <- function(
   object,
   resamples,
@@ -484,6 +515,7 @@ nested_loop <- function(
   param_info,
   event_level,
   eval_time,
+  control,
   grid,
   call
 ) {
@@ -518,6 +550,7 @@ nested_loop <- function(
     param_info = param_info,
     event_level = event_level,
     eval_time = eval_time,
+    control = control,
     call = call
   )
 
@@ -525,7 +558,8 @@ nested_loop <- function(
     tuner,
     param_info = param_info,
     event_level = event_level,
-    eval_time = eval_time
+    eval_time = eval_time,
+    control = control
   )
   out <- new_nested_results(resamples, folds, seeds, grid, metrics, procedure)
   warn_failed_folds(out, call = call)
@@ -549,7 +583,8 @@ nested_fold_fit <- function(
   metrics,
   param_info = NULL,
   event_level = "first",
-  eval_time = NULL
+  eval_time = NULL,
+  control = NULL
 ) {
   set_fold_seed(seeds[[1L]])
 
@@ -571,6 +606,7 @@ nested_fold_fit <- function(
         metrics = metrics,
         eval_time = eval_time,
         event_level = event_level,
+        control = control,
         seed = seeds[[1L]]
       )
       # Resolved from the tuned object rather than from `metrics`, so the same

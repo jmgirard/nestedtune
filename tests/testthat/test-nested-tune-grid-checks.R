@@ -509,3 +509,116 @@ test_that("the new refusals fire before the RNG is drawn from", {
     expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
   }
 })
+
+# M48: what `...` accepts, and what a control may carry. Fitting is replaced
+# by a sentinel so a refusal is shown to fire at entry rather than after the
+# loop began, as test-nested-tune-bayes-checks.R does for its sibling.
+
+grid_refusal <- function(expr) {
+  sentinel <- function(...) {
+    rlang::abort("fitting began", class = "nestedtune_sentinel")
+  }
+  testthat::local_mocked_bindings(dispatch_folds = sentinel)
+  tryCatch(expr, error = function(cnd) cnd)
+}
+
+expect_grid_refused <- function(cnd, class, pattern) {
+  testthat::expect_s3_class(cnd, class)
+  testthat::expect_false(inherits(cnd, "nestedtune_sentinel"))
+  testthat::expect_match(conditionMessage(cnd), pattern)
+  testthat::expect_identical(
+    conditionCall(cnd)[[1L]],
+    as.name("nested_tune_grid")
+  )
+  invisible(cnd)
+}
+
+test_that("`...` accepts `control` and nothing else (M48, AC5)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  cnd <- grid_refusal(nested_tune_grid(wf, folds, nonesuch = 1))
+  expect_grid_refused(cnd, "nestedtune_bad_dots", "nonesuch")
+
+  cnd <- grid_refusal(nested_tune_grid(wf, folds, det_grid()))
+  expect_grid_refused(cnd, "nestedtune_bad_dots", "unnamed")
+
+  cnd <- grid_refusal(nested_tune_grid(
+    wf,
+    folds,
+    control = tune::control_grid(),
+    no = 1
+  ))
+  expect_grid_refused(cnd, "nestedtune_bad_dots", "`no`")
+})
+
+test_that("`control` must be what tune::control_grid() returns (M48, AC5)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  # A `control_bayes()` carries every slot `control_grid()` does and is still
+  # refused: the class is the contract, not the slot list. (`control_resamples()`
+  # is not in the list because tune 2.1.0 gives it the `control_grid` class,
+  # so it is what `control_grid()` returns.)
+  bad <- list(
+    tune::control_bayes(seed = 1L),
+    list(allow_par = FALSE),
+    "no",
+    1
+  )
+  for (b in bad) {
+    cnd <- grid_refusal(nested_tune_grid(wf, folds, control = b))
+    expect_grid_refused(cnd, "nestedtune_bad_control", "control_grid")
+  }
+})
+
+test_that("a control naming another event level is refused at entry (M48, AC3)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  cnd <- grid_refusal(nested_tune_grid(
+    wf,
+    folds,
+    event_level = "first",
+    control = tune::control_grid(event_level = "second")
+  ))
+  expect_grid_refused(cnd, "nestedtune_bad_control", "event_level")
+  expect_match(conditionMessage(cnd), "\"first\"")
+  expect_match(conditionMessage(cnd), "\"second\"")
+
+  cnd <- grid_refusal(nested_tune_grid(
+    wf,
+    folds,
+    event_level = "second",
+    control = tune::control_grid()
+  ))
+  expect_s3_class(cnd, "nestedtune_sentinel")
+})
+
+test_that("the control refusals fire before the RNG is drawn from (M48)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- valid_folds(d)
+
+  set.seed(1)
+  before <- get(".Random.seed", envir = globalenv())
+  grid_refusal(nested_tune_grid(wf, folds, nonesuch = 1))
+  grid_refusal(nested_tune_grid(wf, folds, control = "no"))
+  grid_refusal(nested_tune_grid(
+    wf,
+    folds,
+    control = tune::control_grid(event_level = "second")
+  ))
+  expect_identical(get(".Random.seed", envir = globalenv()), before)
+})
