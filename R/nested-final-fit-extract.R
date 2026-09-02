@@ -121,9 +121,9 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #'   [tune::collect_metrics()] table with those labels — the same shape one
 #'   element of a result's `.inner_metrics` column reduces to when its metric
 #'   columns are dropped — so the two can be compared directly. Everything
-#'   tune wrote per metric goes with them: `.metric`, `.estimator`, `mean`,
-#'   `n`, `std_err`, and on a fit that scored a dynamic survival metric the
-#'   `.eval_time` column too, so a candidate has one row here however many
+#'   tune wrote per metric is dropped: `.metric`, `.estimator`, `mean`, `n`,
+#'   `std_err`, and on a fit that scored a dynamic survival metric the
+#'   `.eval_time` column, so a candidate has one row here however many
 #'   evaluation times it was scored at. The times and the scores are in
 #'   `collect_metrics(extract_tune_results(x))`.
 #'

@@ -315,6 +315,13 @@ print_selection <- function(s) {
   invisible(NULL)
 }
 
+# The candidate set each completed fold searched, derived from its inner
+# table (M49): the distinct parameter rows of `.inner_metrics`, with tune's
+# `.config` and `.iter` along, which `candidate_key()` then drops.
+candidate_sets <- function(x) {
+  lapply(x$.inner_metrics[x$.completed], candidate_set)
+}
+
 # Whether the folds were even choosing from the same menu (M21).
 #
 # Printed by print() rather than behind summary() because it qualifies the rows
@@ -326,13 +333,6 @@ print_selection <- function(s) {
 #
 # Silent on agreement, so the line appears only when it changes how the
 # selections summary() reports should be read.
-# The candidate set each completed fold searched, derived from its inner
-# table (M49): the distinct parameter rows of `.inner_metrics`, with tune's
-# `.config` and `.iter` along, which `candidate_key()` then drops.
-candidate_sets <- function(x) {
-  lapply(x$.inner_metrics[x$.completed], candidate_set)
-}
-
 print_candidate_sets <- function(grids) {
   if (length(grids) < 2L || same_candidates(grids)) {
     return(invisible(NULL))
@@ -386,8 +386,8 @@ candidate_key <- function(g) {
   # the columns themselves. `order()` RAISES on a list column -- "unimplemented
   # type 'list' in 'orderVector1'" -- and this method promises never to raise
   # (M21 review F1; the earlier claim that it does not raise was measured
-  # against `scored_candidates_impl()`, which orders `.config` and never a
-  # parameter column, so it tested a different path).
+  # against the derivation now in `candidate_set()`, which orders `.config`
+  # and never a parameter column, so it tested a different path).
   #
   # Rendering decides ROW ORDER ONLY. What is returned and compared is the
   # original values, so two candidates differing below print precision are

@@ -800,7 +800,7 @@ test_that("printing survives a list-valued parameter column (M21 review F1)", {
   # `do.call(order, values)`, and order() RAISES on a list column
   # ("unimplemented type 'list' in 'orderVector1'") -- so a candidate set carrying one
   # aborted a method whose header promises it never raises. The shape is
-  # producible: test-nested-tune-grid-failures.R asserts scored_candidates()
+  # producible: test-nested-tune-grid-failures.R asserts candidate_set()
   # returns exactly such a record.
   #
   # Asserted on same_candidates() rather than only through print(), because the

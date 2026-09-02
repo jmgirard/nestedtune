@@ -2,8 +2,9 @@
 
 * Breaking: each outer fold of a `nested_results` now carries its inner
   tuning run's metrics as `.inner_metrics` -- `tune::collect_metrics()` of
-  that fold's run, one row per candidate and metric with `mean`, `n`,
-  `std_err` and `.config`, plus `.iter` from `nested_tune_bayes()` -- in
+  that fold's run, one row per candidate and metric with `.metric`,
+  `.estimator`, `mean`, `n`, `std_err` and `.config`, plus `.iter` from
+  `nested_tune_bayes()` -- in
   place of the `.grid` column, which held the candidates alone. The
   candidates a fold searched are the table's distinct parameter rows, so
   nothing `.grid` recorded is lost, and a Bayesian search's trajectory or a
