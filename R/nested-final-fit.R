@@ -208,7 +208,9 @@ nested_final_fit <- function(object, results, ...) {
   # The grid is judged against the workflow as the orchestrator judged it,
   # so a workflow other than the one the estimate was built around is refused
   # here rather than by tune, one full tuning run later (GP3).
-  if (identical(procedure$tuner, "tune_grid")) {
+  # Every tuner that takes a grid -- `tune_grid()` and finetune's racers -- is
+  # held to it; the iterative tuners record none (R/tuner.R).
+  if (tuner_takes_grid(procedure$tuner)) {
     check_grid_params(object, procedure$grid, recorded = TRUE)
   }
   inside <- attr(results, "inside")

@@ -749,7 +749,18 @@ inner_metrics <- function(tuned, prototype) {
   if (!scored_anything(tuned)) {
     return(prototype)
   }
-  tryCatch(tune::collect_metrics(tuned), error = function(cnd) prototype)
+  tryCatch(collect_inner_metrics(tuned), error = function(cnd) prototype)
+}
+
+# The one `collect_metrics()` call behind every reader of an inner run (M50,
+# D-043): tune's summary, and on a race every candidate the race scored --
+# `all_configs = TRUE` -- where finetune's default keeps the survivors alone.
+# IP4 records what ran, and an eliminated candidate ran on `n` resamples.
+collect_inner_metrics <- function(tuned) {
+  if (inherits(tuned, "tune_race")) {
+    return(tune::collect_metrics(tuned, all_configs = TRUE))
+  }
+  tune::collect_metrics(tuned)
 }
 
 # Whether at least one candidate scored on at least one inner resample, read
@@ -793,7 +804,7 @@ empty_inner_metrics <- function(
   cols[["n"]] <- integer(0)
   cols[["std_err"]] <- numeric(0)
   cols[[".config"]] <- character(0)
-  if (identical(tuner$tuner, "tune_bayes")) {
+  if (!is.null(tuner) && isTRUE(tuner_entry(tuner$tuner)$iterates)) {
     cols[[".iter"]] <- integer(0)
   }
   new_tbl(cols)
@@ -807,7 +818,11 @@ empty_param_columns <- function(object, tuner, param_info) {
     tune::extract_parameter_set_dials(object),
     error = function(cnd) NULL
   )
-  grid <- tuner$args$grid
+  # The grid, where the tuner takes one: the raced tuners' description holds
+  # a `grid` exactly as `tune_grid()`'s does (R/tuner.R).
+  grid <- if (!is.null(tuner) && tuner_takes_grid(tuner$tuner)) {
+    tuner$args$grid
+  }
   ids <- if (is.data.frame(params)) {
     params$id
   } else if (is.data.frame(grid)) {
@@ -885,7 +900,7 @@ empty_param_column <- function(param) {
 # is the true answer, not a fallback.
 scored_candidates <- function(tuned) {
   tryCatch(
-    candidate_set(tune::collect_metrics(tuned)),
+    candidate_set(collect_inner_metrics(tuned)),
     error = function(cnd) empty_candidates()
   )
 }

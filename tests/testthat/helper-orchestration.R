@@ -1433,3 +1433,270 @@ unregister_fake_tuning <- function() {
     rm("collect_metrics.nestedtune_fake_tuning", envir = table)
   }
 }
+
+# The racing fixtures (M50).
+#
+# finetune's two racers take the grid orchestrator's arguments, so the suite's
+# existing fixtures serve them; what racing adds is the control. The suite's
+# designs hold 3 inner resamples and `control_race()` defaults `burn_in` to 3,
+# which a race refuses (it needs more resamples than its burn-in), so every
+# racing fixture passes `control_race(burn_in = 2)` -- the control the
+# criteria name -- and the refusal's own test is the one place the default
+# control reaches a run.
+race_control <- function() finetune::control_race(burn_in = 2)
+
+# The racing export for a registry key, so a test can loop over both racers.
+race_fn <- function(fn) {
+  switch(
+    fn,
+    tune_race_anova = nested_tune_race_anova,
+    tune_race_win_loss = nested_tune_race_win_loss,
+    rlang::abort(sprintf("no racing export for %s", fn))
+  )
+}
+
+RACERS <- c("tune_race_anova", "tune_race_win_loss")
+
+# The suite's racing run on the deterministic fixture, served from the cache:
+# the same data, workflow, design, grid, metrics and control under entry seed
+# 20, so a reference loop started from `seed = 20` reproduces it.
+race_results <- function(fn) {
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d)
+  g <- det_grid()
+  ms <- reg_metrics()
+  ctrl <- race_control()
+  set.seed(20)
+  switch(
+    fn,
+    tune_race_anova = memoised(nested_tune_race_anova(
+      wf,
+      folds,
+      grid = g,
+      metrics = ms,
+      control = ctrl
+    )),
+    tune_race_win_loss = memoised(nested_tune_race_win_loss(
+      wf,
+      folds,
+      grid = g,
+      metrics = ms,
+      control = ctrl
+    ))
+  )
+}
+
+# The racing results objects a final fit is built from (M50, AC6), on
+# `final_nested()`, whose inner specification is literal and so survives the
+# re-run. The stochastic sibling runs ranger over `stoch_grid()`.
+race_final_results <- function(fn, data, seed = 27) {
+  wf <- det_workflow(data)
+  folds <- final_nested(data)
+  g <- det_grid()
+  ms <- reg_metrics()
+  ctrl <- race_control()
+  set.seed(seed)
+  switch(
+    fn,
+    tune_race_anova = memoised(nested_tune_race_anova(
+      wf,
+      folds,
+      grid = g,
+      metrics = ms,
+      control = ctrl
+    )),
+    tune_race_win_loss = memoised(nested_tune_race_win_loss(
+      wf,
+      folds,
+      grid = g,
+      metrics = ms,
+      control = ctrl
+    ))
+  )
+}
+
+race_stoch_final_results <- function(fn, data, seed = 28) {
+  wf <- stoch_workflow(data)
+  folds <- final_nested(data)
+  g <- stoch_grid()
+  ms <- reg_metrics()
+  ctrl <- race_control()
+  set.seed(seed)
+  switch(
+    fn,
+    tune_race_anova = memoised(nested_tune_race_anova(
+      wf,
+      folds,
+      grid = g,
+      metrics = ms,
+      control = ctrl
+    )),
+    tune_race_win_loss = memoised(nested_tune_race_win_loss(
+      wf,
+      folds,
+      grid = g,
+      metrics = ms,
+      control = ctrl
+    ))
+  )
+}
+
+# What a racer needs beyond the engines: finetune, and the package its race
+# fits its elimination model with -- lme4 for the ANOVA race, BradleyTerry2
+# for the win/loss race -- read off the package's own registry so the gate
+# and the refusal cannot name different packages.
+skip_if_no_race_fixture <- function(fn = RACERS, stochastic = FALSE) {
+  skip_if_no_engines(stochastic = stochastic)
+  for (f in fn) {
+    for (pkg in tuner_registry[[f]]$requires) {
+      testthat::skip_if_not_installed(pkg)
+    }
+  }
+}
+
+# The control a fold's race runs under, written from the documented contract
+# (D-042): the caller's control -- or finetune's default when none was
+# passed -- with `allow_par` forced off and `event_level` set from the
+# argument. `control_race()` has no seed slot. `save_workflow` is the
+# reference's own addition where a strand needs `fit_best()`.
+forced_race_control <- function(
+  control,
+  save_workflow = FALSE,
+  event_level = "first"
+) {
+  if (is.null(control)) {
+    control <- finetune::control_race()
+  }
+  control$allow_par <- FALSE
+  control$event_level <- event_level
+  if (save_workflow) {
+    control$save_workflow <- TRUE
+  }
+  control
+}
+
+# The hand-rolled reference loop for the racing path (M50 AC1), written from
+# the same seed contract as the grid reference and never from the driver's
+# output: `set.seed(s)`, one `sample.int(.Machine$integer.max, 2 * n)`, fold
+# i racing under element 2i-1 with the kind pinned -- the race's resample
+# shuffle draws inside that scope -- and fitting under element 2i. `fn` is
+# the finetune function's name.
+reference_nested_race_loop <- function(
+  fn,
+  wf,
+  nested,
+  grid,
+  metrics,
+  seed,
+  metric_name,
+  control = NULL,
+  param_info = NULL
+) {
+  racer <- getExportedValue("finetune", fn)
+  set.seed(seed)
+  n <- nrow(nested)
+  seeds <- sample.int(.Machine$integer.max, 2L * n)
+
+  lapply(seq_len(n), function(i) {
+    tuning_seed <- seeds[[2L * i - 1L]]
+    outer_seed <- seeds[[2L * i]]
+
+    set.seed(
+      tuning_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    raced <- racer(
+      wf,
+      resamples = nested$inner_resamples[[i]],
+      grid = grid,
+      param_info = param_info,
+      metrics = metrics,
+      control = forced_race_control(control)
+    )
+    best <- tune::select_best(raced, metric = metric_name)
+    final_wf <- tune::finalize_workflow(wf, best)
+
+    set.seed(
+      outer_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    fitted <- tune::last_fit(
+      final_wf,
+      split = nested$splits[[i]],
+      metrics = metrics
+    )
+
+    list(
+      metrics = tune::collect_metrics(fitted),
+      selected = best,
+      tuning_seed = tuning_seed,
+      outer_fit_seed = outer_seed,
+      tuned = raced
+    )
+  })
+}
+
+# The hand-rolled reference final fit for the racing path (M50 AC6): the
+# grid reference with the race in place of `tune_grid()`, under the same two
+# seeds and D-016's ordering (the rset built after the tuning seed is set).
+# `save_workflow = TRUE` on the test's own race alone, so a strand can run
+# `tune::fit_best()` on this run.
+reference_race_final_fit <- function(
+  fn,
+  wf,
+  data,
+  grid,
+  metrics,
+  seed,
+  metric_name,
+  v = 3,
+  control = NULL
+) {
+  racer <- getExportedValue("finetune", fn)
+  set.seed(seed)
+  seeds <- sample.int(.Machine$integer.max, 2L)
+
+  set.seed(
+    seeds[[1L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  inner <- rsample::vfold_cv(data, v = v)
+  raced <- racer(
+    wf,
+    resamples = inner,
+    grid = grid,
+    metrics = metrics,
+    control = forced_race_control(control, save_workflow = TRUE)
+  )
+  best <- tune::select_best(raced, metric = metric_name)
+  final_wf <- tune::finalize_workflow(wf, best)
+
+  set.seed(
+    seeds[[2L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  fitted <- parsnip::fit(final_wf, data = data)
+
+  list(seeds = seeds, selected = best, workflow = fitted, tuned = raced)
+}
+
+# A call to a racing export by its own name, evaluated in the caller's frame,
+# so a condition's call names the export and a fixture's cache key sees the
+# call the test wrote. `fn` is the registry key.
+race_call_by_name <- function(fn, ...) {
+  name <- switch(
+    fn,
+    tune_race_anova = "nested_tune_race_anova",
+    tune_race_win_loss = "nested_tune_race_win_loss"
+  )
+  eval(rlang::call2(name, !!!rlang::enexprs(...)), parent.frame())
+}

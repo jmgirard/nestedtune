@@ -81,17 +81,17 @@ their M48 Out row.
 
 ## Tasks
 
-- [ ] T1: A tuner registry in `R/tuner.R` — name → package, control constructor, control class, whether it takes
+- [x] T1: A tuner registry in `R/tuner.R` — name → package, control constructor, control class, whether it takes
       `grid` or `iter`/`initial` — replacing the `switch()`es in `default_control()` (`R/tuner.R:121`) and
       `control_class()` (`:137`), the `tune_bayes` test in `empty_inner_metrics()` (`R/nested-tune-grid.R:796`) and
       the grid read in `empty_param_columns()` (`:806`), the grid re-check in `nested_final_fit()`
       (`R/nested-final-fit.R:211`) and `procedure_label()` (`R/nested-final-fit-print.R:210`); `run_tuner()` builds
       its call with `.ns = <the registry's package>` (`R/tuner.R:82`); `tuner_race(fn, grid)`. Grid and Bayes suites
       green, unchanged.
-- [ ] T2: `check_tuner_installed()` (through `rlang::is_installed()`, mocked in tests), `check_race_burn_in()`
+- [x] T2: `check_tuner_installed()` (through `rlang::is_installed()`, mocked in tests), `check_race_burn_in()`
       over every fold's inner `rset`, `check_control()` accepting `control_race`; the AC5 tests, mocked-absence
       cases included.
-- [ ] T3: The two exports over one internal `nested_tune_race()`; `inner_metrics()` and `scored_candidates()`
+- [x] T3: The two exports over one internal `nested_tune_race()`; `inner_metrics()` and `scored_candidates()`
       (`R/nested-tune-grid.R:886`) calling `all_configs = TRUE` on a `tune_race`; `reference_nested_race_loop()` in
       `helper-orchestration.R` on the pattern of the Bayesian loop; the AC1, AC2 and AC3 tests.
 - [ ] T4: `attach_daemon_pkgs()` (`R/parallel.R:597`) takes the tuner's package beside the workflow's; the AC4 RNG
@@ -116,6 +116,12 @@ their M48 Out row.
 - 2026-09-02: plan chose refusing a burn-in mismatch at entry over letting every fold fail on finetune's own message because GP3 refuses before work is spent; falsified by an inner design whose folds legitimately differ in resample count.
 - 2026-09-02: plan chose a tuner registry over extending the four `switch()`es on the tuner's name because each new tuner would otherwise touch every site; falsified by a tuner whose arguments neither the grid nor the iter/initial shape describes.
 - 2026-09-02: acknowledgement comment posted on #35 at the user's choice.
+- 2026-09-02: /milestone-implement started; branch `m050-finetune-racing` cut from the pushed default branch; finetune 1.3.0, BradleyTerry2 1.1.3 installed locally for the suite.
+- 2026-09-02: question gate: `tune_race_anova()` calls `rlang::check_installed("lme4")` inside the fold and finetune only suggests lme4, so the user chose an entry refusal for lme4 on the ANOVA racer and lme4 in Suggests beside finetune and BradleyTerry2 (one D-entry for the three, T6); the AC3 tripwire (ip-touching) was offered escalation and the user chose to proceed as planned.
+- 2026-09-02: T1 done: `tuner_registry` in `R/tuner.R` (package, requires, control constructor, control class, takes_grid, iterates, label) replaces the `switch()`es in `default_control()` and `control_class()`, the `.iter` and grid reads in the zero-row prototype, the final fit's grid re-check and `procedure_label()`; `run_tuner()` builds its call with `.ns = <registry package>`; `tuner_race(fn, grid)` added; `test-tuner-registry.R`; grid and Bayes suites green, unchanged.
+- 2026-09-02: T2 done: `check_tuner_installed()` over the registry's `requires` through `rlang::is_installed()` (class `nestedtune_pkg_not_installed`), `check_race_burn_in()` over every fold's inner `rset` (class `nestedtune_bad_burn_in`, naming each short fold's count and the burn-in), `check_control()` naming the control's package; `R/nested-tune-race.R` holds the two exports over one `nested_tune_race()`; `test-nested-tune-race-checks.R` covers AC5 with the absences mocked one package at a time.
+
+- 2026-09-02: T3 done: `collect_inner_metrics()` is the one `collect_metrics()` call behind `inner_metrics()` and `scored_candidates()`, `all_configs = TRUE` on a `tune_race`; `reference_nested_race_loop()`, `reference_race_final_fit()` and the racing fixtures in `helper-orchestration.R`; `test-nested-tune-race-oracles.R` covers AC1 (both fixtures, both racers, formals identical to the grid export), AC2 (raced-to-the-end means identical to the grid path's, at least one per fold) and AC3 (record from `all_configs = TRUE`, selection a survivor, an elimination observed on the ranger fixture); full suite green after T1 (336 lines of summary, no failures).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->

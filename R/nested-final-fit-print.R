@@ -218,18 +218,19 @@ procedure_label <- function(s) {
       s$iterations_requested
     ))
   }
-  if (identical(s$tuner, "tune_grid")) {
-    return(sprintf(
-      "grid search, %d candidate%s scored",
-      s$candidates,
-      if (s$candidates == 1L) "" else "s"
-    ))
+  # Every other tuner names its search from the registry -- "grid search",
+  # "ANOVA racing", "win/loss racing" -- ahead of the count; an object built
+  # by hand with no tuner, or one the registry does not know, keeps the count
+  # alone rather than inventing a name.
+  label <- if (is.character(s$tuner) && s$tuner %in% names(tuner_registry)) {
+    tuner_registry[[s$tuner]]$label
   }
-  sprintf(
+  count <- sprintf(
     "%d candidate%s scored",
     s$candidates,
     if (s$candidates == 1L) "" else "s"
   )
+  if (is.null(label)) count else paste(label, count, sep = ", ")
 }
 
 # How the full-data tuning run's resampling scheme describes itself.
