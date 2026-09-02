@@ -1,19 +1,18 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 53 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M47 archive summary 25. Both byte budgets stay over: ROADMAP.md ~40,900 B against 24,000, LESSONS.md ~31,600 B against 20,000. This pass pruned M42's terminal row; no candidate row added (M47's three unfixed findings were rejected, not deferred) and no finding-absorbing row touched. LESSONS extended the M28 upstream-claims line with M47's refusal-boundary lesson rather than adding one; no line pruned. Closing the byte gap still means graduating or dropping candidates — a user call, now thirteen passes overdue. Since the last check: M47 shipped `predict()`/`augment()` on the final fit, archived after one review round with six gate fixes.)_
+_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 56 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M48 archive summary 25. Both byte budgets stay over: ROADMAP.md ~41,400 B against 24,000, LESSONS.md ~32,200 B against 20,000. This pass pruned M43's terminal row; no candidate row added (M48's rejected findings stay rejected, its accepted `time_limit` limitation went to DESIGN Known issues) and no finding-absorbing row touched. LESSONS extended the M16 cap line with M48's suite-growth and push-restarts-CI lessons rather than adding one; no line pruned. Closing the byte gap still means graduating or dropping candidates — a user call, now fourteen passes overdue. Since the last check: M48 shipped `control` through `...` on both orchestrators and raised the check step cap to 30 minutes, archived after two review rounds.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M48 | `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert | review | — | normal | milestones/M48-dots-control-passthrough.md |
+| M48 | `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert | done | — | normal | milestones/archive/M48-dots-control-passthrough.md |
 | M49 | Each outer fold keeps its inner search's metrics in place of `.grid` | planned | — | normal | milestones/M49-inner-metrics-column.md |
 | M47 | `predict()` and `augment()` on a `nested_final_fit` | done | — | normal | milestones/archive/M47-final-fit-predict-augment.md |
 | M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
 | M46 | `nested_final_fit()` re-runs the procedure a result recorded | done | M45 | normal | milestones/archive/M46-final-fit-recorded-procedure.md |
 | M44 | `agreement()` tabulates what the outer folds selected | done | — | normal | milestones/archive/M44-agreement.md |
-| M43 | The print and summary follow-ups M39 left behind | done | — | normal | milestones/archive/M43-print-summary-followups.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
