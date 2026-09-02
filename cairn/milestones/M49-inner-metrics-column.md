@@ -1,6 +1,6 @@
 # M49: Each outer fold keeps its inner search's metrics in place of `.grid`
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -34,7 +34,7 @@ for that generic → not planned; a user control on the inner run → M48.
 
 ## Acceptance criteria
 
-- [x] AC1: Each completed fold's `.inner_metrics` is identical to `tune::collect_metrics()` of the inner tuning run re-run
+- [ ] AC1: Each completed fold's `.inner_metrics` is identical to `tune::collect_metrics()` of the inner tuning run re-run
       by hand under the fold's tuning seed, for both tuners, the Bayesian table carrying `.iter`; a fold that tuned and
       then failed its outer fit keeps its table; a fold that scored nothing carries a zero-row table with the columns of
       a completed fold's; a candidate that scored on some inner resamples and failed on others appears with `n` below
@@ -64,12 +64,12 @@ for that generic → not planned; a user control on the inner run → M48.
 
 ## Coverage
 
-- AC1 → T1, T2
+- AC1 → T1, T2, T7
 - AC2 → T3, T4
 - AC3 → T4
 - AC4 → T3
 - AC5 → T5
-- AC6 → T4
+- AC6 → T4, T8
 - AC7 → T6
 
 ## Tasks
@@ -90,6 +90,16 @@ for that generic → not planned; a user control on the inner run → M48.
       removal and mutation probes in `test-dplyr-compat.R` and `test-vctrs-compat.R` across the four doors.
 - [x] T6: NEWS, DESIGN.md, D-043 (drafted at plan), verify slot.
 
+- [ ] T7: Zero-row prototype (F1, F2): type each parameter column from the grid data frame when one was given, else
+      from `param_info`, else the workflow's dials set; add `.eval_time` only when the metric set carries a dynamic or
+      integrated survival metric; tests on a regression run given `eval_time`, a static-only censored run, and an engine
+      parameter with no dials object, each asserting the prototype identical in names and types to a completed fold's.
+- [ ] T8: `candidate_set()` and `.eval_time` (F3): decide whether the final-fit accessor keeps base's `.eval_time`
+      column on a dynamic-survival fit or the drop is intended; amend AC6's wording at the step-6 gate to match (and to
+      name the assertions, not the file, as what stays unchanged), with a censored test either way.
+- [ ] T9: `fake_tuning()` cleanup (F4) and the `show_best()` roxygen sentence (F7): scope the S3 registration to the
+      test and reword the sentence to what `.inner_metrics` supports and how it relates to `.selected`.
+
 ## Work log
 
 - 2026-09-02: created by /milestone-plan from issue #57 (topepo, 2026-09-02).
@@ -102,6 +112,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: T2–T6 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, `devtools::test()` clean in full (an earlier full run failed the three daemon files whose hand-built fold records still carried `grid`, and `test-suite-hygiene.R` on the time-budget ledger's `test-parallel-classify.R` line numbers, which `fake_fold_record()`'s eight new lines had shifted — both fixed). AC2 grep matches nothing; the AC3 diff and snapshot diff are empty. Status → review.
 - 2026-09-02: review opened: PR #59 drafted; AC evidence gathering in progress (suite, check and three reviewers running).
 - 2026-09-02: review step 6 checkpoint: suite, check and gate green; [O] F1–F3 confirmed by execution as criterion breaches on censored, `eval_time` and engine-parameter inputs outside the fixtures; disposition to the gate.
+- 2026-09-02: review step 7: gate declined the merge; defect return 1 of M49 — [O] F1 and F2 demonstrate AC1's zero-row clause failing (prototype columns and types diverge from a completed fold's on `eval_time` without a dynamic survival metric and on an engine parameter without a dials object), F3 demonstrates AC6 failing on a dynamic-survival final fit (`.eval_time` dropped); F4 and F7 fix on the same return; F5 rejected (unreachable), F6 resolved by measurement, F8 rejected (tracking prose), F9 noted, F10 rejected (cosmetic). Tasks T7–T9 added; status → in-progress; PR #59 stays draft.
 
 ## Decisions
 
@@ -126,6 +137,8 @@ _Evidence gathered 2026-09-02 on branch `m049-inner-metrics-column` at 8df4c7e (
 - `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, with no milestone number in user-facing text. No new top-level files. `devtools::check()`: 0 errors, 0 warnings, 0 notes.
 
 ### Independent review
+
+_Gate 2026-09-02: return to in-progress on F1–F3 (the defect return counted above in the work log); F4 and F7 fix-now on the return; F5, F8, F10 rejected; F6 resolved; F9 noted._
 
 - [S] blame-history: no findings; checked the M03 collect_metrics guard, M21's per-fold record, M45's `join_iteration()` retirement (tune 2.1.0's `collect_metrics()` carries `.iter` natively), M21 review F1/F2 ordering, M37 probes, D-031/D-036 invariant set, D-043 scope, all respected.
 - [S] prior-review record: no findings; archives M21, M36–M39, M45, LESSONS.md and D-023/031/032/036/043 read; the GitHub probe found one real inline comment (PR #30, a workflow file), the walk of PRs #22, #45–#47, #51, #54, #58 returned none.
