@@ -1,12 +1,12 @@
 # M49: Each outer fold keeps its inner search's metrics in place of `.grid`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4, GP4
 - **Resolves:** #57 closes
-- **Branch/PR:** —
+- **Branch/PR:** m049-inner-metrics-column
 
 ## Goal
 

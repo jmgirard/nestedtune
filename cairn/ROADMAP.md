@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M48 | `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert | done | — | normal | milestones/archive/M48-dots-control-passthrough.md |
-| M49 | Each outer fold keeps its inner search's metrics in place of `.grid` | planned | — | normal | milestones/M49-inner-metrics-column.md |
+| M49 | Each outer fold keeps its inner search's metrics in place of `.grid` | in-progress | — | normal | milestones/M49-inner-metrics-column.md |
 | M47 | `predict()` and `augment()` on a `nested_final_fit` | done | — | normal | milestones/archive/M47-final-fit-predict-augment.md |
 | M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
 | M46 | `nested_final_fit()` re-runs the procedure a result recorded | done | M45 | normal | milestones/archive/M46-final-fit-recorded-procedure.md |
