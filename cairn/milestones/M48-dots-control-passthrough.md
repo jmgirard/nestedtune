@@ -50,7 +50,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
       none was passed; `nested_final_fit()` re-runs under it, passing exactly one `control` to the inner call: a test
       asserts the recorded slots on both tuners, and that the final fit's retained tuning run under `no_improve = 2`
       matches a hand-run `tune::tune_bayes()` with the same control and the fit's tuning seed.
-- [ ] AC5: A name in `...` other than `control` is refused at entry by both orchestrators with a classed condition naming
+- [x] AC5: A name in `...` other than `control` is refused at entry by both orchestrators with a classed condition naming
       it, and a `control` that is not what the matching `tune::control_*()` returns is refused naming the class expected;
       asserted by tests on both functions.
 - [x] AC6: The "Differences from calling tune directly" section of each help page lists every slot of
@@ -127,6 +127,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: T11: `reference_nested_loop()` takes `control`, merged by a `forced_grid_control()` helper written from the contract; the grid oracles file gains a `parallel_over = "everything"` run on the stochastic fixture matching the reference under the same control fold by fold, with the no-control run as the discriminating control (measured before writing: fold 2's outer metrics and selection differ, folds 1 and 3 agree).
 - 2026-09-02: T10, T12: both "Not returned" paragraphs now say the final fit keeps its tuning run as `$tuning`, where what `extract`/`save_pred`/`save_workflow` saved is reachable (measured: a final fit under `save_pred = TRUE` carries 270 prediction rows in `extract_tune_results()`), and the grid page's `workflow_size` sentence is reworded against that. `tune::control_last_fit()` is accepted, not refused: tune 2.1.0 gives it and `control_resamples()` the `control_grid` class, the grid page's "Refused" paragraph says so, and the grid checks file asserts both reach fitting beside the refused list. `test-control-slots.R` and the M41 doc test in `test-eval-time.R` pass on the regenerated Rd.
 - 2026-09-02: return scope T8–T13 done; full `devtools::test()` clean (summary reporter, no failures or skips), `devtools::document()` no diff; status set to review for round 2.
+- 2026-09-02: /milestone-review round 2: branch contains origin/main and is pushed; PR #58 still draft; document() no diff; cairn_validate exit 0; pkgdown clean; full `devtools::test()` DONE with no failure, skip or warning section; criterion files rerun by name; three reviewers back with four findings from the diff-bug lens and none from the other two, triaged at the gate.
 
 ## Decisions
 
@@ -162,3 +163,25 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
   1. The AC3 whole-object `expect_identical()` against a memoised fixture with a separately built `metric_set()` repeats the M12 lesson's trap. Rejected: `testthat::expect_identical()` compares through waldo, which ignores function environments (checked this session: `identical()` FALSE, `expect_identical()` passes), and the test passes in the full run.
   2. `run_tuner()` still has no size-invariant test for the inlining hazard the M05/M45 lesson names, while its surface grew. Rejected: pre-existing gap the diff did not introduce; the lesson line already records it.
   3. The time-budget ledger's line drift was caught and fixed by the guard as designed. Informational, no action.
+
+### Round 2 (2026-09-02)
+
+**Gate checks.** Branch contains `origin/main` (0 behind, 12 ahead, no merge needed) and is pushed; draft PR #58 open and mergeable. `devtools::document()` leaves no diff; `cairn_validate.py` exit 0 (advisories: 18 references-staleness, one sizing warning on 13 tasks — the six return tasks); no IP/GP text changed, `cairn_impact` skipped; `pkgdown::check_pkgdown()` clean; README.md and README.Rmd share a timestamp; NEWS carries the entry with no milestone numbers; NEWS.md is the only top-level file touched. Full `devtools::test()` (summary reporter, tune 2.1.0): DONE with no failure, skip or warning section. `devtools::check()`: see the line below.
+
+**Criterion evidence (fresh, this round).**
+- AC1: `test-nested-tune-bayes-oracles.R` "a control passed through `...` reaches every fold (M48, AC1)" passes on rerun (file: 5 tests, 91 expectations, 0 failed, 0 skipped). Verified.
+- AC2: `test-parallel-identity.R` BC11 rerun alone under `NOT_CRAN=true`: 10 expectations, 0 failed, 0 skipped; the full run recorded no skip section. Verified.
+- AC3: "forced slots win: a control setting them yields the default run (M48, AC3)" in the Bayes results file and "a control naming another event level is refused at entry (M48, AC3)" in both checks files pass on rerun (7 expectations each). Verified.
+- AC4: "the procedure records the effective control on both tuners (M48, AC4)" and "the final fit re-runs under the recorded control (M48, AC4)" pass on rerun (final-fit oracles file: 8 tests, 43 expectations, 0 failed). Verified.
+- AC5: "`...` accepts `control` and nothing else (M48, AC5)" (16 expectations, now including `call = quote(bogus())`) and "`control` must be what tune::control_*() returns (M48, AC5)" pass on both checks files; direct probes this session: `check_dots_control(list(call = 5))`, `nested_tune_grid(1, 2, call = ...)`, `nested_tune_bayes(1, 2, call = ...)`, `nonesuch = 1`, an unnamed value, `dots = 1` and a duplicated `control` each abort with class `nestedtune_bad_dots` naming the argument. The round-1 hole is closed. Verified.
+- AC6: `test-control-slots.R` passes on rerun (3 tests, 47 expectations): every `formals()` slot of `control_grid()` and `control_bayes()` under exactly one heading, planted-duplicate discrimination green. Verified.
+- AC7: `test-dots-barrier.R` passes on rerun (9 tests, 41 expectations) covering `nested_tune_bayes()` with the grid entry expecting `nestedtune_bad_dots`; verify slot clean (the full run); NEWS entry present; D-042 in DECISIONS.md; DESIGN.md's `run_tuner()` paragraph names the effective control. Verified.
+
+**Independent review (three fresh-context lenses).** Ranked as the reviewers ranked them; disposition logged at the gate.
+- [O] diff-bug lens (verified the round-1 fixes first: `call` refused on both paths, `capture_dots()` restores kind and state, `default_control()` draws nothing, `procedure_tuner()` strips `control`, `control_resamples()`/`control_last_fit()` run through `tune_grid()`; no finding is a criterion failure):
+  1. `control` is threaded with a `NULL` default at every internal hop (`R/parallel.R:202,1054`, `R/nested-tune-grid.R:597`), so a dropped argument degrades to tune's default instead of erroring — the failure the leakage-file stub showed. Proposed: follow-up.
+  2. The recorded Bayes control has no `seed` element, so passed straight to `tune::tune_bayes()` it fails on `control$seed[1] + i`; the recipe sets `control$seed` first. Proposed: follow-up (doc line, or keep the slot at `NA_integer_`).
+  3. `time_limit` pass-through is a user-reachable IP2 exception recorded on the page and in D-042 but not where IP2 lives in DESIGN.md. Proposed: follow-up.
+  4. `expect_lte(nrow(...), initial + iter)` at `test-nested-final-fit-oracles.R:413` is unconditionally true. Proposed: reject (round 1 finding 8, no new evidence).
+- [S] blame-history lens: no findings. Noted that `capture_dots()` removes a `.Random.seed` the forcing created where `restore_rng()` keeps one, a divergence the function's comment states with its reason.
+- [S] prior-review lens: no findings; every round-1 fix confirmed landed as described, none regressing a lesson on record; the GitHub probe found the same single non-bot comment on `pkgdown.yaml`.
