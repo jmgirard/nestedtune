@@ -2,6 +2,18 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`agreement()`](https://nestedtune.tidymodels.org/reference/agreement.md)
+  reports how often each candidate was selected across the outer folds
+  of a `nested_results`: one row per distinct combination of selected
+  parameter values, with `n`, the number of completed outer folds that
+  chose it, and `prop`, that count over the completed fold count, most
+  frequent first. A fold with no recorded value for a parameter is
+  counted under `NA`, and a partial run is tabulated over the folds that
+  completed, with a warning saying so. The most frequent combination is
+  not the final model’s parameters;
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  selects those for itself.
+
 - [`print()`](https://rdrr.io/r/base/print.html) on a `nested_results`
   accepts `n` and `width` and passes them to the rendering of the
   outer-fold rows, so `print(res, n = Inf)` shows every fold of a run of

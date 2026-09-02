@@ -25,6 +25,9 @@ the outer split — and keep what each fold chose.
   : Summarize a nested cross-validation result
 - [`autoplot(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/autoplot.nested_results.md)
   : Plot a nested cross-validation result
+- [`agreement()`](https://nestedtune.tidymodels.org/reference/agreement.md)
+  : Tabulate how often each candidate was selected across the outer
+  folds
 
 ## The final model
 
