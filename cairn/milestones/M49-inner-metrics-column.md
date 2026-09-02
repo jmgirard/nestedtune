@@ -101,6 +101,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: amendment (substantive, narrowing) — AC5 rewritten at a mini gate: the change-through-`[`-and-`rbind()` clause was unconstructible, those doors taking the object they act on as their own template. Two fresh [O] readings in full mode: the first returned four findings (probe forms and fold location, `vec_restore()` call form, the two doors' constructions split, a home for the self-template gap), the second two findings and an ambiguity (exact `[` subset, single-argument `rbind()`, a completed fold); all applied, the final text user-approved. Two hand-built-run tests (final-fit print counts, the bookkeeping wrapper) rewritten over a `fake_tuning()` stand-in whose `collect_metrics()` is a table given by hand.
 - 2026-09-02: T2–T6 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, `devtools::test()` clean in full (an earlier full run failed the three daemon files whose hand-built fold records still carried `grid`, and `test-suite-hygiene.R` on the time-budget ledger's `test-parallel-classify.R` line numbers, which `fake_fold_record()`'s eight new lines had shifted — both fixed). AC2 grep matches nothing; the AC3 diff and snapshot diff are empty. Status → review.
 - 2026-09-02: review opened: PR #59 drafted; AC evidence gathering in progress (suite, check and three reviewers running).
+- 2026-09-02: review step 6 checkpoint: suite, check and gate green; [O] F1–F3 confirmed by execution as criterion breaches on censored, `eval_time` and engine-parameter inputs outside the fixtures; disposition to the gate.
 
 ## Decisions
 
@@ -122,7 +123,7 @@ _Evidence gathered 2026-09-02 on branch `m049-inner-metrics-column` at 8df4c7e (
 ### Consistency gate
 
 - `cairn_validate.py`: all checks passed, 18 references-staleness advisories only (the standing set). No IP/GP text changed in DESIGN.md, so `cairn_impact.py --changed` is skipped.
-- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, with no milestone number in user-facing text. No new top-level files. `devtools::check()`: pending.
+- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, with no milestone number in user-facing text. No new top-level files. `devtools::check()`: 0 errors, 0 warnings, 0 notes.
 
 ### Independent review
 
