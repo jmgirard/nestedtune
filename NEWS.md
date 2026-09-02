@@ -3,7 +3,8 @@
 * `nested_tune_bayes()` runs the outer loop of nested cross-validation with
   `tune::tune_bayes()` as the inner tuner. On each outer fold it scores
   `initial` space-filling candidates on the fold's inner resamples, lets a
-  Gaussian process propose `iter` more under `objective`, selects the best,
+  Gaussian process propose up to `iter` more under `objective`, selects the
+  best,
   and fits and scores the outer split -- what `nested_tune_grid()` does around
   `tune::tune_grid()`, through the same loop, so the seed contract, the
   parallel path, the results object and its methods are shared. Two rules are

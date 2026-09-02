@@ -652,7 +652,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-payload.R",
-      287L,
+      295L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a daemon receives the payload rehydrated, not the leaned one"

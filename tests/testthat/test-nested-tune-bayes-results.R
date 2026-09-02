@@ -11,7 +11,7 @@
 # a fit -- a candidate scored in iteration 1 on one resample and iteration 0
 # on none, one that scored on two resamples, and a resample that scored
 # nothing.
-candidate_frame <- function(config, value, iter = NULL) {
+candidate_frame <- function(config, value) {
   out <- data.frame(
     df1 = value,
     .metric = "rmse",

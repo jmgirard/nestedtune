@@ -26,9 +26,10 @@
 #'   scores the initial candidates and proposes nothing, which makes the run
 #'   the same as [nested_tune_grid()] on the space-filling grid those
 #'   candidates form. tune stops a fold's search early when no unscored
-#'   candidate remains, saying so on the console and keeping what it has; the
-#'   fold completes with the candidates scored so far, and nothing about the
-#'   early stop reaches `.notes`.
+#'   candidate remains, saying so on the console and keeping what it has, and
+#'   after ten consecutive iterations without improvement (its `no_improve`
+#'   default, not settable here); the fold completes with the candidates
+#'   scored so far, and nothing about the early stop reaches `.notes`.
 #' @param initial The number of candidates to score before the first
 #'   iteration: a single whole number of at least 2. Each fold generates its own
 #'   space-filling set of that size from the parameter ranges with
@@ -120,12 +121,15 @@
 #' tuning seed and built inside that seed's scope, as the section above
 #' describes.
 #'
-#' Not offered: `no_improve`, `uncertain` and `time_limit`, the three settings
-#' that stop a search before `iter` is reached -- every fold runs the full
-#' `iter`, or until its candidates are exhausted; `save_gp_scoring`, `verbose`
-#' and `verbose_iter`, which would print from a mirai daemon where nothing
-#' shows it; and the slots that would have nothing to act on here, for the
-#' reasons [nested_tune_grid()] gives.
+#' Not offered: `no_improve`, `uncertain` and `time_limit`, which keep
+#' [tune::control_bayes()]'s defaults -- a fold's search stops once ten
+#' consecutive iterations have brought no improvement (`no_improve = 10`),
+#' takes no uncertainty sample (`uncertain = Inf`) and runs under no time
+#' limit (`time_limit = NA`) -- so a fold may stop short of `iter`, and its
+#' `.grid` records how far it went; `save_gp_scoring`, `verbose` and
+#' `verbose_iter`, which write to a daemon's temporary directory or print
+#' where nothing collects it; and the slots that would have nothing to act on
+#' here, for the reasons [nested_tune_grid()] gives.
 #'
 #' @examples
 #' \donttest{

@@ -39,9 +39,10 @@ proposes one candidate and scores it on the fold's inner resamples. \code{0}
 scores the initial candidates and proposes nothing, which makes the run
 the same as \code{\link[=nested_tune_grid]{nested_tune_grid()}} on the space-filling grid those
 candidates form. tune stops a fold's search early when no unscored
-candidate remains, saying so on the console and keeping what it has; the
-fold completes with the candidates scored so far, and nothing about the
-early stop reaches \code{.notes}.}
+candidate remains, saying so on the console and keeping what it has, and
+after ten consecutive iterations without improvement (its \code{no_improve}
+default, not settable here); the fold completes with the candidates
+scored so far, and nothing about the early stop reaches \code{.notes}.}
 
 \item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
 derive one from the workflow. Passed unchanged to \code{\link[tune:tune_bayes]{tune::tune_bayes()}} on
@@ -196,12 +197,15 @@ parallelism belongs over the outer folds; and \code{seed}, set to the fold's
 tuning seed and built inside that seed's scope, as the section above
 describes.
 
-Not offered: \code{no_improve}, \code{uncertain} and \code{time_limit}, the three settings
-that stop a search before \code{iter} is reached -- every fold runs the full
-\code{iter}, or until its candidates are exhausted; \code{save_gp_scoring}, \code{verbose}
-and \code{verbose_iter}, which would print from a mirai daemon where nothing
-shows it; and the slots that would have nothing to act on here, for the
-reasons \code{\link[=nested_tune_grid]{nested_tune_grid()}} gives.
+Not offered: \code{no_improve}, \code{uncertain} and \code{time_limit}, which keep
+\code{\link[tune:control_bayes]{tune::control_bayes()}}'s defaults -- a fold's search stops once ten
+consecutive iterations have brought no improvement (\code{no_improve = 10}),
+takes no uncertainty sample (\code{uncertain = Inf}) and runs under no time
+limit (\code{time_limit = NA}) -- so a fold may stop short of \code{iter}, and its
+\code{.grid} records how far it went; \code{save_gp_scoring}, \code{verbose} and
+\code{verbose_iter}, which write to a daemon's temporary directory or print
+where nothing collects it; and the slots that would have nothing to act on
+here, for the reasons \code{\link[=nested_tune_grid]{nested_tune_grid()}} gives.
 }
 
 \examples{

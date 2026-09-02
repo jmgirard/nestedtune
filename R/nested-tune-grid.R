@@ -673,8 +673,10 @@ scored_candidates <- function(tuned) {
   #
   # No raising input is known HERE, and the reason is narrower than it looks:
   # the ordering below runs on `key[first]`, which is `.config` or a pasted
-  # string, never on a parameter column. `order()` DOES raise on a list-valued
-  # parameter column, which is why `candidate_key()` in nested-results-print.R
+  # string, and on `.iter` where a frame carries one, which is tune's integer
+  # iteration counter -- never on a parameter column. `order()` DOES raise on
+  # a list-valued parameter column, which is why `candidate_key()` in
+  # nested-results-print.R
   # renders rows before ordering them -- an earlier comment here claimed the
   # opposite, having measured this function and concluded something about that
   # one (M21 review F1, F2).

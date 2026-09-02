@@ -141,7 +141,11 @@ test_that("a fold's dispatch carries the data exactly once", {
   fx <- fixture_design()
   shared <- fx$data
   sentinel <- sentinel_of(shared)
-  args <- list(object = payload_fixture_workflow(), grid = 3, metrics = NULL)
+  args <- list(
+    object = payload_fixture_workflow(),
+    tuner = tuner_grid(3),
+    metrics = NULL
+  )
 
   for (i in seq_len(nrow(fx$design))) {
     fat <- fat_payload(fx$design, i)
@@ -177,7 +181,11 @@ test_that("a leaned run puts under a quarter of the pre-milestone bytes on the w
   fx <- fixture_design()
   shared <- fx$data
   args_bytes <- payload_bytes(
-    list(object = payload_fixture_workflow(), grid = 3, metrics = NULL)
+    list(
+      object = payload_fixture_workflow(),
+      tuner = tuner_grid(3),
+      metrics = NULL
+    )
   )
   n_folds <- nrow(fx$design)
 
@@ -194,7 +202,7 @@ test_that("a leaned run puts under a quarter of the pre-milestone bytes on the w
   lean_args_bytes <- payload_bytes(
     list(
       object = payload_fixture_workflow(),
-      grid = 3,
+      tuner = tuner_grid(3),
       metrics = NULL,
       data = shared
     )

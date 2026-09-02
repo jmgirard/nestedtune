@@ -54,18 +54,27 @@ run_tuner <- function(
   seed
 ) {
   control <- tuner_control(tuner, event_level = event_level, seed = seed)
-  call <- rlang::call2(
-    tuner$tuner,
-    object,
-    resamples = resamples,
-    param_info = param_info,
-    metrics = metrics,
-    eval_time = eval_time,
-    !!!tuner$args,
-    control = control,
-    .ns = "tune"
+  # The call is built over symbols and evaluated where they are bound, never
+  # over the values themselves: a condition tune raises carries its call, and
+  # a call holding the workflow inline holds the recipe's training data with
+  # it -- 172,000 characters of deparsed call on a 400-row fixture against 173
+  # over symbols (measured 2026-09-01, M45 review). `object` stays positional
+  # so the call reads as a by-hand one would.
+  args <- c(
+    list(
+      object = object,
+      resamples = resamples,
+      param_info = param_info,
+      metrics = metrics,
+      eval_time = eval_time
+    ),
+    tuner$args,
+    list(control = control)
   )
-  rlang::eval_bare(call)
+  syms <- rlang::syms(names(args))
+  names(syms) <- c("", names(args)[-1L])
+  call <- rlang::call2(tuner$tuner, !!!syms, .ns = "tune")
+  rlang::eval_bare(call, rlang::new_environment(args, parent = baseenv()))
 }
 
 tuner_control <- function(tuner, event_level, seed) {

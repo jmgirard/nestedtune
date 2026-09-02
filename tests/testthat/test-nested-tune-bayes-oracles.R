@@ -139,8 +139,9 @@ test_that("at iter = 0 the Bayesian path is the grid path on the space-filling g
   # The grid every fold's Bayesian run scores: built once, outside any seed
   # scope, which is the O2 premise -- and asserted rather than assumed, so a
   # dials release that started drawing this design would fail here by name.
-  g <- dials::grid_space_filling(p, size = 3)
   set.seed(1)
+  g <- dials::grid_space_filling(p, size = 3)
+  set.seed(2)
   again <- dials::grid_space_filling(p, size = 3)
   expect_identical(again, g)
   expect_identical(nrow(g), 3L)
