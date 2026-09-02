@@ -1278,6 +1278,65 @@ state. A user wanting a tuned fit with no nested run has `tune::fit_best()`
 and `tune::last_fit()`. Falsified by a real need for a final fit from a
 design alone that those two do not serve.
 
+### D-042 (2026-09-02): `control` reaches the inner tuning call through `...`, merged with the slots this package forces — supersedes the per-slot clause of D-030 and the `control` rejection of D-040, and keeps D-010's "no `control` formal"
+
+**Context:** issue #33 asked for `...` to reach `tune_grid()`, and issue #35
+noted `nested_tune_bayes()` passes nothing and asked for `no_improve` and
+`uncertain`. D-030 answered with one narrow argument per slot and D-040
+rejected a `control` argument on those grounds, parking the three Bayesian
+slots on a candidate row. topepo's replies of 2026-09-02 settle the shape:
+no named `control` formal, since that name is reserved for a future control
+of the outer work, but a `control` object passed through `...` reaches the
+inner call, with the slots that are inert or not returned documented.
+
+**Decision:** `...` on both orchestrators accepts `control` and nothing
+else. The control that runs is the caller's, or tune's default, with the
+forced slots overwritten — `allow_par = FALSE`, the fold's tuning seed as the
+Bayesian `seed` — and `event_level` from the argument, a disagreeing control
+refused. The `procedure` attribute records that effective control, `seed`
+dropped, so the final fit re-runs it. Considered and rejected: a named
+`control` formal (topepo reserves it); forwarding the Gaussian-process
+fitter's options on the Bayes sibling (a second, unbounded name domain on
+one sibling only, against GP3); refusing every forced slot (both controls
+default `allow_par` to `TRUE`, so every default control would be refused).
+
+**Consequences:** D-030's rule that every further slot is its own argument
+is superseded; `event_level` and `eval_time` stay as arguments, and the help
+pages classify every control slot under one heading. D-010's "no `control`
+argument" survives as "no `control` formal". `time_limit` passes through
+with a documented caveat: a wall-clock stop makes the candidate set depend
+on the machine, outside what IP2 can promise. Falsified by a caller needing
+a setting of the inner call that no control slot carries.
+
+### D-043 (2026-09-02): `nested_results` keeps each fold's inner metrics as `.inner_metrics` in place of `.grid`, and `.selected` stays — supersedes D-031's column list and D-023's `.grid` clause, and annotates D-023's one-shape clause
+
+**Context:** issue #57 asks for the inner run's metrics per fold, to plot a
+Bayesian search's trajectory and to compute the best candidate on the fly,
+and suggests dropping `.selected`. `.grid` holds candidate identities only,
+derived from the same frames `collect_metrics()` summarizes; the summarized
+table measured about the size of `.grid` and `.selected` together.
+
+**Decision:** a `.inner_metrics` list column, each fold's
+`tune::collect_metrics()` of its inner run (`.iter` for the Bayesian tuner),
+replaces `.grid`; the candidate set a reader needs is derived from its
+distinct parameter rows. `.selected` stays: it records what the fold's outer
+fit used under `select_best()`'s tie rules, and DESIGN.md names retained
+selections as first-class. The invariant column set D-031 fixed reads
+`.inner_metrics` where it read `.grid`. `extract_scored_candidates()` on the
+final fit keeps its candidate shape, so the two surfaces no longer share
+one shape — the one-shape clause of D-023 is annotated, not kept.
+Considered and rejected: dropping `.selected` (a tie may resolve
+differently from what ran); keeping `.grid` beside the new column (a
+derivable column, twice the record).
+
+**Consequences:** a results object grows by the summarized inner table per
+fold; the M23 payload tests measure outbound dispatch and do not bound it.
+D-030's falsifier — the inner run retained — is not met: metrics are kept,
+predictions and extracts are not, so `save_pred` and `extract` still have
+nothing to act on. Pre-1.0, no deprecation (D-003). Falsified by a user
+needing the inner run's predictions, which would reopen the retention
+question.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
