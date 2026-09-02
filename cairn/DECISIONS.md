@@ -1185,6 +1185,41 @@ absent; the count and its members are recorded in M41's work log. Falsified by
 tune's value validation diverging from this check, or by the check legs failing
 to install `censored`.
 
+### D-039 (2026-09-01): `agreement()` is a package-owned S3 generic tabulating how often each selected parameter combination was chosen across the outer folds — the third generic this package defines, on the shape D-023 fixed, and answers issue #36
+
+**Context:** Issue #36 (topepo) asks for a method reporting candidate
+selection frequencies across the outer folds. The facts are on the object:
+`.selected` holds each fold's `tune::select_best()` row, `summary()` prints
+them per parameter and `autoplot(type = "parameters")` draws them, and nothing
+returns them as a table. Verified 2026-09-01 by execution against the
+installed tune, hardhat and generics namespaces: none exports `agreement`,
+`consensus` or `collect_selections`, so an owned generic is the route D-023
+already took.
+
+**Decision:** `agreement()` — a `nested_results` method and a default method
+aborting as a classed nestedtune condition — returns one row per distinct
+combination of selected parameter values with `n` (completed folds that chose
+it) and `prop` (`n` over the completed fold count), most frequent first,
+`.config` dropped because it labels a fold's own tuning run and folds can
+search different grids (M21). Considered and rejected at the M44 plan gate:
+`consensus()` (reads as naming one winner, which is the modal-vote route to a
+final model that D-014 rejected); `collect_selections()` (tune's `collect_`
+family stacks per-resample rows rather than tallying them, so the name promises
+another shape); a long-form `tidy()` method on `generics::tidy()` (a new import
+and a dependency decision for a shape `.selected` already holds; declined, no
+candidate row); one empty-tuple row for a workflow with nothing to tune (keeps
+`sum(n)` universal, but claims a candidate where `summary()` says none was
+tuned — zero rows instead).
+
+**Consequences:** the export list gains one name and the namespace a third
+owned generic beside `extract_tune_results()` and `extract_scored_candidates()`;
+a later upstream definition of the name is a masking conflict resolved by
+dropping ours, pre-1.0 without a deprecation cycle (D-003). D-010's and
+D-014's refusals stand: nothing here ranks outer folds or names a model, and
+the help page says the most frequent row is not the final model's parameters.
+The refusal on an all-failed run is `check_any_completed()`'s, shared with the
+other accessors (IP4).
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
