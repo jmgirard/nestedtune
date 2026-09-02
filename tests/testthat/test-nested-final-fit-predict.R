@@ -182,6 +182,14 @@ test_that("AC3: predict() forwards an unknown argument to parsnip's refusal", {
     conditionMessage(cnd),
     "not used to pass args to the model function's predict function"
   )
+  # The delegation pin: the workflow's own path refuses with the same message,
+  # so the refusal is parsnip's on `nonesuch`, not one this method provoked
+  # by injecting a name of its own into `...`.
+  theirs <- rlang::catch_cnd(
+    predict(extract_workflow(final), new_data = d, nonesuch = 1),
+    classes = "error"
+  )
+  expect_identical(conditionMessage(cnd), conditionMessage(theirs))
 })
 
 test_that("AC3: predict() without `new_data` raises the workflow's own error", {

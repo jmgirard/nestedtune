@@ -52,9 +52,13 @@ fold failed — stays on its own candidate row.
       method's own formals (`new_data`, and `eval_time` on the censored fixture), asserted in the same
       file.
 - [ ] AC3: Argument handling, asserted in the same file. `predict(final, new_data, nonesuch = 1)`
-      raises an error whose message names `nonesuch` as an argument the model's predict function does
-      not take (parsnip's wording, which the test matches); `predict(final)` with no `new_data` raises
-      the error the workflow's own `predict()` raises for a missing `new_data`; `augment(final,
+      raises the same error, by message, that `predict(extract_workflow(final), new_data, nonesuch
+      = 1)` raises — parsnip's `check_pred_type_dots()` refusal, identified by its wording ("not used
+      to pass args to the model function's predict function"; parsnip 1.6.0 prints the literal
+      placeholder `bad_args` rather than the argument's name, so the claim is about the refusal, not
+      the name it reports); `predict(final)` with no `new_data` fails with the same message as
+      `predict(extract_workflow(final))` with no `new_data` (R's missing-argument error in both, the
+      workflow forcing `new_data` before use), so the method adds no error of its own; `augment(final,
       new_data, nonesuch = 1)` raises `rlib_error_dots_nonempty`.
 - [ ] AC4: The help page documenting both methods states that augmenting the rows the model was
       trained on yields in-sample residuals that are not this model's performance, that the number to
@@ -69,9 +73,12 @@ fold failed — stays on its own candidate row.
       the vignette sentence at `:324-326` reworded to say the object predicts directly and still naming
       `extract_workflow()` as the way to the workflow itself; `README.md` regenerated from `README.Rmd`.
 - [ ] AC6: The refusals stand: `tune::collect_metrics()`, `tune::show_best()` and `tune::select_best()`
-      on a `nested_final_fit` each still raise R's "no applicable method" error, asserted by a test in
-      the same file, with a registry read (`getNamespaceInfo(asNamespace("nestedtune"), "S3methods")`)
-      showing no method of this package registered on any of the three.
+      on a `nested_final_fit` each still raise the refusal tune's own default method raises, asserted
+      by a test in the same file, each message matching tune's default wording (`No .* exists for`,
+      tune 2.1.0) rather than R's "no applicable method", which is how D-010's and D-014's
+      consequences clauses describe the same refusal; with a registry read
+      (`getNamespaceInfo(asNamespace("nestedtune"), "S3methods")`) showing no method of this package
+      registered on any of the three.
 - [ ] AC7: The profile's verify slot: `devtools::document()` produces no diff, `devtools::test()`
       passes, and `devtools::check()` reports 0 errors, 0 warnings and no NOTE the previous check on
       the default branch did not carry.
@@ -120,6 +127,8 @@ fold failed — stays on its own candidate row.
 - 2026-09-02: T2 — `R/nested-final-fit-predict.R` (both methods, one help page `predict.nested_final_fit` with the IP3 caveat and the dots divergence), `augment` re-exported in `R/reexports.R`; `document()` run. T3 — `predict.nested_final_fit` added to `DOTS_EXEMPT_METHODS` with its reason. Predict and dots-barrier files green.
 - 2026-09-02: amendment pending (substantive, AC3 and AC6): parsnip 1.6.0's `check_pred_type_dots()` prints the literal placeholder `bad_args` instead of the argument's name, so AC3's "names `nonesuch`" clause is unsatisfiable; tune 2.1.0 refuses `collect_metrics()`/`show_best()`/`select_best()` through its own default methods ("No `<generic>()` exists for ..."), never R's "no applicable method", so AC6's failure identity was wrong. Tests written to the corrected identities; amended wording sent to a fresh [O] reader for the full-mode audit before the mini gate.
 - 2026-09-02: T4 — pkgdown row, NEWS entry, `nested_final_fit()` roxygen (`@return`, example, `@seealso`), README.Rmd/README.md (`build_readme()`, one line changed), vignette sentence and chunk, DESIGN function-family line and constructor paragraph; `document()` no further diff, `pkgdown::check_pkgdown()` no problems.
+- 2026-09-02: full-mode criteria audit of the amended AC3/AC6 ([O] fresh reader) returned one minor instrument finding (AC3's "so the name is not asserted" aside) and two failure-identity gaps (AC3's clauses 1 and 2 could not tell parsnip's refusal or the workflow's missing-argument error from one the method raised itself), plus the note that D-010's and D-014's consequences clauses call the refusal "no applicable method"; all three wording recommendations applied, the delegation-pin comparison added to the AC3 test.
+- 2026-09-02: amendment (substantive) accepted at the mini gate: AC3 and AC6 reworded to the failures parsnip 1.6.0 and tune 2.1.0 actually raise (text as now in the Acceptance criteria section); no criterion added, removed or reordered.
 
 ## Decisions
 
