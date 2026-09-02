@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Resolves:** —
 - **Principles touched:** IP2, IP3, IP4, GP2, GP3
-- **Branch/PR:** m046-final-fit-recorded-procedure
+- **Branch/PR:** m046-final-fit-recorded-procedure · https://github.com/tidymodels/nestedtune/pull/55
 
 ## Goal
 
