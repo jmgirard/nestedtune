@@ -1,6 +1,6 @@
 # M45: The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -70,7 +70,7 @@ candidate row (added 2026-09-01), an IP1 question on the grid path today.
 - [x] T4: `nested_tune_bayes()` in `R/nested-tune-bayes.R` with roxygen (AC8's section, an engines-guarded example), the `nested_tune_grid()` cross-reference, `_pkgdown.yml`, `NEWS.md`, DESIGN's family line and architecture paragraph; `bayes_param_info()` fixture — a finalized, integer-only parameter set on the deterministic workflow — and a stochastic-engine sibling in `helper-orchestration.R`, built inline where a daemon is involved (M12 lesson).
 - [x] T5: Oracles and the readers test (`test-nested-tune-bayes-oracles.R`, provenance header per DESIGN): `reference_nested_bayes_loop()` for AC2 on both fixtures; the AC3 invariant; the AC5 record assertions; the AC1 readers test, its method list taken from `grep 'nested_results)' NAMESPACE` at implementation time and each method called once.
 - [x] T6: `test-nested-tune-bayes-rng.R` with AC4's eight properties; a BC10 test in `test-parallel-identity.R` at two daemon counts, its `start_daemons()` waits added as ledger rows in `helper-time-budget.R`; the AC7 before-and-after comparison, its command and result written to the work log.
-- [ ] T7: `air format .`, `devtools::document()`, `devtools::test()`, `devtools::check()`; NEWS wording derived from the shipped behaviour, not composed.
+- [x] T7: `air format .`, `devtools::document()`, `devtools::test()`, `devtools::check()`; NEWS wording derived from the shipped behaviour, not composed.
 
 ## Work log
 
@@ -86,6 +86,7 @@ candidate row (added 2026-09-01), an IP1 question on the grid path today.
 - 2026-09-01: T4 done. Help page with the "Differences from calling tune directly" section, the seed rule and the by-hand recipe, an example on two tunable recipe steps (a single four-level parameter exhausts tune's search at `initial = 2, iter = 2`, printing a backtrace and returning early with no note — measured, and stated on `iter`); `nested_tune_grid()` names its sibling in the description, `@return` and `@seealso`; the five method pages and `agreement()`'s no-method hint name both orchestrators; `_pkgdown.yml`, NEWS, DESIGN's family line and architecture paragraph. Fixtures: `bayes_workflow()` (two `step_ns()` tunables, `df1`/`df2`), `bayes_param_info()` (1..10 each), and `bayes_stoch_param_info()` narrowing ranger's `min_n` to 2..25 — at 40 a candidate predicts a constant, yardstick warns, and the note's backtrace differs between host and daemon, which would fail BC10 on the trace alone; T4's "stochastic-engine sibling" is `stoch_workflow()` under that set. `bayes_results()` spells the shared run once for the cache.
 - 2026-09-01: T5 done. `test-nested-tune-bayes-oracles.R`: O1 the reference loop on both fixtures, O2 the `iter = 0` identity with `nested_tune_grid()` on `dials::grid_space_filling(p, size = 3)` (asserted seed-independent in the test, not assumed), the readers test over the NAMESPACE lines the AC1 grep selects plus the four pair methods it skips, the two casts into the class asserting their documented refusal (D-032). Full suite clean. AC5's record assertions sit in `test-nested-tune-bayes-results.R` (T2).
 - 2026-09-01: T6 done. `test-nested-tune-bayes-rng.R`: the eight AC4 properties plus a ninth pinning through a mocked `tuner_control()` that the seed handed to `control_bayes()` is the fold's tuning seed and the generator state at that moment is `set_fold_seed()`'s. BC10 appended to `test-parallel-identity.R` (serial vs 2 and 3 daemons, whole object), its `start_daemons()` rowed at `:595` with `times = 2L`. AC7 comparison: `git archive origin/main` extracted to the scratchpad, `pkgload::load_all()` of each tree in its own `Rscript`, each tree's own `helper-orchestration.R` sourced, `nested_tune_grid()` run on the deterministic fixture (`det_grid()`), the continuous one (`grid = 5`) and the stochastic one under seeds 11/20, 11/20 and 12/21, `.metrics`/`.selected`/`.grid` saved and compared with `identical()` — nine of nine TRUE (script: scratchpad `ac7/grid-path.R`, `ac7/compare.R`; result logged here since the scratchpad is session-local).
+- 2026-09-01: T7 done. `air format .` changes nothing, `devtools::document()` produces no diff, `devtools::test()` clean (the readers test first read NAMESPACE by a source-tree path that R CMD check's installed copy lacks; it now reads `system.file("NAMESPACE", package = "nestedtune")`), `devtools::check()` 0 errors, 0 warnings, 0 notes. NEWS wording derived from the shipped behaviour and the probes above. Status → review.
 
 ## Decisions
 

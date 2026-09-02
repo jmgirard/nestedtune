@@ -273,7 +273,10 @@ test_that("every nested_results method in NAMESPACE runs on a Bayesian result", 
     }
   )
 
-  namespace <- readLines(test_path("..", "..", "NAMESPACE"))
+  # The installed file rather than a source-tree path: under `R CMD check`
+  # the tests run against the built package, where `..` holds no NAMESPACE,
+  # and pkgload shims `system.file()` to the source root under `load_all()`.
+  namespace <- readLines(system.file("NAMESPACE", package = "nestedtune"))
   registered <- namespace[grepl("nested_results)", namespace, fixed = TRUE)]
   # The enumeration cannot silently empty: the class has methods.
   expect_gt(length(registered), 10L)
