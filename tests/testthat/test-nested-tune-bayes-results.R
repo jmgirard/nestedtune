@@ -327,3 +327,40 @@ test_that("the procedure survives a row reorder and goes with the class", {
   expect_false(inherits(narrowed, "nested_results"))
   expect_null(attr(narrowed, "procedure"))
 })
+
+# ---- the inner table on a fold that scored nothing (M49) ---------------------
+
+test_that("a Bayesian fold that scored nothing carries a zero-row table with .iter", {
+  skip_if_no_bayes_fixture()
+
+  # A fold whose inner tuning fails outright scores nothing, and its table is
+  # a zero-row stand-in under the completed folds' columns (AC1). On the
+  # Bayesian path those columns include `.iter`, so a reader drawing the
+  # search trajectory across folds meets the same columns on every one.
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  nested <- break_fold(det_nested(d), fold = 2L, stage = "inner tuning")
+  p <- bayes_param_info(wf)
+
+  set.seed(20)
+  res <- suppressWarnings(memoised(nested_tune_bayes(
+    wf,
+    nested,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = reg_metrics()
+  )))
+
+  expect_false(res$.completed[[2L]])
+  expect_true(res$.completed[[1L]])
+  none <- res$.inner_metrics[[2L]]
+  done <- res$.inner_metrics[[1L]]
+  expect_identical(nrow(none), 0L)
+  expect_true(".iter" %in% names(none))
+  expect_identical(names(none), names(done))
+  expect_identical(
+    vapply(none, function(col) class(col)[[1L]], character(1)),
+    vapply(done, function(col) class(col)[[1L]], character(1))
+  )
+})

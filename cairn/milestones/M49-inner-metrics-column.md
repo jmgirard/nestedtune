@@ -71,7 +71,7 @@ for that generic → not planned; a user control on the inner run → M48.
 
 ## Tasks
 
-- [ ] T1: Tests first: extend the hand-run oracles (`test-nested-tune-grid-oracles.R` O3, `test-nested-tune-bayes-oracles.R`)
+- [x] T1: Tests first: extend the hand-run oracles (`test-nested-tune-grid-oracles.R` O3, `test-nested-tune-bayes-oracles.R`)
       to `.inner_metrics`; the tuned-then-failed, nothing-scored and partial-inner-split shapes in
       `test-nested-tune-grid-failures.R`; the zero-row prototype.
 - [ ] T2: Fold worker: `nested_fold_fit()` (`R/nested-tune-grid.R:643-652`) and `failed_fold()` (`:802-820`) record the
@@ -93,6 +93,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: criteria audit ran in full mode by a fresh [O] reader; for M49 it returned: the column was never named (now `.inner_metrics`, gate); AC2's grep matched `expand.grid` in the vignette and README (pattern fixed); deriving candidate sets from distinct `.config` rows would collapse the differing-grid snapshot whose folds share labels (derived from parameter rows instead); AC3 rested on green tests rather than unchanged output (now an empty diff and unchanged snapshots); `has_results_columns()` omitted from AC5 (added); the partial-inner-split case unprobed (added to AC1); the final-fit accessor's shape left implicit (settled: kept, recorded in D-043).
 - 2026-09-02: plan gate chose keeping `.selected` over dropping it for an on-the-fly `slice_min()` because it records what the outer fit used under `select_best()`'s tie rules and DESIGN.md's selection-stability stance names it; falsified by evidence that recomputing from `.inner_metrics` always reproduces it.
 - 2026-09-02: plan chose leaving `extract_scored_candidates()` unchanged over reshaping it to the metrics table because nothing on the final fit is broken and the divergence is one sentence in D-043; falsified by a user comparing the two surfaces row for row.
+- 2026-09-02: gate: proceed without escalation on the ip-touching criteria (the hand-run `collect_metrics()` oracle is available); one candidate derivation over the metrics table, the final fit applying it to `collect_metrics()` of its tuning run. T1: `.inner_metrics` oracles on both hand-run loops, the outer-fit-failed, nothing-scored (both branches), partial-inner-split and Bayesian nothing-scored shapes; red on the missing column until T2.
 
 ## Decisions
 

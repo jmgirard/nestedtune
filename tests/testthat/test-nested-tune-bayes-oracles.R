@@ -81,6 +81,13 @@ test_that("per-fold metrics and selections match a hand-rolled Bayesian referenc
   for (i in seq_len(nrow(res))) {
     expect_identical(res$.metrics[[i]], ref[[i]]$metrics)
     expect_identical(res$.selected[[i]], ref[[i]]$selected)
+    # The inner table (M49, AC1): tune's own summary of the hand run, the
+    # `.iter` column included, so a search trajectory can be drawn from it.
+    expect_identical(
+      res$.inner_metrics[[i]],
+      tune::collect_metrics(ref[[i]]$tuned)
+    )
+    expect_true(".iter" %in% names(res$.inner_metrics[[i]]))
   }
 
   # The search ran: at least one proposal was scored in some fold. Without
@@ -125,6 +132,12 @@ test_that("a control passed through `...` reaches every fold (M48, AC1)", {
     # The candidate set, as the hand run scored it: the same rows in the
     # same order, so a fold that stopped early stopped where tune stopped.
     expect_identical(res$.grid[[i]], scored_candidates(ref[[i]]$tuned))
+    # And the table under a control that stops folds early holds exactly the
+    # iterations the hand run reached (M49, AC1).
+    expect_identical(
+      res$.inner_metrics[[i]],
+      tune::collect_metrics(ref[[i]]$tuned)
+    )
   }
 
   # The control changed the run: `no_improve = 2` stopped at least one fold

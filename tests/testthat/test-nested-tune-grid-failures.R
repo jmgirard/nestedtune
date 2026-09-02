@@ -274,6 +274,14 @@ test_that("a fold that completed on a truncated inner design keeps tune's notes"
   )))
   # A genuinely clean fold still carries nothing.
   expect_identical(nrow(res$.notes[[1L]]), 0L)
+
+  # The inner table says the same thing in numbers (M49, AC1): every
+  # candidate of fold 2 scored on two of its three inner resamples, so its
+  # `n` is below the inner resample count, while a clean fold's is the count.
+  partial <- res$.inner_metrics[[2L]]
+  expect_identical(nrow(partial), nrow(res$.inner_metrics[[1L]]))
+  expect_true(all(partial$n < 3L))
+  expect_true(all(res$.inner_metrics[[1L]]$n == 3L))
 })
 
 test_that("a row subset carries no record of the run at all", {
@@ -433,6 +441,25 @@ test_that("a fold that failed at the outer fit keeps the grid its tuning scored"
   expect_false(res$.completed[[3L]])
   expect_identical(nrow(res$.grid[[3L]]), 3L)
   expect_identical(sort(res$.grid[[3L]]$num_comp), 1:3)
+
+  # And it keeps the inner table that tuning produced (M49, AC1), checked
+  # against tune re-run by hand under the fold's own seed: the outer failure
+  # came after the inner run, so the table is the completed run's, not a
+  # zero-row stand-in for a fold that did tune.
+  set.seed(
+    res$.tuning_seed[[3L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  tuned <- tune::tune_grid(
+    det_workflow(d),
+    resamples = nested$inner_resamples[[3L]],
+    grid = det_grid(),
+    metrics = reg_metrics(),
+    control = tune::control_grid(allow_par = FALSE)
+  )
+  expect_identical(res$.inner_metrics[[3L]], tune::collect_metrics(tuned))
 })
 
 test_that("a fold that scored nothing records an empty table, never NULL", {
@@ -457,6 +484,24 @@ test_that("a fold that scored nothing records an empty table, never NULL", {
   # A NULL here would be indistinguishable from a column that was never filled,
   # and would make every lapply() over `.grid` special-case one fold.
   expect_false(any(vapply(res$.grid, is.null, logical(1))))
+
+  # The inner table of a fold that scored nothing (M49, AC1): zero rows under
+  # a completed fold's columns, name for name and type for type, so a reader
+  # stacking the folds' tables never meets a fold whose columns differ. It is
+  # built without asking tune for it: `collect_metrics()` raises on a run in
+  # which every candidate failed (the M03 lesson), which is exactly this fold.
+  none <- res$.inner_metrics[[2L]]
+  done <- res$.inner_metrics[[1L]]
+  expect_true(is.data.frame(none))
+  expect_identical(nrow(none), 0L)
+  expect_identical(names(none), names(done))
+  expect_identical(
+    vapply(none, function(col) class(col)[[1L]], character(1)),
+    vapply(done, function(col) class(col)[[1L]], character(1))
+  )
+  # The passing control: the completed fold's table is not itself empty, so
+  # the identities above compare against real columns.
+  expect_true(nrow(done) > 0L)
 })
 
 # The thrown-error branches at each stage (M03 review, F3). The fixtures above
@@ -490,6 +535,19 @@ test_that("an error raised by tune_grid() itself is recorded, not propagated", {
   expect_false(any(res$.completed))
   expect_identical(res$.notes[[1L]]$location[[1L]], "inner tuning")
   expect_true(any(grepl("will not be tuned", res$.notes[[1L]]$note)))
+
+  # No fold completed, so there is no completed fold's table to copy the
+  # columns from: the zero-row table is built from the workflow's tuned
+  # parameter and tune's summary columns instead (M49, AC1). This is the one
+  # branch where tuning returned nothing at all, not even a run to read.
+  for (m in res$.inner_metrics) {
+    expect_identical(nrow(m), 0L)
+    expect_identical(
+      names(m),
+      c("num_comp", ".metric", ".estimator", "mean", "n", "std_err", ".config")
+    )
+    expect_type(m$num_comp, "integer")
+  }
 })
 
 test_that("an error raised by last_fit() is recorded against the outer fit", {
