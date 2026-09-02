@@ -1,17 +1,21 @@
 # Summarize a final fit
 
 Answers what the final fit means: the full-data tuning run the selection
-came from, how many candidates that run scored, which parameter values
-it selected, and where this model's honest performance estimate lives.
+came from, which procedure ran it and at what counts, how many
+candidates that run scored, which parameter values it selected, and
+where this model's honest performance estimate lives.
 
 The estimate component is always `NULL`, and that is the point. The
 tuning run stored on the object has metrics, but selection consumed them
 and they are optimistically biased as a claim about this model; the
-nested estimate from
+nested estimate on the results object the fit was built from – the
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-is the one to report (IP3). The absence is carried as a component rather
-than left out, so a caller reading the summary meets a recorded fact
-instead of a missing name.
+or
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+result – is the one to report (IP3). The absence is carried as a
+component rather than left out, so a caller reading the summary meets a
+recorded fact instead of a missing name; the four Bayesian counts are
+carried as `NULL` on a grid fit for the same reason.
 
 ## Usage
 
@@ -43,10 +47,17 @@ print(x, ...)
 
 [`summary()`](https://rdrr.io/r/base/summary.html) returns an object of
 class `summary.nested_final_fit`: a list holding the full-data tuning
-run's resampling label, the number of candidates that run scored, the
-parameter values selection chose, and an `estimate` component that is
-always `NULL`. Printing it is what most callers want; the components are
-there for a caller that needs a value rather than a line of text.
+run's resampling label (`tuning_label`), the tuner that ran (`tuner`,
+`"tune_grid"` or `"tune_bayes"`), the number of candidates that run
+scored (`candidates`), the Bayesian counts (`initial` and
+`initial_requested`, `iterations_completed` and `iterations_requested`,
+each `NULL` on a grid fit; the scored figures are read from the
+candidate record, the requested ones from the procedure, and a run whose
+candidate record cannot be derived reports its scored figures as zero
+rather than failing to print), the parameter values selection chose
+(`selection`), and an `estimate` component that is always `NULL`.
+Printing it is what most callers want; the components are there for a
+caller that needs a value rather than a line of text.
 
 [`print()`](https://rdrr.io/r/base/print.html) returns `x`, invisibly.
 
@@ -77,12 +88,15 @@ folds <- nested_resamples(
 )
 
 set.seed(2)
-final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+set.seed(3)
+final <- nested_final_fit(wf, res)
 
 summary(final)
 #> 
 #> ── Nested cross-validation final fit ──────────────────────────────────
 #> Full-data tuning: 3-fold cross-validation
+#> Procedure: grid search, 3 candidates scored
 #> Candidates scored: 3
 #> 
 #> ── Selected parameters ──
@@ -92,8 +106,8 @@ summary(final)
 #> ── Estimate ──
 #> 
 #> ℹ This model has no performance estimate of its own. Report the nested
-#>   estimate from `collect_metrics()` on the `nested_tune_grid()`
-#>   result, which describes the procedure that produced it.
+#>   estimate from `collect_metrics()` on the results object this fit was
+#>   built from, which describes the procedure that produced it.
 #> ℹ The tuning run above has metrics, but selection consumed them.
 #>   `extract_tune_results()` reaches them, and every one is a
 #>   selection-time quantity, optimistically biased as a claim about this

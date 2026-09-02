@@ -5,7 +5,10 @@ Returns the candidate parameter settings that
 tuning run actually evaluated — the full-data counterpart of the `.grid`
 column
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-records for each outer fold.
+and
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+record for each outer fold, derived the same way, so a Bayesian final
+fit's table carries the `.iter` column that path's `.grid` does.
 
 ## Usage
 
@@ -73,8 +76,10 @@ folds <- nested_resamples(
   inside = rsample::vfold_cv(v = 3)
 )
 
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 set.seed(3)
-final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+final <- nested_final_fit(wf, res)
 
 extract_scored_candidates(final)
 #> # A tibble: 3 × 2

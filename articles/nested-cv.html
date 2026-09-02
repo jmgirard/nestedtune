@@ -148,9 +148,9 @@ searched hard, and a section near the end of this guide says why.</p>
 random forest with two parameters marked for tuning, and an explicit
 grid of candidates.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://parsnip.tidymodels.org/reference/rand_forest.html" class="external-link">rand_forest</a></span><span class="op">(</span>mtry <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, min_n <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, trees <span class="op">=</span> <span class="fl">500</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"ranger"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_args.html" class="external-link">set_mode</a></span><span class="op">(</span><span class="st">"regression"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/parsnip/man/rand_forest.html" class="external-link">rand_forest</a></span><span class="op">(</span>mtry <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, min_n <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, trees <span class="op">=</span> <span class="fl">500</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/parsnip/man/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"ranger"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/parsnip/man/set_args.html" class="external-link">set_mode</a></span><span class="op">(</span><span class="st">"regression"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">wf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">~</span> <span class="va">.</span>, <span class="va">rf</span><span class="op">)</span></span>
 <span></span>
@@ -420,20 +420,23 @@ cannot drift apart:</p>
 <p>Nothing above produced a model you can predict with, and that is
 deliberate. The estimate describes the procedure; the model is a
 separate object, built by running that same procedure once more with the
-whole dataset in hand.</p>
+whole dataset in hand. The procedure is read from <code>res</code> – the
+design’s inner resampling specification, the grid, the metrics – so it
+cannot be restated: the model and the estimate come from one search.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">final</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nested_final_fit.html">nested_final_fit</a></span><span class="op">(</span><span class="va">wf</span>, <span class="va">folds</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span></span>
+<span><span class="va">final</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nested_final_fit.html">nested_final_fit</a></span><span class="op">(</span><span class="va">wf</span>, <span class="va">res</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">final</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Nested cross-validation final fit</span> <span style="color: #00BBBB;">──────────────────────────────────</span></span></span>
+<span><span class="co">#&gt; Procedure: grid search, 6 candidates scored</span></span>
 <span><span class="co">#&gt; Selected: mtry = 2, min_n = 2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This model has no performance estimate of its own. Report the nested</span></span>
-<span><span class="co">#&gt;   estimate from `collect_metrics()` on the `nested_tune_grid()`</span></span>
-<span><span class="co">#&gt;   result, which describes the procedure that produced it.</span></span>
+<span><span class="co">#&gt;   estimate from `collect_metrics()` on the results object this fit was</span></span>
+<span><span class="co">#&gt;   built from, which describes the procedure that produced it.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Compare the parameters above with `.selected` from that run. Outer</span></span>
 <span><span class="co">#&gt;   folds choosing differently is selection instability, and it is</span></span>
 <span><span class="co">#&gt;   information about the procedure rather than noise.</span></span>
@@ -560,8 +563,7 @@ function takes a seed of its own:</p>
 <span><span class="co">#&gt;     metrics = NULL, event_level = "first", eval_time = NULL) </span></span>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/args.html" class="external-link">args</a></span><span class="op">(</span><span class="va">nested_final_fit</span><span class="op">)</span></span>
-<span><span class="co">#&gt; function (object, resamples, ..., param_info = NULL, grid = 10, </span></span>
-<span><span class="co">#&gt;     metrics = NULL, event_level = "first", eval_time = NULL) </span></span>
+<span><span class="co">#&gt; function (object, results, ...) </span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
 <p>Each draws and pins its own per-step seeds from the session state
 instead, and stores them, so any single piece is reproducible by
@@ -578,7 +580,7 @@ random state is put back as it was found:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">before</span> <span class="op">&lt;-</span> <span class="va">.Random.seed</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="../reference/nested_final_fit.html">nested_final_fit</a></span><span class="op">(</span><span class="va">wf</span>, <span class="va">folds</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="../reference/nested_final_fit.html">nested_final_fit</a></span><span class="op">(</span><span class="va">wf</span>, <span class="va">res</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">before</span>, <span class="va">.Random.seed</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>

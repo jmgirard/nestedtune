@@ -2,6 +2,8 @@
 
 Returns the
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
+or
+[`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
 result that
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
 chose its parameters from — the record of what selection saw when the
@@ -42,8 +44,10 @@ that object is this model's performance.
 
 Report the nested estimate instead —
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
-on the
+on the results object the fit was built from, the
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+or
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
 result. That number is measured on data no part of the tune-and-fit
 procedure ever saw, which is what makes it an honest description of the
 procedure that produced your model.
@@ -76,8 +80,10 @@ folds <- nested_resamples(
   inside = rsample::vfold_cv(v = 3)
 )
 
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
 set.seed(3)
-final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+final <- nested_final_fit(wf, res)
 
 extract_tune_results(final)
 #> # Tuning results

@@ -406,22 +406,25 @@ folds.](nested-cv_files/figure-html/autoplot-performance-1.png)
 Nothing above produced a model you can predict with, and that is
 deliberate. The estimate describes the procedure; the model is a
 separate object, built by running that same procedure once more with the
-whole dataset in hand.
+whole dataset in hand. The procedure is read from `res` – the design’s
+inner resampling specification, the grid, the metrics – so it cannot be
+restated: the model and the estimate come from one search.
 
 ``` r
 
 set.seed(3)
 
-final <- nested_final_fit(wf, folds, grid = grid)
+final <- nested_final_fit(wf, res)
 
 final
 #> 
 #> ── Nested cross-validation final fit ──────────────────────────────────
+#> Procedure: grid search, 6 candidates scored
 #> Selected: mtry = 2, min_n = 2
 #> 
 #> ℹ This model has no performance estimate of its own. Report the nested
-#>   estimate from `collect_metrics()` on the `nested_tune_grid()`
-#>   result, which describes the procedure that produced it.
+#>   estimate from `collect_metrics()` on the results object this fit was
+#>   built from, which describes the procedure that produced it.
 #> ℹ Compare the parameters above with `.selected` from that run. Outer
 #>   folds choosing differently is selection instability, and it is
 #>   information about the procedure rather than noise.
@@ -571,8 +574,7 @@ args(nested_tune_grid)
 #>     metrics = NULL, event_level = "first", eval_time = NULL) 
 #> NULL
 args(nested_final_fit)
-#> function (object, resamples, ..., param_info = NULL, grid = 10, 
-#>     metrics = NULL, event_level = "first", eval_time = NULL) 
+#> function (object, results, ...) 
 #> NULL
 ```
 
@@ -596,7 +598,7 @@ is put back as it was found:
 
 before <- .Random.seed
 
-invisible(nested_final_fit(wf, folds, grid = grid))
+invisible(nested_final_fit(wf, res))
 
 identical(before, .Random.seed)
 #> [1] TRUE

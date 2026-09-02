@@ -6,9 +6,20 @@ accessors that reach what selection saw.
 
 No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically
-biased as a claim about this model; the nested estimate from
+biased as a claim about this model; the nested estimate on the results
+object the fit was built from – the
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-is the one to report (IP3).
+or
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+result – is the one to report (IP3).
+
+The procedure line says what the full-data search was, as what ran
+beside what was asked for: for a grid procedure the candidates scored;
+for a Bayesian one the initial candidates scored and requested, and the
+iterations completed and requested, since
+[`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
+may score fewer initial candidates than `initial` names and stop short
+of `iter`.
 
 ## Usage
 

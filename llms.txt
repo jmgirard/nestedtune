@@ -3,7 +3,7 @@
 Nested cross-validation for the tidymodels ecosystem.
 
 Start with [Nested
-cross-validation](https://jmgirard.github.io/nestedtune/articles/nested-cv.html)
+cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.html)
 — what the estimate means, what to report instead of your model’s own
 score, and how to read disagreement between outer folds.
 
@@ -81,8 +81,9 @@ tunes on each outer fold’s inner resamples, selects, fits on the outer
 analysis set, and scores on the outer assessment set — keeping what each
 fold chose.
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
-runs the same procedure once more with the whole dataset in hand, and
-gives back the model to deploy as its own object.
+takes that result and runs the procedure it recorded once more with the
+whole dataset in hand, and gives back the model to deploy as its own
+object.
 
 ``` r
 
@@ -118,7 +119,7 @@ collect_metrics(res)
 
 # The model: what you deploy. It has no performance number of its own.
 set.seed(3)
-final <- nested_final_fit(wf, folds, grid = grid)
+final <- nested_final_fit(wf, res)
 predict(extract_workflow(final), new_data = mtcars[1:3, ])
 #> # A tibble: 3 × 1
 #>   .pred

@@ -191,7 +191,11 @@ the operations that shed it.
 The estimate this returns describes the whole search-and-fit
 *procedure*, not any single fitted model, exactly as for
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md);
-report it for that procedure.
+report it for that procedure. No final model is returned here: build
+that with
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
+which takes this result and runs the search it recorded again with the
+whole dataset in hand.
 
 ## Reproducibility
 
@@ -269,6 +273,7 @@ gives.
 
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md),
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
 [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
 
 ## Examples
