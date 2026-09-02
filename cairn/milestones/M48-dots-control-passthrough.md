@@ -166,7 +166,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 
 ### Round 2 (2026-09-02)
 
-**Gate checks.** Branch contains `origin/main` (0 behind, 12 ahead, no merge needed) and is pushed; draft PR #58 open and mergeable. `devtools::document()` leaves no diff; `cairn_validate.py` exit 0 (advisories: 18 references-staleness, one sizing warning on 13 tasks — the six return tasks); no IP/GP text changed, `cairn_impact` skipped; `pkgdown::check_pkgdown()` clean; README.md and README.Rmd share a timestamp; NEWS carries the entry with no milestone numbers; NEWS.md is the only top-level file touched. Full `devtools::test()` (summary reporter, tune 2.1.0): DONE with no failure, skip or warning section. `devtools::check()`: see the line below.
+**Gate checks.** Branch contains `origin/main` (0 behind, 12 ahead, no merge needed) and is pushed; draft PR #58 open and mergeable. `devtools::document()` leaves no diff; `cairn_validate.py` exit 0 (advisories: 18 references-staleness, one sizing warning on 13 tasks — the six return tasks); no IP/GP text changed, `cairn_impact` skipped; `pkgdown::check_pkgdown()` clean; README.md and README.Rmd share a timestamp; NEWS carries the entry with no milestone numbers; NEWS.md is the only top-level file touched. Full `devtools::test()` (summary reporter, tune 2.1.0): DONE with no failure, skip or warning section. `devtools::check()` (this round): 0 errors, 0 warnings, 0 notes in 8m 49s.
 
 **Criterion evidence (fresh, this round).**
 - AC1: `test-nested-tune-bayes-oracles.R` "a control passed through `...` reaches every fold (M48, AC1)" passes on rerun (file: 5 tests, 91 expectations, 0 failed, 0 skipped). Verified.
