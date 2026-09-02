@@ -1,11 +1,11 @@
 # M44: `agreement()` tabulates what the outer folds selected
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4, GP3
-- **Branch/PR:** —
+- **Branch/PR:** m044-agreement
 
 ## Goal
 

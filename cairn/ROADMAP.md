@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M44 | `agreement()` tabulates what the outer folds selected | planned | — | normal | milestones/M44-agreement.md |
+| M44 | `agreement()` tabulates what the outer folds selected | in-progress | — | normal | milestones/M44-agreement.md |
 | M43 | The print and summary follow-ups M39 left behind | done | — | normal | milestones/archive/M43-print-summary-followups.md |
 | M42 | The fixture key's separation test, derived from the orchestrators' own arguments | done | — | normal | milestones/archive/M42-fixture-key-derived.md |
 | M41 | `eval_time` reaches the metrics that need it | done | — | normal | milestones/archive/M41-eval-time.md |
