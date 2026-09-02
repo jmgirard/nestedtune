@@ -1,12 +1,12 @@
 # M48: `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP2, IP4, GP3
 - **Resolves:** #33 closes, #35 partial
-- **Branch/PR:** —
+- **Branch/PR:** m048-dots-control-passthrough
 
 ## Goal
 
