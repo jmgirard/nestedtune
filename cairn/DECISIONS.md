@@ -1220,6 +1220,64 @@ the help page says the most frequent row is not the final model's parameters.
 The refusal on an all-failed run is `check_any_completed()`'s, shared with the
 other accessors (IP4).
 
+### D-040 (2026-09-01): `nested_tune_bayes()` takes `iter`, `initial` and `objective` as its own arguments, `initial` as a count only, and seeds the Gaussian process from the fold's tuning seed — the third and fourth slots the per-argument rule D-030 fixed reach, and the first sibling the naming convention D-010 reserved
+
+**Context:** issue #35 asks for a Bayesian inner loop without a second copy of
+the orchestrator. D-010 reserved `nested_tune_bayes()` for it and rejected a
+single function taking the tuning method as an argument; D-030 settled that a
+setting of tune's reaches a caller here one narrow argument at a time, never
+as a `control` object; D-016 said any `nested_tune_bayes()` inherits the
+tuning seed's scope. `tune::tune_bayes()` adds three formals of its own —
+`iter`, `initial`, `objective` — and a `control_bayes()` whose `seed` slot,
+drawn from the stream by default, drives the Gaussian-process proposals.
+
+**Decision:** `nested_tune_bayes()` is a sibling export mirroring
+`nested_tune_grid()`, with `iter`, `initial` and `objective` in place of
+`grid`; the loop that runs it is shared, told which tuner to call. `initial`
+is a count only: a `tune_results` initial is refused, because one object
+cannot serve every outer fold and its scores come from resamples that may
+include a fold's assessment rows (IP1). `iter` and `initial` are refused
+unless single whole numbers, `initial` at least 2 — stricter than tune's
+`check_iter()`, which accepts `2.5`, on D-038's precedent. `control_bayes()`
+is built inside the fold's seed scope with `seed = <the fold's tuning seed>`
+and `allow_par = FALSE`; nothing else on it is settable. Considered and
+rejected: a `control` argument (D-030's grounds); `no_improve`, `uncertain`
+and `time_limit` as arguments (a ROADMAP candidate row holds them); a single
+function with a tuner argument, topepo's sketch (D-010's rejection stands).
+
+**Consequences:** the `nested_tune_*` family has two members and one loop;
+the results object records which tuner ran and its static arguments
+(M45's `procedure` attribute), which is what a final fit can re-run.
+Falsified by a caller needing a `control_bayes()` slot beyond these to change
+a number they are shown, or by tune changing `tune_bayes()`'s draw order so a
+fixed control seed no longer reproduces a run.
+
+### D-041 (2026-09-01): `nested_final_fit()` takes the results object and re-runs the procedure it recorded — supersedes the signature clause of D-014, and leaves its object and its refusals standing
+
+**Context:** D-014 fixed `nested_final_fit(object, resamples, grid, metrics)`,
+mirroring the one orchestrator that existed, so the user restated the
+procedure. With a second orchestrator (D-040) the restatement would need a
+method switch and every setting of both, and nothing would stop a user
+handing the final fit a procedure other than the one their estimate
+describes — the reading IP3 exists to forbid.
+
+**Decision:** `nested_final_fit(object, results, ...)`, where `results` is a
+`nested_results`; the inner specification, the data and the procedure are
+read from it, which from M46 records the design's `inside` call beside M45's
+`procedure` attribute. The former `grid`, `param_info`, `metrics`,
+`event_level` and `eval_time` formals are removed without a deprecation cycle
+(D-003). A results object lacking the record, or carrying no rows, is refused.
+Considered and rejected: mirroring the orchestrators' arguments with a method
+switch (lets the estimate and the model come from different procedures);
+offering both routes (GP3, as D-014 argued); migrating pre-M46 objects
+(pre-1.0).
+
+**Consequences:** a final fit always follows a nested run whose estimate is
+what the user reports, which is the pairing IP3 asks the documentation to
+state. A user wanting a tuned fit with no nested run has `tune::fit_best()`
+and `tune::last_fit()`. Falsified by a real need for a final fit from a
+design alone that those two do not serve.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
