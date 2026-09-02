@@ -216,6 +216,11 @@ test_that("`...` accepts `control` and nothing else (M48, AC5)", {
 
   cnd <- refusal(nested_tune_bayes(wf, folds, control = ac1_control(), no = 1))
   expect_refused(cnd, "nestedtune_bad_dots", "`no`")
+
+  # `call` is the name of the check's own formal: a caller's `call = ` once
+  # bound there and slipped the fence (M48 review round 1, finding 1).
+  cnd <- refusal(nested_tune_bayes(wf, folds, call = quote(bogus())))
+  expect_refused(cnd, "nestedtune_bad_dots", "`call`")
 })
 
 test_that("`control` must be what tune::control_bayes() returns (M48, AC5)", {

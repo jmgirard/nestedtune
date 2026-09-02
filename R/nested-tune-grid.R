@@ -470,7 +470,7 @@ nested_tune_grid <- function(
   event_level = "first",
   eval_time = NULL
 ) {
-  control <- check_dots_control(...)
+  control <- check_dots_control(capture_dots(...))
   check_workflow(object)
   check_nested(resamples)
   check_grid(grid)
@@ -499,7 +499,10 @@ nested_tune_grid <- function(
 # them is the tuner description and the entry checks, and both of those are
 # settled before this is reached. Every argument has been forced by the
 # caller's `check_*()` calls, so the RNG snapshot below is taken after the
-# caller's own evaluation is complete and nothing lazy can draw inside it.
+# caller's own evaluation is complete and nothing lazy can draw inside it. The
+# one argument whose evaluation may draw and whose draw is thrown away -- an
+# inline `control_bayes()` -- is forced under `capture_dots()`'s own
+# snapshot, so its draw is undone before this one is taken.
 #
 # `call` is the orchestrator's frame, so the run's warnings and the daemon
 # pre-flight's refusals name the function the user called rather than this one.

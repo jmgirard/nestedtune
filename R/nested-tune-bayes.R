@@ -205,7 +205,7 @@ nested_tune_bayes <- function(
   event_level = "first",
   eval_time = NULL
 ) {
-  control <- check_dots_control(...)
+  control <- check_dots_control(capture_dots(...))
   check_workflow(object)
   check_nested(resamples)
   check_iter(iter)

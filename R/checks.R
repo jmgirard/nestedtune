@@ -666,17 +666,42 @@ is_single_number <- function(x) {
   is.numeric(x) && length(x) == 1L && !is.na(x)
 }
 
+# The dots, forced (D-042). The one formal is `...` itself, so a name a
+# caller puts in the dots -- `call`, say -- has nothing else to bind to and
+# reaches `check_dots_control()` as the argument it is. Forcing is where a
+# control the caller built inline runs -- `control = tune::control_bayes()`
+# draws its `seed` slot when it is built -- and that happens here, before the
+# loop's own RNG snapshot; the draw is discarded by `effective_control()`, so
+# the stream is put back where the caller left it (D-011's net-zero entry),
+# and a run under an inline control is the run under the same control built
+# beforehand. Unlike the loop's `restore_rng()`, a session that had no state
+# is left with none: a state the forcing created is removed rather than kept,
+# because the refusals downstream promise to fire before anything is drawn,
+# and `RNGkind()` is never called here, since setting a kind is itself a
+# draw. Assigning `.Random.seed` restores the kind with it.
+capture_dots <- function(...) {
+  had_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  old_seed <- if (had_seed) get(".Random.seed", envir = globalenv())
+  on.exit(
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = globalenv())
+    } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    },
+    add = TRUE
+  )
+  rlang::list2(...)
+}
+
 # What `...` accepts on the two orchestrators (D-042): `control` and nothing
 # else. There is no `control` formal -- tune's maintainer reserves that name
 # for a future control of the outer work -- so the object comes through the
 # dots, and every other name is refused here, at entry, with the argument
 # named. An unnamed argument is refused too: everything after `resamples` is
 # matched by name, so a positional value is a call that meant something else.
-# `rlang::list2()` forces the dots, which is where a control the caller built
-# inline draws its own `seed` slot -- before the loop's RNG snapshot, as any
-# argument evaluation is.
-check_dots_control <- function(..., call = rlang::caller_env()) {
-  dots <- rlang::list2(...)
+# `dots` is the list `capture_dots()` returns, never the dots themselves: a
+# `call` in the caller's dots would bind to this function's `call` formal.
+check_dots_control <- function(dots, call = rlang::caller_env()) {
   nms <- rlang::names2(dots)
   unknown <- nms[nms != "control"]
   if (length(unknown) > 0L) {

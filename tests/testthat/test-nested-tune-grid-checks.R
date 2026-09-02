@@ -553,6 +553,11 @@ test_that("`...` accepts `control` and nothing else (M48, AC5)", {
     no = 1
   ))
   expect_grid_refused(cnd, "nestedtune_bad_dots", "`no`")
+
+  # `call` is the name of the check's own formal: a caller's `call = ` once
+  # bound there and slipped the fence (M48 review round 1, finding 1).
+  cnd <- grid_refusal(nested_tune_grid(wf, folds, call = quote(bogus())))
+  expect_grid_refused(cnd, "nestedtune_bad_dots", "`call`")
 })
 
 test_that("`control` must be what tune::control_grid() returns (M48, AC5)", {

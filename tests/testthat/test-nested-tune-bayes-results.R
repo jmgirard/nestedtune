@@ -268,6 +268,43 @@ test_that("forced slots win: a control setting them yields the default run (M48,
   expect_identical(forced, plain)
 })
 
+test_that("a control built inline draws nothing the caller can see (M48)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- det_nested(d)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+
+  plain <- bayes_results()
+
+  # `tune::control_bayes()` draws its `seed` slot when it is built, and an
+  # inline control is built when `...` is forced, inside the call. The draw
+  # is discarded, so the stream must be put back: the run equals the
+  # no-control run, and the caller's state after the call is the state on
+  # entry (M48 review round 1, finding 2).
+  set.seed(20)
+  before <- .Random.seed
+  inline <- nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms,
+    control = tune::control_bayes()
+  )
+  expect_identical(.Random.seed, before)
+  expect_identical(inline, plain)
+
+  # The discrimination: building that control at the top level does move the
+  # stream, which is what the call has to undo.
+  set.seed(20)
+  invisible(tune::control_bayes())
+  expect_false(identical(.Random.seed, before))
+})
+
 test_that("the procedure is part of the run's record", {
   # `run_attributes()` is what the dplyr and vctrs doors carry across and shed,
   # so membership here is what makes the compat suites' `expect_kept()` and
