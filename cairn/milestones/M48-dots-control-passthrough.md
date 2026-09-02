@@ -1,6 +1,6 @@
 # M48: `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -74,25 +74,25 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 
 ## Tasks
 
-- [ ] T1: Tests first: the AC1 hand-run oracle in `test-nested-tune-bayes-oracles.R` on a fixture where `no_improve = 2`
+- [x] T1: Tests first: the AC1 hand-run oracle in `test-nested-tune-bayes-oracles.R` on a fixture where `no_improve = 2`
       fires (assert the early stop); AC3 and AC5 refusals in `test-nested-tune-bayes-checks.R` and
       `test-nested-tune-grid-checks.R`; the AC4 recorded slots and final-fit oracle in `test-nested-final-fit-oracles.R`.
-- [ ] T2: Thread `control` from both orchestrators through `nested_loop()` (`R/nested-tune-grid.R:463-521`),
+- [x] T2: Thread `control` from both orchestrators through `nested_loop()` (`R/nested-tune-grid.R:463-521`),
       `dispatch_folds()` and its `.args` list (`R/parallel.R:194-320`), `fold_task()` (`R/parallel.R:1040-1061`),
       `nested_fold_fit()` (`R/nested-tune-grid.R:543-575`) into `run_tuner()`; `tuner_control()` (`R/tuner.R:80-97`)
       becomes the merge of the caller's control with the forced slots, still built inside the fold's seed scope.
-- [ ] T3: Entry: pull `control` out of `rlang::list2(...)`, refuse every other name; `check_control(control, tuner)` for
+- [x] T3: Entry: pull `control` out of `rlang::list2(...)`, refuse every other name; `check_control(control, tuner)` for
       class and the `event_level` conflict, beside the existing checks (`R/nested-tune-grid.R:446-454`,
       `R/nested-tune-bayes.R:185-194`).
-- [ ] T4: `new_procedure()` and `procedure_tuner()` (`R/tuner.R:104-124`) carry `control` as a shared slot in effective
+- [x] T4: `new_procedure()` and `procedure_tuner()` (`R/tuner.R:104-124`) carry `control` as a shared slot in effective
       form; `final_fit_worker()` (`R/nested-final-fit.R:277-284`) passes it once; the by-hand recipe in the final-fit
       roxygen (`R/nested-final-fit.R:114-124`) shows it.
-- [ ] T5: Parallel and barrier tests: extend `test-parallel-identity.R` with the AC1 control; update the `.args` shapes
+- [x] T5: Parallel and barrier tests: extend `test-parallel-identity.R` with the AC1 control; update the `.args` shapes
       in `test-parallel-payload.R:140-218,332`; extend `test-dots-barrier.R` (AC1/AC2 probes at `:11-66`) to the Bayes
       sibling and rewrite the grid expectation.
-- [ ] T6: Docs: rewrite the "Differences" sections (`R/nested-tune-grid.R:371-401`, `R/nested-tune-bayes.R:107-134`)
+- [x] T6: Docs: rewrite the "Differences" sections (`R/nested-tune-grid.R:371-401`, `R/nested-tune-bayes.R:107-134`)
       under the six headings with the `time_limit` caveat; write the Rd-parsing test for AC6.
-- [ ] T7: NEWS entry, D-042 (drafted at plan), DESIGN.md paragraph, verify slot.
+- [x] T7: NEWS entry, D-042 (drafted at plan), DESIGN.md paragraph, verify slot.
 
 ## Work log
 
@@ -109,6 +109,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: T7: NEWS entry; DESIGN.md's `run_tuner()` paragraph now names the effective control; D-042 was appended at plan and stands.
 - 2026-09-02: checkpoint with T1–T7 written but unticked: the targeted files (checks, oracles, results, barrier, identity, payload, control-slots) pass and `devtools::document()` is clean; the full `devtools::test()` run had not finished when this was committed, so the ticks wait on it.
 - 2026-09-02: the first full run found two things the targeted files could not: the `nested_fold_fit` stub in `test-nested-tune-grid-leakage.R` lacked the new argument, and the wait ledger in `helper-time-budget.R` keys pool starts by line, which the BC11 insertion and the mock signatures shifted (seven rows moved, one added for BC11). Both fixed; second full run started.
+- 2026-09-02: second full run: two failures, both the M41 doc test in `test-eval-time.R` pinning the old "Settable:" sentence; rewritten to read the "Settable as its own argument" heading's paragraph, and the file passes. The suite is clean by composition of that run and the per-file reruns (leakage, suite-hygiene, identity, eval-time); `devtools::document()` leaves no diff. T1–T7 ticked; status set to review.
 
 ## Decisions
 
