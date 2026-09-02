@@ -36,6 +36,7 @@ reference:
   - print.nested_results
   - summary.nested_results
   - autoplot.nested_results
+  - agreement
 
 - title: The final model
   desc: >

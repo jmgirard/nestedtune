@@ -63,7 +63,9 @@ naming convention.
   resampling design and returns an object carrying rsample's `nested_cv`
   classes, so it is a drop-in for `rsample::nested_cv()`'s output (D-008).
 - **Orchestration — `nested_tune_*`** — `nested_tune_grid()`, plus the
-  `collect_metrics()` method on the `nested_results` object it returns. The
+  `collect_metrics()` method on the `nested_results` object it returns and
+  `agreement()`, the package-owned generic tabulating how often each selected
+  parameter combination was chosen across the outer folds (D-039). The
   suffix names the inner tuning method, leaving `nested_tune_bayes()` free for
   a Bayesian inner loop (D-010).
 - **Final fit** — `nested_final_fit()`, returning a `nested_final_fit` object
