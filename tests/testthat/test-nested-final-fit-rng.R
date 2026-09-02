@@ -77,7 +77,15 @@ test_that("the fit does not depend on the ambient RNG state or kind", {
   )
 
   run_one <- function() {
-    final_fit_worker(inside, d, environment(), seeds, wf, stoch_grid(), ms)
+    final_fit_worker(
+      inside,
+      d,
+      environment(),
+      seeds,
+      wf,
+      tuner_grid(stoch_grid()),
+      ms
+    )
   }
 
   set.seed(1)

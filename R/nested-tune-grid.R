@@ -439,6 +439,40 @@ nested_tune_grid <- function(
   check_event_level(event_level)
   check_eval_time(eval_time)
 
+  nested_loop(
+    object,
+    resamples,
+    tuner = tuner_grid(grid),
+    metrics = metrics,
+    param_info = param_info,
+    event_level = event_level,
+    eval_time = eval_time,
+    grid = grid,
+    call = rlang::current_env()
+  )
+}
+
+# The outer loop, shared by both orchestrators (D-040): what differs between
+# them is the tuner description and the entry checks, and both of those are
+# settled before this is reached. Every argument has been forced by the
+# caller's `check_*()` calls, so the RNG snapshot below is taken after the
+# caller's own evaluation is complete and nothing lazy can draw inside it.
+#
+# `call` is the orchestrator's frame, so the run's warnings and the daemon
+# pre-flight's refusals name the function the user called rather than this one.
+# `grid` is recorded on the object as it was given, for the grid path alone;
+# the Bayesian path passes NULL and carries no such attribute.
+nested_loop <- function(
+  object,
+  resamples,
+  tuner,
+  metrics,
+  param_info,
+  event_level,
+  eval_time,
+  grid,
+  call
+) {
   n <- nrow(resamples)
 
   # Snapshot before drawing, so what is restored is the caller's state on
@@ -465,23 +499,30 @@ nested_tune_grid <- function(
   folds <- dispatch_folds(
     payloads,
     object = object,
-    grid = grid,
+    tuner = tuner,
     metrics = metrics,
     param_info = param_info,
     event_level = event_level,
     eval_time = eval_time,
-    call = rlang::current_env()
+    call = call
   )
 
-  out <- new_nested_results(resamples, folds, seeds, grid, metrics)
-  warn_failed_folds(out, call = rlang::current_env())
+  procedure <- new_procedure(
+    tuner,
+    param_info = param_info,
+    event_level = event_level,
+    eval_time = eval_time
+  )
+  out <- new_nested_results(resamples, folds, seeds, grid, metrics, procedure)
+  warn_failed_folds(out, call = call)
   out
 }
 
 # One outer fold, start to finish.
 #
 # Everything this needs is an argument: the split, the inner resamples, the two
-# seeds, and the static inputs. Nothing is read from the enclosing loop and
+# seeds, the tuner description and the static inputs. Nothing is read from the
+# enclosing loop and
 # nothing is drawn here, so the fold's result depends on its position in the
 # design and not on when or where it runs -- which is what makes the loop safe
 # to reorder or, later, to parallelize (IP2).
@@ -490,7 +531,7 @@ nested_fold_fit <- function(
   inner,
   seeds,
   object,
-  grid,
+  tuner,
   metrics,
   param_info = NULL,
   event_level = "first",
@@ -504,17 +545,19 @@ nested_fold_fit <- function(
   tuned <- NULL
   selected <- tryCatch(
     {
-      tuned <- tune::tune_grid(
-        object,
+      # The tuner's own call -- `tune_grid()` or `tune_bayes()` -- assembled
+      # from the description the orchestrator built (R/tuner.R). The fold's
+      # tuning seed goes in with it, because `control_bayes()` is seeded from
+      # it and has to be built inside this seed's scope.
+      tuned <- run_tuner(
+        tuner,
+        object = object,
         resamples = inner,
         param_info = param_info,
-        grid = grid,
         metrics = metrics,
         eval_time = eval_time,
-        control = tune::control_grid(
-          allow_par = FALSE,
-          event_level = event_level
-        )
+        event_level = event_level,
+        seed = seeds[[1L]]
       )
       # Resolved from the tuned object rather than from `metrics`, so the same
       # code answers whether the caller supplied a metric set or let tune pick.

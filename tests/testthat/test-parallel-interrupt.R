@@ -20,7 +20,7 @@
 completed_fold_task <- function(
   payload,
   object,
-  grid,
+  tuner,
   metrics,
   param_info,
   event_level,
@@ -58,7 +58,7 @@ test_that("an interrupted run leaves no fold executing", {
     fold_task = function(
       payload,
       object,
-      grid,
+      tuner,
       metrics,
       param_info,
       event_level,
@@ -96,7 +96,7 @@ test_that("an interrupted run leaves no fold executing", {
   interrupted <- FALSE
   tryCatch(
     without_pkgload_warning(
-      dispatch_folds(payloads, object = NULL, grid = NULL, metrics = NULL)
+      dispatch_folds(payloads, object = NULL, tuner = NULL, metrics = NULL)
     ),
     interrupt = function(cnd) interrupted <<- TRUE
   )
@@ -136,7 +136,7 @@ test_that("a run that finished normally is unharmed by the cancel on the way out
     dispatch_folds(
       list(list(value = 1), list(value = 2)),
       object = NULL,
-      grid = NULL,
+      tuner = NULL,
       metrics = NULL
     )
   )

@@ -82,7 +82,7 @@ test_that("fold results do not depend on the order folds are run in", {
       inner = folds$inner_resamples[[i]],
       seeds = c(res$.tuning_seed[[i]], res$.outer_fit_seed[[i]]),
       object = wf,
-      grid = stoch_grid(),
+      tuner = tuner_grid(stoch_grid()),
       metrics = ms
     )
   })
@@ -120,7 +120,7 @@ test_that("fold results do not depend on the ambient RNG state or kind", {
       inner = folds$inner_resamples[[1]],
       seeds = seeds,
       object = wf,
-      grid = stoch_grid(),
+      tuner = tuner_grid(stoch_grid()),
       metrics = ms
     )
   }

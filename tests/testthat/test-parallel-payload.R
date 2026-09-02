@@ -294,7 +294,7 @@ test_that("a daemon receives the payload the serial branch would have passed", {
     fold_task = function(
       payload,
       object,
-      grid,
+      tuner,
       metrics,
       param_info,
       event_level,
@@ -321,7 +321,7 @@ test_that("a daemon receives the payload the serial branch would have passed", {
   )
 
   out <- without_pkgload_warning(
-    dispatch_folds(payloads, object = NULL, grid = NULL, metrics = NULL)
+    dispatch_folds(payloads, object = NULL, tuner = NULL, metrics = NULL)
   )
 
   expect_identical(last_dispatch(), "parallel")

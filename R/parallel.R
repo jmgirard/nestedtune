@@ -194,7 +194,7 @@ rehydrate_payload <- function(payload, shared) {
 dispatch_folds <- function(
   payloads,
   object,
-  grid,
+  tuner,
   metrics,
   param_info = NULL,
   event_level = "first",
@@ -207,7 +207,7 @@ dispatch_folds <- function(
       payloads,
       fold_task,
       object = object,
-      grid = grid,
+      tuner = tuner,
       metrics = metrics,
       param_info = param_info,
       event_level = event_level,
@@ -274,7 +274,7 @@ dispatch_folds <- function(
     task <- function(
       payload,
       object,
-      grid,
+      tuner,
       metrics,
       param_info,
       event_level,
@@ -286,7 +286,7 @@ dispatch_folds <- function(
       worker(
         ns$rehydrate_payload(payload, shared),
         object,
-        grid,
+        tuner,
         metrics,
         param_info,
         event_level,
@@ -295,7 +295,7 @@ dispatch_folds <- function(
     }
     args <- list(
       object = object,
-      grid = grid,
+      tuner = tuner,
       metrics = metrics,
       param_info = param_info,
       event_level = event_level,
@@ -307,7 +307,7 @@ dispatch_folds <- function(
     task <- fold_task
     args <- list(
       object = object,
-      grid = grid,
+      tuner = tuner,
       metrics = metrics,
       param_info = param_info,
       event_level = event_level,
@@ -1040,7 +1040,7 @@ worker_failure_message <- function(x) {
 fold_task <- function(
   payload,
   object,
-  grid,
+  tuner,
   metrics,
   param_info = NULL,
   event_level = "first",
@@ -1052,7 +1052,7 @@ fold_task <- function(
     inner = payload$inner,
     seeds = payload$seeds,
     object = object,
-    grid = grid,
+    tuner = tuner,
     metrics = metrics,
     param_info = param_info,
     event_level = event_level,

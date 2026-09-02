@@ -348,7 +348,7 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
     fold_task = function(
       payload,
       object,
-      grid,
+      tuner,
       metrics,
       param_info,
       event_level,
@@ -368,7 +368,7 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
         inner = payload$inner,
         seeds = payload$seeds,
         object = object,
-        grid = grid,
+        tuner = tuner,
         metrics = metrics,
         param_info = param_info,
         event_level = event_level,
