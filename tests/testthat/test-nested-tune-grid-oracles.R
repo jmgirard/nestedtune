@@ -129,6 +129,53 @@ test_that("the reference loop also matches with a stochastic engine", {
   }
 })
 
+test_that("a control passed through `...` reaches the inner tune_grid() (M48)", {
+  skip_if_no_engines(stochastic = TRUE)
+
+  d <- make_reg_data()
+  wf <- stoch_workflow(d)
+  ms <- reg_metrics()
+  grid <- stoch_grid()
+
+  set.seed(12)
+  folds <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 3),
+    inside = rsample::vfold_cv(v = 3)
+  )
+
+  # `parallel_over = "everything"` changes the seed each model fit starts
+  # from even at `allow_par = FALSE`, so a stochastic engine's numbers differ
+  # from the default run's: on this fixture fold 2's outer metrics and
+  # selection differ and folds 1 and 3 agree (measured 2026-09-02, tune
+  # 2.1.0). The run under the control matches the reference loop run under
+  # the same control, fold by fold.
+  ctrl <- tune::control_grid(parallel_over = "everything")
+  set.seed(21)
+  res <- nested_tune_grid(wf, folds, grid = grid, metrics = ms, control = ctrl)
+
+  ref <- reference_nested_loop(
+    wf,
+    folds,
+    grid,
+    ms,
+    seed = 21,
+    metric_name = "rmse",
+    control = ctrl
+  )
+
+  for (i in seq_len(nrow(res))) {
+    expect_identical(res$.metrics[[i]], ref[[i]]$metrics)
+    expect_identical(res$.selected[[i]], ref[[i]]$selected)
+  }
+
+  # The discrimination: the same run without the control is not this one, so
+  # the match above is not the default run agreeing with itself.
+  set.seed(21)
+  plain <- nested_tune_grid(wf, folds, grid = grid, metrics = ms)
+  expect_false(identical(plain$.metrics, res$.metrics))
+})
+
 test_that("a single-candidate grid degenerates to fit_resamples()", {
   skip_if_no_engines()
 

@@ -75,7 +75,8 @@ reference_nested_loop <- function(
   grid,
   metrics,
   seed,
-  metric_name
+  metric_name,
+  control = NULL
 ) {
   set.seed(seed)
   n <- nrow(nested)
@@ -96,7 +97,7 @@ reference_nested_loop <- function(
       resamples = nested$inner_resamples[[i]],
       grid = grid,
       metrics = metrics,
-      control = tune::control_grid(allow_par = FALSE)
+      control = forced_grid_control(control)
     )
     best <- tune::select_best(tuned, metric = metric_name)
     final_wf <- tune::finalize_workflow(wf, best)
@@ -120,6 +121,19 @@ reference_nested_loop <- function(
       outer_fit_seed = outer_seed
     )
   })
+}
+
+# The control a fold's `tune_grid()` runs under, written from the documented
+# contract (M48, D-042): the caller's control -- or tune's default when none
+# was passed -- with `allow_par` forced off and `event_level` set from the
+# argument.
+forced_grid_control <- function(control, event_level = "first") {
+  if (is.null(control)) {
+    control <- tune::control_grid()
+  }
+  control$allow_par <- FALSE
+  control$event_level <- event_level
+  control
 }
 
 # The hand-rolled reference loop for the Bayesian path (M45 AC2), written
