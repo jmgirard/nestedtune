@@ -562,3 +562,50 @@ test_that("BC8: the identity holds with a censored fixture at a named eval_time 
   }
   expect_identical(parallel, serial)
 })
+
+test_that("BC10: the Bayesian path matches serial at two above-threshold daemon counts (M45, AC4)", {
+  skip_if_no_daemons()
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("dials")
+
+  # The stochastic fixture, so the Gaussian-process proposals and the ranger
+  # fits both draw -- a deterministic engine would leave only tune's own
+  # `set.seed(control$seed + i)` calls to differ, and those are the seed rule
+  # under test on both sides of the identity.
+  data <- make_reg_data()
+  nested <- det_nested(data)
+  wf <- stoch_workflow(data)
+  p <- bayes_stoch_param_info(wf)
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  mirai::daemons(0)
+  set.seed(2026L)
+  serial <- nested_tune_bayes(
+    wf,
+    nested,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = reg_metrics()
+  )
+  expect_identical(last_dispatch(), "serial")
+  expect_true(all(serial$.completed))
+
+  for (n in c(2L, 3L)) {
+    start_daemons(n)
+    set.seed(2026L)
+    parallel <- without_pkgload_warning(
+      nested_tune_bayes(
+        wf,
+        nested,
+        iter = 2,
+        initial = 3,
+        param_info = p,
+        metrics = reg_metrics()
+      )
+    )
+
+    expect_identical(last_dispatch(), "parallel")
+    expect_identical(parallel, serial)
+  }
+})
