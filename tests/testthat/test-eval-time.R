@@ -591,15 +591,19 @@ test_that("AC6: both help pages document `eval_time` and what this package refus
     "",
     pages$nested_tune_grid
   )
-  expect_match(differences, "Settable: \\code{event_level}", fixed = TRUE)
-  # Inside the "Settable:" sentence itself, not merely somewhere after the
-  # heading -- the "Not passed on" paragraph names the argument too, and a
-  # match anywhere below the heading would stay green if it appeared only there
-  # (M41 review R5). `rd_text()` has already collapsed the page onto one line.
-  expect_match(
-    differences,
-    "Settable: \\\\code\\{event_level\\}[^.]*\\\\code\\{eval_time\\}"
-  )
+  heading <- "\\strong{Settable as its own argument: \\code{event_level}.}"
+  expect_match(differences, heading, fixed = TRUE)
+  # Inside that heading's own paragraph, not merely somewhere after it -- the
+  # "Not passed on" paragraph names the argument too, and a match anywhere
+  # below the heading would stay green if it appeared only there (M41 review
+  # R5). Since M48 the section is six bold headings, each followed by its
+  # paragraph, so the paragraph runs from this heading to the next `\strong`.
+  # `rd_text()` has already collapsed the page onto one line.
+  start <- regexpr(heading, differences, fixed = TRUE)
+  paragraph <- substring(differences, start + attr(start, "match.length"))
+  paragraph <- sub("\\\\strong\\{.*$", "", paragraph)
+  expect_gt(nchar(paragraph), 50L)
+  expect_match(paragraph, "\\code{eval_time}", fixed = TRUE)
 })
 
 # AC8 -- per-time summaries ----------------------------------------------------

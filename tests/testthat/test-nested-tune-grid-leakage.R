@@ -18,7 +18,8 @@ record_handoffs <- function(wf, folds, grid, metrics) {
     metrics,
     param_info,
     event_level,
-    eval_time
+    eval_time,
+    control
   ) {
     seen[[length(seen) + 1L]] <<- list(split = split, inner = inner)
     list(

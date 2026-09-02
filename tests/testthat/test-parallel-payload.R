@@ -144,7 +144,8 @@ test_that("a fold's dispatch carries the data exactly once", {
   args <- list(
     object = payload_fixture_workflow(),
     tuner = tuner_grid(3),
-    metrics = NULL
+    metrics = NULL,
+    control = effective_control("tune_grid", NULL, "first")
   )
 
   for (i in seq_len(nrow(fx$design))) {
@@ -180,11 +181,16 @@ test_that("rehydrating a leaned payload returns the serial path's own objects", 
 test_that("a leaned run puts under a quarter of the pre-milestone bytes on the wire", {
   fx <- fixture_design()
   shared <- fx$data
+  # The control rides in `.args` since M48, so it is charged per fold here
+  # as on the wire; tune's default with the forced slots applied weighs the
+  # same on both sides of the ratio.
+  control <- effective_control("tune_grid", NULL, "first")
   args_bytes <- payload_bytes(
     list(
       object = payload_fixture_workflow(),
       tuner = tuner_grid(3),
-      metrics = NULL
+      metrics = NULL,
+      control = control
     )
   )
   n_folds <- nrow(fx$design)
@@ -204,6 +210,7 @@ test_that("a leaned run puts under a quarter of the pre-milestone bytes on the w
       object = payload_fixture_workflow(),
       tuner = tuner_grid(3),
       metrics = NULL,
+      control = control,
       data = shared
     )
   )
@@ -306,7 +313,8 @@ test_that("a daemon receives the payload the serial branch would have passed", {
       metrics,
       param_info,
       event_level,
-      eval_time
+      eval_time,
+      control
     ) {
       list(
         completed = TRUE,

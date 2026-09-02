@@ -75,7 +75,8 @@ reference_nested_loop <- function(
   grid,
   metrics,
   seed,
-  metric_name
+  metric_name,
+  control = NULL
 ) {
   set.seed(seed)
   n <- nrow(nested)
@@ -96,7 +97,7 @@ reference_nested_loop <- function(
       resamples = nested$inner_resamples[[i]],
       grid = grid,
       metrics = metrics,
-      control = tune::control_grid(allow_par = FALSE)
+      control = forced_grid_control(control)
     )
     best <- tune::select_best(tuned, metric = metric_name)
     final_wf <- tune::finalize_workflow(wf, best)
@@ -122,6 +123,19 @@ reference_nested_loop <- function(
   })
 }
 
+# The control a fold's `tune_grid()` runs under, written from the documented
+# contract (M48, D-042): the caller's control -- or tune's default when none
+# was passed -- with `allow_par` forced off and `event_level` set from the
+# argument.
+forced_grid_control <- function(control, event_level = "first") {
+  if (is.null(control)) {
+    control <- tune::control_grid()
+  }
+  control$allow_par <- FALSE
+  control$event_level <- event_level
+  control
+}
+
 # The hand-rolled reference loop for the Bayesian path (M45 AC2), written
 # from the same seed contract and never from the driver's output. What it adds
 # to the grid reference is the one rule that is the Bayesian path's own: the
@@ -137,7 +151,8 @@ reference_nested_bayes_loop <- function(
   param_info,
   metrics,
   seed,
-  metric_name
+  metric_name,
+  control = NULL
 ) {
   set.seed(seed)
   n <- nrow(nested)
@@ -161,7 +176,7 @@ reference_nested_bayes_loop <- function(
       objective = objective,
       param_info = param_info,
       metrics = metrics,
-      control = tune::control_bayes(seed = tuning_seed, allow_par = FALSE)
+      control = forced_bayes_control(control, tuning_seed)
     )
     best <- tune::select_best(tuned, metric = metric_name)
     final_wf <- tune::finalize_workflow(wf, best)
@@ -182,9 +197,34 @@ reference_nested_bayes_loop <- function(
       metrics = tune::collect_metrics(fitted),
       selected = best,
       tuning_seed = tuning_seed,
-      outer_fit_seed = outer_seed
+      outer_fit_seed = outer_seed,
+      tuned = tuned
     )
   })
+}
+
+# The control a fold's `tune_bayes()` runs under, written from the documented
+# contract (M48, D-042): the caller's control -- or tune's default when none
+# was passed -- with `allow_par` forced off, `event_level` set from the
+# argument and the fold's tuning seed as the Gaussian process's `seed`.
+# `save_workflow` is the reference's own addition where a strand needs
+# `fit_best()`, never part of the contract.
+forced_bayes_control <- function(
+  control,
+  tuning_seed,
+  save_workflow = FALSE,
+  event_level = "first"
+) {
+  if (is.null(control)) {
+    control <- tune::control_bayes(seed = tuning_seed)
+  }
+  control$seed <- tuning_seed
+  control$allow_par <- FALSE
+  control$event_level <- event_level
+  if (save_workflow) {
+    control$save_workflow <- TRUE
+  }
+  control
 }
 
 # The hand-rolled reference final fit (AC2/AC9).
@@ -256,7 +296,8 @@ reference_bayes_final_fit <- function(
   metrics,
   seed,
   metric_name,
-  v = 3
+  v = 3,
+  control = NULL
 ) {
   set.seed(seed)
   seeds <- sample.int(.Machine$integer.max, 2L)
@@ -276,11 +317,7 @@ reference_bayes_final_fit <- function(
     objective = objective,
     param_info = param_info,
     metrics = metrics,
-    control = tune::control_bayes(
-      seed = seeds[[1L]],
-      allow_par = FALSE,
-      save_workflow = TRUE
-    )
+    control = forced_bayes_control(control, seeds[[1L]], save_workflow = TRUE)
   )
   best <- tune::select_best(tuned, metric = metric_name)
   final_wf <- tune::finalize_workflow(wf, best)
@@ -580,7 +617,8 @@ results_from <- function(design) {
       tuner_grid(det_grid()),
       param_info = NULL,
       event_level = "first",
-      eval_time = NULL
+      eval_time = NULL,
+      control = effective_control("tune_grid", NULL, "first")
     )
   )
 }
@@ -879,6 +917,61 @@ bayes_results <- function() {
 # whole-object identity would fail on the trace and on nothing else, and the
 # whole-record identities in test-nested-tune-bayes-rng.R with it. 25 is the
 # largest value `stoch_grid()` has always scored without a note.
+# The control AC1 of M48 names, built under a fixed seed: `control_bayes()`
+# draws its `seed` slot when it is built, and a fixture keyed on a control
+# holding a fresh draw would miss the cache on every request. The draw is
+# overwritten by every fold's tuning seed, so its value never reaches a run.
+ac1_control <- function() {
+  set.seed(1)
+  tune::control_bayes(no_improve = 2, uncertain = 2)
+}
+
+# The suite's Bayesian run under that control (M48): four iterations, so a
+# fold that `no_improve = 2` stops early is visible against `initial + iter`.
+# The control is built before `set.seed(20)`, so the run's entry state is the
+# seed's own and a reference loop started from `seed = 20` reproduces it.
+bayes_control_results <- function() {
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- det_nested(d)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+  ctrl <- ac1_control()
+  set.seed(20)
+  memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 4,
+    initial = 3,
+    param_info = p,
+    metrics = ms,
+    control = ctrl
+  ))
+}
+
+# The results object a control-carrying final fit is built from (M48, AC4).
+# Seeded before the workflow is built as well as before the run: the recipe
+# step ids are drawn from the stream, and a workflow built under whatever
+# state the requesting test left would key a fresh build on every request.
+bayes_control_final_results <- function(data, seed = 26) {
+  set.seed(seed)
+  wf <- bayes_workflow(data)
+  folds <- final_nested(data)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+  ctrl <- ac1_control()
+  set.seed(seed)
+  memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 4,
+    initial = 3,
+    param_info = p,
+    metrics = ms,
+    control = ctrl
+  ))
+}
+
 bayes_stoch_param_info <- function(wf) {
   update(
     tune::extract_parameter_set_dials(wf),

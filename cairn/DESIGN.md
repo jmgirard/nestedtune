@@ -248,12 +248,15 @@ loop. It draws every fold's seeds up front and hands each fold to
 `rset`, the fold's two seeds, the tuner description and the static
 workflow/metrics. The worker delegates the entire statistical pipeline to
 tune: `run_tuner()` assembles the inner call with `rlang::call2()` —
-`tune_grid()` under `control_grid(allow_par = FALSE, event_level)`, or
-`tune_bayes()` under `control_bayes(allow_par = FALSE, event_level, seed =
-<the fold's tuning seed>)`, the control built inside the fold's seed scope —
-then `select_best()`, `finalize_workflow()`, `last_fit()` on the outer split
-under `control_last_fit(event_level = event_level)`. The results object
-records the description as its `procedure` attribute.
+`tune_grid()` or `tune_bayes()` under the effective control (D-042): the
+`control_grid()` / `control_bayes()` the caller passed through `...`, or
+tune's default, with `allow_par = FALSE` and the argument's `event_level`
+overwritten by `effective_control()` at entry (`check_control()`), and for
+`tune_bayes()` the fold's tuning seed added as `seed` inside the fold's seed
+scope (`tuner_control()`) — then `select_best()`, `finalize_workflow()`,
+`last_fit()` on the outer split under `control_last_fit(event_level =
+event_level)`. The results object records the description and the effective
+control, `seed` dropped, as its `procedure` attribute.
 Nothing is read from the enclosing loop and nothing is drawn inside it, which
 is what makes fold results independent of execution order and the loop safe to
 parallelize later.

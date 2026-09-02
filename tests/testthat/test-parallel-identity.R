@@ -352,7 +352,8 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
       metrics,
       param_info,
       event_level,
-      eval_time
+      eval_time,
+      control
     ) {
       seed <- payload$seeds[[1L]]
       file.create(file.path(
@@ -372,7 +373,8 @@ test_that("BC3: a daemon killed mid-run yields a recorded failure, not an abort"
         metrics = metrics,
         param_info = param_info,
         event_level = event_level,
-        eval_time = eval_time
+        eval_time = eval_time,
+        control = control
       )
     }
   )
@@ -608,4 +610,62 @@ test_that("BC10: the Bayesian path matches serial at two above-threshold daemon 
     expect_identical(last_dispatch(), "parallel")
     expect_identical(parallel, serial)
   }
+})
+
+test_that("BC11: the control reaches every fold on the parallel path as on the serial one (M48, AC2)", {
+  skip_if_no_daemons()
+  skip_if_not_installed("dials")
+
+  # The AC1 run: a control whose `no_improve = 2` stops folds short of `iter`,
+  # so a daemon that ran under tune's default would record more candidates
+  # than the serial fold did. The deterministic fixture, as the AC1 oracle.
+  data <- make_reg_data()
+  nested <- det_nested(data)
+  wf <- bayes_workflow(data)
+  p <- bayes_param_info(wf)
+  ctrl <- ac1_control()
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  mirai::daemons(0)
+  set.seed(2026L)
+  serial <- nested_tune_bayes(
+    wf,
+    nested,
+    iter = 4,
+    initial = 3,
+    param_info = p,
+    metrics = reg_metrics(),
+    control = ctrl
+  )
+  expect_identical(last_dispatch(), "serial")
+  expect_true(all(serial$.completed))
+  # The control is in force: some fold stopped early.
+  expect_true(any(vapply(serial$.grid, nrow, integer(1)) < 7L))
+
+  start_daemons(2)
+  set.seed(2026L)
+  parallel <- without_pkgload_warning(
+    nested_tune_bayes(
+      wf,
+      nested,
+      iter = 4,
+      initial = 3,
+      param_info = p,
+      metrics = reg_metrics(),
+      control = ctrl
+    )
+  )
+  expect_identical(last_dispatch(), "parallel")
+
+  # The fold records the criterion names, one by one, and then the object.
+  for (col in c(
+    ".metrics",
+    ".selected",
+    ".grid",
+    ".tuning_seed",
+    ".outer_fit_seed"
+  )) {
+    expect_identical(parallel[[col]], serial[[col]], info = col)
+  }
+  expect_identical(parallel, serial)
 })

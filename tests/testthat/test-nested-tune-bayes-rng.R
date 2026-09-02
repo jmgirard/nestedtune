@@ -209,10 +209,10 @@ test_that("the Gaussian-process seed is the fold's tuning seed, set inside its s
   seen <- new.env(parent = emptyenv())
   real <- tuner_control
   local_mocked_bindings(
-    tuner_control = function(tuner, event_level, seed) {
+    tuner_control = function(tuner, control, event_level, seed) {
       seen$seed <- seed
       seen$state <- get(".Random.seed", envir = globalenv())
-      real(tuner, event_level = event_level, seed = seed)
+      real(tuner, control = control, event_level = event_level, seed = seed)
     }
   )
 

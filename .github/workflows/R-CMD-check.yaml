@@ -42,18 +42,21 @@ jobs:
 
     # Two caps at two scopes, and they differ on purpose.
     #
-    # 20 minutes, on the `check-r-package` step below: a run that hangs is a
+    # 30 minutes, on the `check-r-package` step below: a run that hangs is a
     # run nobody gets an answer from, and both observed hangs were inside
     # `test_check("nestedtune")` on a tree that had passed an hour earlier --
     # 52 minutes under `R CMD check` on macOS, which is this workflow's check
     # step, and 40 minutes under `covr` on ubuntu, which is `test-coverage`'s
     # (that workflow caps its own job at 20). The bound stays on the code both
-    # hangs were in. It is not free headroom: an ordinary windows leg has
-    # reached 11m54s. The 394-job record bounds how often this can bite from
-    # above rather than settling it -- exactly one job in 394 has ever passed
-    # 20 minutes and still finished, and nothing recorded says how much of that
-    # job was the check step, so the step cap fails at most that one job and
-    # may fail none. Priced against a 52-minute hang, and chosen anyway.
+    # hangs were in. It was 20 until 2026-09-02, when the suite outgrew it:
+    # the windows check step had run 13.2, 16.3 and 17.9 minutes on the last
+    # three default-branch runs, and the M48 branch, adding tests measured at
+    # 85 s locally, was killed at 20 on three consecutive runs mid-suite with
+    # no testthat output written (run 33664382061). 30 keeps the step bound
+    # under the 52-minute hang it was cut against while leaving the slowest
+    # leg roughly 10 minutes of headroom; it is still not free headroom, and a
+    # leg that approaches it again is the suite asking to be made faster
+    # rather than the cap asking to be raised.
     #
     # 60 minutes, on the job: the devel leg gets no Linux binaries and builds
     # every dependency from source. A 20-minute job cap killed it mid-`Building
@@ -67,7 +70,7 @@ jobs:
     # What the split gives up: every step that is not the check -- checkout,
     # `setup-r-dependencies`, cache save -- is now bounded only by this
     # 60-minute job cap, on all five legs, where the old single cap ended a
-    # stall anywhere in 20. The step cap still ends a hung test suite in 20.
+    # stall anywhere in 20. The step cap still ends a hung test suite in 30.
     timeout-minutes: 60
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
@@ -117,7 +120,7 @@ jobs:
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
-        timeout-minutes: 20
+        timeout-minutes: 30
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'

@@ -29,6 +29,16 @@
 #   serially and at two daemon counts. Recorded here for the audit; the
 #   assertion lives with the other dispatch identities.
 #
+# O4 -- type "live" (reference implementation), M48. Source: the same
+#   reference loop, handed the caller's `control_bayes()` and applying the
+#   documented merge -- `allow_par` off, the fold's tuning seed as `seed`,
+#   every other slot as passed. Pinned by "a control passed through `...`
+#   reaches every fold". The discriminator is the early stop `no_improve = 2`
+#   produces on the fixture: two of three folds record five candidates
+#   against the seven `initial + iter` would give, and the same run with no
+#   control records seven in every fold (measured 2026-09-02, tune 2.1.0).
+#   Satisfies M48 AC1.
+#
 # O1 and O2 are the >=2 independent oracle types GP2 asks of the package's own
 # contribution -- the call, the seed, the record, the loop -- at the initial
 # stage. The iteration stage has O1 and O3 only: the proposals are tune's own
@@ -78,6 +88,63 @@ test_that("per-fold metrics and selections match a hand-rolled Bayesian referenc
   # both would then be the initial stage alone.
   proposed <- vapply(res$.grid, function(g) any(g$.iter > 0L), logical(1))
   expect_true(any(proposed))
+})
+
+test_that("a control passed through `...` reaches every fold (M48, AC1)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- det_nested(d)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+  ctrl <- ac1_control()
+
+  res <- bayes_control_results()
+  expect_true(all(res$.completed))
+
+  ref <- reference_nested_bayes_loop(
+    wf,
+    folds,
+    iter = 4,
+    initial = 3,
+    objective = tune::exp_improve(),
+    param_info = p,
+    metrics = ms,
+    seed = 20,
+    metric_name = "rmse",
+    control = ctrl
+  )
+
+  expect_identical(res$.tuning_seed, ref_field(ref, "tuning_seed"))
+  expect_identical(res$.outer_fit_seed, ref_field(ref, "outer_fit_seed"))
+
+  for (i in seq_len(nrow(res))) {
+    expect_identical(res$.metrics[[i]], ref[[i]]$metrics)
+    expect_identical(res$.selected[[i]], ref[[i]]$selected)
+    # The candidate set, as the hand run scored it: the same rows in the
+    # same order, so a fold that stopped early stopped where tune stopped.
+    expect_identical(res$.grid[[i]], scored_candidates(ref[[i]]$tuned))
+  }
+
+  # The control changed the run: `no_improve = 2` stopped at least one fold
+  # short of `iter`, so its candidate set is smaller than `initial + iter`.
+  scored <- vapply(res$.grid, nrow, integer(1))
+  expect_true(any(scored < 3L + 4L))
+
+  # And the same run with no control stops nowhere, so the shortfall above is
+  # the control's and not the fixture's.
+  set.seed(20)
+  plain <- memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 4,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  ))
+  expect_true(all(plain$.completed))
+  expect_identical(vapply(plain$.grid, nrow, integer(1)), rep(7L, nrow(plain)))
 })
 
 test_that("the Bayesian reference loop also matches with a stochastic engine", {

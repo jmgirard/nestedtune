@@ -29,9 +29,14 @@ whatever its \code{inside} argument returned — so a specification that produce
 no \code{rset} gives a design that cannot be run, where \code{\link[=nested_resamples]{nested_resamples()}}
 refuses one at construction.}
 
-\item{...}{Not used; must be empty. Everything after it is matched by name,
-so a mistyped or unsupported argument is an error rather than a silent
-positional match.}
+\item{...}{A control object as \code{control} -- what \code{\link[tune:control_grid]{tune::control_grid()}}
+returns for \code{nested_tune_grid()}, what \code{\link[tune:control_bayes]{tune::control_bayes()}} returns for
+\code{nested_tune_bayes()} -- and nothing else. It reaches the inner tuning
+call in every fold, and in the final fit, with the slots this package
+forces overwritten; the section on differences from tune says what
+becomes of each slot. Any other name is an error, as is an unnamed
+value: everything after \code{...} is matched by name, so a mistyped or
+unsupported argument is an error rather than a silent positional match.}
 
 \item{iter}{The maximum number of search iterations, passed to
 \code{\link[tune:tune_bayes]{tune::tune_bayes()}}. A single non-negative whole number. Each iteration
@@ -154,18 +159,18 @@ One rule is this function's own. \code{\link[tune:control_bayes]{tune::control_b
 that drives the Gaussian-process proposals, and tune draws it from the
 stream when it is not given -- so left alone, a fold's proposals would depend
 on how much of the stream tune had consumed before reaching it. Here the
-control is built inside the fold's seed scope with \code{seed} set to the fold's
-tuning seed, the same number \code{.tuning_seed} reports. Fold \code{i} is exactly:
+control is given \code{seed} inside the fold's seed scope, set to the fold's
+tuning seed, the same number \code{.tuning_seed} reports; the recorded control
+carries no \code{seed} for that reason. Fold \code{i} is exactly:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
+control <- attr(res, "procedure")$control
+control$seed <- res$.tuning_seed[[i]]
 tuned <- tune_bayes(object, resamples$inner_resamples[[i]],
                     iter = iter, initial = initial, objective = objective,
                     param_info = param_info, metrics = metrics,
-                    eval_time = eval_time,
-                    control = control_bayes(allow_par = FALSE,
-                                            event_level = event_level,
-                                            seed = res$.tuning_seed[[i]]))
+                    eval_time = eval_time, control = control)
 final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 set.seed(res$.outer_fit_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -182,32 +187,56 @@ parallel, at any number of daemons.
 \section{Differences from calling tune directly}{
 
 
-There is no \code{control} argument. What \code{\link[tune:control_bayes]{tune::control_bayes()}} settles is
-settled here by the arguments above, or forced.
+There is no \code{control} formal, but a \code{\link[tune:control_bayes]{tune::control_bayes()}} passed through
+\code{...} as \code{control} reaches the inner \code{tune_bayes()} in every fold, and in
+the final fit that re-runs the result -- \code{control = control_bayes(no_improve = 5, uncertain = 3)}, say, to stop a fold's search sooner. What runs is the
+control passed, or tune's default when none is, with the slots this package
+forces overwritten; the result records that effective control, \code{seed} left
+out, as \code{attr(res, "procedure")$control}, which is what the recipe above
+passes. Every slot of \code{control_bayes()} falls under one of six headings.
 
-Settable: \code{iter}, \code{initial} and \code{objective}, which are \code{\link[tune:tune_bayes]{tune::tune_bayes()}}'s
-own arguments and reach it unchanged; \code{event_level}, which reaches the inner
-\code{control_bayes()} and the outer \code{control_last_fit()} alike; and \code{eval_time},
-which reaches the inner \code{tune_bayes()} and the outer \code{last_fit()}.
+\strong{Forced: \code{allow_par}, \code{seed}.} \code{allow_par = FALSE} on both tune calls a
+fold makes, because parallelism belongs over the outer folds; and \code{seed},
+set to the fold's tuning seed inside that seed's scope, as the section
+above describes -- whatever the control carries for either.
 
-\code{initial} is a count only. tune also accepts an earlier \code{tune_grid()} result
-there, and this function refuses one, for the reason the argument's
-description gives.
+\strong{Settable as its own argument: \code{event_level}.} As on \code{\link[=nested_tune_grid]{nested_tune_grid()}}:
+the argument is the one place the level is set, a control left at tune's
+default takes it, and a control naming a level that is neither tune's
+default nor the argument's is refused at entry, naming both. \code{iter},
+\code{initial}, \code{objective} and \code{eval_time} are \code{\link[tune:tune_bayes]{tune::tune_bayes()}}'s own
+arguments rather than control slots, offered here as arguments and reaching
+it unchanged. \code{initial} is a count only: tune also accepts an earlier
+\code{tune_grid()} result there, and this function refuses one, for the reason
+the argument's description gives.
 
-Forced: \code{allow_par = FALSE} on both tune calls a fold makes, because
-parallelism belongs over the outer folds; and \code{seed}, set to the fold's
-tuning seed and built inside that seed's scope, as the section above
-describes.
+\strong{Refused: none.} No slot is refused on its own. What is refused at entry
+is a control of another class -- a \code{control_grid()}, which tune itself
+would accept here -- and the \code{event_level} conflict above.
 
-Not offered: \code{no_improve}, \code{uncertain} and \code{time_limit}, which keep
-\code{\link[tune:control_bayes]{tune::control_bayes()}}'s defaults -- a fold's search stops once ten
-consecutive iterations have brought no improvement (\code{no_improve = 10}),
-takes no uncertainty sample (\code{uncertain = Inf}) and runs under no time
-limit (\code{time_limit = NA}) -- so a fold may stop short of \code{iter}, and its
-\code{.grid} records how far it went; \code{save_gp_scoring}, \code{verbose} and
-\code{verbose_iter}, which write to a daemon's temporary directory or print
-where nothing collects it; and the slots that would have nothing to act on
-here, for the reasons \code{\link[=nested_tune_grid]{nested_tune_grid()}} gives.
+\strong{Passed through: \code{no_improve}, \code{uncertain}, \code{time_limit}, \code{verbose},
+\code{verbose_iter}, \code{save_gp_scoring}, \code{pkgs}, \code{parallel_over},
+\code{workflow_size}.} Each reaches \code{tune_bayes()} as given. \code{no_improve} and
+\code{uncertain} govern each fold's search as they would a direct call, so a
+fold may stop short of \code{iter}, and its \code{.grid} records how far it went.
+\code{time_limit} is a wall-clock stop, and a wall-clock stop makes the
+candidate set depend on the machine: two runs under the same seed can stop
+at different iterations, which is outside what the seed contract above can
+promise. \code{verbose} and \code{verbose_iter} print from a serial run, and from a
+mirai daemon where nothing shows it. \code{save_gp_scoring} writes its files to
+the temporary directory of the process that tuned, a daemon's own on the
+parallel path. \code{pkgs}, \code{parallel_over} and \code{workflow_size} behave as on
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{parallel_over} included: it changes the numbers a
+stochastic engine produces even at \code{allow_par = FALSE}.
+
+\strong{Not returned: \code{extract}, \code{save_pred}, \code{save_workflow}.} As on
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}: each lands on the inner \code{tune_results} a fold record
+discards, so on a nested run setting them costs the work and returns
+nothing; the final fit keeps its tuning run as \verb{$tuning}, where what they
+saved is reachable.
+
+\strong{Inert: \code{backend_options}.} Options for a parallel backend, with no
+backend to reach at \code{allow_par = FALSE}.
 }
 
 \examples{

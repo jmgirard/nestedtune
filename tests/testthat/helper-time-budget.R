@@ -606,33 +606,41 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      441L,
+      443L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with param_info supplied"
     ),
     tb_row(
       "test-parallel-identity.R",
-      494L,
+      496L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with a two-class fixture at event_level second"
     ),
     tb_row(
       "test-parallel-identity.R",
-      541L,
+      543L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with a censored fixture at a named eval_time"
     ),
     tb_row(
       "test-parallel-identity.R",
-      595L,
+      597L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the Bayesian path matches serial at two above-threshold daemon counts",
       times = 2L,
       note = "inside for (n in c(2L, 3L)) (M45)"
+    ),
+    tb_row(
+      "test-parallel-identity.R",
+      645L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the control reaches every fold on the parallel path as on the serial one",
+      note = "one pool of 2 (M48)"
     ),
 
     # --- test-parallel-metrics.R --------------------------------------------
@@ -652,7 +660,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-payload.R",
-      295L,
+      302L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a daemon receives the payload rehydrated, not the leaned one"
@@ -683,7 +691,7 @@ time_budget_ledger <- function() {
     # --- test-parallel-interrupt.R ------------------------------------------
     tb_row(
       "test-parallel-interrupt.R",
-      51L,
+      52L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "an interrupted run leaves no fold executing"
@@ -698,7 +706,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-interrupt.R",
-      131L,
+      133L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a completed run is not disturbed by the unconditional cancel"
