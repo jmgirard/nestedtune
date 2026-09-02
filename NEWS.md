@@ -1,14 +1,5 @@
 # nestedtune 0.0.0.9000
 
-* `predict()` and `augment()` now work directly on a `nested_final_fit`,
-  returning what the same call on `extract_workflow(final)` returns; the
-  `extract_workflow()` route still works. `augment` is re-exported so the
-  call needs no other package attached. `predict()` passes further arguments
-  (`level`, `eval_time`, ...) through to the model, where parsnip refuses
-  one it does not take; `augment()` takes `new_data` and `eval_time` only
-  and refuses anything else, where workflows' own method would let it
-  vanish. The help page says what residuals on the training rows are not.
-
 * Breaking: `nested_final_fit()` now takes the `nested_results` object in
   place of the design and the procedure -- `nested_final_fit(object,
   results)` -- and re-runs the procedure that result recorded: the design's
@@ -24,6 +15,15 @@
   one that is no longer a `nested_results` (an operation that changed the
   rows returns a plain tibble), or one with no rows is refused before any
   fitting, with condition class `nestedtune_bad_results`. Not migrated.
+
+* `predict()` and `augment()` now work directly on a `nested_final_fit`,
+  returning what the same call on `extract_workflow(final)` returns; the
+  `extract_workflow()` route still works. `augment` is re-exported so the
+  call needs no other package attached. `predict()` passes further arguments
+  (`level`, `eval_time`, ...) through to the model, where parsnip refuses
+  a name it does not recognise; `augment()` takes `new_data` and `eval_time` only
+  and refuses anything else, where workflows' own method would let it
+  vanish. The help page says what residuals on the training rows are not.
 
 * `print()` and `summary()` on a `nested_final_fit` name the procedure that
   ran: the candidates scored for a grid search; for a Bayesian search the

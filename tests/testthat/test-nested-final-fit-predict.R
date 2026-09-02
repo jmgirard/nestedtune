@@ -199,8 +199,11 @@ test_that("AC3: predict() without `new_data` raises the workflow's own error", {
 
   final <- reg_final()
 
-  ours <- rlang::catch_cnd(predict(final))
-  theirs <- rlang::catch_cnd(predict(extract_workflow(final)))
+  ours <- rlang::catch_cnd(predict(final), classes = "error")
+  theirs <- rlang::catch_cnd(
+    predict(extract_workflow(final)),
+    classes = "error"
+  )
   expect_s3_class(ours, "error")
   expect_s3_class(theirs, "error")
   expect_identical(conditionMessage(ours), conditionMessage(theirs))
@@ -216,6 +219,14 @@ test_that("AC3: augment() refuses an argument it does not know", {
   cnd <- rlang::catch_cnd(augment(final, new_data = d, nonesuch = 1))
   expect_s3_class(cnd, "rlib_error_dots_nonempty")
   expect_identical(rlang::call_name(conditionCall(cnd)), "augment")
+  # The upstream property the fence answers: the workflow's own method lets
+  # the same argument vanish (workflows 1.3.0), so the refusal is this
+  # package's. A workflows release that starts reading its dots turns this
+  # red, which is the falsifier the fence was chosen against.
+  expect_null(rlang::catch_cnd(
+    augment(extract_workflow(final), new_data = d, nonesuch = 1),
+    classes = "error"
+  ))
 })
 
 # AC4 -------------------------------------------------------------------
@@ -223,7 +234,8 @@ test_that("AC3: augment() refuses an argument it does not know", {
 test_that("AC4: augment is re-exported, so the call works with tune unattached", {
   skip_if_no_engines()
 
-  expect_false("package:tune" %in% search())
+  # A precondition of the session, not a claim about the package.
+  skip_if("package:tune" %in% search(), "tune is attached")
   expect_true("augment" %in% getNamespaceExports("nestedtune"))
 
   final <- reg_final()

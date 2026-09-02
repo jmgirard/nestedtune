@@ -20,9 +20,11 @@ method unchanged; \code{type} selects the prediction type (\code{"numeric"},
 when \code{NULL}.}
 
 \item{...}{For \code{predict()}, further arguments passed on to the model's
-predict method through the workflow -- \code{level} for an interval, or
-\code{eval_time} with \code{type = "survival"}; an argument the model's predict
-method does not take is refused by parsnip. For \code{augment()}, not used;
+predict method through the workflow -- \code{level} with \code{type = "conf_int"}
+for an interval, or \code{eval_time} with \code{type = "survival"}; a name outside
+parsnip's own short list of predict arguments is refused by parsnip, and
+a listed one the model cannot use for the \code{type} asked is passed on and
+may be ignored. For \code{augment()}, not used;
 must be empty. Here the two diverge: workflows' own \code{augment()} method
 passes an unknown argument on to parsnip, which ignores it, so this
 method refuses it instead of letting it vanish.}
@@ -33,9 +35,9 @@ which to evaluate survival probabilities; passed to the workflow's
 }
 \value{
 \code{predict()} returns the tibble of predictions the workflow's
-\code{predict()} method returns for \code{type}. \code{augment()} returns \code{new_data}
-with the workflow's prediction columns bound on, and a \code{.resid} column
-where the outcome is present and the model is a regression.
+\code{predict()} method returns for \code{type}. \code{augment()} returns the workflow's
+prediction columns followed by the columns of \code{new_data}, with a \code{.resid}
+column where the outcome is present and the model is a regression.
 }
 \description{
 \code{predict()} and \code{augment()} on a \code{nested_final_fit} are the trained

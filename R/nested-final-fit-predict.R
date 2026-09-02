@@ -8,9 +8,11 @@
 # not.
 #
 # The two treat `...` differently, on purpose (GP1). `predict()` forwards it,
-# because parsnip's `check_pred_type_dots()` refuses any name it does not take
-# on the way through, so an unknown argument is an error there rather than a
-# silent no-op here. `augment()` fences it, because
+# because parsnip's `check_pred_type_dots()` refuses any name outside its own
+# short list of predict arguments on the way through, so an unknown argument
+# is an error there rather than a silent no-op here (a listed name the model
+# cannot use, `level` without `type = "conf_int"` say, is passed on and may be
+# ignored -- parsnip's behavior, not this method's). `augment()` fences it, because
 # `workflows::augment.workflow()` passes its dots on unread and parsnip's
 # `augment()` methods ignore them, so a fence here is the only place the
 # argument would be refused at all (both verified 2026-09-02, workflows 1.3.0,
@@ -32,17 +34,19 @@
 #'   which to evaluate survival probabilities; passed to the workflow's
 #'   `augment()` method. Ignored otherwise.
 #' @param ... For `predict()`, further arguments passed on to the model's
-#'   predict method through the workflow -- `level` for an interval, or
-#'   `eval_time` with `type = "survival"`; an argument the model's predict
-#'   method does not take is refused by parsnip. For `augment()`, not used;
+#'   predict method through the workflow -- `level` with `type = "conf_int"`
+#'   for an interval, or `eval_time` with `type = "survival"`; a name outside
+#'   parsnip's own short list of predict arguments is refused by parsnip, and
+#'   a listed one the model cannot use for the `type` asked is passed on and
+#'   may be ignored. For `augment()`, not used;
 #'   must be empty. Here the two diverge: workflows' own `augment()` method
 #'   passes an unknown argument on to parsnip, which ignores it, so this
 #'   method refuses it instead of letting it vanish.
 #'
 #' @return `predict()` returns the tibble of predictions the workflow's
-#'   `predict()` method returns for `type`. `augment()` returns `new_data`
-#'   with the workflow's prediction columns bound on, and a `.resid` column
-#'   where the outcome is present and the model is a regression.
+#'   `predict()` method returns for `type`. `augment()` returns the workflow's
+#'   prediction columns followed by the columns of `new_data`, with a `.resid`
+#'   column where the outcome is present and the model is a regression.
 #'
 #' @section Residuals on the training rows are not performance:
 #'

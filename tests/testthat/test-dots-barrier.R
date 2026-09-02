@@ -73,9 +73,10 @@ test_that("AC2: nested_resamples() refuses an argument it does not know", {
 DOTS_EXEMPT_METHODS <- c(
   "[.nested_results",
   # Its `...` is forwarded to the trained workflow on purpose (M47): parsnip's
-  # `check_pred_type_dots()` refuses any name the model's predict method does
-  # not take, so an unknown argument is an error downstream rather than a
-  # silent no-op. `augment.nested_final_fit` stays probed -- workflows' own
+  # `check_pred_type_dots()` refuses any name outside its own short list of
+  # predict arguments, so an unknown argument is an error downstream rather
+  # than a silent no-op (a listed name the model cannot use is parsnip's to
+  # ignore, not this package's to fence). `augment.nested_final_fit` stays probed -- workflows' own
   # method swallows its dots, so the fence there is this package's.
   "predict.nested_final_fit",
   # The compatibility methods M37 registers. Their `...` is not this package's
