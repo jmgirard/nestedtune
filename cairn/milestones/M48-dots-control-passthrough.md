@@ -130,6 +130,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: /milestone-review round 2: branch contains origin/main and is pushed; PR #58 still draft; document() no diff; cairn_validate exit 0; pkgdown clean; full `devtools::test()` DONE with no failure, skip or warning section; criterion files rerun by name; three reviewers back with four findings from the diff-bug lens and none from the other two, triaged at the gate.
 - 2026-09-02: round 2 gate: user accepted the proposed triage (findings 1, 2, 4 rejected; finding 3 to Known issues at hygiene) and approved merging PR #58.
 - 2026-09-02: CI red on `format-suggest` alone: one over-wide line in `test-parallel-identity.R` (BC11's column vector); `air format` applied, the ledger's line keys unmoved (the change sits after the last pool start), identity file green on rerun; formatting only, approval stands.
+- 2026-09-02: CI watch hit the harness ceiling and was stopped; fresh state at that point: format-suggest, pkgdown and the hard-check ubuntu release leg pass, the five-leg R-CMD-check matrix and test-coverage still pending. Approval marker stands; the merge waits on a fresh `gh pr checks 58` showing green.
 
 ## Decisions
 
