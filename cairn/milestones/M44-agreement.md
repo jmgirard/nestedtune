@@ -1,6 +1,6 @@
 # M44: `agreement()` tabulates what the outer folds selected
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -131,7 +131,7 @@ is missing is the table.
 - [x] T3: Roxygen with `@return`, the IP3 sentence, an `@examplesIf` block
       mirroring `R/nested-results-print.R`'s; `_pkgdown.yml` row; NEWS entry;
       `DESIGN.md` Function Families gains the method beside `collect_metrics()`.
-- [ ] T4: `air format .`; `devtools::document()`, `devtools::test()`,
+- [x] T4: `air format .`; `devtools::document()`, `devtools::test()`,
       `devtools::check()`, `pkgdown::check_pkgdown()` (AC7).
 
 ## Work log
@@ -146,6 +146,7 @@ is missing is the table.
 - 2026-09-01: T1 done — generic, default (`abort_no_agreement_method()`, class `nestedtune_no_agreement_method`) and method; counting by `vctrs::vec_count(sort = "location")` then a stable `order(-count)`, folds stacked with `vctrs::vec_rbind()` over one-row frames so a fold lacking a parameter fills `NA` by common type. Full `devtools::test()`: 2816 pass, 0 fail, 0 warn.
 - 2026-09-01: T2 done — AC3–AC5 tests; `warn_partial_summary()` gained `noun = "summary"`, `check_any_completed()` is called with `action = "tabulate"`. One subtlety found: `rbind()` of two row-subsets sheds the class (the vctrs template rule), so the reordered fixture is built by the single subset `paired[c(2, 1, 3), ]` the criterion names. No missing-parameter subtlety beyond the planned `NA` row.
 - 2026-09-01: T3 done — roxygen (claims checked against the example's output: two rows, `num_comp` 1 then 2, `n` 2 and 1, `prop` 0.667 and 0.333), `_pkgdown.yml` row, NEWS entry, DESIGN Function Families line; D-039 was written at planning.
+- 2026-09-01: T4 done — `air format .` and `devtools::document()` leave no diff, `devtools::check()` 0 errors, 0 warnings, 0 notes, `pkgdown::check_pkgdown()` no problems. Status → review.
 
 ## Decisions
 
