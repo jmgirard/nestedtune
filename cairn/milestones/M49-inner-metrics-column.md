@@ -34,7 +34,7 @@ for that generic → not planned; a user control on the inner run → M48.
 
 ## Acceptance criteria
 
-- [ ] AC1: Each completed fold's `.inner_metrics` is identical to `tune::collect_metrics()` of the inner tuning run re-run
+- [x] AC1: Each completed fold's `.inner_metrics` is identical to `tune::collect_metrics()` of the inner tuning run re-run
       by hand under the fold's tuning seed, for both tuners, the Bayesian table carrying `.iter`; a fold that tuned and
       then failed its outer fit keeps its table; a fold that scored nothing carries a zero-row table with the columns of
       a completed fold's; a candidate that scored on some inner resamples and failed on others appears with `n` below
@@ -57,7 +57,7 @@ for that generic → not planned; a user control on the inner run → M48.
       the same table with one row dropped; `[` returns a bare tibble for the column subset
       `setdiff(names(x), ".inner_metrics")`, and a single-argument `rbind()` for a still-classed object from which the
       column was removed beforehand; and a frame lacking the column fails `has_results_columns()`; asserted by tests.
-- [ ] AC6: `extract_scored_candidates()` on a regression grid fit, a Bayesian fit and a censored-regression fit
+- [x] AC6: `extract_scored_candidates()` on a regression grid fit, a Bayesian fit and a censored-regression fit
       scoring a dynamic survival metric returns one row per candidate the fit's tuning run scored, carrying the
       tuned-parameter columns and `.config`, `.iter` added on the Bayesian fit, and no other column — so the `.eval_time`
       column the base commit's accessor carried on the survival fit, the first pooled row's evaluation time per
@@ -127,6 +127,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: T8 code landed: the help page's `@return` names the per-metric columns dropped, `.eval_time` among them, and points at `collect_metrics(extract_tune_results(x))`; NEWS names the dropped column; a survival column-set test in `test-nested-final-fit-extract.R` and a Bayesian column-set assertion in `test-nested-final-fit-oracles.R`. The three touched files are green; checkpoint while the full suite runs, the T8 tick and status waiting on it.
 - 2026-09-02: T8 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, full `devtools::test()` clean with no failure, warning or skip line. All of T7–T9 done; status → review for the second round.
 
+- 2026-09-02: review round 2 opened: branch pushed, PR #59 still draft; AC1–AC7 evidenced and ticked on a clean 3,675-pass suite; gate checks green save `devtools::check()`, still running; three reviewers returned (G1–G12, one [S] overlap with G3); checkpoint before the check lands and the gate.
 ## Decisions
 
 - 2026-09-02: a record column altered under the class — `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class after without consulting the reconstruct rule — passes `[` and `rbind()`, which compare the object against itself; the template-taking doors refuse it. Pre-existing for every record column, recorded at the rule (`R/nested-results.R`) rather than fixed: intercepting `$<-` and `[[<-` is a fifth and sixth door the invariants D-031 fixed do not name, a candidate for a later milestone if a user meets it.
@@ -134,21 +135,21 @@ for that generic → not planned; a user control on the inner run → M48.
 
 ## Review
 
-_Evidence gathered 2026-09-02 on branch `m049-inner-metrics-column` at 8df4c7e (origin/main unmoved since the cut; PR #59 draft). Full `devtools::test()`: 3,621 pass, 0 fail, 0 warn, 0 skip, 381 s._
+_Round 2, evidence gathered 2026-09-02 on branch `m049-inner-metrics-column` at 14a8465 (origin/main at 15c07d9, unmoved since the cut; PR #59 draft, pushed). Full `devtools::test()`: 3,675 pass, 0 fail, 0 warn, 0 skip. Round 1 (at 8df4c7e) ended in defect return 1; its evidence is superseded by the lines below._
 
-- AC1 — verified. Grid: `test-nested-tune-grid-oracles.R` "an integer grid records the candidates that fold actually expanded" asserts each fold's `.inner_metrics` identical to `tune::collect_metrics()` of a hand re-run under the fold's seed. Bayesian: `test-nested-tune-bayes-oracles.R` "per-fold metrics and selections match a hand-rolled Bayesian reference loop" asserts the same and `.iter` present. Failure shapes in `test-nested-tune-grid-failures.R`: "a fold that failed at the outer fit keeps the grid its tuning scored" (table kept), "a fold that scored nothing records an empty table, never NULL" (zero-row, a completed fold's columns), "a fold that completed on a truncated inner design keeps tune's notes" (partial inner split: every `n` below 3); Bayesian zero-row with `.iter` in `test-nested-tune-bayes-results.R`. All green in the run above.
-- AC2 — verified. `grep -rnE '(^|[^A-Za-z])\.grid' R/ tests/ vignettes/ man/ README.Rmd` exits 1 with no match; a repo-wide sweep outside `cairn/` finds `.grid` only in NEWS.md. `R/nested-results.R` and `has_results_columns()` name `.inner_metrics`; the print and summary comparison reads `candidate_sets()` over `.inner_metrics`.
-- AC3 — verified. `git diff origin/main..HEAD -- R/nested-results-agreement.R R/nested-results-plot.R` is 0 bytes; `git diff origin/main..HEAD -- vignettes/ tests/testthat/_snaps/` is empty, so the selection section and the print, summary, agreement and plot snapshots carry no edit.
-- AC4 — verified. No `_snaps/` edit (AC3's diff) and `test-nested-results-print.R` (157 tests) plus `test-nested-tune-bayes-results.R` green, covering equal sets, the differing per-fold random grid sharing `.config` labels, a partial run and the Bayesian rendering; `candidate_sets()` derives each completed fold's set from `candidate_set(.inner_metrics)` and `candidate_key()` drops `.config` and `.iter` before comparing parameter values.
+- AC1 — verified. Grid: `test-nested-tune-grid-oracles.R` "an integer grid records the candidates that fold actually expanded" asserts each fold's `.inner_metrics` identical to `tune::collect_metrics()` of a hand re-run under the fold's seed. Bayesian: `test-nested-tune-bayes-oracles.R` "per-fold metrics and selections match a hand-rolled Bayesian reference loop", `.iter` included. Failure shapes in `test-nested-tune-grid-failures.R`: "a fold that failed at the outer fit keeps the grid its tuning scored" (table kept), "a fold that scored nothing records an empty table, never NULL" (zero-row, a completed fold's columns), "a fold that completed on a truncated inner design keeps tune's notes" (every `n` below 3 on the partial fold, 3 on the full one); the round-1 F1/F2 shapes now covered by "a regression fold that scored nothing carries no .eval_time for an eval_time it was given", "a censored fold that scored nothing carries .eval_time under a dynamic metric only" and "an engine parameter with no dials object is typed from the grid"; Bayesian zero-row with `.iter` in `test-nested-tune-bayes-results.R`. The [O] reviewer re-ran the prototype against real `collect_metrics()` output on six metric-set shapes and matched names and types. All green in the run above.
+- AC2 — verified. `grep -rnE '(^|[^A-Za-z])\.grid' R/ tests/ vignettes/ man/ README.Rmd` exits 1 with no match; a repo-wide sweep outside `cairn/` finds `.grid` only in NEWS.md. `record_columns()` and `has_results_columns()` name `.inner_metrics`; print and summary read `candidate_sets()` over `.inner_metrics`.
+- AC3 — verified. `git diff origin/main..HEAD -- R/nested-results-agreement.R R/nested-results-plot.R` is 0 bytes; the diff over `vignettes/` and `tests/testthat/_snaps/` is empty.
+- AC4 — verified. No `_snaps/` edit and `test-nested-results-print.R` plus `test-nested-tune-bayes-results.R` green, covering equal sets, the differing per-fold random grid sharing `.config` labels, a partial run and the Bayesian rendering; `candidate_sets()` derives each completed fold's set from `candidate_set(.inner_metrics)` and `candidate_key()` drops `.config` and `.iter` before comparing parameter values.
 - AC5 — verified. `record_columns()` and `has_results_columns()` list `.inner_metrics`; `test-dplyr-compat.R` ".inner_metrics is in the record dplyr_reconstruct() checks" and "has_results_columns() requires .inner_metrics", `test-vctrs-compat.R` ".inner_metrics is in the record vec_restore() and rbind() check" probe the missing column, the zero-row and one-row-dropped replacement on a non-first completed fold, the `[` column subset and the single-argument `rbind()`; all green.
-- AC6 — evidence recorded, tick pending the gate. `R/nested-final-fit-extract.R` changes comments only; the function body is untouched and still returns `scored_candidates(x$tuning)`. Every `expect_*` line in `test-nested-final-fit-extract.R` is unchanged and green; the file's diff is three comment rewordings plus one comparand, `res$.grid[[1L]]` → `candidate_set(res$.inner_metrics[[1L]])`, which AC2's grep over `tests/` forces. The help page describes the shape as a `collect_metrics()` table reduced to its parameter columns and `.config`, without `.grid`. Read strictly, "its existing tests unchanged" and AC2 cannot both hold on this file; the disposition is the maintainer's at the gate.
-- AC7 — verified. Verify slot: `devtools::document()` produces no diff, `air format .` no diff, `devtools::test()` clean (above). NEWS.md carries the breaking-change entry as its first bullet. DESIGN.md's `new_nested_results()` paragraph names `.inner_metrics`. D-043 is appended to DECISIONS.md.
+- AC6 — verified against the amended text. Regression: `test-nested-final-fit-extract.R` lines 46 and 53 carry `expect_identical(nrow(cand), nrow(det_grid()))` and `expect_setequal(names(cand), c("num_comp", ".config"))`. Bayesian: `test-nested-final-fit-oracles.R` line 276 `expect_setequal(names(cand), c("df1", "df2", ".config", ".iter"))` beside the `.iter` assertion. Survival: "a survival fit's candidates carry no evaluation-time column" asserts the run's own table carries `.eval_time` with one row per candidate and time, and the accessor `c("dist", ".config")` with one row per candidate. The help page names the parameter columns and `.config` (`.iter` on a Bayesian fit) without `.grid`, names `.eval_time` among the per-metric columns that go, and points at `collect_metrics(extract_tune_results(x))`; NEWS names the dropped column. Wording of the help sentence is round-2 finding G3, fixed at the gate.
+- AC7 — verified. `devtools::document()` no diff, `air format .` no diff, `devtools::test()` clean (above). NEWS.md's first bullet is the breaking-change entry. DESIGN.md's `new_nested_results()` paragraph names `.inner_metrics`. D-043 is appended.
 - Driving RR: none, so no projection-vs-outcome pairs.
 
 ### Consistency gate
 
-- `cairn_validate.py`: all checks passed, 18 references-staleness advisories only (the standing set). No IP/GP text changed in DESIGN.md, so `cairn_impact.py --changed` is skipped.
-- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, with no milestone number in user-facing text. No new top-level files. `devtools::check()`: 0 errors, 0 warnings, 0 notes.
+- `cairn_validate.py`: all checks passed, 18 references-staleness advisories only (the standing set). No IP/GP text changed, so `cairn_impact.py --changed` is skipped.
+- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, no milestone number in user-facing text. No new top-level files. `devtools::check()`: pending at this write.
 
 ### Independent review
 
@@ -167,3 +168,21 @@ _Gate 2026-09-02: return to in-progress on F1–F3 (the defect return counted ab
   - F8: the Scope's size comparison sets the summarized table against `.grid` and `.selected` together though `.selected` is kept; tracking prose.
   - F9: the print snapshots elide the tibble body, so "no snapshot edit" cannot see the column rename; the "Candidates searched" line is the operative AC4 evidence and holds.
   - F10: `candidate_sets()` is derived on every `print()` and `summary()` call; cosmetic.
+
+#### Round 2 (2026-09-02, at 14a8465)
+
+- [S] blame-history: no findings; seven informational checks — the M03 `collect_metrics()` guard intact in `inner_metrics()`, the M21 list-valued-column ordering lesson kept in `candidate_set()`, `join_iteration()` retired against the hand-rolled Bayesian oracle, the per-resample pooling superseded by `collect_metrics()`'s own aggregation, the `.eval_time` drop disclosed in NEWS and the help page, the T7 typing fix traced, the `fake_tuning()` cleanup sound.
+- [S] prior-review record: one finding, the same as G3 below (the help sentence reads as inclusion); F1, F2, F4, F7 confirmed fixed; no contradiction with D-023/031/032/035/036 or LESSONS.
+- [O] diff-bug: twelve findings, ranked by the reviewer; dispositions at the gate:
+  - G1: `candidate_sets()` on the `print()`/`summary()` path derives through `candidate_set()`, which has no `tryCatch` of its own (the wrapper is `scored_candidates()`, which those callers bypass), on a method whose comment promises never to raise (M21 F1). No raising input found; the guard's absence is the finding.
+  - G2: `empty_inner_metrics()` is called outside every `tryCatch` in `nested_fold_fit()` and, in `R/parallel.R`, after `collect_mirai()` has returned every fold; its internals are each guarded, no raise constructed.
+  - G3: the help sentence "Everything tune wrote per metric goes with them: ..., the `.eval_time` column too" reads as inclusion; AC6 asks the page to say the column is dropped. NEWS says it plainly.
+  - G4: `R/nested-results-print.R:389` still cites `scored_candidates_impl()`, deleted on this branch; `test-nested-results-print.R:30` names `scored_candidates()` where the test now asserts of `candidate_set()`.
+  - G5: `candidate_sets()` was inserted between `print_candidate_sets()`'s comment block and the function, orphaning the comment.
+  - G6: `empty_param_column()` falls back to `logical(0)` for an unrecognized dials type — the F2 wrong type, as the default.
+  - G7: `empty_param_columns()` ignores the grid's names when the parameter set is a zero-row data frame; no input found reaching it.
+  - G8: `fake_tuning()`'s `env = parent.frame()` default schedules removal on a wrapping helper's frame if one is ever introduced; the shapes in use clean up, verified by execution.
+  - G9: the engine-free tests now stub `collect_metrics()` through `fake_tuning()`, so the raw `tune_results` shape is exercised only in engine-gated tests; not a criterion breach.
+  - G10: `candidate_sets()` recomputed on both print and summary (round-1 F10 restated).
+  - G11: D-043 carries no trace of the `.eval_time` drop; the round-1 gate chose to leave it unannotated, the milestone's Decisions section recording it.
+  - G12: NEWS's column list omits `.metric` and `.estimator`, which the roxygen lists.
