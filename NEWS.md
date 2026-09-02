@@ -1,5 +1,15 @@
 # nestedtune 0.0.0.9000
 
+* `print()` on a `nested_results` accepts `n` and `width` and passes them to
+  the rendering of the outer-fold rows, so `print(res, n = Inf)` shows every
+  fold of a run wider than ten and `print(res, width = 40)` narrows the table.
+  Both are matched by full name only; any other argument is still refused.
+  Previously `print(res, n = 25)` was an error.
+
+* The failure advice a `nested_results` summary prints now names the results
+  object's `.notes` column. Previously it read `x$.notes`, and `x` inside the
+  summary's print method is the summary itself, which has no such column.
+
 * `nested_tune_grid()` and `nested_final_fit()` gain an `eval_time` argument,
   passed on to every `tune` call whose answer depends on it, so a censored
   regression workflow scored by a dynamic or integrated survival metric is
