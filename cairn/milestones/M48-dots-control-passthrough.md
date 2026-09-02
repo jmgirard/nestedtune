@@ -129,6 +129,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: return scope T8–T13 done; full `devtools::test()` clean (summary reporter, no failures or skips), `devtools::document()` no diff; status set to review for round 2.
 - 2026-09-02: /milestone-review round 2: branch contains origin/main and is pushed; PR #58 still draft; document() no diff; cairn_validate exit 0; pkgdown clean; full `devtools::test()` DONE with no failure, skip or warning section; criterion files rerun by name; three reviewers back with four findings from the diff-bug lens and none from the other two, triaged at the gate.
 - 2026-09-02: round 2 gate: user accepted the proposed triage (findings 1, 2, 4 rejected; finding 3 to Known issues at hygiene) and approved merging PR #58.
+- 2026-09-02: CI red on `format-suggest` alone: one over-wide line in `test-parallel-identity.R` (BC11's column vector); `air format` applied, the ledger's line keys unmoved (the change sits after the last pool start), identity file green on rerun; formatting only, approval stands.
 
 ## Decisions
 

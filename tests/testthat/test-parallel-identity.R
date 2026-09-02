@@ -658,7 +658,13 @@ test_that("BC11: the control reaches every fold on the parallel path as on the s
   expect_identical(last_dispatch(), "parallel")
 
   # The fold records the criterion names, one by one, and then the object.
-  for (col in c(".metrics", ".selected", ".grid", ".tuning_seed", ".outer_fit_seed")) {
+  for (col in c(
+    ".metrics",
+    ".selected",
+    ".grid",
+    ".tuning_seed",
+    ".outer_fit_seed"
+  )) {
     expect_identical(parallel[[col]], serial[[col]], info = col)
   }
   expect_identical(parallel, serial)
