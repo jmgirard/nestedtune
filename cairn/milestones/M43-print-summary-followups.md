@@ -110,11 +110,11 @@ has passed.
       the class), no new tuning run. Tests for AC2 and AC3; the AC3 probes use
       the real calling shape (M42 lesson). Confirm `test-dots-barrier.R`'s
       registry probe passes with no new exemption.
-- [ ] T3: `@return` labels on `summary.nested_results()` and its print method
+- [x] T3: `@return` labels on `summary.nested_results()` and its print method
       in the M40 form; an `@examplesIf` block mirroring
       `R/nested-final-fit-print.R:81-101` with `summary(res)` as its last line;
       `devtools::document()`; read the regenerated Rd for AC4.
-- [ ] T4: A snapshot transform for the four `print(<results>)` blocks in the
+- [x] T4: A snapshot transform for the four `print(<results>)` blocks in the
       `printed output holds its shape` test: keep the `# A tibble: <n> x <k>`
       line, replace the column-type row, the cell rows and the
       `# i <k> more variables` footer with one fixed marker; re-record the four
@@ -131,6 +131,7 @@ has passed.
 - 2026-09-01: plan gate chose rewording only the summary's advice line over one shared sentence at all four `.notes` sites, because the other three name the right object; falsified by a second site found wrong.
 - 2026-09-01: T1 done — advice line now reads ``See the `.notes` column of the results object for what went wrong.``; the print-side control assertion moved from `\$\.notes` (which the tibble body could never match anyway) to `what went wrong`; AC1's two assertions plus a block-position check on both failed fixtures; two summary snapshots re-recorded, diff read: the one line each.
 - 2026-09-01: T2 done — `print.nested_results(x, ..., n = NULL, width = NULL)`, both handed to `print_rows()`; `@param` text derived from tibble's `?print.tbl_df` as read at tibble 3.3.x; AC2 and AC3 tests added, the AC3 probes as real `print(res, …)` calls; registry probe passes with no new exemption. Minor amendment: the >20-fold fixture is `repeated_results(v = 3, repeats = 7)` (21 folds through the constructor over stand-in records), not an `rbind()` stack — measured: `rbind()` of seven copies returns a bare tibble, because `can_reconstruct_results()` refuses a row count differing from the template's (M36), which D-032's class-keeping does not override.
+- 2026-09-01: T3 done — `?summary.nested_results` regenerated: `\value` opens ``summary()` returns` then ``print()` returns`, `\examples` under the engines guard ends in `summary(res)`. T4 done — `scrub_tibble_body()` transform on the four print blocks; testthat hands a transform each cli message alone, so the first cut (which looked for the next bullet) errored and was made to accept a body with nothing after it; re-recorded blocks read: header, marker, cli lines.
 
 ## Decisions
 

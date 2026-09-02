@@ -825,6 +825,65 @@ test_that("printing survives a list-valued parameter column (M21 review F1)", {
 
 # ---- shape ------------------------------------------------------------------
 
+# The tibble body is a dependency's rendering and not this package's to pin:
+# its column-type row, cell text and `# i <k> more variables` footer have all
+# changed wording across pillar releases. The four print snapshots keep the
+# `# A tibble: <n> x <k>` header and every cli line, and stand one marker in
+# for the body -- everything between the header and the first cli bullet
+# (M43). The rows themselves are asserted in words above (n, width, Fold1).
+scrub_tibble_body <- function(lines) {
+  header <- grep("^\\s*# A tibble: ", lines)
+  if (length(header) != 1L) {
+    return(lines)
+  }
+  # testthat hands the transform each cli message on its own, and the tibble
+  # block is one message, so usually nothing follows the body here; the bullet
+  # search is kept so the scrub is right about a block that does carry one.
+  after <- seq.int(header + 1L, length.out = length(lines) - header)
+  bullets <- after[grepl("^\\s*[xiv!] ", lines[after])]
+  keep <- if (length(bullets) == 0L) integer(0) else bullets[[1L]]:length(lines)
+  c(
+    lines[seq_len(header)],
+    "<tibble body: column types, rows and the more-variables footer>",
+    lines[keep]
+  )
+}
+
+test_that("the tibble-body scrub keeps the header and every cli line", {
+  # Discrimination for the transform: what it removes and what it keeps,
+  # asserted on a shape written here, so a scrub that swallowed a cli line or
+  # left a cell row behind could not go on recording a valid-looking snapshot.
+  lines <- c(
+    "-- Nested cross-validation results ----",
+    "Outer resamples: 3-fold cross-validation",
+    "# A tibble: 3 x 9",
+    "  splits id",
+    "  <list> <chr>",
+    "1 <split [60/30]> Fold1",
+    "# i 2 more variables: .tuning_seed <int>",
+    "x 1 of 3 outer folds did not complete.",
+    "i Use `summary()` for what the run means."
+  )
+  expect_identical(
+    scrub_tibble_body(lines),
+    c(
+      lines[1:3],
+      "<tibble body: column types, rows and the more-variables footer>",
+      lines[8:9]
+    )
+  )
+  # The shape the transform meets in practice: the tibble message alone.
+  expect_identical(
+    scrub_tibble_body(lines[3:7]),
+    c(
+      lines[[3L]],
+      "<tibble body: column types, rows and the more-variables footer>"
+    )
+  )
+  # A summary's output carries no tibble and passes through untouched.
+  expect_identical(scrub_tibble_body(lines[-(3:7)]), lines[-(3:7)])
+})
+
 test_that("printed output holds its shape", {
   skip_if_no_engines()
   d <- make_reg_data()
@@ -891,10 +950,10 @@ test_that("printed output holds its shape", {
     metrics = reg_metrics()
   )
 
-  expect_snapshot(print(complete))
-  expect_snapshot(print(partial))
-  expect_snapshot(print(nothing))
-  expect_snapshot(print(differing))
+  expect_snapshot(print(complete), transform = scrub_tibble_body)
+  expect_snapshot(print(partial), transform = scrub_tibble_body)
+  expect_snapshot(print(nothing), transform = scrub_tibble_body)
+  expect_snapshot(print(differing), transform = scrub_tibble_body)
 
   expect_snapshot(print(summary(complete)))
   expect_snapshot(print(summary(unanimous)))

@@ -144,13 +144,36 @@ print_failure_count <- function(x) {
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored.
 #'
-#' @return An object of class `summary.nested_results`: a list holding the
-#'   outer resampling scheme's label, the outer design's requested and
-#'   completed fold counts, the failed folds with the stage each failed at, the
-#'   parameter values the completed folds selected, the candidate grid each
-#'   completed fold searched, and the metric estimates averaged across them.
-#'   Printing it is what most callers want; the components are there for a
-#'   caller that needs a number rather than a line of text.
+#' @return
+#' `summary()` returns an object of class `summary.nested_results`: a list
+#' holding the outer resampling scheme's label, the outer design's requested
+#' and completed fold counts, the failed folds with the stage each failed at,
+#' the parameter values the completed folds selected, the candidate grid each
+#' completed fold searched, and the metric estimates averaged across them.
+#' Printing it is what most callers want; the components are there for a
+#' caller that needs a number rather than a line of text.
+#'
+#' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
+#' data(mtcars)
+#'
+#' rec <- recipes::step_pca(
+#'   recipes::recipe(mpg ~ ., data = mtcars),
+#'   recipes::all_predictors(),
+#'   num_comp = tune::tune()
+#' )
+#' wf <- workflows::workflow(rec, parsnip::linear_reg())
+#'
+#' set.seed(1)
+#' folds <- nested_resamples(
+#'   mtcars,
+#'   outside = rsample::vfold_cv(v = 3),
+#'   inside = rsample::vfold_cv(v = 3)
+#' )
+#'
+#' set.seed(2)
+#' res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+#'
+#' summary(res)
 #'
 #' @seealso [print.nested_results()], [nested_tune_grid()], [collect_metrics()]
 #' @export
@@ -165,7 +188,8 @@ summary.nested_results <- function(object, ...) {
 
 #' @rdname summary.nested_results
 #' @param x A `summary.nested_results` object from [summary.nested_results()].
-#' @return `print()` returns `x`, invisibly.
+#' @return
+#' `print()` returns `x`, invisibly.
 #' @export
 print.summary.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
