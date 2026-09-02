@@ -63,11 +63,15 @@ nested_final_fit(object, results, ...)
 ## Value
 
 An object of class `nested_final_fit` with elements `workflow` (the
-trained workflow, better reached with
-[`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)),
-`selected` (the parameters chosen), `tuning` (the tuning run they were
-chosen from), `tuning_seed` and `fit_seed` (the two seeds that reproduce
-it), and `procedure` (the record re-run, as `results` carried it).
+trained workflow; the object answers
+[predict()](https://nestedtune.tidymodels.org/reference/predict.nested_final_fit.md)
+and [`augment()`](https://generics.r-lib.org/reference/augment.html)
+directly, and
+[`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+returns the workflow itself), `selected` (the parameters chosen),
+`tuning` (the tuning run they were chosen from), `tuning_seed` and
+`fit_seed` (the two seeds that reproduce it), and `procedure` (the
+record re-run, as `results` carried it).
 
 ## Details
 
@@ -196,6 +200,7 @@ evaluation in health care: Tutorial. *JMIR AI*, 2, e49023.
 
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
+[`predict.nested_final_fit()`](https://nestedtune.tidymodels.org/reference/predict.nested_final_fit.md),
 [`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
 
 ## Examples
@@ -247,7 +252,7 @@ final
 #>   metric reachable through the first is a selection-time quantity,
 #>   optimistically biased as a claim about this model.
 
-predict(extract_workflow(final), new_data = mtcars[1:3, ])
+predict(final, new_data = mtcars[1:3, ])
 #> # A tibble: 3 × 1
 #>   .pred
 #>   <dbl>

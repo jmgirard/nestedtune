@@ -21,6 +21,20 @@
   returns a plain tibble), or one with no rows is refused before any
   fitting, with condition class `nestedtune_bad_results`. Not migrated.
 
+- [`predict()`](https://rdrr.io/r/stats/predict.html) and
+  [`augment()`](https://generics.r-lib.org/reference/augment.html) now
+  work directly on a `nested_final_fit`, returning what the same call on
+  `extract_workflow(final)` returns; the
+  [`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+  route still works. `augment` is re-exported so the call needs no other
+  package attached. [`predict()`](https://rdrr.io/r/stats/predict.html)
+  passes further arguments (`level`, `eval_time`, …) through to the
+  model, where parsnip refuses a name it does not recognise;
+  [`augment()`](https://generics.r-lib.org/reference/augment.html) takes
+  `new_data` and `eval_time` only and refuses anything else, where
+  workflows’ own method would let it vanish. The help page says what
+  residuals on the training rows are not.
+
 - [`print()`](https://rdrr.io/r/base/print.html) and
   [`summary()`](https://rdrr.io/r/base/summary.html) on a
   `nested_final_fit` name the procedure that ran: the candidates scored

@@ -438,13 +438,16 @@ The outer folds play no part here. Their selections are not pooled or
 voted on — they belong to the estimate, which describes the procedure
 across the instability they reveal.
 
-The trained workflow comes out with
-[`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html),
-and predicts as any workflow does:
+The object predicts directly –
+[`predict()`](https://rdrr.io/r/stats/predict.html) and
+[`augment()`](https://generics.r-lib.org/reference/augment.html) on it
+are the trained workflow’s own methods – and
+[`extract_workflow()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+returns the workflow itself:
 
 ``` r
 
-predict(extract_workflow(final), new_data = mtcars[1:3, ])
+predict(final, new_data = mtcars[1:3, ])
 #> # A tibble: 3 × 1
 #>   .pred
 #>   <dbl>

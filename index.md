@@ -120,7 +120,7 @@ collect_metrics(res)
 # The model: what you deploy. It has no performance number of its own.
 set.seed(3)
 final <- nested_final_fit(wf, res)
-predict(extract_workflow(final), new_data = mtcars[1:3, ])
+predict(final, new_data = mtcars[1:3, ])
 #> # A tibble: 3 × 1
 #>   .pred
 #>   <dbl>

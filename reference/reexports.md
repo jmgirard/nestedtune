@@ -9,5 +9,6 @@ to see their documentation.
 
 - tune:
 
+  [`augment`](https://generics.r-lib.org/reference/augment.html),
   [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html),
   [`extract_workflow`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)

@@ -45,6 +45,9 @@ the results.
 - [`summary(`*`<nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_final_fit.md)
   [`print(`*`<summary.nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_final_fit.md)
   : Summarize a final fit
+- [`predict(`*`<nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/predict.nested_final_fit.md)
+  [`augment(`*`<nested_final_fit>`*`)`](https://nestedtune.tidymodels.org/reference/predict.nested_final_fit.md)
+  : Predict with the final model
 - [`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md)
   : Extract the tuning run a final fit was selected from
 - [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)
@@ -56,4 +59,5 @@ the results.
   [`collect_metrics`](https://nestedtune.tidymodels.org/reference/reexports.md)
   [`extract_workflow`](https://nestedtune.tidymodels.org/reference/reexports.md)
   [`autoplot`](https://nestedtune.tidymodels.org/reference/reexports.md)
+  [`augment`](https://nestedtune.tidymodels.org/reference/reexports.md)
   : Objects exported from other packages

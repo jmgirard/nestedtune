@@ -102,7 +102,9 @@ now come from <code>results</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>nested_final_fit</code> with elements <code>workflow</code> (the
-trained workflow, better reached with <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow()</a></code>), <code>selected</code>
+trained workflow; the object answers <a href="predict.nested_final_fit.html">predict()</a>
+and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> directly, and <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow()</a></code> returns the workflow
+itself), <code>selected</code>
 (the parameters chosen), <code>tuning</code> (the tuning run they were chosen from),
 <code>tuning_seed</code> and <code>fit_seed</code> (the two seeds that reproduce it), and
 <code>procedure</code> (the record re-run, as <code>results</code> carried it).</p>
@@ -219,7 +221,8 @@ care: Tutorial. <em>JMIR AI</em>, 2, e49023.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="nested_tune_grid.html">nested_tune_grid()</a></code>, <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code>, <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="nested_tune_grid.html">nested_tune_grid()</a></code>, <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code>,
+<code><a href="predict.nested_final_fit.html">predict.nested_final_fit()</a></code>, <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -270,7 +273,7 @@ care: Tutorial. <em>JMIR AI</em>, 2, e49023.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   metric reachable through the first is a selection-time quantity,</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   optimistically biased as a claim about this model.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final</span><span class="op">)</span>, new_data <span class="op">=</span> <span class="va">mtcars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">final</span>, new_data <span class="op">=</span> <span class="va">mtcars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 1</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   .pred</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
