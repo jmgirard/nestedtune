@@ -133,6 +133,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: CI watch hit the harness ceiling and was stopped; fresh state at that point: format-suggest, pkgdown and the hard-check ubuntu release leg pass, the five-leg R-CMD-check matrix and test-coverage still pending. Approval marker stands; the merge waits on a fresh `gh pr checks 58` showing green.
 - 2026-09-02: windows leg red on every completed run of this branch (2ef0fb7, 8c897f8, f13ea57; 21-22 min, the check step killed at its 20-minute cap during the tests, no testthat output written); not a hang: the same step ran 13.2, 16.3 and 17.9 min on main's last three runs, and the M48-tagged tests measure 85 s locally (AC1 oracle 27 s, BC11 16 s, AC4 record 13 s, the two Bayes results tests 10 s each) — the suite grew past a cap it was already within 2 min of. Remedy put to the user at the gate.
 - 2026-09-02: user chose raising the `check-r-package` step cap from 20 to 30 minutes over trimming or skipping the M48 tests; `R-CMD-check.yaml` and the profile's hang-cap line updated with the measurements. A CI-configuration change, so approval is re-requested once the matrix is green.
+- 2026-09-02: CI watch on 4679c31 hit the harness ceiling and was stopped; at that point format-suggest passed and the eight other checks were pending. Committed locally without pushing: every push to the branch restarts the matrix under the concurrency block, which is what kept the earlier runs from finishing.
 
 ## Decisions
 
