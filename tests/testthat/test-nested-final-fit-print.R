@@ -72,9 +72,9 @@ test_that("the printed report is stable", {
 
 # Summarizing a final fit (M40) ------------------------------------------
 
-# What `print.nested_final_fit()` emitted before this milestone existed, under
-# testthat's reproducible output settings, captured from the method as it stood
-# at d6ff85f.
+# What `print.nested_final_fit()` emits for a grid final fit, under testthat's
+# reproducible output settings: first captured at M40 from the method as it
+# stood at d6ff85f, and re-agreed at M46 (below).
 #
 # Written out here rather than left to the snapshot below it. The snapshot is
 # exactly the artifact a change to the print method would re-record, so a
@@ -88,7 +88,7 @@ test_that("the printed report is stable", {
 # equally be a `nested_tune_bayes()` result. That is a change to what this
 # constant pins, re-agreed by hand rather than accepted from the snapshot for
 # the same reason the original was.
-PRINT_BEFORE_M40 <- paste(
+PRINT_AS_AGREED_M46 <- paste(
   c(
     "",
     "-- Nested cross-validation final fit -------------------------------------------",
@@ -109,14 +109,14 @@ PRINT_BEFORE_M40 <- paste(
   collapse = "\n"
 )
 
-test_that("AC1: printing a final fit is unchanged by summary() existing", {
+test_that("printing a grid final fit is the hand-agreed text, not the snapshot", {
   skip_if_no_engines()
 
   txt <- local({
     local_reproducible_output()
     paste(cli::cli_fmt(print(final_for_print())), collapse = "\n")
   })
-  expect_identical(txt, PRINT_BEFORE_M40)
+  expect_identical(txt, PRINT_AS_AGREED_M46)
 })
 
 test_that("AC2: summary() returns a classed object naming what was selected", {
@@ -251,4 +251,134 @@ test_that("the stored selection keeps the value's own precision", {
   # The one-line print label is unchanged by that: it renders for reading, and
   # `print.nested_final_fit()` emits exactly what it always did.
   expect_identical(selected_label(final$selected), "penalty = 0.003162278")
+})
+
+
+# The procedure line and the Bayesian counts (M46 T5, AC5) -------------------
+
+bayes_final_for_print <- function() {
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  res <- bayes_final_results(d)
+  set.seed(31)
+  memoised(nested_final_fit(wf, res))
+}
+
+test_that("AC5: a Bayesian final fit names its procedure with the counts that ran", {
+  skip_if_no_bayes_fixture()
+
+  final <- bayes_final_for_print()
+
+  # The candidate table is the `.iter`-bearing one the loop's derivation
+  # gives, so the counts below are read off the same record a fold's `.grid`
+  # would be.
+  cand <- extract_scored_candidates(final)
+  expect_true(".iter" %in% names(cand))
+  expect_identical(cand, scored_candidates(final$tuning))
+  initial <- sum(cand$.iter == 0L)
+  completed <- max(cand$.iter)
+  # AC5: the iterations completed are the tuning run's largest `.iter`.
+  expect_identical(completed, max(final$tuning$.iter))
+  expect_gte(initial, 1L)
+
+  s <- summary(final)
+  expect_identical(s$tuner, "tune_bayes")
+  expect_identical(s$initial, initial)
+  expect_identical(s$initial_requested, 3L)
+  expect_identical(s$iterations_completed, completed)
+  expect_identical(s$iterations_requested, 2L)
+  expect_identical(s$candidates, nrow(cand))
+
+  line <- sprintf(
+    "Bayesian optimization, %d initial candidate%s \\(3 requested\\), %d iteration%s completed \\(2 requested\\)",
+    initial,
+    if (initial == 1L) "" else "s",
+    completed,
+    if (completed == 1L) "" else "s"
+  )
+  out <- print_text(final)
+  expect_match(out, line)
+  expect_no_match(out, "nested_tune_grid")
+  expect_match(print_text(s), line)
+})
+
+test_that("the counts read what ran, not what was asked for", {
+  # Built by hand, so the scored counts can differ from the requested ones
+  # without an engine: a record holding two initial candidates where three
+  # were requested, stopping at iteration 1 of 4 (IP4, RR05 Q2).
+  frame <- function(config, value, iter) {
+    data.frame(
+      df1 = value,
+      .metric = "rmse",
+      .estimator = "standard",
+      .estimate = 1,
+      .config = config,
+      stringsAsFactors = FALSE
+    )
+  }
+  tuning <- list(
+    .metrics = list(
+      rbind(frame("pre1", 1L), frame("pre2", 5L)),
+      frame("iter1", 3L)
+    ),
+    .iter = c(0L, 1L)
+  )
+  final <- structure(
+    list(
+      workflow = NULL,
+      selected = data.frame(df1 = 3L, .config = "iter1"),
+      tuning = tuning,
+      tuning_seed = 1L,
+      fit_seed = 2L,
+      procedure = list(
+        tuner = "tune_bayes",
+        iter = 4,
+        initial = 3,
+        objective = NULL,
+        param_info = NULL,
+        event_level = "first",
+        eval_time = NULL
+      )
+    ),
+    class = "nested_final_fit"
+  )
+
+  s <- summary(final)
+  expect_identical(s$initial, 2L)
+  expect_identical(s$initial_requested, 3L)
+  expect_identical(s$iterations_completed, 1L)
+  expect_identical(s$iterations_requested, 4L)
+  expect_identical(s$candidates, 3L)
+  # The singular forms, at the count where the wording changes.
+  expect_match(
+    print_text(final),
+    "2 initial candidates \\(3 requested\\), 1 iteration completed \\(4 requested\\)"
+  )
+})
+
+test_that("a grid final fit carries the Bayesian counts as NULL and names its search", {
+  skip_if_no_engines()
+
+  final <- final_for_print()
+  s <- summary(final)
+
+  expect_identical(s$tuner, "tune_grid")
+  for (nm in c(
+    "initial",
+    "initial_requested",
+    "iterations_completed",
+    "iterations_requested"
+  )) {
+    expect_true(nm %in% names(s))
+    expect_null(s[[nm]])
+  }
+  expect_match(print_text(final), "grid search, 3 candidates scored")
+  expect_match(print_text(s), "grid search, 3 candidates scored")
+})
+
+test_that("the Bayesian printed reports are stable", {
+  skip_if_no_bayes_fixture()
+
+  expect_snapshot(print(bayes_final_for_print()))
+  expect_snapshot(print(summary(bayes_final_for_print())))
 })

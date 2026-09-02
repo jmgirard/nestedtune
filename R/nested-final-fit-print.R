@@ -223,7 +223,11 @@ procedure_label <- function(s) {
       if (s$candidates == 1L) "" else "s"
     ))
   }
-  sprintf("%d candidate%s scored", s$candidates, if (s$candidates == 1L) "" else "s")
+  sprintf(
+    "%d candidate%s scored",
+    s$candidates,
+    if (s$candidates == 1L) "" else "s"
+  )
 }
 
 # How the full-data tuning run's resampling scheme describes itself.

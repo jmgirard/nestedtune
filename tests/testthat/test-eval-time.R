@@ -144,7 +144,6 @@ test_that("AC1: an unusable `eval_time` is refused, naming the function the user
     expect_s3_class(cnd, "rlang_error")
     expect_match(conditionMessage(cnd), "eval_time", fixed = TRUE)
     expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_grid")
-
   }
 
   # A vector's offending positions are named, not just the fact that one exists.

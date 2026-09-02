@@ -66,7 +66,12 @@ test_that("the candidate accessor holds up past nine candidates", {
   grid <- data.frame(threshold = seq(0.05, 0.95, length.out = 11L))
 
   set.seed(4)
-  res <- memoised(nested_tune_grid(wf, folds, grid = grid, metrics = reg_metrics()))
+  res <- memoised(nested_tune_grid(
+    wf,
+    folds,
+    grid = grid,
+    metrics = reg_metrics()
+  ))
 
   set.seed(4)
   final <- memoised(nested_final_fit(wf, res))

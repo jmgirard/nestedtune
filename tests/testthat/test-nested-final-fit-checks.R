@@ -61,7 +61,11 @@ test_that("the former procedure arguments are refused as unknown", {
   for (nm in names(former)) {
     # Spliced rather than `do.call()`, which would put the function object in
     # the condition's call and leave nothing for `call_name()` to read.
-    cnd <- rlang::catch_cnd(rlang::inject(nested_final_fit(wf, res, !!!former[nm])))
+    cnd <- rlang::catch_cnd(rlang::inject(nested_final_fit(
+      wf,
+      res,
+      !!!former[nm]
+    )))
     expect_s3_class(cnd, "rlib_error_dots_nonempty")
     expect_identical(rlang::call_name(conditionCall(cnd)), "nested_final_fit")
   }
@@ -74,7 +78,10 @@ expect_bad_results <- function(expr, pattern) {
   cnd <- tryCatch(expr, error = function(e) e)
   testthat::expect_s3_class(cnd, "nestedtune_bad_results")
   testthat::expect_match(conditionMessage(cnd), pattern)
-  testthat::expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+  testthat::expect_identical(
+    conditionCall(cnd)[[1]],
+    as.name("nested_final_fit")
+  )
   invisible(cnd)
 }
 
