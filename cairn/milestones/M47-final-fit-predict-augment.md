@@ -1,12 +1,12 @@
 # M47: `predict()` and `augment()` on a `nested_final_fit`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, GP1
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** m047-final-fit-predict-augment
 
 ## Goal
 

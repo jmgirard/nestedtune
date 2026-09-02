@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M47 | `predict()` and `augment()` on a `nested_final_fit` | planned | — | normal | milestones/M47-final-fit-predict-augment.md |
+| M47 | `predict()` and `augment()` on a `nested_final_fit` | in-progress | — | normal | milestones/M47-final-fit-predict-augment.md |
 | M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
 | M46 | `nested_final_fit()` re-runs the procedure a result recorded | done | M45 | normal | milestones/archive/M46-final-fit-recorded-procedure.md |
 | M44 | `agreement()` tabulates what the outer folds selected | done | — | normal | milestones/archive/M44-agreement.md |
