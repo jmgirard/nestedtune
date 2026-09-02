@@ -32,19 +32,17 @@ test_that("the final fit matches a hand-rolled reference pipeline", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
-  grid <- stoch_grid()
-  metrics <- reg_metrics()
+  res <- stoch_final_results(d)
 
   set.seed(99)
-  final <- nested_final_fit(wf, folds, grid = grid, metrics = metrics)
+  final <- nested_final_fit(wf, res)
 
   ref <- reference_final_fit(
     wf,
     d,
-    grid,
-    metrics,
+    attr(res, "procedure")$grid,
+    attr(res, "metrics"),
     seed = 99,
     metric_name = "rmse"
   )
@@ -74,12 +72,12 @@ test_that("a single-candidate grid degenerates to a direct fit", {
   skip_if_no_engines()
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- det_workflow(d)
   one <- data.frame(num_comp = 2L)
+  res <- final_results(d, grid = one)
 
   set.seed(5)
-  final <- nested_final_fit(wf, folds, grid = one, metrics = reg_metrics())
+  final <- nested_final_fit(wf, res)
 
   # Nothing to select, so the tuning stage cannot have influenced anything: the
   # result must be the workflow finalized on that candidate and fitted on all
@@ -97,19 +95,17 @@ test_that("the final fit matches tune::fit_best() on the same tuning run", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
-  grid <- stoch_grid()
-  metrics <- reg_metrics()
+  res <- stoch_final_results(d)
 
   set.seed(99)
-  final <- nested_final_fit(wf, folds, grid = grid, metrics = metrics)
+  final <- nested_final_fit(wf, res)
 
   ref <- reference_final_fit(
     wf,
     d,
-    grid,
-    metrics,
+    attr(res, "procedure")$grid,
+    attr(res, "metrics"),
     seed = 99,
     metric_name = "rmse"
   )

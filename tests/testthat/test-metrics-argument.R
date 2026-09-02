@@ -117,13 +117,14 @@ test_that("nested_final_fit() tunes under the metrics it was given", {
   wf <- sep_workflow(d)
   nested <- sep_nested(d)
 
-  set.seed(30)
-  final <- memoised(nested_final_fit(
+  res <- memoised(nested_tune_grid(
     wf,
     nested,
     grid = sep_grid(),
     metrics = sep_metrics()
   ))
+  set.seed(30)
+  final <- memoised(nested_final_fit(wf, res))
 
   expect_identical(
     sort(unique(tune::collect_metrics(final$tuning)$.metric)),

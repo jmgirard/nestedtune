@@ -10,14 +10,13 @@ test_that("the same seed produces the same final fit", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
-  ms <- reg_metrics()
+  res <- stoch_final_results(d)
 
   set.seed(77)
-  first <- nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms)
+  first <- nested_final_fit(wf, res)
   set.seed(77)
-  second <- nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms)
+  second <- nested_final_fit(wf, res)
 
   expect_identical(first$tuning_seed, second$tuning_seed)
   expect_identical(first$selected, second$selected)
@@ -35,14 +34,13 @@ test_that("a different seed produces a different final fit", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
-  ms <- reg_metrics()
+  res <- stoch_final_results(d)
 
   set.seed(77)
-  first <- nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms)
+  first <- nested_final_fit(wf, res)
   set.seed(78)
-  other <- nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms)
+  other <- nested_final_fit(wf, res)
 
   # Without this the same-seed test above would pass for a function that
   # ignored the seed entirely.
@@ -57,9 +55,9 @@ test_that("the fit does not depend on the ambient RNG state or kind", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
   ms <- reg_metrics()
+  res <- stoch_final_results(d)
 
   # Driven at the worker, with the two seeds supplied, because from a
   # user-visible seed this property cannot hold: the entry draw reads the
@@ -69,7 +67,7 @@ test_that("the fit does not depend on the ambient RNG state or kind", {
   # the seeds, which is what this asserts. (M05's recorded deviation from
   # RR02's BC6; the same idiom test-nested-tune-grid-rng.R uses.)
   seeds <- c(101L, 202L)
-  inside <- attr(folds, "inside")
+  inside <- attr(res, "inside")
   entry_kind <- RNGkind()
   on.exit(
     RNGkind(entry_kind[[1]], entry_kind[[2]], entry_kind[[3]]),
@@ -116,14 +114,13 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
-  ms <- reg_metrics()
+  res <- stoch_final_results(d)
 
   set.seed(404)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
-  invisible(nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms))
+  invisible(nested_final_fit(wf, res))
 
   expect_identical(.Random.seed, before_seed)
   expect_identical(RNGkind(), before_kind)
@@ -131,7 +128,7 @@ test_that("the caller's RNG state and kind survive the call untouched", {
   # Net-zero stated the way a user would notice it.
   set.seed(404)
   with_call <- {
-    invisible(nested_final_fit(wf, folds, grid = stoch_grid(), metrics = ms))
+    invisible(nested_final_fit(wf, res))
     runif(3)
   }
   set.seed(404)
@@ -151,8 +148,10 @@ test_that("the RNG state is restored when the call errors after the snapshot", {
   # would leave the caller's state untouched no matter what on.exit() did
   # (AC12). This design re-evaluates its inner specification after the tuning
   # seed has already been set, so a specification that cannot be re-evaluated
-  # fails exactly there -- past the snapshot, past a set.seed().
-  folds <- local({
+  # fails exactly there -- past the snapshot, past a set.seed(). The loop
+  # accepts such a design; only the final fit re-evaluates the stored call, so
+  # the results object it errors on is built here rather than at the loop.
+  gone <- local({
     v <- 3
     set.seed(1)
     nested_resamples(
@@ -161,13 +160,19 @@ test_that("the RNG state is restored when the call errors after the snapshot", {
       inside = rsample::vfold_cv(v = v)
     )
   })
+  res_gone <- memoised(nested_tune_grid(
+    wf,
+    gone,
+    grid = stoch_grid(),
+    metrics = reg_metrics()
+  ))
 
   set.seed(505)
   before_seed <- .Random.seed
   before_kind <- RNGkind()
 
   expect_error(
-    nested_final_fit(wf, folds, grid = stoch_grid(), metrics = reg_metrics()),
+    nested_final_fit(wf, res_gone),
     "could not be"
   )
 
@@ -181,7 +186,7 @@ test_that("the kind is restored on the error path from a non-default kind", {
   d <- make_reg_data()
   wf <- stoch_workflow(d)
 
-  folds <- local({
+  gone <- local({
     v <- 3
     set.seed(1)
     nested_resamples(
@@ -190,6 +195,12 @@ test_that("the kind is restored on the error path from a non-default kind", {
       inside = rsample::vfold_cv(v = v)
     )
   })
+  res_gone <- memoised(nested_tune_grid(
+    wf,
+    gone,
+    grid = stoch_grid(),
+    metrics = reg_metrics()
+  ))
 
   entry_kind <- RNGkind()
   on.exit(
@@ -204,7 +215,7 @@ test_that("the kind is restored on the error path from a non-default kind", {
   before_seed <- .Random.seed
   before_kind <- RNGkind()
 
-  expect_error(nested_final_fit(wf, folds, grid = stoch_grid()), "could not be")
+  expect_error(nested_final_fit(wf, res_gone), "could not be")
 
   expect_identical(RNGkind(), before_kind)
   expect_identical(.Random.seed, before_seed)
@@ -214,14 +225,14 @@ test_that("a session with no RNG state is left with a valid one", {
   skip_if_no_engines(stochastic = TRUE)
 
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- stoch_workflow(d)
+  res <- stoch_final_results(d)
 
   saved <- .Random.seed
   on.exit(assign(".Random.seed", saved, envir = globalenv()), add = TRUE)
   rm(".Random.seed", envir = globalenv())
 
-  expect_no_error(nested_final_fit(wf, folds, grid = stoch_grid()))
+  expect_no_error(nested_final_fit(wf, res))
   expect_true(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
   expect_no_error(runif(1))
 })

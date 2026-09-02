@@ -304,12 +304,15 @@ autoplot(res, type = "performance")
 
 Nothing above produced a model you can predict with, and that is deliberate.
 The estimate describes the procedure; the model is a separate object, built by
-running that same procedure once more with the whole dataset in hand.
+running that same procedure once more with the whole dataset in hand. The
+procedure is read from `res` -- the design's inner resampling specification,
+the grid, the metrics -- so it cannot be restated: the model and the estimate
+come from one search.
 
 ```{r final}
 set.seed(3)
 
-final <- nested_final_fit(wf, folds, grid = grid)
+final <- nested_final_fit(wf, res)
 
 final
 ```
@@ -446,7 +449,7 @@ found:
 ```{r rng-restored}
 before <- .Random.seed
 
-invisible(nested_final_fit(wf, folds, grid = grid))
+invisible(nested_final_fit(wf, res))
 
 identical(before, .Random.seed)
 ```

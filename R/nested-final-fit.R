@@ -14,11 +14,13 @@
 
 #' Fit the final model after nested cross-validation
 #'
-#' `nested_final_fit()` runs the tuning procedure once more with the whole
-#' dataset in hand: it re-evaluates the design's inner resampling specification
-#' against every row, tunes with [tune::tune_grid()], selects the best
-#' candidate, finalizes the workflow, and fits it on all the data. The result is
-#' the model to deploy.
+#' `nested_final_fit()` runs the tuning procedure a nested run recorded once
+#' more, with the whole dataset in hand: it re-evaluates the design's inner
+#' resampling specification against every row, tunes with [tune::tune_grid()]
+#' or [tune::tune_bayes()] under the arguments the results object carries,
+#' selects the best candidate, finalizes the workflow, and fits it on all the
+#' data. The result is the model to deploy, built by the same search the
+#' estimate you report describes.
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()]: the workflow the nested run was built
@@ -46,7 +48,8 @@
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
 #'   trained workflow, better reached with [extract_workflow()]), `selected`
 #'   (the parameters chosen), `tuning` (the tuning run they were chosen from),
-#'   and `tuning_seed` and `fit_seed` (the two seeds that reproduce it).
+#'   `tuning_seed` and `fit_seed` (the two seeds that reproduce it), and
+#'   `procedure` (the record re-run, as `results` carried it).
 #'
 #' @details
 #' The procedure a nested estimate describes is "resample this dataset by the
@@ -61,8 +64,11 @@
 #'
 #' @section What to report:
 #'
-#' Report the estimate from [collect_metrics()] on the [nested_tune_grid()]
-#' result as this model's performance. That number estimates the k-fold test
+#' Report the estimate from [collect_metrics()] on the results object you
+#' handed over -- the [nested_tune_grid()] or [nested_tune_bayes()] result --
+#' as this model's performance. The model and the estimate come from one
+#' search by construction: the procedure is read from that object and cannot
+#' be restated here. That number estimates the k-fold test
 #' error of the whole tune-and-fit procedure that produced this model, measured
 #' on data no part of the procedure ever touched. Expect it to run slightly
 #' pessimistic: each outer fold trains on its analysis rows alone, so every
@@ -95,15 +101,26 @@
 #' inner resamples *and* tuning; the second covers the final fit. Both are
 #' applied with the generator kind pinned, and both are returned on the object.
 #'
-#' The run is reproducible by hand from those two seeds alone:
+#' The run is reproducible by hand from those two seeds and the record on
+#' `fit$procedure`, every value below being one that record holds (or, for
+#' `metrics`, `attr(results, "metrics")`); the tuning call is the one the
+#' record names:
 #'
 #' ```
 #' set.seed(fit$tuning_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
-#' tuned <- tune_grid(object, inner, grid = grid, metrics = metrics,
-#'   eval_time = eval_time,
+#' # a grid procedure
+#' tuned <- tune_grid(object, inner, grid = grid, param_info = param_info,
+#'   metrics = metrics, eval_time = eval_time,
 #'   control = control_grid(allow_par = FALSE, event_level = event_level))
+#' # a Bayesian procedure: the Gaussian process is seeded from the tuning
+#' # seed, the rule nested_tune_bayes() fixes for every fold
+#' tuned <- tune_bayes(object, inner, iter = iter, initial = initial,
+#'   objective = objective, param_info = param_info, metrics = metrics,
+#'   eval_time = eval_time,
+#'   control = control_bayes(allow_par = FALSE, event_level = event_level,
+#'                           seed = fit$tuning_seed))
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
@@ -126,9 +143,10 @@
 #'
 #' @section The inner specification is re-evaluated:
 #'
-#' A nested design stores its `inside` argument as an unevaluated call, and this
-#' function evaluates it again — against the whole dataset, in the environment
-#' you call from, not the one the design was built in.
+#' A nested design stores its `inside` argument as an unevaluated call, the
+#' nested run records it on its result, and this function evaluates it again
+#' — against the whole dataset, in the environment you call from, not the one
+#' the design was built in.
 #'
 #' Write it with literal arguments. `inside = vfold_cv(v = 5)` is re-evaluated
 #' identically anywhere. `inside = vfold_cv(v = k)` is not: if `k` is gone by
@@ -174,7 +192,7 @@
 #' examples of cross-validation for model development and evaluation in health
 #' care: Tutorial. *JMIR AI*, 2, e49023.
 #'
-#' @seealso [nested_tune_grid()], [extract_workflow()]
+#' @seealso [nested_tune_grid()], [nested_tune_bayes()], [extract_workflow()]
 #' @export
 nested_final_fit <- function(object, results, ...) {
   rlang::check_dots_empty()
@@ -275,7 +293,16 @@ final_fit_worker <- function(
   set_fold_seed(seeds[[2L]])
   fitted <- parsnip::fit(final_wf, data = data)
 
-  new_nested_final_fit(fitted, selected, tuned, seeds)
+  # The same record the results object carries, rebuilt from what this worker
+  # was handed, so the object names the procedure it ran (IP4) and the print
+  # method has the requested counts to show beside the scored ones.
+  procedure <- new_procedure(
+    tuner,
+    param_info = param_info,
+    event_level = event_level,
+    eval_time = eval_time
+  )
+  new_nested_final_fit(fitted, selected, tuned, seeds, procedure)
 }
 
 # The final-fit object.
@@ -287,14 +314,15 @@ final_fit_worker <- function(
 # carry is any method that would turn that run into a performance claim: tune's
 # ranking and collecting generics are left unregistered, so they error rather
 # than answer, exactly as they do for `nested_results` (D-010, RR02 Q7).
-new_nested_final_fit <- function(workflow, selected, tuning, seeds) {
+new_nested_final_fit <- function(workflow, selected, tuning, seeds, procedure) {
   structure(
     list(
       workflow = workflow,
       selected = selected,
       tuning = tuning,
       tuning_seed = seeds[[1L]],
-      fit_seed = seeds[[2L]]
+      fit_seed = seeds[[2L]],
+      procedure = procedure
     ),
     class = "nested_final_fit"
   )

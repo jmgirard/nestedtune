@@ -20,25 +20,33 @@ rather than silently ignored.}
 }
 \value{
 \code{summary()} returns an object of class \code{summary.nested_final_fit}: a list
-holding the full-data tuning run's resampling label, the number of
-candidates that run scored, the parameter values selection chose, and an
-\code{estimate} component that is always \code{NULL}. Printing it is what most callers
-want; the components are there for a caller that needs a value rather than a
+holding the full-data tuning run's resampling label (\code{tuning_label}), the
+tuner that ran (\code{tuner}, \code{"tune_grid"} or \code{"tune_bayes"}), the number of
+candidates that run scored (\code{candidates}), the Bayesian counts (\code{initial}
+and \code{initial_requested}, \code{iterations_completed} and
+\code{iterations_requested}, each \code{NULL} on a grid fit; the scored figures are
+read from the candidate record, the requested ones from the procedure), the
+parameter values selection chose (\code{selection}), and an \code{estimate}
+component that is always \code{NULL}. Printing it is what most callers want;
+the components are there for a caller that needs a value rather than a
 line of text.
 
 \code{print()} returns \code{x}, invisibly.
 }
 \description{
 Answers what the final fit means: the full-data tuning run the selection
-came from, how many candidates that run scored, which parameter values it
-selected, and where this model's honest performance estimate lives.
+came from, which procedure ran it and at what counts, how many candidates
+that run scored, which parameter values it selected, and where this
+model's honest performance estimate lives.
 
 The estimate component is always \code{NULL}, and that is the point. The tuning
 run stored on the object has metrics, but selection consumed them and they
 are optimistically biased as a claim about this model; the nested estimate
-from \code{\link[=nested_tune_grid]{nested_tune_grid()}} is the one to report (IP3). The absence is carried
-as a component rather than left out, so a caller reading the summary meets a
-recorded fact instead of a missing name.
+on the results object the fit was built from -- the \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result -- is the one to report (IP3). The absence is
+carried as a component rather than left out, so a caller reading the
+summary meets a recorded fact instead of a missing name; the four Bayesian
+counts are carried as \code{NULL} on a grid fit for the same reason.
 }
 \examples{
 \dontshow{if (rlang::is_installed(c("recipes", "yardstick"))) withAutoprint(\{ # examplesIf}
@@ -59,7 +67,9 @@ folds <- nested_resamples(
 )
 
 set.seed(2)
-final <- nested_final_fit(wf, folds, grid = data.frame(num_comp = 1:3))
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+set.seed(3)
+final <- nested_final_fit(wf, res)
 
 summary(final)
 \dontshow{\}) # examplesIf}

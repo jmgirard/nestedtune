@@ -145,13 +145,6 @@ test_that("AC1: an unusable `eval_time` is refused, naming the function the user
     expect_match(conditionMessage(cnd), "eval_time", fixed = TRUE)
     expect_identical(rlang::call_name(conditionCall(cnd)), "nested_tune_grid")
 
-    cnd <- tryCatch(
-      nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
-      error = function(e) e
-    )
-    expect_s3_class(cnd, "rlang_error")
-    expect_match(conditionMessage(cnd), "eval_time", fixed = TRUE)
-    expect_identical(rlang::call_name(conditionCall(cnd)), "nested_final_fit")
   }
 
   # A vector's offending positions are named, not just the fact that one exists.
@@ -195,13 +188,6 @@ test_that("AC1: the refusal fires before any fitting begins", {
       ),
       "nestedtune_sentinel"
     ))
-    expect_false(inherits(
-      tryCatch(
-        nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
-        error = function(e) e
-      ),
-      "nestedtune_sentinel"
-    ))
   }
 
   # The accepting side, including the values tune normalizes rather than
@@ -210,10 +196,6 @@ test_that("AC1: the refusal fires before any fitting begins", {
   for (value in accepted) {
     expect_error(
       nested_tune_grid(wf, folds, grid = det_grid(), eval_time = value),
-      class = "nestedtune_sentinel"
-    )
-    expect_error(
-      nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
       class = "nestedtune_sentinel"
     )
   }
@@ -248,7 +230,7 @@ test_that("AC1: an accepted `eval_time` reaches the outer loop untouched", {
   }
 })
 
-test_that("AC1: an accepted `eval_time` reaches the final fit untouched", {
+test_that("AC1: the recorded `eval_time` reaches the final fit untouched", {
   skip_if_no_engines()
 
   d <- make_reg_data()
@@ -263,10 +245,20 @@ test_that("AC1: an accepted `eval_time` reaches the final fit untouched", {
     }
   )
 
+  # The eval_time argument is no longer taken by nested_final_fit() directly --
+  # it is read off the results object's recorded procedure. So the value under
+  # test is carried through nested_tune_grid() first, and what is checked is
+  # that the final fit forwards the record untouched.
   for (value in list(NULL, 0, c(0.5, 10), c(10, 0.5, 10))) {
     seen$value <- NULL
+    res <- suppressWarnings(memoised(nested_tune_grid(
+      wf,
+      folds,
+      grid = det_grid(),
+      eval_time = value
+    )))
     expect_error(
-      nested_final_fit(wf, folds, grid = det_grid(), eval_time = value),
+      nested_final_fit(wf, res),
       class = "nestedtune_sentinel"
     )
     expect_identical(seen$value, list(value))
@@ -495,14 +487,15 @@ test_that("AC4: nested_final_fit() tunes and selects under the caller's evaluati
   times <- srv_eval_times()
 
   fits <- lapply(times, function(t) {
-    set.seed(11)
-    memoised(nested_final_fit(
+    res_t <- memoised(nested_tune_grid(
       workflow,
       nested,
       grid = srv_grid(),
       metrics = srv_metrics(),
       eval_time = t
     ))
+    set.seed(11)
+    memoised(nested_final_fit(workflow, res_t))
   })
 
   for (k in seq_along(times)) {
@@ -573,8 +566,18 @@ test_that("AC6: both help pages document `eval_time` and what this package refus
     # The passing control: a page long enough to be the real one, carrying the
     # argument that was documented the same way before this one.
     expect_gt(nchar(text), 1000L)
-    expect_match(text, "\\item{event_level}", fixed = TRUE)
 
+    if (identical(nm, "nested_final_fit")) {
+      # nested_final_fit() no longer takes `eval_time` as a formal -- it reads
+      # it from the results object's recorded procedure -- so what the page
+      # owes a reader is that the `results` argument's documentation says so,
+      # not a matching `\item{eval_time}` of its own.
+      expect_match(text, "\\item{results}", fixed = TRUE)
+      expect_match(text, "eval_time", fixed = TRUE)
+      next
+    }
+
+    expect_match(text, "\\item{event_level}", fixed = TRUE)
     expect_match(text, "\\item{eval_time}", fixed = TRUE)
     # What this package refuses ahead of tune, and what it lets through.
     expect_match(text, "Refused here, ahead of tune", fixed = TRUE)

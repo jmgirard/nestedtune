@@ -1,5 +1,30 @@
 # nestedtune 0.0.0.9000
 
+* Breaking: `nested_final_fit()` now takes the `nested_results` object in
+  place of the design and the procedure -- `nested_final_fit(object,
+  results)` -- and re-runs the procedure that result recorded: the design's
+  inner resampling specification, now carried on every `nested_results` as
+  its `inside` attribute, the tuner and its arguments from the `procedure`
+  attribute, the metric set, and the data every split references. The
+  former `grid`, `param_info`, `metrics`, `event_level` and `eval_time`
+  arguments are gone, so the model and the estimate you report for it come
+  from one search by construction; a Bayesian result re-runs
+  `tune::tune_bayes()` with its Gaussian process seeded from the fit's
+  tuning seed, exactly as each outer fold was. A results object with no such
+  record (built by an earlier version, or from a design assembled by hand),
+  one that is no longer a `nested_results` (an operation that changed the
+  rows returns a plain tibble), or one with no rows is refused before any
+  fitting, with condition class `nestedtune_bad_results`. Not migrated.
+
+* `print()` and `summary()` on a `nested_final_fit` name the procedure that
+  ran: the candidates scored for a grid search; for a Bayesian search the
+  initial candidates and iterations, each as what ran beside what was
+  requested. The summary carries those counts as components, `NULL` on a
+  grid fit, and a `tuner` component; the printed pointer to the estimate now
+  names the results object the fit was built from rather than one
+  orchestrator. The object gains a `procedure` element, and
+  `extract_scored_candidates()` on a Bayesian final fit carries `.iter`.
+
 * `nested_tune_bayes()` runs the outer loop of nested cross-validation with
   `tune::tune_bayes()` as the inner tuner. On each outer fold it scores
   `initial` space-filling candidates on the fold's inner resamples, lets a

@@ -3,15 +3,10 @@
 
 final_for_print <- function() {
   d <- make_reg_data()
-  folds <- final_nested(d)
   wf <- det_workflow(d)
+  res <- final_results(d)
   set.seed(21)
-  memoised(nested_final_fit(
-    wf,
-    folds,
-    grid = det_grid(),
-    metrics = reg_metrics()
-  ))
+  memoised(nested_final_fit(wf, res))
 }
 
 test_that("printing names the selection and where the estimate lives", {
