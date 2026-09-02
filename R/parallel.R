@@ -355,7 +355,7 @@ dispatch_folds <- function(
   lapply(
     collected,
     classify_fold_result,
-    prototype = empty_inner_metrics(object, tuner, eval_time),
+    prototype = empty_inner_metrics(object, tuner, metrics, param_info),
     call = call
   )
 }

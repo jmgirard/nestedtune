@@ -99,9 +99,12 @@ passed. The \code{.inner_metrics} column holds what each outer fold's inner
 tuning actually scored: \code{\link[tune:collect_metrics]{tune::collect_metrics()}} of that fold's tuning
 run, one table per fold with a column per tuned parameter, one row per
 candidate and metric, and tune's \code{.metric}, \code{.estimator}, \code{mean}, \code{n},
-\code{std_err} and \code{.config} columns. The candidates a fold searched are the
-table's distinct parameter rows, and the fold's best candidate is what
-\code{\link[tune:show_best]{tune::show_best()}} reports for the inner run.
+\code{std_err} and \code{.config} columns, with \code{.eval_time} beside them when a
+dynamic survival metric was scored. The candidates a fold searched are the
+table's distinct parameter rows. Ranking those rows on one metric by
+\code{mean} reproduces the fold's \code{.selected} except where candidates tie,
+which \code{\link[tune:select_best]{tune::select_best()}} resolved on the inner run in its own order;
+\code{.selected} records the candidate the fold's outer fit used.
 
 The two diverge routinely, in both directions. A size is expanded by tune
 and may reach fewer candidates than were asked for — a request for 20 on a

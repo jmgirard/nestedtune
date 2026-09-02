@@ -90,14 +90,14 @@ for that generic → not planned; a user control on the inner run → M48.
       removal and mutation probes in `test-dplyr-compat.R` and `test-vctrs-compat.R` across the four doors.
 - [x] T6: NEWS, DESIGN.md, D-043 (drafted at plan), verify slot.
 
-- [ ] T7: Zero-row prototype (F1, F2): type each parameter column from the grid data frame when one was given, else
+- [x] T7: Zero-row prototype (F1, F2): type each parameter column from the grid data frame when one was given, else
       from `param_info`, else the workflow's dials set; add `.eval_time` only when the metric set carries a dynamic or
       integrated survival metric; tests on a regression run given `eval_time`, a static-only censored run, and an engine
       parameter with no dials object, each asserting the prototype identical in names and types to a completed fold's.
 - [ ] T8: `candidate_set()` and `.eval_time` (F3): decide whether the final-fit accessor keeps base's `.eval_time`
       column on a dynamic-survival fit or the drop is intended; amend AC6's wording at the step-6 gate to match (and to
       name the assertions, not the file, as what stays unchanged), with a censored test either way.
-- [ ] T9: `fake_tuning()` cleanup (F4) and the `show_best()` roxygen sentence (F7): scope the S3 registration to the
+- [x] T9: `fake_tuning()` cleanup (F4) and the `show_best()` roxygen sentence (F7): scope the S3 registration to the
       test and reword the sentence to what `.inner_metrics` supports and how it relates to `.selected`.
 
 ## Work log
@@ -113,6 +113,8 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: review opened: PR #59 drafted; AC evidence gathering in progress (suite, check and three reviewers running).
 - 2026-09-02: review step 6 checkpoint: suite, check and gate green; [O] F1–F3 confirmed by execution as criterion breaches on censored, `eval_time` and engine-parameter inputs outside the fixtures; disposition to the gate.
 - 2026-09-02: review step 7: gate declined the merge; defect return 1 of M49 — [O] F1 and F2 demonstrate AC1's zero-row clause failing (prototype columns and types diverge from a completed fold's on `eval_time` without a dynamic survival metric and on an engine parameter without a dials object), F3 demonstrates AC6 failing on a dynamic-survival final fit (`.eval_time` dropped); F4 and F7 fix on the same return; F5 rejected (unreachable), F6 resolved by measurement, F8 rejected (tracking prose), F9 noted, F10 rejected (cosmetic). Tasks T7–T9 added; status → in-progress; PR #59 stays draft.
+- 2026-09-02: T7: `empty_inner_metrics()` types each parameter column from the grid data frame, else `param_info`, else the workflow's dials set, and adds `.eval_time` only when the metric set holds a dynamic survival metric (or none was given on a censored-regression workflow, tune's default there being `brier_survival`); T7's "dynamic or integrated" was measured wrong on tune 2.1.0 — an integrated-only set gets no `.eval_time` — so the code and tests follow the measurement. Three tests in `test-nested-tune-grid-failures.R` (regression given `eval_time`; censored static-only, with dynamic and default-metric controls; ranger `max.depth` typed integer and double from the grid) were red on the branch before the fix and green after. T9: `fake_tuning()` schedules the method's removal from tune's S3 table on the calling block's exit, with a test that it leaves; the `show_best()` roxygen sentence now says ranking by `mean` reproduces `.selected` except on ties, which `select_best()` resolved. `devtools::document()` regenerated `nested_tune_grid.Rd`; `air format .` clean; full `devtools::test()` clean.
+- 2026-09-02: T8 amended-AC6 wording went to two fresh [O] readers in full mode before the mini gate: the first returned seven findings (zero-candidate case, the survival trigger, an instrument-bound and factually off evidence clause, an unasserted ordering clause, unbounded domain, D-043 staleness, direction narrowing); the second, on the revised text, eight (dynamic metric unnamed on the survival fit, the base column's meaning, the zero-candidate clause unasserted, D-043, GP1 wants the drop said on the help page, the Bayesian probe checks `.iter` only, base-commit provenance on the regression assertions, NEWS). All applied except the first reader's "dynamic or integrated", contradicted by measurement; the gate decides the drop.
 
 ## Decisions
 

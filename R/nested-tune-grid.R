@@ -95,9 +95,12 @@
 #'   tuning actually scored: [tune::collect_metrics()] of that fold's tuning
 #'   run, one table per fold with a column per tuned parameter, one row per
 #'   candidate and metric, and tune's `.metric`, `.estimator`, `mean`, `n`,
-#'   `std_err` and `.config` columns. The candidates a fold searched are the
-#'   table's distinct parameter rows, and the fold's best candidate is what
-#'   [tune::show_best()] reports for the inner run.
+#'   `std_err` and `.config` columns, with `.eval_time` beside them when a
+#'   dynamic survival metric was scored. The candidates a fold searched are the
+#'   table's distinct parameter rows. Ranking those rows on one metric by
+#'   `mean` reproduces the fold's `.selected` except where candidates tie,
+#'   which [tune::select_best()] resolved on the inner run in its own order;
+#'   `.selected` records the candidate the fold's outer fit used.
 #'
 #'   The two diverge routinely, in both directions. A size is expanded by tune
 #'   and may reach fewer candidates than were asked for — a request for 20 on a
@@ -606,7 +609,7 @@ nested_fold_fit <- function(
   # here, before anything can fail, from the workflow rather than from a run:
   # a fold whose tuning raised has no run to read columns off, and one whose
   # every candidate failed has a run `collect_metrics()` raises on (M03).
-  prototype <- empty_inner_metrics(object, tuner, eval_time)
+  prototype <- empty_inner_metrics(object, tuner, metrics, param_info)
   set_fold_seed(seeds[[1L]])
 
   # `tuned` is assigned inside the tryCatch expression, which evaluates in this
@@ -764,26 +767,26 @@ scored_anything <- function(tuned) {
 
 # The zero-row table a fold that scored nothing records: a completed fold's
 # columns, name for name and type for type, so stacking the folds' tables
-# never meets one whose columns differ. The parameter columns come from the
-# workflow's tuned parameters, typed as dials types them, which is how tune
-# types them in a completed fold's table; the summary columns are the ones
-# `collect_metrics()` writes (measured 2026-09-02, tune 2.1.0), `.eval_time`
-# among them only when the run was given evaluation times, and `.iter` only
-# on the Bayesian path.
-empty_inner_metrics <- function(object, tuner, eval_time = NULL) {
-  params <- tryCatch(
-    tune::extract_parameter_set_dials(object),
-    error = function(cnd) NULL
-  )
-  cols <- list()
-  if (is.data.frame(params)) {
-    for (i in seq_len(nrow(params))) {
-      cols[[params$id[[i]]]] <- empty_param_column(params$object[[i]])
-    }
-  }
+# never meets one whose columns differ. Each column is typed from what tune
+# types it from. A parameter column takes the grid data frame's type when one
+# was given -- tune passes a grid's columns through as typed, a double grid
+# over an integer parameter scoring as double -- else the dials object
+# `param_info` supplies, else the workflow's own; an engine parameter with no
+# dials object reaches the last and is typed by the grid alone. The summary
+# columns are the ones `collect_metrics()` writes; `.eval_time` is among them
+# for a dynamic survival metric only -- an `eval_time` given beside a static
+# or an integrated metric draws tune's warning and no column -- and `.iter`
+# only on the Bayesian path (each measured 2026-09-02, tune 2.1.0).
+empty_inner_metrics <- function(
+  object,
+  tuner,
+  metrics = NULL,
+  param_info = NULL
+) {
+  cols <- empty_param_columns(object, tuner, param_info)
   cols[[".metric"]] <- character(0)
   cols[[".estimator"]] <- character(0)
-  if (!is.null(eval_time)) {
+  if (has_dynamic_metric(object, metrics)) {
     cols[[".eval_time"]] <- numeric(0)
   }
   cols[["mean"]] <- numeric(0)
@@ -796,7 +799,68 @@ empty_inner_metrics <- function(object, tuner, eval_time = NULL) {
   new_tbl(cols)
 }
 
-# A zero-length column of the type a dials parameter's values take.
+# One zero-length column per tuned parameter, in the workflow's order. The
+# workflow names the parameters; the grid data frame, then `param_info`, then
+# the workflow's dials set type them.
+empty_param_columns <- function(object, tuner, param_info) {
+  params <- tryCatch(
+    tune::extract_parameter_set_dials(object),
+    error = function(cnd) NULL
+  )
+  grid <- tuner$args$grid
+  ids <- if (is.data.frame(params)) {
+    params$id
+  } else if (is.data.frame(grid)) {
+    names(grid)
+  } else {
+    character(0)
+  }
+  cols <- list()
+  for (id in ids) {
+    cols[[id]] <- if (is.data.frame(grid) && id %in% names(grid)) {
+      grid[[id]][0L]
+    } else {
+      dials_object <- param_object(id, param_info)
+      if (is.null(dials_object)) {
+        dials_object <- param_object(id, params)
+      }
+      empty_param_column(dials_object)
+    }
+  }
+  cols
+}
+
+# The dials object a parameter set holds for `id`, or NULL: a set records a
+# parameter with no object as a bare NA in its `object` column.
+param_object <- function(id, params) {
+  if (!is.data.frame(params) || !id %in% params$id) {
+    return(NULL)
+  }
+  object <- params$object[[match(id, params$id)]]
+  if (is.list(object)) object else NULL
+}
+
+# Whether the inner run's metrics table carries `.eval_time`: the metric set
+# holds a dynamic survival metric, or none was given and the workflow's mode
+# is censored regression, where tune's default is the dynamic Brier score
+# (`tune:::check_metrics_arg()`, tune 2.1.0, read 2026-09-02) and every other
+# mode's default is static.
+has_dynamic_metric <- function(object, metrics) {
+  if (is.null(metrics)) {
+    mode <- tryCatch(
+      workflows::extract_spec_parsnip(object)$mode,
+      error = function(cnd) NULL
+    )
+    return(identical(mode, "censored regression"))
+  }
+  any(vapply(
+    attr(metrics, "metrics"),
+    inherits,
+    logical(1),
+    what = "dynamic_survival_metric"
+  ))
+}
+
 empty_param_column <- function(param) {
   type <- if (is.list(param)) param[["type"]] else NULL
   switch(

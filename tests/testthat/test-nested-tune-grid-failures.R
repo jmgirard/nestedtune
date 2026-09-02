@@ -507,6 +507,135 @@ test_that("a fold that scored nothing records an empty table, never NULL", {
   expect_true(nrow(done) > 0L)
 })
 
+# The prototype on inputs the fixtures above never reach (M49 review, F1 and
+# F2). `.eval_time` is tune's column and tune adds it for a dynamic survival
+# metric only: an `eval_time` handed to a regression run, or to a censored run
+# scoring a static metric alone, draws tune's warning and no column (measured
+# 2026-09-02, tune 2.1.0). A parameter's type is the grid's when a grid data
+# frame was given -- tune passes a grid's columns through as typed -- and an
+# engine parameter with no dials object has nothing else to be typed from.
+expect_prototype_of_completed <- function(res, failed, completed = 1L) {
+  none <- res$.inner_metrics[[failed]]
+  done <- res$.inner_metrics[[completed]]
+  expect_false(res$.completed[[failed]])
+  expect_true(res$.completed[[completed]])
+  expect_identical(nrow(none), 0L)
+  # The passing control: a real table on the other side of the comparison.
+  expect_true(nrow(done) > 0L)
+  expect_identical(names(none), names(done))
+  expect_identical(vctrs::vec_ptype(none), vctrs::vec_ptype(done))
+  invisible(none)
+}
+
+test_that("a regression fold that scored nothing carries no .eval_time for an eval_time it was given", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  nested <- break_fold(det_nested(d), fold = 2L, stage = "inner tuning")
+
+  # tune warns once per fold that `eval_time` is only used for censored
+  # regression, and the run warns about the failed fold; neither is under test.
+  set.seed(2)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    nested,
+    grid = det_grid(),
+    metrics = reg_metrics(),
+    eval_time = c(1, 2)
+  )))
+
+  none <- expect_prototype_of_completed(res, failed = 2L)
+  expect_false(".eval_time" %in% names(none))
+})
+
+test_that("a censored fold that scored nothing carries .eval_time under a dynamic metric only", {
+  skip_if_no_censored()
+  data <- srv_data()
+  nested <- break_fold(srv_nested(data), fold = 2L, stage = "inner tuning")
+  wf <- srv_workflow(data)
+
+  # A static metric alone: tune warns that `eval_time` is only used for
+  # dynamic or integrated survival metrics, and its table has no `.eval_time`.
+  set.seed(5)
+  static <- suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = srv_grid(),
+    metrics = yardstick::metric_set(yardstick::concordance_survival),
+    eval_time = srv_eval_times()
+  )))
+  none <- expect_prototype_of_completed(static, failed = 2L)
+  expect_false(".eval_time" %in% names(none))
+
+  # The control that must keep the column: the dynamic Brier score, once
+  # named and once as tune's default for the mode.
+  set.seed(5)
+  dynamic <- suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = srv_grid(),
+    metrics = srv_metrics(),
+    eval_time = srv_eval_times()
+  )))
+  none <- expect_prototype_of_completed(dynamic, failed = 2L)
+  expect_true(".eval_time" %in% names(none))
+
+  set.seed(5)
+  default <- suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = srv_grid(),
+    eval_time = srv_eval_times()
+  )))
+  none <- expect_prototype_of_completed(default, failed = 2L)
+  expect_true(".eval_time" %in% names(none))
+})
+
+test_that("an engine parameter with no dials object is typed from the grid", {
+  skip_if_no_engines(stochastic = TRUE)
+  d <- make_reg_data()
+  nested <- break_fold(det_nested(d), fold = 2L, stage = "inner tuning")
+
+  # ranger's `max.depth`: an engine argument parsnip declares tunable and
+  # dials has no object for. The premise is asserted, so a dials release that
+  # adds one turns this into a test of something else rather than a vacuous
+  # pass.
+  spec <- parsnip::set_mode(
+    parsnip::set_engine(
+      parsnip::rand_forest(trees = 5),
+      "ranger",
+      num.threads = 1,
+      max.depth = tune::tune()
+    ),
+    "regression"
+  )
+  wf <- workflows::workflow(y ~ x1 + x2 + x3 + x4, spec)
+  params <- tune::extract_parameter_set_dials(wf)
+  expect_identical(params$id, "max.depth")
+  expect_false(is.list(params$object[[1L]]))
+
+  set.seed(3)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = data.frame(max.depth = 2:3),
+    metrics = reg_metrics()
+  )))
+  none <- expect_prototype_of_completed(res, failed = 2L)
+  expect_true(is.integer(none$max.depth))
+
+  # The type is the grid's and not a default for the missing object: the same
+  # parameter given as a double is a double on both sides.
+  set.seed(3)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    nested,
+    grid = data.frame(max.depth = c(2, 3)),
+    metrics = reg_metrics()
+  )))
+  none <- expect_prototype_of_completed(res, failed = 2L)
+  expect_true(is.double(none$max.depth))
+})
+
 # The thrown-error branches at each stage (M03 review, F3). The fixtures above
 # all reach the *quiet* paths -- tune returning a useless result rather than
 # raising -- which left the raise branches structurally plausible and unproven.
@@ -608,6 +737,26 @@ test_that("an error while finalizing is this fold's failure, not the run's", {
   expect_false(any(res$.completed))
   expect_identical(nrow(res), 3L)
   expect_true(any(grepl("engineered finalize failure", res$.notes[[1L]]$note)))
+})
+
+test_that("a fake tuning run's method leaves with the block that made it", {
+  # The stand-in registers a method into tune's own table (M49 review, F4);
+  # what it registers must not outlive the test, or every later dispatch on
+  # the class reads a method no test asked for.
+  registered <- function() {
+    exists(
+      "collect_metrics.nestedtune_fake_tuning",
+      envir = asNamespace("tune")[[".__S3MethodsTable__."]],
+      inherits = FALSE
+    )
+  }
+  expect_false(registered())
+  local({
+    fake <- fake_tuning(new_tbl(list(.config = "pre1")))
+    expect_true(registered())
+    expect_identical(tune::collect_metrics(fake)$.config, "pre1")
+  })
+  expect_false(registered())
 })
 
 test_that("bookkeeping the candidate record cannot abort a run", {
