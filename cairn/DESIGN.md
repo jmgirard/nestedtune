@@ -355,3 +355,13 @@ execution in RR01, and tune 1.x seeded differently (D-012).
   break it. Accepted at M48's review rather than refusing the slot: the help
   page states it under "Passed through", D-042 records the caveat, and IP2's
   text is unchanged.
+
+- A record column altered under the class — `x$.inner_metrics[[1]] <- ...`,
+  or the same through `[[<-` — keeps the class: tibble's `$<-` reattaches it
+  without consulting the reconstruct rule, and `[` and `rbind()` then compare
+  the object against itself, so only the template-taking doors
+  (`dplyr_reconstruct()`, `vec_restore()`) refuse it. Pre-existing for every
+  record column, surfaced at M49's review and recorded at the rule in
+  `R/nested-results.R` rather than fixed: intercepting `$<-` and `[[<-` is a
+  fifth and sixth door the invariants D-031 fixed do not name. Revisit if a
+  user reaches it.
