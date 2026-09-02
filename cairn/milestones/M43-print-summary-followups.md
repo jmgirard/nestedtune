@@ -134,6 +134,7 @@ has passed.
 - 2026-09-01: T3 done — `?summary.nested_results` regenerated: `\value` opens ``summary()` returns` then ``print()` returns`, `\examples` under the engines guard ends in `summary(res)`. T4 done — `scrub_tibble_body()` transform on the four print blocks; testthat hands a transform each cli message alone, so the first cut (which looked for the next bullet) errored and was made to accept a body with nothing after it; re-recorded blocks read: header, marker, cli lines.
 - 2026-09-01: T5 done — two NEWS entries; `devtools::document()` no diff, `air format --check .` clean, `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 - 2026-09-01: review — PR #52 opened as draft; every criterion verified with fresh evidence; three-lens review: two lenses clean, the diff lens reported eight findings, three fixed at the gate (NEWS threshold, signature comment, AC3 whole-call assertion), five rejected with reasons in the Review section.
+- 2026-09-01: merge approved at the gate; PR #52 marked ready; CI watch timed out with 7 of 10 checks green and the devel, ubuntu-release and windows legs still running; merge waits on them.
 
 ## Decisions
 
