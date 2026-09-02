@@ -34,24 +34,24 @@ for that generic → not planned; a user control on the inner run → M48.
 
 ## Acceptance criteria
 
-- [ ] AC1: Each completed fold's `.inner_metrics` is identical to `tune::collect_metrics()` of the inner tuning run re-run
+- [x] AC1: Each completed fold's `.inner_metrics` is identical to `tune::collect_metrics()` of the inner tuning run re-run
       by hand under the fold's tuning seed, for both tuners, the Bayesian table carrying `.iter`; a fold that tuned and
       then failed its outer fit keeps its table; a fold that scored nothing carries a zero-row table with the columns of
       a completed fold's; a candidate that scored on some inner resamples and failed on others appears with `n` below
       the inner resample count; each asserted by a test — one fixture per tuner, the failure shapes on the existing
       `break_*` fixtures. (RB tripwire: ip-touching)
-- [ ] AC2: `.grid` is gone from the constructor, the invariant column set, `has_results_columns()`, the print and summary
+- [x] AC2: `.grid` is gone from the constructor, the invariant column set, `has_results_columns()`, the print and summary
       candidate-set comparison, the vignette, README and every help page:
       `grep -rnE '(^|[^A-Za-z])\.grid' R/ tests/ vignettes/ man/ README.Rmd` matches nothing, and NEWS is the only
       remaining mention. (RB tripwire: ip-touching)
-- [ ] AC3: `.selected` is built as before and its readers are untouched: `git diff <base>..HEAD --
+- [x] AC3: `.selected` is built as before and its readers are untouched: `git diff <base>..HEAD --
       R/nested-results-agreement.R R/nested-results-plot.R` is empty, the vignette's selection section is unchanged,
       and the snapshot files for print, summary, agreement and plot carry no edit.
-- [ ] AC4: The print and summary candidate-set comparison renders as before on the existing snapshots — equal sets,
+- [x] AC4: The print and summary candidate-set comparison renders as before on the existing snapshots — equal sets,
       differing sets (the per-fold random grid whose folds share `.config` labels), a partial run, and the Bayesian
       rendering — with no snapshot edit, each fold's candidate set derived from the distinct parameter rows of
       `.inner_metrics`.
-- [ ] AC5: `.inner_metrics` is in the dplyr/vctrs invariant set and in `has_results_columns()`: called directly with
+- [x] AC5: `.inner_metrics` is in the dplyr/vctrs invariant set and in `has_results_columns()`: called directly with
       the original as template, `dplyr_reconstruct()` and `vec_restore()` return a bare tibble for a frame lacking the
       column, and for one whose table on a completed fold other than the first is replaced by a zero-row table or by
       the same table with one row dropped; `[` returns a bare tibble for the column subset
@@ -59,7 +59,7 @@ for that generic → not planned; a user control on the inner run → M48.
       column was removed beforehand; and a frame lacking the column fails `has_results_columns()`; asserted by tests.
 - [ ] AC6: `extract_scored_candidates()` on a `nested_final_fit` returns what it returns at the base commit (its existing
       tests unchanged), and its help page describes its shape without reference to `.grid`.
-- [ ] AC7: The profile's verify slot is clean; NEWS carries the breaking-change entry; DESIGN.md's results-object
+- [x] AC7: The profile's verify slot is clean; NEWS carries the breaking-change entry; DESIGN.md's results-object
       description names `.inner_metrics`; D-043 is appended.
 
 ## Coverage
@@ -107,3 +107,25 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: a record column altered under the class — `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class after without consulting the reconstruct rule — passes `[` and `rbind()`, which compare the object against itself; the template-taking doors refuse it. Pre-existing for every record column, recorded at the rule (`R/nested-results.R`) rather than fixed: intercepting `$<-` and `[[<-` is a fifth and sixth door the invariants D-031 fixed do not name, a candidate for a later milestone if a user meets it.
 
 ## Review
+
+_Evidence gathered 2026-09-02 on branch `m049-inner-metrics-column` at 8df4c7e (origin/main unmoved since the cut; PR #59 draft). Full `devtools::test()`: 3,621 pass, 0 fail, 0 warn, 0 skip, 381 s._
+
+- AC1 — verified. Grid: `test-nested-tune-grid-oracles.R` "an integer grid records the candidates that fold actually expanded" asserts each fold's `.inner_metrics` identical to `tune::collect_metrics()` of a hand re-run under the fold's seed. Bayesian: `test-nested-tune-bayes-oracles.R` "per-fold metrics and selections match a hand-rolled Bayesian reference loop" asserts the same and `.iter` present. Failure shapes in `test-nested-tune-grid-failures.R`: "a fold that failed at the outer fit keeps the grid its tuning scored" (table kept), "a fold that scored nothing records an empty table, never NULL" (zero-row, a completed fold's columns), "a fold that completed on a truncated inner design keeps tune's notes" (partial inner split: every `n` below 3); Bayesian zero-row with `.iter` in `test-nested-tune-bayes-results.R`. All green in the run above.
+- AC2 — verified. `grep -rnE '(^|[^A-Za-z])\.grid' R/ tests/ vignettes/ man/ README.Rmd` exits 1 with no match; a repo-wide sweep outside `cairn/` finds `.grid` only in NEWS.md. `R/nested-results.R` and `has_results_columns()` name `.inner_metrics`; the print and summary comparison reads `candidate_sets()` over `.inner_metrics`.
+- AC3 — verified. `git diff origin/main..HEAD -- R/nested-results-agreement.R R/nested-results-plot.R` is 0 bytes; `git diff origin/main..HEAD -- vignettes/ tests/testthat/_snaps/` is empty, so the selection section and the print, summary, agreement and plot snapshots carry no edit.
+- AC4 — verified. No `_snaps/` edit (AC3's diff) and `test-nested-results-print.R` (157 tests) plus `test-nested-tune-bayes-results.R` green, covering equal sets, the differing per-fold random grid sharing `.config` labels, a partial run and the Bayesian rendering; `candidate_sets()` derives each completed fold's set from `candidate_set(.inner_metrics)` and `candidate_key()` drops `.config` and `.iter` before comparing parameter values.
+- AC5 — verified. `record_columns()` and `has_results_columns()` list `.inner_metrics`; `test-dplyr-compat.R` ".inner_metrics is in the record dplyr_reconstruct() checks" and "has_results_columns() requires .inner_metrics", `test-vctrs-compat.R` ".inner_metrics is in the record vec_restore() and rbind() check" probe the missing column, the zero-row and one-row-dropped replacement on a non-first completed fold, the `[` column subset and the single-argument `rbind()`; all green.
+- AC6 — evidence recorded, tick pending the gate. `R/nested-final-fit-extract.R` changes comments only; the function body is untouched and still returns `scored_candidates(x$tuning)`. Every `expect_*` line in `test-nested-final-fit-extract.R` is unchanged and green; the file's diff is three comment rewordings plus one comparand, `res$.grid[[1L]]` → `candidate_set(res$.inner_metrics[[1L]])`, which AC2's grep over `tests/` forces. The help page describes the shape as a `collect_metrics()` table reduced to its parameter columns and `.config`, without `.grid`. Read strictly, "its existing tests unchanged" and AC2 cannot both hold on this file; the disposition is the maintainer's at the gate.
+- AC7 — verified. Verify slot: `devtools::document()` produces no diff, `air format .` no diff, `devtools::test()` clean (above). NEWS.md carries the breaking-change entry as its first bullet. DESIGN.md's `new_nested_results()` paragraph names `.inner_metrics`. D-043 is appended to DECISIONS.md.
+- Driving RR: none, so no projection-vs-outcome pairs.
+
+### Consistency gate
+
+- `cairn_validate.py`: all checks passed, 18 references-staleness advisories only (the standing set). No IP/GP text changed in DESIGN.md, so `cairn_impact.py --changed` is skipped.
+- `devtools::document()`: no diff. `air format .`: no diff. README.Rmd and README.md untouched on the branch. `pkgdown::check_pkgdown()`: no problems found. NEWS has the entry, with no milestone number in user-facing text. No new top-level files. `devtools::check()`: pending.
+
+### Independent review
+
+- [S] blame-history: no findings; checked the M03 collect_metrics guard, M21's per-fold record, M45's `join_iteration()` retirement (tune 2.1.0's `collect_metrics()` carries `.iter` natively), M21 review F1/F2 ordering, M37 probes, D-031/D-036 invariant set, D-043 scope, all respected.
+- [S] prior-review record: no findings; archives M21, M36–M39, M45, LESSONS.md and D-023/031/032/036/043 read; the GitHub probe found one real inline comment (PR #30, a workflow file), the walk of PRs #22, #45–#47, #51, #54, #58 returned none.
+- [O] diff-bug: pending.
