@@ -14,16 +14,18 @@ rather than silently ignored.}
 }
 \value{
 A tibble with one row per candidate scored, carrying one column per
-tuned parameter plus tune's \code{.config} label for the candidate. It is the
-same shape as one element of \code{\link[=nested_tune_grid]{nested_tune_grid()}}'s \code{.grid} column, so the
-two can be compared directly.
+tuned parameter plus tune's \code{.config} label for the candidate, and \code{.iter}
+on a Bayesian fit. It is the distinct parameter rows of the run's
+\code{\link[tune:collect_metrics]{tune::collect_metrics()}} table with those labels — the same shape one
+element of a result's \code{.inner_metrics} column reduces to when its metric
+columns are dropped — so the two can be compared directly.
 
 This is what was \strong{scored}, not what was \strong{asked for}. A \code{grid} given as
 a size is expanded by tune and may reach fewer candidates than the number
 requested; a candidate that failed everywhere scored nothing. See the
-\code{.grid} discussion in \code{\link[=nested_tune_grid]{nested_tune_grid()}} for the full account of how the
-two records diverge, which holds here too — this record is derived the same
-way.
+\code{.inner_metrics} discussion in \code{\link[=nested_tune_grid]{nested_tune_grid()}} for the full account
+of how the two records diverge, which holds here too — this record is
+derived the same way.
 
 One pointer there does \strong{not} carry over. A candidate that failed on every
 inner resample is missing from this table, and on a \code{nested_tune_grid()}
@@ -33,10 +35,11 @@ itself — \code{tune::collect_notes(extract_tune_results(x))}.
 }
 \description{
 Returns the candidate parameter settings that \code{\link[=nested_final_fit]{nested_final_fit()}}'s tuning
-run actually evaluated — the full-data counterpart of the \code{.grid} column
-\code{\link[=nested_tune_grid]{nested_tune_grid()}} and \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} record for each outer fold,
-derived the same way, so a Bayesian final fit's table carries the \code{.iter}
-column that path's \code{.grid} does.
+run actually evaluated — the full-data counterpart of the candidate set each
+outer fold's \code{.inner_metrics} table describes on a \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result, derived the same way from the run's
+\code{\link[tune:collect_metrics]{tune::collect_metrics()}} table, so a Bayesian final fit's table carries the
+\code{.iter} column that path's tables do.
 }
 \examples{
 \dontshow{if (rlang::is_installed(c("recipes", "yardstick"))) withAutoprint(\{ # examplesIf}

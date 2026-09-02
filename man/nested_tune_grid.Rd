@@ -87,7 +87,7 @@ inappropriate evaluation time points were removed, once per tune call.}
 An object of class \code{nested_results}: one row per outer fold, with the
 fold's split and id, the metrics scored on its assessment set
 (\code{.metrics}), the parameters chosen for it by inner tuning (\code{.selected}),
-the candidates its inner tuning actually scored (\code{.grid}), whether the fold
+the inner tuning run's own metrics (\code{.inner_metrics}), whether the fold
 finished (\code{.completed}), anything that went wrong (\code{.notes}), and the two
 seeds that reproduce it (\code{.tuning_seed}, \code{.outer_fit_seed}). Use
 \code{\link[=collect_metrics]{collect_metrics()}} to summarize.
@@ -95,8 +95,13 @@ seeds that reproduce it (\code{.tuning_seed}, \code{.outer_fit_seed}). Use
 \strong{Two records describe the grid, and they answer different questions.}
 \code{attr(x, "grid")} holds the \code{grid} argument \strong{as it was given} — a
 positive whole number, not a table of candidates, whenever a size was
-passed. The \code{.grid} column holds what each outer fold's inner tuning
-actually scored, one table per fold with a column per tuned parameter.
+passed. The \code{.inner_metrics} column holds what each outer fold's inner
+tuning actually scored: \code{\link[tune:collect_metrics]{tune::collect_metrics()}} of that fold's tuning
+run, one table per fold with a column per tuned parameter, one row per
+candidate and metric, and tune's \code{.metric}, \code{.estimator}, \code{mean}, \code{n},
+\code{std_err} and \code{.config} columns. The candidates a fold searched are the
+table's distinct parameter rows, and the fold's best candidate is what
+\code{\link[tune:show_best]{tune::show_best()}} reports for the inner run.
 
 The two diverge routinely, in both directions. A size is expanded by tune
 and may reach fewer candidates than were asked for — a request for 20 on a
@@ -106,24 +111,25 @@ size draws from the generator, and each fold tunes under its own seed, so
 a continuous parameter gives every fold its own candidates. Printing says
 so when it happens.
 
-One limit is worth stating plainly. \code{.grid} is derived from the tuning
-run's own metrics, because that is the only place tune records candidates
-at all. A candidate that failed on \strong{every} inner resample scored nothing
-and is therefore absent from \code{.grid} — \code{.notes} is where its failure is
-recorded. A fold that scored no candidate at all carries a zero-row table,
-never \code{NULL}.
+One limit is worth stating plainly. \code{.inner_metrics} is tune's summary of
+the tuning run, and a candidate that failed on \strong{every} inner resample
+scored nothing: it has no row there — \code{.notes} is where its failure is
+recorded. A candidate that failed on some inner resamples and scored on
+others has its rows, with \code{n} below the inner resample count. A fold that
+scored no candidate at all carries a zero-row table with a completed
+fold's columns, never \code{NULL}.
 
 \code{attr(x, "metrics")} holds the \code{metrics} argument, and is absent rather
-than \code{NULL} when none was supplied. \code{.grid} is a column, so it travels
-with the fold it describes.
+than \code{NULL} when none was supplied. \code{.inner_metrics} is a column, so it
+travels with the fold it describes.
 
 \code{attr(x, "procedure")} records what ran, on the result of either
 orchestrator: a named list giving the tuner (\code{"tune_grid"} here,
 \code{"tune_bayes"} from \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}), that tuner's own arguments
 (\code{grid} here; \code{iter}, \code{initial} and \code{objective} there), and \code{param_info},
 \code{event_level} and \code{eval_time} on both. A Bayesian result carries the
-\code{procedure} attribute and no \code{grid} attribute, and its \code{.grid} tables
-carry an \code{.iter} column; \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} documents both.
+\code{procedure} attribute and no \code{grid} attribute, and its \code{.inner_metrics}
+tables carry an \code{.iter} column; \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} documents both.
 
 \strong{What an operation on the object may and may not do.} The result carries
 the invariants \code{tune} declares on its own results objects:
@@ -262,11 +268,11 @@ means exactly that: it worked, on less than the whole design.
 
 A failed fold still records the candidates it got as far as scoring, whatever
 stage it failed at. A fold that died at the outer fit had already tuned, so
-its \code{.grid} holds the full set — and so does one that tuned successfully and
-then failed while selecting from the results. Only a fold that never reached
-a scored candidate at all — tuning itself raised, or every candidate failed —
-holds a zero-row table. No fold is reported as having searched a grid it did
-not.
+its \code{.inner_metrics} holds the full table — and so does one that tuned
+successfully and then failed while selecting from the results. Only a fold
+that never reached a scored candidate at all — tuning itself raised, or every
+candidate failed — holds a zero-row table. No fold is reported as having
+searched a grid it did not.
 
 Any operation outside the invariants stated under \strong{Value} above returns a
 bare tibble, and both counts go with the class rather than being recomputed

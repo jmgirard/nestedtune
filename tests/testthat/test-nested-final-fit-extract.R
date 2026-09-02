@@ -46,7 +46,8 @@ test_that("the candidate accessor reports the candidates that scored", {
   expect_identical(nrow(cand), nrow(det_grid()))
   expect_setequal(cand$num_comp, det_grid()$num_comp)
 
-  # D-023: the same shape a fold's `.grid` carries, `.config` included, so the
+  # D-023: the same shape a fold's candidate set derived from `.inner_metrics`
+  # carries, `.config` included, so the
   # two records of one thing can be compared without translating between them.
   expect_true(".config" %in% names(cand))
   expect_setequal(names(cand), c("num_comp", ".config"))
@@ -86,7 +87,7 @@ test_that("what the accessors return agrees with what the loop records", {
   skip_if_no_engines()
 
   # The `@return` promises a reader they can compare this table against a
-  # fold's `.grid` directly. That promise is only worth making if the two
+  # fold's candidate set directly. That promise is only worth making if the two
   # really are the same shape, which nothing above checks -- both assertions so
   # far read the accessor alone.
   d <- make_reg_data()
@@ -97,14 +98,14 @@ test_that("what the accessors return agrees with what the loop records", {
   final <- memoised(nested_final_fit(wf, res))
 
   from_fit <- extract_scored_candidates(final)
-  from_loop <- res$.grid[[1L]]
+  from_loop <- candidate_set(res$.inner_metrics[[1L]])
 
   expect_identical(names(from_fit), names(from_loop))
 
   # Names alone cannot fail here: both sides come from `scored_candidates()`
   # over the same deterministic grid, so they agree by construction. The plan
   # gate's recorded falsifier for this milestone's shape choice was "the
-  # accessor and the `.grid` column disagreeing on a run where both are
+  # accessor and the fold's candidate set disagreeing on a run where both are
   # defined", and disagreement in VALUES is what that names -- so the values
   # are what has to be compared.
   expect_setequal(from_fit$num_comp, from_loop$num_comp)

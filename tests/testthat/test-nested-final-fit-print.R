@@ -270,8 +270,8 @@ test_that("AC5: a Bayesian final fit names its procedure with the counts that ra
   final <- bayes_final_for_print()
 
   # The candidate table is the `.iter`-bearing one the loop's derivation
-  # gives, so the counts below are read off the same record a fold's `.grid`
-  # would be.
+  # gives, so the counts below are read off the same record a fold's candidate
+  # set derived from `.inner_metrics` would be.
   cand <- extract_scored_candidates(final)
   expect_true(".iter" %in% names(cand))
   expect_identical(cand, scored_candidates(final$tuning))

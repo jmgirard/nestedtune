@@ -93,7 +93,11 @@ test_that("per-fold metrics and selections match a hand-rolled Bayesian referenc
   # The search ran: at least one proposal was scored in some fold. Without
   # this the reference could agree with a driver that never iterated, since
   # both would then be the initial stage alone.
-  proposed <- vapply(res$.grid, function(g) any(g$.iter > 0L), logical(1))
+  proposed <- vapply(
+    res$.inner_metrics,
+    function(m) any(m$.iter > 0L),
+    logical(1)
+  )
   expect_true(any(proposed))
 })
 
@@ -130,8 +134,13 @@ test_that("a control passed through `...` reaches every fold (M48, AC1)", {
     expect_identical(res$.metrics[[i]], ref[[i]]$metrics)
     expect_identical(res$.selected[[i]], ref[[i]]$selected)
     # The candidate set, as the hand run scored it: the same rows in the
-    # same order, so a fold that stopped early stopped where tune stopped.
-    expect_identical(res$.grid[[i]], scored_candidates(ref[[i]]$tuned))
+    # same order, so a fold that stopped early stopped where tune stopped --
+    # and derived from the fold's table exactly as the final fit derives its
+    # own from its run (D-043).
+    expect_identical(
+      candidate_set(res$.inner_metrics[[i]]),
+      scored_candidates(ref[[i]]$tuned)
+    )
     # And the table under a control that stops folds early holds exactly the
     # iterations the hand run reached (M49, AC1).
     expect_identical(
@@ -142,7 +151,7 @@ test_that("a control passed through `...` reaches every fold (M48, AC1)", {
 
   # The control changed the run: `no_improve = 2` stopped at least one fold
   # short of `iter`, so its candidate set is smaller than `initial + iter`.
-  scored <- vapply(res$.grid, nrow, integer(1))
+  scored <- vapply(candidate_sets(res), nrow, integer(1))
   expect_true(any(scored < 3L + 4L))
 
   # And the same run with no control stops nowhere, so the shortfall above is
@@ -157,7 +166,10 @@ test_that("a control passed through `...` reaches every fold (M48, AC1)", {
     metrics = ms
   ))
   expect_true(all(plain$.completed))
-  expect_identical(vapply(plain$.grid, nrow, integer(1)), rep(7L, nrow(plain)))
+  expect_identical(
+    vapply(candidate_sets(plain), nrow, integer(1)),
+    rep(7L, nrow(plain))
+  )
 })
 
 test_that("the Bayesian reference loop also matches with a stochastic engine", {
@@ -248,8 +260,8 @@ test_that("at iter = 0 the Bayesian path is the grid path on the space-filling g
 
     # The grid record plus an `.iter` column of zeros: the same columns in the
     # same order, holding the same values, and then the iteration.
-    b <- bayes$.grid[[i]]
-    r <- grid$.grid[[i]]
+    b <- candidate_set(bayes$.inner_metrics[[i]])
+    r <- candidate_set(grid$.inner_metrics[[i]])
     expect_identical(names(b), c(names(r), ".iter"))
     for (nm in names(r)) {
       expect_identical(b[[nm]], r[[nm]])

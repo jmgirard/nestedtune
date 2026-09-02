@@ -86,7 +86,7 @@ print.nested_results <- function(x, ..., n = NULL, width = NULL) {
   }
   print_rows(x, n = n, width = width)
   print_failure_count(x)
-  print_candidate_sets(x$.grid[x$.completed])
+  print_candidate_sets(candidate_sets(x))
   cli::cli_bullets(c(
     i = "Use {.fn summary} for what the run means: which folds failed, what \\
          each one selected, and the estimate across them."
@@ -227,7 +227,7 @@ new_summary_nested_results <- function(x) {
         stage = vapply(x$.notes[failed], fold_failure_stage, character(1))
       ),
       selection = summary_selection(selected),
-      grids = x$.grid[completed],
+      grids = candidate_sets(x),
       estimate = if (length(completed) > 0L) {
         summarize_folds(per_fold_metrics(x))
       }
@@ -326,6 +326,13 @@ print_selection <- function(s) {
 #
 # Silent on agreement, so the line appears only when it changes how the
 # selections summary() reports should be read.
+# The candidate set each completed fold searched, derived from its inner
+# table (M49): the distinct parameter rows of `.inner_metrics`, with tune's
+# `.config` and `.iter` along, which `candidate_key()` then drops.
+candidate_sets <- function(x) {
+  lapply(x$.inner_metrics[x$.completed], candidate_set)
+}
+
 print_candidate_sets <- function(grids) {
   if (length(grids) < 2L || same_candidates(grids)) {
     return(invisible(NULL))

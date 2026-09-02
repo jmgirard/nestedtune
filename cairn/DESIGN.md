@@ -267,8 +267,10 @@ pinned, and the caller's RNG state restored on exit including on error. The
 kind pin is what makes a fresh worker agree with a serial run.
 
 `new_nested_results()` (`R/nested-results.R`) assembles one row per outer fold
-— split, id, metrics, selected parameters, and the fold's two seeds — as a
-plain tibble carrying class `nested_results`. It deliberately does **not**
+— split, id, metrics, selected parameters, the inner tuning run's
+`collect_metrics()` table as `.inner_metrics` (M49, D-043; the candidate set a
+reader needs is its distinct parameter rows), notes, and the fold's two seeds —
+as a plain tibble carrying class `nested_results`. It deliberately does **not**
 inherit `tune_results`: that would bring `show_best()` and `select_best()`
 along, and both would rank outer folds, which is the reading IP3 forbids
 (D-010). `collect_metrics()` is registered against tune's generic.

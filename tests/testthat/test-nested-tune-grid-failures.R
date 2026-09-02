@@ -371,12 +371,13 @@ test_that("dropping any of the per-fold columns sheds the results class", {
     )
   )
 
-  # .grid joined that set at M21. Asserted by dropping it from an otherwise
+  # .inner_metrics is in that set (M49; the candidate column joined it at M21).
+  # Asserted by dropping it from an otherwise
   # complete object rather than by listing a subset that happens to omit it, so
   # this fails if the column stops being required rather than passing on some
   # other column's absence.
   expect_false(
-    inherits(res[, setdiff(names(res), ".grid")], "nested_results")
+    inherits(res[, setdiff(names(res), ".inner_metrics")], "nested_results")
   )
   # The control: a column selection that drops nothing keeps the class, so the
   # assertions above fail on the column they name rather than on `[` having
@@ -411,9 +412,13 @@ test_that("a candidate that fails on every inner resample is absent from the rec
   )))
 
   expect_true(all(res$.completed))
-  for (g in res$.grid) {
+  for (g in candidate_sets(res)) {
     expect_identical(nrow(g), 2L)
     expect_identical(sort(g$num_comp), c(1L, 2L))
+  }
+  # And the table itself carries no row for it: absent, not scored as NA.
+  for (m in res$.inner_metrics) {
+    expect_false(-5L %in% m$num_comp)
   }
 
   # The request is unchanged: the two records answer different questions, and
@@ -439,8 +444,9 @@ test_that("a fold that failed at the outer fit keeps the grid its tuning scored"
   # candidates as having searched none -- IP4 pointing the other way, and the
   # defect M21's criteria audit caught in the plan's own wording.
   expect_false(res$.completed[[3L]])
-  expect_identical(nrow(res$.grid[[3L]]), 3L)
-  expect_identical(sort(res$.grid[[3L]]$num_comp), 1:3)
+  scored <- candidate_set(res$.inner_metrics[[3L]])
+  expect_identical(nrow(scored), 3L)
+  expect_identical(sort(scored$num_comp), 1:3)
 
   # And it keeps the inner table that tuning produced (M49, AC1), checked
   # against tune re-run by hand under the fold's own seed: the outer failure
@@ -475,25 +481,22 @@ test_that("a fold that scored nothing records an empty table, never NULL", {
     metrics = reg_metrics()
   )))
 
-  empty <- res$.grid[[2L]]
-  expect_false(res$.completed[[2L]])
-  expect_false(is.null(empty))
-  expect_true(is.data.frame(empty))
-  expect_identical(nrow(empty), 0L)
-
-  # A NULL here would be indistinguishable from a column that was never filled,
-  # and would make every lapply() over `.grid` special-case one fold.
-  expect_false(any(vapply(res$.grid, is.null, logical(1))))
-
-  # The inner table of a fold that scored nothing (M49, AC1): zero rows under
-  # a completed fold's columns, name for name and type for type, so a reader
-  # stacking the folds' tables never meets a fold whose columns differ. It is
-  # built without asking tune for it: `collect_metrics()` raises on a run in
-  # which every candidate failed (the M03 lesson), which is exactly this fold.
   none <- res$.inner_metrics[[2L]]
-  done <- res$.inner_metrics[[1L]]
+  expect_false(res$.completed[[2L]])
+  expect_false(is.null(none))
   expect_true(is.data.frame(none))
   expect_identical(nrow(none), 0L)
+
+  # A NULL here would be indistinguishable from a column that was never filled,
+  # and would make every lapply() over `.inner_metrics` special-case one fold.
+  expect_false(any(vapply(res$.inner_metrics, is.null, logical(1))))
+
+  # Zero rows under a completed fold's columns (M49, AC1), name for name and
+  # type for type, so a reader stacking the folds' tables never meets a fold
+  # whose columns differ. It is built without asking tune for it:
+  # `collect_metrics()` raises on a run in which every candidate failed (the
+  # M03 lesson), which is exactly this fold.
+  done <- res$.inner_metrics[[1L]]
   expect_identical(names(none), names(done))
   expect_identical(
     vapply(none, function(col) class(col)[[1L]], character(1)),

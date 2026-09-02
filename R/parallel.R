@@ -352,7 +352,12 @@ dispatch_folds <- function(
   # `.stop` would abort the whole run on the first failing fold and discard the
   # completed ones -- exactly what M03 exists to prevent.
   collected <- mirai::collect_mirai(mapped)
-  lapply(collected, classify_fold_result, call = call)
+  lapply(
+    collected,
+    classify_fold_result,
+    prototype = empty_inner_metrics(object, tuner, eval_time),
+    call = call
+  )
 }
 
 # One round-trip before any fold is dispatched, to fail on the setup error users
@@ -945,7 +950,11 @@ warn_if_not_cancellable <- function(
 # the latter rather than describing it (RR03 Q4, verified). Asking "is this an
 # error?" therefore mistakes both for successes; asking "is this a fold record?"
 # cannot.
-classify_fold_result <- function(x, call = rlang::caller_env()) {
+classify_fold_result <- function(
+  x,
+  prototype = empty_inner_metrics(NULL, NULL),
+  call = rlang::caller_env()
+) {
   if (is_fold_record(x)) {
     return(x)
   }
@@ -976,7 +985,13 @@ classify_fold_result <- function(x, call = rlang::caller_env()) {
       call = call
     )
   }
-  failed_fold("worker", NULL, NULL, message = worker_failure_message(x))
+  failed_fold(
+    "worker",
+    NULL,
+    NULL,
+    message = worker_failure_message(x),
+    prototype = prototype
+  )
 }
 
 # nanonext's ECANCELED, which is what `mirai::stop_mirai()` leaves behind.
@@ -1007,7 +1022,7 @@ is_fold_record <- function(x) {
   is.list(x) &&
     is.logical(x$completed) &&
     length(x$completed) == 1L &&
-    all(c("metrics", "selected", "grid", "notes") %in% names(x))
+    all(c("metrics", "selected", "inner_metrics", "notes") %in% names(x))
 }
 
 worker_failure_message <- function(x) {

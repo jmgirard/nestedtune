@@ -11,12 +11,20 @@ fake_fold_record <- function(completed = TRUE) {
     completed = completed,
     metrics = data.frame(.metric = "rmse", .estimate = 1),
     selected = data.frame(mtry = 2),
-    # The evaluated-candidate record (M21). Part of the shape a fold record is
-    # RECOGNISED by, not decoration: a worker returning the pre-M21 shape is a
-    # worker whose package disagrees with this one, and classifying it as a
-    # completed fold would put an object with no `.grid` element into a column
-    # that must have one.
-    grid = data.frame(mtry = 2, .config = "pre0_mod1_post0"),
+    # The inner run's metrics (M49; the evaluated-candidate record since M21).
+    # Part of the shape a fold record is RECOGNISED by, not decoration: a
+    # worker returning an older shape is a worker whose package disagrees with
+    # this one, and classifying it as a completed fold would put an object
+    # with no `inner_metrics` element into a column that must have one.
+    inner_metrics = data.frame(
+      mtry = 2,
+      .metric = "rmse",
+      .estimator = "standard",
+      mean = 1,
+      n = 3L,
+      std_err = 0.1,
+      .config = "pre0_mod1_post0"
+    ),
     notes = data.frame(
       location = character(0),
       type = character(0),
@@ -37,15 +45,15 @@ test_that("a fold record missing the evaluated-candidate set is not a fold recor
   # M21, and the reason this is asserted per element rather than on the whole
   # shape at once: the required set is what classification RECOGNISES, so a
   # requirement nothing pins can be dropped from it with every test still green
-  # (verified by mutation at M21 T4 -- removing "grid" left the file passing
-  # until this test existed).
+  # (verified by mutation at M21 T4 -- removing the candidate element left the
+  # file passing until this test existed).
   #
   # What the missing element means in practice is a worker running a different
   # version of this package. Accepting it would put a fold with no candidate
-  # record into the `.grid` column, which new_nested_results() would fill with
+  # record into the `.inner_metrics` column, which new_nested_results() would fill with
   # a NULL -- an object claiming to record what it searched while recording
   # nothing, which is the IP4 failure the column exists to prevent.
-  for (element in c("metrics", "selected", "grid", "notes")) {
+  for (element in c("metrics", "selected", "inner_metrics", "notes")) {
     rec <- fake_fold_record()
     rec[[element]] <- NULL
     expect_false(is_fold_record(rec))

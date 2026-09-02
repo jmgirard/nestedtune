@@ -24,11 +24,13 @@ new_nested_results <- function(
 
   cols[[".metrics"]] <- lapply(folds, function(x) x$metrics)
   cols[[".selected"]] <- lapply(folds, function(x) x$selected)
-  # IP4's "the grid actually evaluated", per fold rather than per run: folds can
-  # genuinely search different candidate sets, so this is a column and not an
-  # attribute. An attribute would also survive a row subset as the parent's
-  # record (M20), which is the stale claim the same principle forbids.
-  cols[[".grid"]] <- lapply(folds, function(x) x$grid)
+  # IP4's "the grid actually evaluated", per fold rather than per run: each
+  # fold's inner run summarized by tune, from which its candidate set is
+  # derived (M49, D-043). Folds can genuinely search different candidate sets,
+  # so this is a column and not an attribute. An attribute would also survive
+  # a row subset as the parent's record (M20), which is the stale claim the
+  # same principle forbids.
+  cols[[".inner_metrics"]] <- lapply(folds, function(x) x$inner_metrics)
   cols[[".notes"]] <- lapply(folds, function(x) x$notes)
   cols[[".completed"]] <- completed
   cols[[".tuning_seed"]] <- seeds[seq(1L, by = 2L, length.out = n)]
@@ -123,7 +125,7 @@ record_columns <- function(x) {
     "splits",
     ".metrics",
     ".selected",
-    ".grid",
+    ".inner_metrics",
     ".notes",
     ".completed",
     ".tuning_seed",
@@ -606,7 +608,13 @@ rbind.nested_results <- function(..., deparse.level = 1) {
 # not: `can_reconstruct_results()` is handed a bare frame that carries no record
 # of its own, and the template's record is the one that decides.
 has_results_columns <- function(x, id_cols = id_columns(x)) {
-  required <- c(".metrics", ".selected", ".grid", ".notes", ".completed")
+  required <- c(
+    ".metrics",
+    ".selected",
+    ".inner_metrics",
+    ".notes",
+    ".completed"
+  )
   all(required %in% names(x)) &&
     length(id_cols) > 0L &&
     all(id_cols %in% names(x))
