@@ -62,10 +62,12 @@ naming convention.
 - **Resampling construction** — `nested_resamples()`. Builds a nested
   resampling design and returns an object carrying rsample's `nested_cv`
   classes, so it is a drop-in for `rsample::nested_cv()`'s output (D-008).
-- **Orchestration — `nested_tune_*`** — `nested_tune_grid()` and
-  `nested_tune_bayes()`: one outer loop, told which inner tuner to call by an
-  internal *tuner description* — the tune function's name and its static
-  arguments (`R/tuner.R`, D-040) — plus the `collect_metrics()` method on the
+- **Orchestration — `nested_tune_*`** — `nested_tune_grid()`,
+  `nested_tune_bayes()`, `nested_tune_race_anova()` and
+  `nested_tune_race_win_loss()`: one outer loop, told which inner tuner to
+  call by an internal *tuner description* — the tune or finetune function's
+  name and its static arguments (`R/tuner.R`, D-040), resolved against the
+  tuner registry there (M50) — plus the `collect_metrics()` method on the
   `nested_results` object both return and `agreement()`, the package-owned
   generic tabulating how often each selected parameter combination was chosen
   across the outer folds (D-039). The suffix names the inner tuning method
@@ -239,16 +241,26 @@ against each outer fold's analysis frame exactly as rsample does, then keeps
 only the row indices and remaps them onto the original data, so the inner
 splits reference the one copy the caller already holds.
 
-`nested_tune_grid()` (`R/nested-tune-grid.R`) and `nested_tune_bayes()`
-(`R/nested-tune-bayes.R`) each validate their arguments (`R/checks.R`), build a
-tuner description — `tuner_grid(grid)` or `tuner_bayes(iter, initial,
-objective)` (`R/tuner.R`) — and hand it to `nested_loop()`, the one outer
-loop. It draws every fold's seeds up front and hands each fold to
+`nested_tune_grid()` (`R/nested-tune-grid.R`), `nested_tune_bayes()`
+(`R/nested-tune-bayes.R`) and the two racing exports over one
+`nested_tune_race()` (`R/nested-tune-race.R`) each validate their arguments
+(`R/checks.R`), build a tuner description — `tuner_grid(grid)`,
+`tuner_bayes(iter, initial, objective)` or `tuner_race(fn, grid)`
+(`R/tuner.R`) — and hand it to `nested_loop()`, the one outer loop. The
+description names the tuner; `tuner_registry` (`R/tuner.R`, M50) holds what
+the package knows about each name — its package, the packages it requires,
+its default control and control class, whether it takes a grid, whether its
+tables carry `.iter`, its print label — and every site that once switched on
+the name reads the registry, so a new tuner is one entry and its export. The
+racers add two entry refusals (`check_tuner_installed()`,
+`check_race_burn_in()`) and attach their package in every daemon beside the
+workflow's (`attach_daemon_pkgs()`). It draws every fold's seeds up front and hands each fold to
 `nested_fold_fit()` — a worker whose inputs are the outer split, the inner
 `rset`, the fold's two seeds, the tuner description and the static
 workflow/metrics. The worker delegates the entire statistical pipeline to
-tune: `run_tuner()` assembles the inner call with `rlang::call2()` —
-`tune_grid()` or `tune_bayes()` under the effective control (D-042): the
+tune: `run_tuner()` assembles the inner call with `rlang::call2()` in the
+registry's namespace — `tune_grid()`, `tune_bayes()`, `tune_race_anova()` or
+`tune_race_win_loss()` under the effective control (D-042): the
 `control_grid()` / `control_bayes()` the caller passed through `...`, or
 tune's default, with `allow_par = FALSE` and the argument's `event_level`
 overwritten by `effective_control()` at entry (`check_control()`), and for
@@ -269,7 +281,9 @@ kind pin is what makes a fresh worker agree with a serial run.
 `new_nested_results()` (`R/nested-results.R`) assembles one row per outer fold
 — split, id, metrics, selected parameters, the inner tuning run's
 `collect_metrics()` table as `.inner_metrics` (M49, D-043; the candidate set a
-reader needs is its distinct parameter rows), notes, and the fold's two seeds —
+reader needs is its distinct parameter rows; on a race, `all_configs = TRUE`
+through `collect_inner_metrics()`, so eliminated candidates are in it with
+their `n`, M50), notes, and the fold's two seeds —
 as a plain tibble carrying class `nested_results`. It deliberately does **not**
 inherit `tune_results`: that would bring `show_best()` and `select_best()`
 along, and both would rank outer folds, which is the reading IP3 forbids
@@ -304,7 +318,10 @@ argument on the forwarded path while workflows' `augment()` swallows one.
 
 The dependency surface is rsample, cli, rlang, tune (>= 2.0.0), workflows,
 parsnip, and ggplot2 _(ggplot2 added 2026-07-26 at M08, D-019: the first Import
-that is not needed to compute a result — it carries `autoplot()`)_. The tune
+that is not needed to compute a result — it carries `autoplot()`)_. finetune, with lme4
+and BradleyTerry2, sits in Suggests for the racing exports alone (D-044): a
+missing package is refused at those exports' entry and nothing else reaches
+it. The tune
 floor is load-bearing rather than defensive: every
 reproducibility guarantee above rests on tune >= 2.0.0 deriving its own
 per-resample streams and leaving the caller's RNG state untouched, verified by

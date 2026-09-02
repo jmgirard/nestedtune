@@ -33,6 +33,7 @@ reference:
   contents:
   - nested_tune_grid
   - nested_tune_bayes
+  - nested_tune_race
   - collect_metrics.nested_results
   - print.nested_results
   - summary.nested_results

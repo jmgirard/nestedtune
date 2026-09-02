@@ -1491,6 +1491,11 @@ race_results <- function(fn) {
 # `final_nested()`, whose inner specification is literal and so survives the
 # re-run. The stochastic sibling runs ranger over `stoch_grid()`.
 race_final_results <- function(fn, data, seed = 27) {
+  # Seeded before the workflow is built as well as before the run: the
+  # recipe step ids are drawn from the stream, and a workflow built under
+  # whatever state the requesting test left would key a fresh build on every
+  # request (the same reason `bayes_control_final_results()` gives).
+  set.seed(seed)
   wf <- det_workflow(data)
   folds <- final_nested(data)
   g <- det_grid()
@@ -1517,6 +1522,7 @@ race_final_results <- function(fn, data, seed = 27) {
 }
 
 race_stoch_final_results <- function(fn, data, seed = 28) {
+  set.seed(seed)
   wf <- stoch_workflow(data)
   folds <- final_nested(data)
   g <- stoch_grid()

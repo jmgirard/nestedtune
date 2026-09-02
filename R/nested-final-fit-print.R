@@ -21,7 +21,8 @@
 #' -- is the one to report (IP3).
 #'
 #' The procedure line says what the full-data search was, as what ran beside
-#' what was asked for: for a grid procedure the candidates scored; for a
+#' what was asked for: for a grid or a racing procedure the candidates
+#' scored, the search named; for a
 #' Bayesian one the initial candidates scored and requested, and the
 #' iterations completed and requested, since [tune::tune_bayes()] may score
 #' fewer initial candidates than `initial` names and stop short of `iter`.
@@ -86,7 +87,8 @@ print.nested_final_fit <- function(x, ...) {
 #' @return
 #' `summary()` returns an object of class `summary.nested_final_fit`: a list
 #' holding the full-data tuning run's resampling label (`tuning_label`), the
-#' tuner that ran (`tuner`, `"tune_grid"` or `"tune_bayes"`), the number of
+#' tuner that ran (`tuner`: `"tune_grid"`, `"tune_bayes"`, `"tune_race_anova"`
+#' or `"tune_race_win_loss"`), the number of
 #' candidates that run scored (`candidates`), the Bayesian counts (`initial`
 #' and `initial_requested`, `iterations_completed` and
 #' `iterations_requested`, each `NULL` on a grid fit; the scored figures are

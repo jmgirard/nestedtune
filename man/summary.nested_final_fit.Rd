@@ -21,7 +21,8 @@ rather than silently ignored.}
 \value{
 \code{summary()} returns an object of class \code{summary.nested_final_fit}: a list
 holding the full-data tuning run's resampling label (\code{tuning_label}), the
-tuner that ran (\code{tuner}, \code{"tune_grid"} or \code{"tune_bayes"}), the number of
+tuner that ran (\code{tuner}: \code{"tune_grid"}, \code{"tune_bayes"}, \code{"tune_race_anova"}
+or \code{"tune_race_win_loss"}), the number of
 candidates that run scored (\code{candidates}), the Bayesian counts (\code{initial}
 and \code{initial_requested}, \code{iterations_completed} and
 \code{iterations_requested}, each \code{NULL} on a grid fit; the scored figures are

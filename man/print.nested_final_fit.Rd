@@ -27,7 +27,8 @@ was built from -- the \code{\link[=nested_tune_grid]{nested_tune_grid()}} or \co
 -- is the one to report (IP3).
 
 The procedure line says what the full-data search was, as what ran beside
-what was asked for: for a grid procedure the candidates scored; for a
+what was asked for: for a grid or a racing procedure the candidates
+scored, the search named; for a
 Bayesian one the initial candidates scored and requested, and the
 iterations completed and requested, since \code{\link[tune:tune_bayes]{tune::tune_bayes()}} may score
 fewer initial candidates than \code{initial} names and stop short of \code{iter}.

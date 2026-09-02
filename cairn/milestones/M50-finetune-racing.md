@@ -94,10 +94,10 @@ their M48 Out row.
 - [x] T3: The two exports over one internal `nested_tune_race()`; `inner_metrics()` and `scored_candidates()`
       (`R/nested-tune-grid.R:886`) calling `all_configs = TRUE` on a `tune_race`; `reference_nested_race_loop()` in
       `helper-orchestration.R` on the pattern of the Bayesian loop; the AC1, AC2 and AC3 tests.
-- [ ] T4: `attach_daemon_pkgs()` (`R/parallel.R:597`) takes the tuner's package beside the workflow's; the AC4 RNG
+- [x] T4: `attach_daemon_pkgs()` (`R/parallel.R:597`) takes the tuner's package beside the workflow's; the AC4 RNG
       battery on the pattern of `test-nested-tune-bayes-rng.R`, the daemon identities on the pattern of
       `test-parallel-identity.R`, gated on finetune and mirai.
-- [ ] T5: The final fit on a racing result — grid re-check on the recorded `grid`'s presence, `procedure_label()`,
+- [x] T5: The final fit on a racing result — grid re-check on the recorded `grid`'s presence, `procedure_label()`,
       `extract_scored_candidates()` on a `tune_race` — and `reference_race_final_fit()` for the AC6 identity.
 - [ ] T6: The shared help page with the control classification and the by-hand recipe (its test in AC4);
       `test-control-slots.R`'s `differences_section()` (`:51`) accepting "Differences from calling finetune directly"
@@ -122,6 +122,12 @@ their M48 Out row.
 - 2026-09-02: T2 done: `check_tuner_installed()` over the registry's `requires` through `rlang::is_installed()` (class `nestedtune_pkg_not_installed`), `check_race_burn_in()` over every fold's inner `rset` (class `nestedtune_bad_burn_in`, naming each short fold's count and the burn-in), `check_control()` naming the control's package; `R/nested-tune-race.R` holds the two exports over one `nested_tune_race()`; `test-nested-tune-race-checks.R` covers AC5 with the absences mocked one package at a time.
 
 - 2026-09-02: T3 done: `collect_inner_metrics()` is the one `collect_metrics()` call behind `inner_metrics()` and `scored_candidates()`, `all_configs = TRUE` on a `tune_race`; `reference_nested_race_loop()`, `reference_race_final_fit()` and the racing fixtures in `helper-orchestration.R`; `test-nested-tune-race-oracles.R` covers AC1 (both fixtures, both racers, formals identical to the grid export), AC2 (raced-to-the-end means identical to the grid path's, at least one per fold) and AC3 (record from `all_configs = TRUE`, selection a survivor, an elimination observed on the ranger fixture); full suite green after T1 (336 lines of summary, no failures).
+
+- 2026-09-02: T4 done: `attach_daemon_pkgs(object, tuner)` attaches the registry's package for the tuner beside the workflow's (tune left off, as the pre-flight's namespace load brings it; a tuner-less driver adds nothing); `test-nested-tune-race-rng.R` (same seed, two seeds differ in `.inner_metrics`, fold order, ambient kind, restore on completion, on failed folds and on error, unseeded session), BC12 in `test-parallel-identity.R` (both racers, serial against 2 and 3 daemons) and a finetune-attached probe in `test-parallel-required-pkgs.R`, each with its wait-budget ledger row.
+
+- 2026-09-02: T5 done: the final fit's grid re-check keys on the registry's `takes_grid` (T1), `procedure_label()` names the racing method from the registry, `extract_scored_candidates()` reads a `tune_race` through `collect_inner_metrics()` (T3); `test-nested-final-fit-race.R` covers AC6 against `reference_race_final_fit()` on the ranger fixture for both racers, the eliminated candidates present in the extract, print and summary lines, and the recorded-grid refusal; the racing final-fit fixtures seed before building the workflow so the cache keys once.
+
+- 2026-09-02: T6 in progress: help page `?nested_tune_race` shared by the two exports (six-heading classification, by-hand recipe), `test-control-slots.R` reads either "Differences from calling ... directly" title and classifies `control_race()`, the recipe test in `test-nested-tune-race-oracles.R`, `_pkgdown.yml` row, NEWS entry, DESIGN function families and architecture, DESCRIPTION Suggests finetune, lme4, BradleyTerry2 with D-044; per-file suites green, `pkgdown::check_pkgdown()` clean; `devtools::check()` and the full suite after T4 still running at this checkpoint.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->

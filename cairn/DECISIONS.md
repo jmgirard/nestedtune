@@ -1337,6 +1337,36 @@ nothing to act on. Pre-1.0, no deprecation (D-003). Falsified by a user
 needing the inner run's predictions, which would reopen the retention
 question.
 
+### D-044 (2026-09-02): `finetune`, `lme4` and `BradleyTerry2` join Suggests for the racing exports, which refuse at entry when a package their race needs is absent — extends the dependency set D-038 last added to, and is the first Suggests addition that an exported function requires to run at all
+
+**Context:** issue #35's remainder asks for finetune's tuners inside the
+outer loop. M50 adds `nested_tune_race_anova()` and
+`nested_tune_race_win_loss()`; `tune_race_anova()` calls
+`rlang::check_installed("lme4")` and `tune_race_win_loss()`
+`rlang::check_installed("BradleyTerry2")` inside the race, and finetune only
+suggests both, so a user with finetune alone would meet a prompt or a
+failure in the first fold, one outer loop's worth of checks later. The
+package's earlier Suggests served tests, vignettes and engines the tests
+name; none was a package an export needs to run.
+
+**Decision:** finetune, lme4 and BradleyTerry2 go in Suggests, and each
+racing export refuses at entry — before any fold runs, class
+`nestedtune_pkg_not_installed` — when finetune or its own race's fitting
+package is not installed, read from the tuner registry's `requires` so the
+refusal and the daemon attach cannot name different packages. Considered
+and rejected: finetune in Imports (every user of the grid and Bayesian paths
+would install finetune, lme4 and their trees for a tuner they may never
+call); leaving lme4 and BradleyTerry2 to finetune's own `check_installed()`
+(the prompt fires inside the fold, after the checks GP3 places at entry);
+lme4 refused but left out of Suggests (the ANOVA tests would skip on a CI
+leg without it).
+
+**Consequences:** the racing tests skip where any of the three is absent,
+and run on the CI matrix, which installs Suggests. The M51 annealing export
+takes finetune from the same registry entry shape and adds no package.
+Falsified by a CI leg on which lme4 or BradleyTerry2 cannot install, which
+would reopen whether the win/loss and ANOVA tests can be required.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

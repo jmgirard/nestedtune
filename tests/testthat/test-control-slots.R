@@ -42,19 +42,23 @@ rd_text <- function(x) {
   paste(vapply(x, rd_text, character(1)), collapse = "")
 }
 
+# The section is titled for the package the page's tuner lives in: tune on
+# the grid and Bayesian pages, finetune on the racing page (M50).
+DIFFERENCES_TITLES <- c(
+  "Differences from calling tune directly",
+  "Differences from calling finetune directly"
+)
+
 differences_section <- function(rd) {
   for (node in rd) {
     if (
       identical(rd_tag(node), "\\section") &&
-        identical(
-          trimws(rd_text(node[[1L]])),
-          "Differences from calling tune directly"
-        )
+        trimws(rd_text(node[[1L]])) %in% DIFFERENCES_TITLES
     ) {
       return(node[[2L]])
     }
   }
-  rlang::abort("no 'Differences from calling tune directly' section")
+  rlang::abort("no 'Differences from calling ... directly' section")
 }
 
 # Every `\strong` node under `x`, in document order.
@@ -131,6 +135,34 @@ test_that("every control_bayes() slot sits under one heading on nested_tune_baye
   expect_true(all(
     c("no_improve", "uncertain", "time_limit") %in% buckets[["Passed through"]]
   ))
+})
+
+test_that("every control_race() slot sits under one heading on the racing page (M50, AC7)", {
+  skip_if_not_installed("finetune")
+  buckets <- expect_classified("nested_tune_race", finetune::control_race)
+  expect_identical(buckets[["Forced"]], "allow_par")
+  expect_identical(buckets[["Settable as its own argument"]], "event_level")
+  expect_identical(buckets[["Refused"]], character(0))
+  # The racing slots pass through, as the criterion names them.
+  expect_true(all(
+    c("burn_in", "alpha", "num_ties", "randomize", "verbose_elim") %in%
+      buckets[["Passed through"]]
+  ))
+  expect_setequal(
+    buckets[["Not returned"]],
+    c("extract", "save_pred", "save_workflow")
+  )
+  expect_identical(buckets[["Inert"]], "backend_options")
+})
+
+test_that("the racing page says what the recorded grid is, and what `n` is (AC7)", {
+  txt <- rd_text(help_rd("nested_tune_race"))
+  # The two records, each named for what it is: the grid as the design
+  # offered, `n` as the resamples each candidate was scored on.
+  expect_match(txt, "design the race was", fixed = TRUE)
+  expect_match(txt, "offered", fixed = TRUE)
+  expect_match(txt, "inner resamples each candidate was", fixed = TRUE)
+  expect_match(txt, "scored on", fixed = TRUE)
 })
 
 test_that("the heading parse can see a slot classified twice, and one left out", {

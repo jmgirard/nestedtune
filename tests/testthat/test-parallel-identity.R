@@ -669,3 +669,58 @@ test_that("BC11: the control reaches every fold on the parallel path as on the s
   }
   expect_identical(parallel, serial)
 })
+
+test_that("BC12: both racing paths match serial at two above-threshold daemon counts (M50, AC4)", {
+  skip_if_no_daemons()
+  skip_if_no_race_fixture(stochastic = TRUE)
+
+  # The stochastic fixture, so the race's resample shuffle and the ranger fits
+  # both draw; and the daemons' library holds finetune, which the loop
+  # attaches in every daemon before the first fold is sent.
+  data <- make_reg_data()
+  nested <- det_nested(data)
+  wf <- stoch_workflow(data)
+  ms <- reg_metrics()
+  ctrl <- race_control()
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  for (fn in RACERS) {
+    mirai::daemons(0)
+    set.seed(2026L)
+    serial <- race_call_by_name(
+      fn,
+      wf,
+      nested,
+      grid = stoch_grid(),
+      metrics = ms,
+      control = ctrl
+    )
+    expect_identical(last_dispatch(), "serial")
+    expect_true(all(serial$.completed))
+
+    for (n in c(2L, 3L)) {
+      start_daemons(n)
+      set.seed(2026L)
+      parallel <- without_pkgload_warning(race_call_by_name(
+        fn,
+        wf,
+        nested,
+        grid = stoch_grid(),
+        metrics = ms,
+        control = ctrl
+      ))
+
+      expect_identical(last_dispatch(), "parallel")
+      for (col in c(
+        ".metrics",
+        ".selected",
+        ".inner_metrics",
+        ".tuning_seed",
+        ".outer_fit_seed"
+      )) {
+        expect_identical(parallel[[col]], serial[[col]], info = paste(fn, col))
+      }
+      expect_identical(parallel, serial)
+    }
+  }
+})

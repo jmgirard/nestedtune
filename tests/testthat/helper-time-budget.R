@@ -642,6 +642,15 @@ time_budget_ledger <- function() {
       "the control reaches every fold on the parallel path as on the serial one",
       note = "one pool of 2 (M48)"
     ),
+    tb_row(
+      "test-parallel-identity.R",
+      702L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "both racing paths match serial at two above-threshold daemon counts",
+      times = 4L,
+      note = "inside for (n in c(2L, 3L)) for each of two racers (M50)"
+    ),
 
     # --- test-parallel-metrics.R --------------------------------------------
     # One pool start, and that is the whole file's declared waiting. The two
@@ -686,6 +695,21 @@ time_budget_ledger <- function() {
       30,
       "a recipe selector the caller left unqualified resolves on a daemon",
       note = "explicit seconds = 30; one site, called twice"
+    ),
+    tb_row(
+      "test-parallel-required-pkgs.R",
+      89L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "a racing run attaches finetune in every daemon"
+    ),
+    tb_row(
+      "test-parallel-required-pkgs.R",
+      92L,
+      "collect_bounded",
+      30,
+      "a racing run attaches finetune in every daemon",
+      note = "explicit seconds = 30; one site, called twice (M50)"
     ),
 
     # --- test-parallel-interrupt.R ------------------------------------------

@@ -16,8 +16,10 @@
 #' for it.
 #'
 #' For a Bayesian inner loop -- [tune::tune_bayes()] proposing candidates one
-#' at a time -- see [nested_tune_bayes()], which runs this same outer loop with
-#' the inner tuner swapped.
+#' at a time -- see [nested_tune_bayes()], and for a raced grid -- finetune
+#' eliminating candidates as the inner resamples come in -- see
+#' [nested_tune_race_anova()] and [nested_tune_race_win_loss()]; each runs
+#' this same outer loop with the inner tuner swapped.
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].

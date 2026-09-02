@@ -26,9 +26,12 @@ Imports:
     vctrs (>= 0.6.1),
     workflows
 Suggests:
+    BradleyTerry2,
     censored,
     dials,
+    finetune,
     knitr,
+    lme4,
     lobstr,
     mirai (>= 2.4.0),
     mlbench,

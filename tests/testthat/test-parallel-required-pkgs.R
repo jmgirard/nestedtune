@@ -71,3 +71,45 @@ test_that("a recipe selector the caller left unqualified resolves on a daemon", 
   expect_true(all(res$.completed))
   expect_true(all(attached()))
 })
+
+# The tuner's package rides beside the workflow's (M50, T4): a racing run
+# attaches finetune in every daemon before the first fold is sent, by the same
+# mechanism, and the two search-path probes pin that it was this package's
+# doing.
+
+test_that("a racing run attaches finetune in every daemon", {
+  skip_if_no_daemons()
+  skip_if_no_race_fixture("tune_race_anova")
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  nested <- det_nested(d)
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+
+  attached <- function() {
+    answers <- collect_bounded(
+      mirai::everywhere("package:finetune" %in% search()),
+      seconds = 30
+    )
+    vapply(answers, isTRUE, logical(1))
+  }
+
+  expect_false(any(attached()))
+
+  set.seed(20)
+  res <- without_pkgload_warning(
+    nested_tune_race_anova(
+      wf,
+      nested,
+      grid = det_grid(),
+      metrics = reg_metrics(),
+      control = race_control()
+    )
+  )
+
+  expect_identical(last_dispatch(), "parallel")
+  expect_true(all(res$.completed))
+  expect_true(all(attached()))
+})
