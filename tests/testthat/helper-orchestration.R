@@ -191,15 +191,22 @@ reference_nested_bayes_loop <- function(
 
 # The control a fold's `tune_bayes()` runs under, written from the documented
 # contract (M48, D-042): the caller's control -- or tune's default when none
-# was passed -- with `allow_par` forced off and the fold's tuning seed as the
-# Gaussian process's `seed`. `save_workflow` is the reference's own addition
-# where a strand needs `fit_best()`, never part of the contract.
-forced_bayes_control <- function(control, tuning_seed, save_workflow = FALSE) {
+# was passed -- with `allow_par` forced off, `event_level` set from the
+# argument and the fold's tuning seed as the Gaussian process's `seed`.
+# `save_workflow` is the reference's own addition where a strand needs
+# `fit_best()`, never part of the contract.
+forced_bayes_control <- function(
+  control,
+  tuning_seed,
+  save_workflow = FALSE,
+  event_level = "first"
+) {
   if (is.null(control)) {
     control <- tune::control_bayes(seed = tuning_seed)
   }
   control$seed <- tuning_seed
   control$allow_par <- FALSE
+  control$event_level <- event_level
   if (save_workflow) {
     control$save_workflow <- TRUE
   }

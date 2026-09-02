@@ -99,7 +99,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - [ ] T10: Review round 1, findings 3 and 7: correct the "Not returned" heading on both pages — the final fit keeps the inner `tune_results` in `$tuning`, so `extract`/`save_pred`/`save_workflow` do return there — and reword `workflow_size` against `save_workflow`.
 - [ ] T11: Review round 1, finding 4: a grid-path pass-through test (a `parallel_over = "everything"` probe on the stochastic grid fixture, or equivalent) showing a caller's `control_grid()` reaches the inner call.
 - [ ] T12: Review round 1, finding 5: `tune::control_last_fit()` carries the `control_grid` class in tune 2.1.0 and passes `check_control()`; refuse it or document it, and put it in the checks tests' class list either way.
-- [ ] T13: Review round 1, finding 6: `forced_bayes_control()` in `helper-orchestration.R` forces `event_level` as `effective_control()` does.
+- [x] T13: Review round 1, finding 6: `forced_bayes_control()` in `helper-orchestration.R` forces `event_level` as `effective_control()` does.
 
 ## Work log
 
@@ -123,6 +123,7 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 
 - 2026-09-02: return gate chose fixing findings 1–7 (T8–T13) over fixing only the two contract defects; findings 8–10 and both prior-review findings rejected as logged in Review.
 - 2026-09-02: T8, T9: `capture_dots(...)` — one formal, the dots — forces `...` and returns the list `check_dots_control(dots, call)` now takes, so a caller's `call = ` has nothing to bind to but the dots (probed on both checks files); it snapshots `.Random.seed` around the forcing and puts it back by assignment (a state the forcing created in a session that had none is removed, and `RNGkind()` is never called, since setting a kind initializes the stream — the grid checks' no-draw-before-refusal test caught the first draft doing that). An inline `tune::control_bayes()` now leaves the caller's stream as found and yields the no-control run, asserted with a top-level build as the discriminating control.
+- 2026-09-02: T13: `forced_bayes_control()` takes `event_level` (default `"first"`) and sets it as `effective_control()` does; the Bayes oracles and final-fit oracles files pass unchanged.
 
 ## Decisions
 
