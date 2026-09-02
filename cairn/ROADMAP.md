@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M43 | The print and summary follow-ups M39 left behind | planned | — | normal | milestones/M43-print-summary-followups.md |
+| M43 | The print and summary follow-ups M39 left behind | in-progress | — | normal | milestones/M43-print-summary-followups.md |
 | M42 | The fixture key's separation test, derived from the orchestrators' own arguments | done | — | normal | milestones/archive/M42-fixture-key-derived.md |
 | M41 | `eval_time` reaches the metrics that need it | done | — | normal | milestones/archive/M41-eval-time.md |
 | M39 | `print()` shows the object, `summary()` says what it means | done | — | normal | milestones/archive/M39-print-tibble-summary-split.md |

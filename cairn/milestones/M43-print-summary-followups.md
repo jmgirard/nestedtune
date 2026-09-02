@@ -1,11 +1,11 @@
 # M43: The print and summary follow-ups M39 left behind
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP3
-- **Branch/PR:** —
+- **Branch/PR:** m043-print-summary-followups
 
 ## Goal
 
