@@ -1,17 +1,16 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 18 references pages record no verification claim, and no release window is open. Line caps hold: ROADMAP.md 53 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M43 archive summary 25. Both byte budgets stay over: ROADMAP.md 40,422 B against 24,000, LESSONS.md 29,973 B against 20,000. This pass pruned M38's terminal row and retired the M39 follow-ups candidate row M43 took whole; no findings were deferred, so no row was added. LESSONS gained M43's line (testthat hands a snapshot transform each cli message alone) and lost the M02 tune-substreams line as the stalest. Closing the byte gap still means graduating or dropping candidates — a user call, now nine passes overdue. Since the last check: M43 shipped the resolving failure advice, `print(n, width)`, the labelled summary page with an example, and the tibble-body scrub, archived after one review round.)_
+_Last hygiene check: 2026-09-01 (all checks green; advisories only — the same 18 references pages record no verification claim, and no release window is open. Line caps hold: ROADMAP.md 52 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M44 archive summary 25. Both byte budgets stay over: ROADMAP.md ~39,600 B against 24,000, LESSONS.md ~30,000 B against 20,000. This pass pruned M39's terminal row; no findings were deferred, so no candidate row was added or extended. LESSONS gained M44's line (a table's own columns silently overwrite a same-named parameter column) and lost the M10 `options()["name"]` line as the stalest. Closing the byte gap still means graduating or dropping candidates — a user call, now ten passes overdue. Since the last check: M44 shipped `agreement()`, archived after one review round with four gate fixes.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M44 | `agreement()` tabulates what the outer folds selected | review | — | normal | milestones/M44-agreement.md |
+| M44 | `agreement()` tabulates what the outer folds selected | done | — | normal | milestones/archive/M44-agreement.md |
 | M43 | The print and summary follow-ups M39 left behind | done | — | normal | milestones/archive/M43-print-summary-followups.md |
 | M42 | The fixture key's separation test, derived from the orchestrators' own arguments | done | — | normal | milestones/archive/M42-fixture-key-derived.md |
 | M41 | `eval_time` reaches the metrics that need it | done | — | normal | milestones/archive/M41-eval-time.md |
-| M39 | `print()` shows the object, `summary()` says what it means | done | — | normal | milestones/archive/M39-print-tibble-summary-split.md |
 | M40 | A `nested_final_fit` answers `summary()` the way its sibling does | done | M39 | normal | milestones/archive/M40-final-fit-summary.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
