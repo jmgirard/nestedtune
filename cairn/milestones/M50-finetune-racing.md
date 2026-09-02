@@ -1,12 +1,12 @@
 # M50: `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, IP4, GP1, GP2, GP3
 - **Resolves:** #35 partial
-- **Branch/PR:** —
+- **Branch/PR:** m050-finetune-racing
 
 ## Goal
 
