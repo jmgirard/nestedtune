@@ -168,11 +168,16 @@ test_that("AC3: predict() forwards an unknown argument to parsnip's refusal", {
   final <- reg_final()
   d <- make_reg_data()
 
-  cnd <- rlang::catch_cnd(predict(final, new_data = d, nonesuch = 1))
+  # `classes = "error"`: predicting through a recipe signals dplyr's regroup
+  # condition first, and a bare catch would return that instead.
+  cnd <- rlang::catch_cnd(
+    predict(final, new_data = d, nonesuch = 1),
+    classes = "error"
+  )
   expect_s3_class(cnd, "error")
-  # parsnip's wording (check_pred_type_dots(), parsnip 1.6.0), which names the
-  # offending argument.
-  expect_match(conditionMessage(cnd), "nonesuch")
+  # parsnip's wording (check_pred_type_dots(), parsnip 1.6.0). The message does
+  # not name the argument: parsnip prints the literal placeholder `bad_args`
+  # where the name was meant to go, so the wording is what identifies it.
   expect_match(
     conditionMessage(cnd),
     "not used to pass args to the model function's predict function"
@@ -226,15 +231,19 @@ test_that("AC6: tune's ranking and collecting generics still refuse the object",
 
   final <- reg_final()
 
-  for (fn in list(tune::collect_metrics, tune::show_best, tune::select_best)) {
-    cnd <- rlang::catch_cnd(fn(final))
+  # Each refuses through a default method tune wrote, never through an answer:
+  # the message names the generic and says no method exists for the object.
+  generics <- c("collect_metrics", "show_best", "select_best")
+  for (g in generics) {
+    fn <- getExportedValue("tune", g)
+    cnd <- rlang::catch_cnd(fn(final), classes = "error")
     expect_s3_class(cnd, "error")
-    expect_match(conditionMessage(cnd), "no applicable method")
+    expect_match(conditionMessage(cnd), sprintf("No `%s\\(\\)` exists for", g))
   }
 
   reg <- getNamespaceInfo(asNamespace("nestedtune"), "S3methods")
   on_final <- reg[reg[, 2L] == "nested_final_fit", 1L]
-  expect_false(any(c("collect_metrics", "show_best", "select_best") %in% on_final))
+  expect_false(any(generics %in% on_final))
   # The registry read has a domain: the class does carry methods of ours.
   expect_true("extract_workflow" %in% on_final)
 })

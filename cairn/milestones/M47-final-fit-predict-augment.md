@@ -93,13 +93,13 @@ fold failed — stays on its own candidate row.
       `test-event-level.R:236-262` builds one, censored as `test-eval-time.R:480-500` builds one, each
       `memoised()`), the identity assertions of AC1 and AC2, the three argument cases of AC3, the
       re-export call of AC4, and AC6's refusals with the registry read. Red before T2.
-- [ ] T2: The methods in `R/nested-final-fit-extract.R` (or a new `R/nested-final-fit-predict.R`):
+- [x] T2: The methods in `R/nested-final-fit-extract.R` (or a new `R/nested-final-fit-predict.R`):
       `predict.nested_final_fit()` forwarding `...` to `predict(x$workflow, ...)`,
       `augment.nested_final_fit()` with `rlang::check_dots_empty()` delegating to
       `augment(x$workflow, new_data, eval_time = eval_time)`; `@importFrom tune augment`, the re-export
       in `R/reexports.R`; one roxygen page (`@rdname predict.nested_final_fit`) with the IP3 caveat and
       the GP1 dots divergence; `devtools::document()`.
-- [ ] T3: `tests/testthat/test-dots-barrier.R:73` — add `predict.nested_final_fit` to
+- [x] T3: `tests/testthat/test-dots-barrier.R:73` — add `predict.nested_final_fit` to
       `DOTS_EXEMPT_METHODS` with a comment giving the reason (its `...` reaches the workflow, where
       parsnip refuses unknown names); `augment.nested_final_fit` stays probed.
 - [ ] T4: Docs: `_pkgdown.yml` row under "The final model"; NEWS entry; `R/nested-final-fit.R:49`
@@ -116,8 +116,9 @@ fold failed — stays on its own candidate row.
 - 2026-09-02: plan gate chose shipping `augment()` with the IP3 caveat on its help page over shipping `predict()` alone or escalating to a review brief, because a per-row residual is not a performance number and the documentation obligation IP3 carries is met by the caveat; falsified by a user reading `.resid` on the training rows as the model's estimate despite the page.
 - 2026-09-02: plan gate chose switching README and vignette to the direct call over leaving `extract_workflow()` examples, because the direct call is the one obvious path (GP3); no evidence class named — a presentation choice.
 - 2026-09-02: plan gate chose absorbing the M05 candidate row with no new D-entry over annotating D-014, because its "not shipped in M05" clause was a deferral; falsified by a later reading of that clause as a rejection, which would then take a superseding entry.
-
 - 2026-09-02: T1 — `tests/testthat/test-nested-final-fit-predict.R` written on the three fixtures; red on the branch as expected (`predict` falls to no-applicable-method, `augment` not found), 6 fixtures built.
+- 2026-09-02: T2 — `R/nested-final-fit-predict.R` (both methods, one help page `predict.nested_final_fit` with the IP3 caveat and the dots divergence), `augment` re-exported in `R/reexports.R`; `document()` run. T3 — `predict.nested_final_fit` added to `DOTS_EXEMPT_METHODS` with its reason. Predict and dots-barrier files green.
+- 2026-09-02: amendment pending (substantive, AC3 and AC6): parsnip 1.6.0's `check_pred_type_dots()` prints the literal placeholder `bad_args` instead of the argument's name, so AC3's "names `nonesuch`" clause is unsatisfiable; tune 2.1.0 refuses `collect_metrics()`/`show_best()`/`select_best()` through its own default methods ("No `<generic>()` exists for ..."), never R's "no applicable method", so AC6's failure identity was wrong. Tests written to the corrected identities; amended wording sent to a fresh [O] reader for the full-mode audit before the mini gate.
 
 ## Decisions
 

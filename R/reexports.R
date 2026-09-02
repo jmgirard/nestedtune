@@ -9,3 +9,7 @@ tune::extract_workflow
 #' @importFrom ggplot2 autoplot
 #' @export
 ggplot2::autoplot
+
+#' @importFrom tune augment
+#' @export
+tune::augment
