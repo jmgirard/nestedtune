@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, IP4, GP1, GP2, GP3
 - **Resolves:** #35 partial
-- **Branch/PR:** m050-finetune-racing
+- **Branch/PR:** m050-finetune-racing · https://github.com/tidymodels/nestedtune/pull/60
 
 ## Goal
 
@@ -132,6 +132,7 @@ their M48 Out row.
 - 2026-09-02: first `devtools::check()` failed on one test only: the AC7 wording test matched phrases across an Rd line break, which the installed help database under `R CMD check` wraps where the source file does not; the test now collapses whitespace and matches the two full clauses, verified against both sources; full suite after T4 green (0 failures, no duplicate fixture build); check re-running.
 
 - 2026-09-02: T6 done; `devtools::check()` clean (0 errors, 0 warnings, 0 notes; tests 6m CPU / 29m elapsed under a concurrent suite run, 19m elapsed on the first attempt); status → review.
+- 2026-09-02: /milestone-review started; main unmoved since the branch was cut; branch pushed, draft PR #60 opened (Refs #35); cairn_validate, document() no-diff and pkgdown check clean; full suite, devtools::check() and the three reviewers running at this checkpoint — criterion evidence pending.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->
