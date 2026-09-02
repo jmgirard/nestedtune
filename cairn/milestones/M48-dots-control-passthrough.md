@@ -94,6 +94,13 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
       under the six headings with the `time_limit` caveat; write the Rd-parsing test for AC6.
 - [x] T7: NEWS entry, D-042 (drafted at plan), DESIGN.md paragraph, verify slot.
 
+- [ ] T8: Review round 1, finding 1 (AC5): close the `call` hole in `check_dots_control()` — force the dots in the orchestrators (`check_dots_control(rlang::list2(...))`) or rename the formal `.call`; add a `call = ` refusal probe to both checks files.
+- [ ] T9: Review round 1, finding 2: an inline `tune::control_bayes()` in `...` draws its `seed` before `nested_loop()` snapshots `.Random.seed`; snapshot and restore around the forcing (or snapshot at orchestrator entry), with a test that `set.seed(s); nested_tune_bayes(..., control = tune::control_bayes())` leaves the stream restored and equals the no-control run.
+- [ ] T10: Review round 1, findings 3 and 7: correct the "Not returned" heading on both pages — the final fit keeps the inner `tune_results` in `$tuning`, so `extract`/`save_pred`/`save_workflow` do return there — and reword `workflow_size` against `save_workflow`.
+- [ ] T11: Review round 1, finding 4: a grid-path pass-through test (a `parallel_over = "everything"` probe on the stochastic grid fixture, or equivalent) showing a caller's `control_grid()` reaches the inner call.
+- [ ] T12: Review round 1, finding 5: `tune::control_last_fit()` carries the `control_grid` class in tune 2.1.0 and passes `check_control()`; refuse it or document it, and put it in the checks tests' class list either way.
+- [ ] T13: Review round 1, finding 6: `forced_bayes_control()` in `helper-orchestration.R` forces `event_level` as `effective_control()` does.
+
 ## Work log
 
 - 2026-09-02: created by /milestone-plan from issues #33 and #35, on topepo's replies of 2026-09-02.
@@ -113,6 +120,8 @@ retaining anything from the inner `tune_results` beyond what M49 keeps → M49.
 - 2026-09-02: /milestone-review started: branch contains origin/main, pushed; draft PR #58 opened; document() no diff, cairn_validate passes, pkgdown clean; full suite and the three reviewers running.
 
 - 2026-09-02: defect return 1 of M48 (review round 1): AC5 fails — an argument named `call` in `...` binds to `check_dots_control()`'s `call` formal and is not refused; suite otherwise clean (3478 pass); nine further findings triaged at the gate chip, dispositions in Review.
+
+- 2026-09-02: return gate chose fixing findings 1–7 (T8–T13) over fixing only the two contract defects; findings 8–10 and both prior-review findings rejected as logged in Review.
 
 ## Decisions
 
