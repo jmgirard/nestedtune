@@ -326,7 +326,10 @@ test_that("a daemon receives the payload the serial branch would have passed", {
           inner_rows = nrow(payload$inner$splits[[1L]]$data),
           fields = length(payload)
         ),
-        grid = data.frame(inner_rows = 1L, .config = "pre0_mod1_post0"),
+        inner_metrics = data.frame(
+          inner_rows = 1L,
+          .config = "pre0_mod1_post0"
+        ),
         notes = data.frame(
           location = character(0),
           type = character(0),

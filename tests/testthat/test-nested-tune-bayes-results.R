@@ -1,44 +1,43 @@
-# The record a Bayesian run leaves (M45 T2, AC5): each fold's `.grid` carries
-# the search iteration its candidates were scored in, the readers of `.grid`
-# treat that column as bookkeeping rather than as a parameter, and every
-# result of either orchestrator records the procedure that produced it.
+# The record a Bayesian run leaves (M45 T2, AC5; M49): each fold's
+# `.inner_metrics` carries the search iteration its candidates were scored in,
+# the readers deriving a candidate set from it treat that column as bookkeeping
+# rather than as a parameter, and every result of either orchestrator records
+# the procedure that produced it.
 
-# ---- the .iter join, on the derivation itself --------------------------------
+# ---- the candidate set derived from a metrics table --------------------------
 
-# A tuning result's shape as `scored_candidates()` reads it: per-resample
-# metric frames, and for a Bayesian run a top-level `.iter` beside them. Built
-# by hand so the join can be asserted on a shape whose answer is known without
-# a fit -- a candidate scored in iteration 1 on one resample and iteration 0
-# on none, one that scored on two resamples, and a resample that scored
-# nothing.
-candidate_frame <- function(config, value) {
+# A metrics table as `candidate_set()` reads it: tune's summary rows, one per
+# candidate and metric, with the `.iter` a Bayesian run adds. Built by hand so
+# the derivation can be asserted on a shape whose answer is known without a
+# fit -- a candidate scored under two metrics, one proposed in iteration 1,
+# and a table with no iteration column at all.
+metric_row <- function(config, value, metric = "rmse", iter = NULL) {
   out <- data.frame(
     df1 = value,
-    .metric = "rmse",
+    .metric = metric,
     .estimator = "standard",
-    .estimate = 1,
+    mean = 1,
+    n = 3L,
+    std_err = 0.1,
     .config = config,
     stringsAsFactors = FALSE
   )
+  if (!is.null(iter)) {
+    out$.iter <- iter
+  }
   out
 }
 
-test_that("a Bayesian run's record carries the iteration each candidate came from", {
-  tuned <- list(
-    .metrics = list(
-      rbind(
-        candidate_frame("pre1_mod0_post0", 1L),
-        candidate_frame("pre2_mod0_post0", 5L)
-      ),
-      candidate_frame("pre1_mod0_post0", 1L),
-      candidate_frame("iter1", 3L),
-      candidate_frame("iter1", 3L)[0, ]
-    ),
-    .iter = c(0L, 0L, 1L, 1L)
+test_that("a Bayesian table's candidate set carries the iteration each candidate came from", {
+  metrics <- rbind(
+    metric_row("pre1_mod0_post0", 1L, iter = 0L),
+    metric_row("pre1_mod0_post0", 1L, metric = "rsq", iter = 0L),
+    metric_row("iter1", 3L, iter = 1L),
+    metric_row("pre2_mod0_post0", 5L, iter = 0L)
   )
-  got <- scored_candidates(tuned)
+  got <- candidate_set(metrics)
 
-  # One row per candidate, the iteration joined from the row the frame sat in,
+  # One row per candidate whatever the metric count, the metric columns gone,
   # ordered by iteration and then by label.
   expect_identical(names(got), c("df1", ".config", ".iter"))
   expect_identical(
@@ -51,13 +50,16 @@ test_that("a Bayesian run's record carries the iteration each candidate came fro
 
 test_that("iterations past nine order by number, not by label", {
   # tune labels proposals `iter1`, `iter2`, ... without padding, so a lexical
-  # order would put the tenth before the second. The record is ordered by the
+  # order would put the tenth before the second. The set is ordered by the
   # iteration number, and the label decides only within an iteration.
-  frames <- lapply(c(0L, 2L, 10L, 1L), function(i) {
-    candidate_frame(if (i == 0L) "pre1_mod0_post0" else paste0("iter", i), i)
+  rows <- lapply(c(0L, 2L, 10L, 1L), function(i) {
+    metric_row(
+      if (i == 0L) "pre1_mod0_post0" else paste0("iter", i),
+      i,
+      iter = i
+    )
   })
-  tuned <- list(.metrics = frames, .iter = c(0L, 2L, 10L, 1L))
-  got <- scored_candidates(tuned)
+  got <- candidate_set(do.call(rbind, rows))
 
   expect_identical(got$.iter, c(0L, 1L, 2L, 10L))
   expect_identical(
@@ -66,41 +68,37 @@ test_that("iterations past nine order by number, not by label", {
   )
 })
 
-test_that("a grid run's record is untouched by the join", {
-  # No `.iter` at the top level, so no column is added and the order is the
-  # label's alone -- the grid path's record as it was before the join existed.
-  tuned <- list(
-    .metrics = list(
-      rbind(
-        candidate_frame("pre2_mod0_post0", 5L),
-        candidate_frame("pre1_mod0_post0", 1L)
-      ),
-      candidate_frame("pre3_mod0_post0", 9L)
-    )
+test_that("a grid table's candidate set carries no iteration", {
+  # No `.iter` in the table, so no column in the set and the order is the
+  # label's alone.
+  metrics <- rbind(
+    metric_row("pre2_mod0_post0", 5L),
+    metric_row("pre1_mod0_post0", 1L),
+    metric_row("pre3_mod0_post0", 9L)
   )
-  got <- scored_candidates(tuned)
+  got <- candidate_set(metrics)
 
   expect_identical(names(got), c("df1", ".config"))
   expect_identical(got$.config, paste0("pre", 1:3, "_mod0_post0"))
 })
 
-test_that("a frame that already carries .iter keeps its own", {
-  frame <- candidate_frame("iter1", 3L)
-  frame$.iter <- 7L
-  got <- scored_candidates(list(.metrics = list(frame), .iter = 1L))
-  expect_identical(got$.iter, 7L)
+test_that("a table with no label keys its candidates on their values", {
+  metrics <- rbind(metric_row("a", 2L), metric_row("a", 1L))
+  metrics$.config <- NULL
+  got <- candidate_set(metrics)
+  expect_identical(names(got), "df1")
+  expect_identical(got$df1, c(1L, 2L))
 })
 
-test_that("a top-level .iter that does not line up with the frames is ignored", {
-  tuned <- list(
-    .metrics = list(candidate_frame("pre1_mod0_post0", 1L)),
-    .iter = c(0L, 1L)
-  )
-  got <- scored_candidates(tuned)
-  expect_false(".iter" %in% names(got))
+test_that("a table describing no candidate yields an empty set", {
+  metrics <- metric_row("pre1_mod0_post0", 1L)
+  metrics$df1 <- NULL
+  metrics$.config <- NULL
+  expect_identical(candidate_set(metrics), empty_candidates())
+  expect_identical(candidate_set(NULL), empty_candidates())
 })
 
-# ---- the readers of .grid ---------------------------------------------------
+# ---- the readers of the candidate set ---------------------------------------
 
 test_that("two folds that scored the same candidates in different iterations searched the same set", {
   a <- data.frame(
@@ -135,8 +133,9 @@ test_that("print() and summary() count the candidates a Bayesian fold scored", {
   # proposals alike. Three initial candidates and two proposals is five per
   # fold when every proposal scored; a fold that stopped short of `iter` holds
   # fewer, so the assertion is on the record, not on the arithmetic.
-  counts <- vapply(res$.grid, nrow, integer(1))
-  for (g in res$.grid) {
+  sets <- candidate_sets(res)
+  counts <- vapply(sets, nrow, integer(1))
+  for (g in sets) {
     expect_true(".iter" %in% names(g))
     expect_identical(sum(g$.iter == 0L), 3L)
   }
@@ -148,7 +147,7 @@ test_that("print() and summary() count the candidates a Bayesian fold scored", {
   # differ, and its numbers are the same counts. Whether they differ is a fact
   # of the search, so both branches are accepted -- and each is asserted on.
   txt <- print_text(res)
-  if (same_candidates(res$.grid)) {
+  if (same_candidates(sets)) {
     expect_no_match(txt, "Candidates searched")
   } else {
     expect_match(
@@ -323,7 +322,44 @@ test_that("the procedure survives a row reorder and goes with the class", {
   expect_s3_class(reordered, "nested_results")
   expect_identical(attr(reordered, "procedure"), procedure)
 
-  narrowed <- res[, setdiff(names(res), ".grid")]
+  narrowed <- res[, setdiff(names(res), ".inner_metrics")]
   expect_false(inherits(narrowed, "nested_results"))
   expect_null(attr(narrowed, "procedure"))
+})
+
+# ---- the inner table on a fold that scored nothing (M49) ---------------------
+
+test_that("a Bayesian fold that scored nothing carries a zero-row table with .iter", {
+  skip_if_no_bayes_fixture()
+
+  # A fold whose inner tuning fails outright scores nothing, and its table is
+  # a zero-row stand-in under the completed folds' columns (AC1). On the
+  # Bayesian path those columns include `.iter`, so a reader drawing the
+  # search trajectory across folds meets the same columns on every one.
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  nested <- break_fold(det_nested(d), fold = 2L, stage = "inner tuning")
+  p <- bayes_param_info(wf)
+
+  set.seed(20)
+  res <- suppressWarnings(memoised(nested_tune_bayes(
+    wf,
+    nested,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = reg_metrics()
+  )))
+
+  expect_false(res$.completed[[2L]])
+  expect_true(res$.completed[[1L]])
+  none <- res$.inner_metrics[[2L]]
+  done <- res$.inner_metrics[[1L]]
+  expect_identical(nrow(none), 0L)
+  expect_true(".iter" %in% names(none))
+  expect_identical(names(none), names(done))
+  expect_identical(
+    vapply(none, function(col) class(col)[[1L]], character(1)),
+    vapply(done, function(col) class(col)[[1L]], character(1))
+  )
 })

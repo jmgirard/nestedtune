@@ -453,7 +453,7 @@ test_that("AC4: the final fit reads nothing from the fold rows but splits", {
       "id",
       ".metrics",
       ".selected",
-      ".grid",
+      ".inner_metrics",
       ".notes",
       ".completed",
       ".tuning_seed",

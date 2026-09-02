@@ -332,3 +332,47 @@ test_that("vec_rbind() and vec_c() shed on one argument where bind_rows() keeps"
   expect_no_record(vctrs::vec_rbind(res, res), "vec_rbind() on two")
   expect_no_record(dplyr::bind_rows(res, res), "bind_rows() on two")
 })
+
+# M49, AC5: `.inner_metrics` through the vctrs doors. `vec_restore()` takes
+# the original as template and refuses a frame lacking the column or carrying
+# one fold's table changed; `rbind()` takes its first argument as template, so
+# what it can refuse is the removal -- an object whose column was dropped
+# under the class, which `$<-` leaves wearing it.
+
+test_that(".inner_metrics is in the record vec_restore() and rbind() check", {
+  skip_if_no_engines()
+  res <- compat_results()
+  bare <- tibble::as_tibble(res)
+
+  without <- bare[setdiff(names(bare), ".inner_metrics")]
+  expect_no_record(
+    vctrs::vec_restore(without, res),
+    "vec_restore() without .inner_metrics"
+  )
+
+  zeroed <- bare
+  zeroed$.inner_metrics[[2L]] <- zeroed$.inner_metrics[[2L]][0, ]
+  expect_no_record(
+    vctrs::vec_restore(zeroed, res),
+    "vec_restore() with fold 2's .inner_metrics zero-row"
+  )
+  shortened <- bare
+  shortened$.inner_metrics[[2L]] <- shortened$.inner_metrics[[2L]][-1L, ]
+  expect_no_record(
+    vctrs::vec_restore(shortened, res),
+    "vec_restore() with one row dropped from fold 2's .inner_metrics"
+  )
+
+  # `$<-` on a tibble reattaches the class without asking the rule, so this
+  # object still wears it with the column gone; `rbind()` is the door that
+  # then asks, against the object itself as template, and refuses.
+  dropped <- res
+  dropped$.inner_metrics <- NULL
+  expect_s3_class(dropped, "nested_results")
+  expect_no_record(rbind(dropped), "rbind() without .inner_metrics")
+
+  # The passing controls: the unaltered frame restores, and the whole object
+  # survives a one-argument rbind().
+  expect_record_kept(vctrs::vec_restore(bare, res), res)
+  expect_record_kept(rbind(res), res)
+})

@@ -747,7 +747,7 @@ test_that("folds that searched different candidate sets are said to have", {
     grid = 5,
     metrics = reg_metrics()
   )
-  expect_false(same_candidates(differing$.grid))
+  expect_false(same_candidates(candidate_sets(differing)))
 
   # The branch this line lives on is reached by no other fixture in the file,
   # so the method's "never raises, never warns" promise is re-asserted here
@@ -769,7 +769,7 @@ test_that("folds that searched different candidate sets are said to have", {
     grid = det_grid(),
     metrics = reg_metrics()
   )
-  expect_true(same_candidates(agreeing$.grid))
+  expect_true(same_candidates(candidate_sets(agreeing)))
   expect_no_match(print_text(agreeing), "Candidates searched")
 })
 
@@ -798,9 +798,9 @@ test_that("the candidate-set comparison ignores order and tune's config labels",
 test_that("printing survives a list-valued parameter column (M21 review F1)", {
   # Regression. `candidate_key()` normalised row order with
   # `do.call(order, values)`, and order() RAISES on a list column
-  # ("unimplemented type 'list' in 'orderVector1'") -- so a `.grid` carrying one
+  # ("unimplemented type 'list' in 'orderVector1'") -- so a candidate set carrying one
   # aborted a method whose header promises it never raises. The shape is
-  # producible: test-nested-tune-grid-failures.R asserts scored_candidates()
+  # producible: test-nested-tune-grid-failures.R asserts candidate_set()
   # returns exactly such a record.
   #
   # Asserted on same_candidates() rather than only through print(), because the

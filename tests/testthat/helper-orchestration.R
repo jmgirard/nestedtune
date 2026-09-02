@@ -1392,3 +1392,44 @@ fixture_cache_report <- function() {
   row.names(out) <- NULL
   out
 }
+
+# A stand-in for a tuning run whose `collect_metrics()` is a table given by
+# hand (M49). The candidate derivation reads a run only through
+# `tune::collect_metrics()`, so a test that wants a record with known counts
+# and no engine supplies the table and nothing else. The class is this
+# suite's own; registering its method against tune's generic is what lets
+# `scored_candidates()` reach it without a mock.
+#
+# The registration lives as long as the calling test: it is removed from
+# tune's method table when `env` -- the test_that() block's own frame, by
+# default -- exits, through on.exit() scheduled there rather than
+# withr::defer(), which is deliberately not a dependency of this package
+# (teardown-fixture-cache.R). A second stand-in in one test re-registers the
+# same method and schedules a second, harmless removal.
+fake_tuning <- function(table, env = parent.frame()) {
+  registerS3method(
+    "collect_metrics",
+    "nestedtune_fake_tuning",
+    function(x, ...) x$table,
+    envir = asNamespace("tune")
+  )
+  do.call(
+    base::on.exit,
+    list(quote(unregister_fake_tuning()), add = TRUE),
+    envir = env
+  )
+  structure(list(table = table), class = "nestedtune_fake_tuning")
+}
+
+unregister_fake_tuning <- function() {
+  table <- asNamespace("tune")[[".__S3MethodsTable__."]]
+  if (
+    exists(
+      "collect_metrics.nestedtune_fake_tuning",
+      envir = table,
+      inherits = FALSE
+    )
+  ) {
+    rm("collect_metrics.nestedtune_fake_tuning", envir = table)
+  }
+}

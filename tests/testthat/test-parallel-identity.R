@@ -640,7 +640,7 @@ test_that("BC11: the control reaches every fold on the parallel path as on the s
   expect_identical(last_dispatch(), "serial")
   expect_true(all(serial$.completed))
   # The control is in force: some fold stopped early.
-  expect_true(any(vapply(serial$.grid, nrow, integer(1)) < 7L))
+  expect_true(any(vapply(candidate_sets(serial), nrow, integer(1)) < 7L))
 
   start_daemons(2)
   set.seed(2026L)
@@ -661,7 +661,7 @@ test_that("BC11: the control reaches every fold on the parallel path as on the s
   for (col in c(
     ".metrics",
     ".selected",
-    ".grid",
+    ".inner_metrics",
     ".tuning_seed",
     ".outer_fit_seed"
   )) {

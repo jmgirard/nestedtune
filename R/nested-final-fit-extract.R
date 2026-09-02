@@ -4,8 +4,10 @@
 # undocumented list slot; D-014 shipped `extract_workflow()` and left this one
 # as "a documented slot suffices pre-1.0" (RR02 Q7). D-023 gives it a name, and
 # gives one to the candidate set that run scored -- the final fit's equivalent
-# of the `.grid` column M21 put on `nested_results`, derived by the same
-# function so the two can never describe the same thing differently.
+# of the candidate set each fold's `.inner_metrics` describes on
+# `nested_results` (M21's column, replaced at M49), derived by the same
+# function from the run's metrics table so the two can never describe the
+# same thing differently.
 #
 # Generics rather than plain functions: the `extract_*` family is generic
 # everywhere in tidymodels, so a non-generic would leave no room for a second
@@ -103,26 +105,34 @@ extract_tune_results.nested_final_fit <- function(x, ...) {
 #' Extract the candidates a final fit actually scored
 #'
 #' Returns the candidate parameter settings that [nested_final_fit()]'s tuning
-#' run actually evaluated — the full-data counterpart of the `.grid` column
-#' [nested_tune_grid()] and [nested_tune_bayes()] record for each outer fold,
-#' derived the same way, so a Bayesian final fit's table carries the `.iter`
-#' column that path's `.grid` does.
+#' run actually evaluated — the full-data counterpart of the candidate set each
+#' outer fold's `.inner_metrics` table describes on a [nested_tune_grid()] or
+#' [nested_tune_bayes()] result, derived the same way from the run's
+#' [tune::collect_metrics()] table, so a Bayesian final fit's table carries the
+#' `.iter` column that path's tables do.
 #'
 #' @param x A `nested_final_fit` object from [nested_final_fit()].
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored.
 #'
 #' @return A tibble with one row per candidate scored, carrying one column per
-#'   tuned parameter plus tune's `.config` label for the candidate. It is the
-#'   same shape as one element of [nested_tune_grid()]'s `.grid` column, so the
-#'   two can be compared directly.
+#'   tuned parameter plus tune's `.config` label for the candidate, and `.iter`
+#'   on a Bayesian fit. It is the distinct parameter rows of the run's
+#'   [tune::collect_metrics()] table with those labels — the same shape one
+#'   element of a result's `.inner_metrics` column reduces to when its metric
+#'   columns are dropped — so the two can be compared directly. Everything
+#'   tune wrote per metric is dropped: `.metric`, `.estimator`, `mean`, `n`,
+#'   `std_err`, and on a fit that scored a dynamic survival metric the
+#'   `.eval_time` column, so a candidate has one row here however many
+#'   evaluation times it was scored at. The times and the scores are in
+#'   `collect_metrics(extract_tune_results(x))`.
 #'
 #'   This is what was **scored**, not what was **asked for**. A `grid` given as
 #'   a size is expanded by tune and may reach fewer candidates than the number
 #'   requested; a candidate that failed everywhere scored nothing. See the
-#'   `.grid` discussion in [nested_tune_grid()] for the full account of how the
-#'   two records diverge, which holds here too — this record is derived the same
-#'   way.
+#'   `.inner_metrics` discussion in [nested_tune_grid()] for the full account
+#'   of how the two records diverge, which holds here too — this record is
+#'   derived the same way.
 #'
 #'   One pointer there does **not** carry over. A candidate that failed on every
 #'   inner resample is missing from this table, and on a `nested_tune_grid()`
@@ -174,9 +184,10 @@ extract_scored_candidates.default <- function(x, ...) {
 #' @export
 extract_scored_candidates.nested_final_fit <- function(x, ...) {
   rlang::check_dots_empty()
-  # The same derivation the loop uses, deliberately: two functions deriving one
-  # thing is two chances to describe it differently, and the `@return` above
-  # promises a reader they can compare this against a fold's `.grid` directly.
+  # The same derivation the fold readers apply to `.inner_metrics`,
+  # deliberately: two functions deriving one thing is two chances to describe
+  # it differently, and the `@return` above promises a reader they can compare
+  # this against a fold's candidate set directly (D-043).
   scored_candidates(x$tuning)
 }
 

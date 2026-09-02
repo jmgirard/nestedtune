@@ -271,6 +271,9 @@ test_that("at iter = 0 the Bayesian final fit is the grid final fit on the space
   # And the Bayesian fit scored exactly the grid: the identity is with `g`,
   # not merely between two runs of the same code.
   cand <- extract_scored_candidates(from_bayes)
+  # The Bayesian fit's column set: the parameters, the label and the
+  # iteration, and nothing tune wrote per metric (AC6).
+  expect_setequal(names(cand), c("df1", "df2", ".config", ".iter"))
   expect_identical(cand$.iter, rep(0L, nrow(g)))
   expect_identical(
     sort(cand$df1 * 100L + cand$df2),

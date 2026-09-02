@@ -45,7 +45,7 @@ test_that("the same seed produces the same result", {
 
   expect_identical(first$.metrics, second$.metrics)
   expect_identical(first$.selected, second$.selected)
-  expect_identical(first$.grid, second$.grid)
+  expect_identical(first$.inner_metrics, second$.inner_metrics)
   expect_identical(first$.tuning_seed, second$.tuning_seed)
 })
 
@@ -133,7 +133,10 @@ test_that("fold results do not depend on the order folds are run in", {
   for (i in seq_len(nrow(res))) {
     expect_identical(out[[as.character(i)]]$metrics, res$.metrics[[i]])
     expect_identical(out[[as.character(i)]]$selected, res$.selected[[i]])
-    expect_identical(out[[as.character(i)]]$grid, res$.grid[[i]])
+    expect_identical(
+      out[[as.character(i)]]$inner_metrics,
+      res$.inner_metrics[[i]]
+    )
   }
 })
 

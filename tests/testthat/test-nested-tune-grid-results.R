@@ -222,11 +222,21 @@ test_that("each fold records the candidates its inner tuning actually scored", {
   grid <- det_grid()
   res <- example_results()
 
-  expect_true(".grid" %in% names(res))
-  expect_type(res$.grid, "list")
-  expect_length(res$.grid, 3L)
+  expect_true(".inner_metrics" %in% names(res))
+  expect_type(res$.inner_metrics, "list")
+  expect_length(res$.inner_metrics, 3L)
 
-  for (g in res$.grid) {
+  # Each fold's table is tune's summary of its inner run -- one row per
+  # candidate and metric -- and the candidate set is its distinct parameter
+  # rows (M49).
+  for (m in res$.inner_metrics) {
+    expect_true(is.data.frame(m))
+    expect_identical(nrow(m), nrow(grid) * 2L)
+    expect_true(all(
+      c("num_comp", ".metric", "mean", "n", ".config") %in% names(m)
+    ))
+  }
+  for (g in candidate_sets(res)) {
     expect_true(is.data.frame(g))
     expect_identical(nrow(g), nrow(grid))
     expect_true(all(c("num_comp", ".config") %in% names(g)))
@@ -251,8 +261,8 @@ test_that("the evaluated-candidate record travels with the rows it describes", {
   res <- example_results()
 
   subset <- res[2:3, ]
-  expect_length(subset$.grid, 2L)
-  expect_identical(subset$.grid, res$.grid[2:3])
+  expect_length(subset$.inner_metrics, 2L)
+  expect_identical(subset$.inner_metrics, res$.inner_metrics[2:3])
 })
 
 test_that("the object records the design's inner specification (M46)", {
@@ -281,7 +291,7 @@ test_that("the object records the design's inner specification (M46)", {
   expect_s3_class(reordered, "nested_results")
   expect_identical(attr(reordered, "inside"), attr(folds, "inside"))
 
-  narrowed <- res[, setdiff(names(res), ".grid")]
+  narrowed <- res[, setdiff(names(res), ".inner_metrics")]
   expect_false(inherits(narrowed, "nested_results"))
   expect_null(attr(narrowed, "inside"))
 })

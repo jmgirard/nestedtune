@@ -108,13 +108,13 @@ An object of class \code{nested_results}, one row per outer fold, with
 the columns \code{\link[=nested_tune_grid]{nested_tune_grid()}} documents. Two things differ from a grid
 run.
 
-Each fold's \code{.grid} -- the candidates its inner search actually scored --
-carries an \code{.iter} column beside the parameter columns and \code{.config}: \code{0}
-for the initial candidates and \code{i} for the candidate the \code{i}-th iteration
-proposed. Every candidate that scored on at least one inner resample is a
-row, so a fold that stopped early holds the rows it reached. As on the
-grid path, a candidate that failed on every inner resample is absent, and
-its failure is in \code{.notes}.
+Each fold's \code{.inner_metrics} -- its inner search's own metrics -- carries
+an \code{.iter} column after \code{.config}: \code{0} for the initial candidates and \code{i}
+for the candidate the \code{i}-th iteration proposed, so the search's
+trajectory can be drawn from it. Every candidate that scored on at least
+one inner resample has its rows, so a fold that stopped early holds the
+iterations it reached. As on the grid path, a candidate that failed on
+every inner resample is absent, and its failure is in \code{.notes}.
 
 There is no \code{grid} attribute: \code{attr(x, "grid")} is \code{NULL}, because nothing
 was asked for as a grid. What was asked for is on the \code{procedure}
@@ -218,7 +218,8 @@ would accept here -- and the \code{event_level} conflict above.
 \code{verbose_iter}, \code{save_gp_scoring}, \code{pkgs}, \code{parallel_over},
 \code{workflow_size}.} Each reaches \code{tune_bayes()} as given. \code{no_improve} and
 \code{uncertain} govern each fold's search as they would a direct call, so a
-fold may stop short of \code{iter}, and its \code{.grid} records how far it went.
+fold may stop short of \code{iter}, and its \code{.inner_metrics} records how far it
+went.
 \code{time_limit} is a wall-clock stop, and a wall-clock stop makes the
 candidate set depend on the machine: two runs under the same seed can stop
 at different iterations, which is outside what the seed contract above can
@@ -267,9 +268,9 @@ if (rlang::is_installed(c("recipes", "yardstick"))) {
   res <- nested_tune_bayes(wf, folds, iter = 2, initial = 3)
   collect_metrics(res)
 
-  # What each fold searched: the initial candidates at `.iter` 0, then one
-  # proposal per iteration.
-  res$.grid[[1]]
+  # What each fold searched and how each candidate scored: the initial
+  # candidates at `.iter` 0, then one proposal per iteration.
+  res$.inner_metrics[[1]]
 }
 }
 

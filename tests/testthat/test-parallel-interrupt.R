@@ -31,7 +31,7 @@ completed_fold_task <- function(
     completed = TRUE,
     metrics = data.frame(.metric = "rmse", .estimate = payload$value),
     selected = data.frame(mtry = 1L),
-    grid = data.frame(mtry = 1L, .config = "pre0_mod1_post0"),
+    inner_metrics = data.frame(mtry = 1L, .config = "pre0_mod1_post0"),
     notes = data.frame(
       location = character(0),
       type = character(0),

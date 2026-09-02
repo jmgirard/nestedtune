@@ -48,13 +48,13 @@
 #'   the columns [nested_tune_grid()] documents. Two things differ from a grid
 #'   run.
 #'
-#'   Each fold's `.grid` -- the candidates its inner search actually scored --
-#'   carries an `.iter` column beside the parameter columns and `.config`: `0`
-#'   for the initial candidates and `i` for the candidate the `i`-th iteration
-#'   proposed. Every candidate that scored on at least one inner resample is a
-#'   row, so a fold that stopped early holds the rows it reached. As on the
-#'   grid path, a candidate that failed on every inner resample is absent, and
-#'   its failure is in `.notes`.
+#'   Each fold's `.inner_metrics` -- its inner search's own metrics -- carries
+#'   an `.iter` column after `.config`: `0` for the initial candidates and `i`
+#'   for the candidate the `i`-th iteration proposed, so the search's
+#'   trajectory can be drawn from it. Every candidate that scored on at least
+#'   one inner resample has its rows, so a fold that stopped early holds the
+#'   iterations it reached. As on the grid path, a candidate that failed on
+#'   every inner resample is absent, and its failure is in `.notes`.
 #'
 #'   There is no `grid` attribute: `attr(x, "grid")` is `NULL`, because nothing
 #'   was asked for as a grid. What was asked for is on the `procedure`
@@ -138,7 +138,8 @@
 #' `verbose_iter`, `save_gp_scoring`, `pkgs`, `parallel_over`,
 #' `workflow_size`.** Each reaches `tune_bayes()` as given. `no_improve` and
 #' `uncertain` govern each fold's search as they would a direct call, so a
-#' fold may stop short of `iter`, and its `.grid` records how far it went.
+#' fold may stop short of `iter`, and its `.inner_metrics` records how far it
+#' went.
 #' `time_limit` is a wall-clock stop, and a wall-clock stop makes the
 #' candidate set depend on the machine: two runs under the same seed can stop
 #' at different iterations, which is outside what the seed contract above can
@@ -186,9 +187,9 @@
 #'   res <- nested_tune_bayes(wf, folds, iter = 2, initial = 3)
 #'   collect_metrics(res)
 #'
-#'   # What each fold searched: the initial candidates at `.iter` 0, then one
-#'   # proposal per iteration.
-#'   res$.grid[[1]]
+#'   # What each fold searched and how each candidate scored: the initial
+#'   # candidates at `.iter` 0, then one proposal per iteration.
+#'   res$.inner_metrics[[1]]
 #' }
 #' }
 #'

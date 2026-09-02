@@ -256,7 +256,13 @@ test_that("an integer grid records the candidates that fold actually expanded", 
       control = tune::control_grid(allow_par = FALSE)
     )
     reference <- sort(unique(tune::collect_metrics(tuned)$threshold))
-    expect_identical(sort(res$.grid[[i]]$threshold), reference)
+    expect_identical(sort(unique(res$.inner_metrics[[i]]$threshold)), reference)
+
+    # The table itself (M49, AC1): the fold's `.inner_metrics` is what tune
+    # summarizes for the same hand run -- identical, not merely the same
+    # candidates -- so a reader computing the best candidate from it computes
+    # it from the inner run's own numbers.
+    expect_identical(res$.inner_metrics[[i]], tune::collect_metrics(tuned))
   }
 })
 
@@ -285,7 +291,7 @@ test_that("a grid size larger than the reachable candidates records what ran", {
   )
 
   expect_identical(attr(res, "grid"), 20L)
-  for (g in res$.grid) {
+  for (g in candidate_sets(res)) {
     expect_true(nrow(g) < 20L)
     expect_identical(nrow(g), 4L)
   }

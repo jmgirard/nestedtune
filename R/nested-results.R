@@ -24,11 +24,13 @@ new_nested_results <- function(
 
   cols[[".metrics"]] <- lapply(folds, function(x) x$metrics)
   cols[[".selected"]] <- lapply(folds, function(x) x$selected)
-  # IP4's "the grid actually evaluated", per fold rather than per run: folds can
-  # genuinely search different candidate sets, so this is a column and not an
-  # attribute. An attribute would also survive a row subset as the parent's
-  # record (M20), which is the stale claim the same principle forbids.
-  cols[[".grid"]] <- lapply(folds, function(x) x$grid)
+  # IP4's "the grid actually evaluated", per fold rather than per run: each
+  # fold's inner run summarized by tune, from which its candidate set is
+  # derived (M49, D-043). Folds can genuinely search different candidate sets,
+  # so this is a column and not an attribute. An attribute would also survive
+  # a row subset as the parent's record (M20), which is the stale claim the
+  # same principle forbids.
+  cols[[".inner_metrics"]] <- lapply(folds, function(x) x$inner_metrics)
   cols[[".notes"]] <- lapply(folds, function(x) x$notes)
   cols[[".completed"]] <- completed
   cols[[".tuning_seed"]] <- seeds[seq(1L, by = 2L, length.out = n)]
@@ -90,6 +92,14 @@ outer_scheme_label <- function(resamples) {
 # and `dplyr_col_modify()` both finish by calling it, and so does `bind_rows()`,
 # so one method covers the verbs; `[` is the one door that does not lead here on
 # its own, and is routed here explicitly below.
+#
+# What the rule cannot see (M49). `[` and `rbind()` take the object they act
+# on as their own template, so a record column altered under the class --
+# `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class
+# after without consulting this rule (measured 2026-09-02) -- is compared
+# against itself by those two doors and passes; they refuse a removal only.
+# The two template-taking doors, `dplyr_reconstruct()` and `vec_restore()`,
+# refuse the alteration against the original.
 
 # Which of an object's columns are the design's own fold labels.
 #
@@ -123,7 +133,7 @@ record_columns <- function(x) {
     "splits",
     ".metrics",
     ".selected",
-    ".grid",
+    ".inner_metrics",
     ".notes",
     ".completed",
     ".tuning_seed",
@@ -606,7 +616,13 @@ rbind.nested_results <- function(..., deparse.level = 1) {
 # not: `can_reconstruct_results()` is handed a bare frame that carries no record
 # of its own, and the template's record is the one that decides.
 has_results_columns <- function(x, id_cols = id_columns(x)) {
-  required <- c(".metrics", ".selected", ".grid", ".notes", ".completed")
+  required <- c(
+    ".metrics",
+    ".selected",
+    ".inner_metrics",
+    ".notes",
+    ".completed"
+  )
   all(required %in% names(x)) &&
     length(id_cols) > 0L &&
     all(id_cols %in% names(x))

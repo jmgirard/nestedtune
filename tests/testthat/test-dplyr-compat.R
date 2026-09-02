@@ -566,3 +566,66 @@ test_that("a fold-label column with a dim is refused rather than compared", {
   expect_no_condition(out <- dplyr::mutate(res, extra = 1))
   expect_bare(out)
 })
+
+# M49, AC5: `.inner_metrics` is part of the record the rule checks. A frame
+# lacking it, or carrying one fold's table changed, is refused against the
+# original as template -- through `dplyr_reconstruct()` here, and through `[`
+# and `select()` for the removal, which is the only change those doors can
+# make (they take the object they act on as their own template, so a table
+# altered under the class is invisible to them; the rule is asserted through
+# the template doors instead).
+
+test_that(".inner_metrics is in the record dplyr_reconstruct() checks", {
+  skip_if_no_engines()
+  res <- compat_results()
+  bare <- tibble::as_tibble(res)
+  expect_false(inherits(bare, "nested_results"))
+
+  # Removed.
+  without <- bare[setdiff(names(bare), ".inner_metrics")]
+  expect_bare(
+    dplyr::dplyr_reconstruct(without, res),
+    "dplyr_reconstruct() without .inner_metrics"
+  )
+  expect_bare(dplyr::select(res, -".inner_metrics"), "select(-.inner_metrics)")
+  expect_bare(
+    res[, setdiff(names(res), ".inner_metrics")],
+    "[ without .inner_metrics"
+  )
+
+  # One fold's table changed, in two forms and on a fold other than the
+  # first, so the comparison the rule makes after putting both sides in id
+  # order is what refuses it: the values are the record, not just the name.
+  zeroed <- bare
+  zeroed$.inner_metrics[[2L]] <- zeroed$.inner_metrics[[2L]][0, ]
+  expect_false(identical(zeroed$.inner_metrics, res$.inner_metrics))
+  expect_bare(
+    dplyr::dplyr_reconstruct(zeroed, res),
+    "dplyr_reconstruct() with fold 2's .inner_metrics zero-row"
+  )
+  shortened <- bare
+  shortened$.inner_metrics[[2L]] <- shortened$.inner_metrics[[2L]][-1L, ]
+  expect_true(nrow(shortened$.inner_metrics[[2L]]) > 0L)
+  expect_bare(
+    dplyr::dplyr_reconstruct(shortened, res),
+    "dplyr_reconstruct() with one row dropped from fold 2's .inner_metrics"
+  )
+  expect_bare(
+    dplyr::mutate(res, .inner_metrics = shortened$.inner_metrics),
+    "mutate(.inner_metrics = <changed>)"
+  )
+
+  # The passing control: the unaltered frame reconstructs.
+  expect_s3_class(dplyr::dplyr_reconstruct(bare, res), "nested_results")
+})
+
+test_that("has_results_columns() requires .inner_metrics", {
+  skip_if_no_engines()
+  res <- compat_results()
+  bare <- tibble::as_tibble(res)
+
+  expect_true(has_results_columns(bare, "id"))
+  expect_false(
+    has_results_columns(bare[setdiff(names(bare), ".inner_metrics")], "id")
+  )
+})

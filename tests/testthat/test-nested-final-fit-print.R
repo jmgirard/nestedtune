@@ -270,8 +270,8 @@ test_that("AC5: a Bayesian final fit names its procedure with the counts that ra
   final <- bayes_final_for_print()
 
   # The candidate table is the `.iter`-bearing one the loop's derivation
-  # gives, so the counts below are read off the same record a fold's `.grid`
-  # would be.
+  # gives, so the counts below are read off the same record a fold's candidate
+  # set derived from `.inner_metrics` would be.
   cand <- extract_scored_candidates(final)
   expect_true(".iter" %in% names(cand))
   expect_identical(cand, scored_candidates(final$tuning))
@@ -304,25 +304,30 @@ test_that("AC5: a Bayesian final fit names its procedure with the counts that ra
 
 test_that("the counts read what ran, not what was asked for", {
   # Built by hand, so the scored counts can differ from the requested ones
-  # without an engine: a record holding two initial candidates where three
-  # were requested, stopping at iteration 1 of 4 (IP4, RR05 Q2).
-  frame <- function(config, value) {
-    data.frame(
+  # without an engine: a metrics table holding two initial candidates where
+  # three were requested, stopping at iteration 1 of 4 (IP4, RR05 Q2). The
+  # run is a stand-in whose `collect_metrics()` is that table (M49).
+  row <- function(config, value, iter = NULL) {
+    out <- data.frame(
       df1 = value,
       .metric = "rmse",
       .estimator = "standard",
-      .estimate = 1,
+      mean = 1,
+      n = 3L,
+      std_err = 0.1,
       .config = config,
       stringsAsFactors = FALSE
     )
+    if (!is.null(iter)) {
+      out$.iter <- iter
+    }
+    out
   }
-  tuning <- list(
-    .metrics = list(
-      rbind(frame("pre1", 1L), frame("pre2", 5L)),
-      frame("iter1", 3L)
-    ),
-    .iter = c(0L, 1L)
-  )
+  tuning <- fake_tuning(rbind(
+    row("pre1", 1L, 0L),
+    row("pre2", 5L, 0L),
+    row("iter1", 3L, 1L)
+  ))
   final <- structure(
     list(
       workflow = NULL,
@@ -357,7 +362,10 @@ test_that("the counts read what ran, not what was asked for", {
 
   # One initial candidate: the other singular branch of the Bayesian line.
   one_initial <- final
-  one_initial$tuning$.metrics[[1L]] <- frame("pre1", 1L)
+  one_initial$tuning <- fake_tuning(rbind(
+    row("pre1", 1L, 0L),
+    row("iter1", 3L, 1L)
+  ))
   expect_identical(summary(one_initial)$initial, 1L)
   expect_match(
     print_text(one_initial),
@@ -366,7 +374,7 @@ test_that("the counts read what ran, not what was asked for", {
 
   # And the grid line at one candidate.
   one_grid <- final
-  one_grid$tuning <- list(.metrics = list(frame("pre1", 1L)))
+  one_grid$tuning <- fake_tuning(row("pre1", 1L))
   one_grid$procedure <- list(tuner = "tune_grid", grid = 1)
   expect_identical(summary(one_grid)$candidates, 1L)
   expect_match(print_text(one_grid), "grid search, 1 candidate scored")
