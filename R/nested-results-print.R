@@ -361,7 +361,10 @@ candidate_key <- function(g) {
   if (!is.data.frame(g)) {
     return(NULL)
   }
-  params <- sort(setdiff(names(g), ".config"))
+  # `.iter` is bookkeeping too (M45): the iteration a candidate was proposed
+  # in says when a fold reached it, not what it is, and two folds that scored
+  # the same candidates in different iterations searched the same set.
+  params <- sort(setdiff(names(g), c(".config", ".iter")))
   if (length(params) == 0L || nrow(g) == 0L) {
     return(list())
   }

@@ -759,6 +759,30 @@ bayes_param_info <- function(wf) {
   )
 }
 
+# The suite's Bayesian run, spelled once so every file that asks for it is
+# served from the cache (M12): the same data, workflow, design, arguments and
+# entry seed, in the same order, so the key agrees wherever it is requested.
+# Built from `make_reg_data()` outward, which seeds the generator itself, so
+# the recipe step ids the workflow draws are the same on every request too.
+# `set.seed(20)` sits after every argument is built, so the run's entry state
+# is that seed's and a reference loop started from `seed = 20` reproduces it.
+bayes_results <- function() {
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  folds <- det_nested(d)
+  p <- bayes_param_info(wf)
+  ms <- reg_metrics()
+  set.seed(20)
+  memoised(nested_tune_bayes(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms
+  ))
+}
+
 skip_if_no_bayes_fixture <- function(stochastic = FALSE) {
   skip_if_no_engines(stochastic = stochastic)
   testthat::skip_if_not_installed("dials")

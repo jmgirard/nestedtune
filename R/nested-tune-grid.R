@@ -704,9 +704,19 @@ scored_candidates_impl <- function(tuned) {
   # happened to score a candidate first: a candidate missing from the first
   # resample and present in the second would otherwise land last. tune
   # zero-pads `.config` past nine candidates, so ordering it lexically is
-  # ordering it numerically.
-  ordered <- order(key[first])
-  new_tbl(lapply(candidates[first, , drop = FALSE], function(col) col[ordered]))
+  # ordering it numerically. A Bayesian run's record is ordered by `.iter`
+  # first, so the initial candidates come before the proposals and the
+  # proposals follow in the order they were made; tune labels those `iter1`,
+  # `iter2`, ... without padding, and the iteration number is what puts the
+  # tenth after the ninth. A grid run's frames carry no `.iter`, and its order
+  # is the key's alone, as before.
+  kept <- candidates[first, , drop = FALSE]
+  ordered <- if (".iter" %in% keep) {
+    order(kept[[".iter"]], key[first])
+  } else {
+    order(key[first])
+  }
+  new_tbl(lapply(kept, function(col) col[ordered]))
 }
 
 # The per-resample metric frames that hold at least one scored candidate.
@@ -718,7 +728,37 @@ scored_metric_frames <- function(tuned) {
   if (!is.list(metrics)) {
     return(list())
   }
+  metrics <- join_iteration(metrics, tuned)
   Filter(function(m) is.data.frame(m) && nrow(m) > 0L, metrics)
+}
+
+# The search iteration each candidate was scored in, joined onto the
+# per-resample frames (M45, IP4).
+#
+# A `tune_bayes()` result records the iteration once per row at the top level,
+# in an `.iter` column beside `.metrics` -- `0` for the rows that scored the
+# initial candidates, `i` for the rows of the `i`-th proposal -- and its
+# per-resample frames carry no such column (measured 2026-09-01, tune 2.1.0).
+# So the frames are stamped from their row before they are pooled, and the
+# candidate record comes out with the iteration as one more column. A result
+# with no `.iter` -- every `tune_grid()` result -- is returned untouched, and a
+# frame already carrying the column keeps what it has.
+join_iteration <- function(metrics, tuned) {
+  iters <- tuned[[".iter"]]
+  if (is.null(iters) || length(iters) != length(metrics)) {
+    return(metrics)
+  }
+  Map(
+    function(m, i) {
+      if (!is.data.frame(m) || ".iter" %in% names(m)) {
+        return(m)
+      }
+      m[[".iter"]] <- rep(i, nrow(m))
+      m
+    },
+    metrics,
+    iters
+  )
 }
 
 # A fold that scored no candidate at all. Bare rather than typed: a fold that
