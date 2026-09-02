@@ -232,7 +232,9 @@ test_that("each fold records the candidates its inner tuning actually scored", {
   for (m in res$.inner_metrics) {
     expect_true(is.data.frame(m))
     expect_identical(nrow(m), nrow(grid) * 2L)
-    expect_true(all(c("num_comp", ".metric", "mean", "n", ".config") %in% names(m)))
+    expect_true(all(
+      c("num_comp", ".metric", "mean", "n", ".config") %in% names(m)
+    ))
   }
   for (g in candidate_sets(res)) {
     expect_true(is.data.frame(g))

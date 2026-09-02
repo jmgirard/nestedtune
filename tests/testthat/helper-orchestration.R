@@ -1392,3 +1392,19 @@ fixture_cache_report <- function() {
   row.names(out) <- NULL
   out
 }
+
+# A stand-in for a tuning run whose `collect_metrics()` is a table given by
+# hand (M49). The candidate derivation reads a run only through
+# `tune::collect_metrics()`, so a test that wants a record with known counts
+# and no engine supplies the table and nothing else. The class is this
+# suite's own; registering its method against tune's generic is what lets
+# `scored_candidates()` reach it without a mock.
+fake_tuning <- function(table) {
+  registerS3method(
+    "collect_metrics",
+    "nestedtune_fake_tuning",
+    function(x, ...) x$table,
+    envir = asNamespace("tune")
+  )
+  structure(list(table = table), class = "nestedtune_fake_tuning")
+}

@@ -350,11 +350,17 @@ test_that(".inner_metrics is in the record vec_restore() and rbind() check", {
     "vec_restore() without .inner_metrics"
   )
 
-  altered <- bare
-  altered$.inner_metrics[[1L]] <- altered$.inner_metrics[[1L]][0, ]
+  zeroed <- bare
+  zeroed$.inner_metrics[[2L]] <- zeroed$.inner_metrics[[2L]][0, ]
   expect_no_record(
-    vctrs::vec_restore(altered, res),
-    "vec_restore() with one fold's .inner_metrics changed"
+    vctrs::vec_restore(zeroed, res),
+    "vec_restore() with fold 2's .inner_metrics zero-row"
+  )
+  shortened <- bare
+  shortened$.inner_metrics[[2L]] <- shortened$.inner_metrics[[2L]][-1L, ]
+  expect_no_record(
+    vctrs::vec_restore(shortened, res),
+    "vec_restore() with one row dropped from fold 2's .inner_metrics"
   )
 
   # `$<-` on a tibble reattaches the class without asking the rule, so this

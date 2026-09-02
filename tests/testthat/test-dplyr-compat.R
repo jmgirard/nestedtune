@@ -593,17 +593,25 @@ test_that(".inner_metrics is in the record dplyr_reconstruct() checks", {
     "[ without .inner_metrics"
   )
 
-  # One fold's table changed to a zero-row table under the same columns: the
-  # values are the record, not just the name.
-  altered <- bare
-  altered$.inner_metrics[[1L]] <- altered$.inner_metrics[[1L]][0, ]
-  expect_false(identical(altered$.inner_metrics, res$.inner_metrics))
+  # One fold's table changed, in two forms and on a fold other than the
+  # first, so the comparison the rule makes after putting both sides in id
+  # order is what refuses it: the values are the record, not just the name.
+  zeroed <- bare
+  zeroed$.inner_metrics[[2L]] <- zeroed$.inner_metrics[[2L]][0, ]
+  expect_false(identical(zeroed$.inner_metrics, res$.inner_metrics))
   expect_bare(
-    dplyr::dplyr_reconstruct(altered, res),
-    "dplyr_reconstruct() with one fold's .inner_metrics changed"
+    dplyr::dplyr_reconstruct(zeroed, res),
+    "dplyr_reconstruct() with fold 2's .inner_metrics zero-row"
+  )
+  shortened <- bare
+  shortened$.inner_metrics[[2L]] <- shortened$.inner_metrics[[2L]][-1L, ]
+  expect_true(nrow(shortened$.inner_metrics[[2L]]) > 0L)
+  expect_bare(
+    dplyr::dplyr_reconstruct(shortened, res),
+    "dplyr_reconstruct() with one row dropped from fold 2's .inner_metrics"
   )
   expect_bare(
-    dplyr::mutate(res, .inner_metrics = altered$.inner_metrics),
+    dplyr::mutate(res, .inner_metrics = shortened$.inner_metrics),
     "mutate(.inner_metrics = <changed>)"
   )
 

@@ -53,7 +53,11 @@ test_that("iterations past nine order by number, not by label", {
   # order would put the tenth before the second. The set is ordered by the
   # iteration number, and the label decides only within an iteration.
   rows <- lapply(c(0L, 2L, 10L, 1L), function(i) {
-    metric_row(if (i == 0L) "pre1_mod0_post0" else paste0("iter", i), i, iter = i)
+    metric_row(
+      if (i == 0L) "pre1_mod0_post0" else paste0("iter", i),
+      i,
+      iter = i
+    )
   })
   got <- candidate_set(do.call(rbind, rows))
 

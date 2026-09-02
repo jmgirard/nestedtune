@@ -92,6 +92,14 @@ outer_scheme_label <- function(resamples) {
 # and `dplyr_col_modify()` both finish by calling it, and so does `bind_rows()`,
 # so one method covers the verbs; `[` is the one door that does not lead here on
 # its own, and is routed here explicitly below.
+#
+# What the rule cannot see (M49). `[` and `rbind()` take the object they act
+# on as their own template, so a record column altered under the class --
+# `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class
+# after without consulting this rule (measured 2026-09-02) -- is compared
+# against itself by those two doors and passes; they refuse a removal only.
+# The two template-taking doors, `dplyr_reconstruct()` and `vec_restore()`,
+# refuse the alteration against the original.
 
 # Which of an object's columns are the design's own fold labels.
 #

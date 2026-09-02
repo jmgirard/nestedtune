@@ -611,35 +611,38 @@ test_that("an error while finalizing is this fold's failure, not the run's", {
 })
 
 test_that("bookkeeping the candidate record cannot abort a run", {
-  # The record is derived, and deriving it runs outside every tryCatch in
-  # nested_fold_fit() -- so a raise here would discard every completed fold over
-  # bookkeeping rather than over a fit, which is the one outcome M03 exists to
-  # prevent.
+  # The candidate set is derived from a metrics table, on the final fit
+  # outside every tryCatch -- so a raise there would abort a call that has a
+  # fitted model to hand back, over bookkeeping rather than over a fit, which
+  # is the one outcome M03 exists to prevent.
   #
   # A list-valued parameter column was the suspected raise and is not one:
-  # order() sorts it and both candidates come back. Asserted rather than
-  # dropped, because that is the fact the defensive wrapper's comment rests on,
-  # and an unasserted "we checked, it is fine" rots.
+  # the derivation orders by the label and both candidates come back.
+  # Asserted rather than dropped, because that is the fact the defensive
+  # wrapper's comment rests on, and an unasserted "we checked, it is fine"
+  # rots.
   listy <- new_tbl(list(
-    .metrics = list(new_tbl(list(
-      cost = list(1:2, 3:4),
-      .metric = c("rmse", "rmse"),
-      .estimator = c("standard", "standard"),
-      .estimate = c(1, 2),
-      .config = c("pre1", "pre2")
-    )))
+    cost = list(1:2, 3:4),
+    .metric = c("rmse", "rmse"),
+    .estimator = c("standard", "standard"),
+    mean = c(1, 2),
+    n = c(3L, 3L),
+    std_err = c(0.1, 0.1),
+    .config = c("pre1", "pre2")
   ))
 
-  expect_no_error(out <- scored_candidates(listy))
+  expect_no_error(out <- candidate_set(listy))
   expect_true(is.data.frame(out))
   expect_identical(nrow(out), 2L)
+  expect_identical(out$.config, c("pre1", "pre2"))
+  expect_no_error(out <- scored_candidates(fake_tuning(listy)))
   expect_identical(out$.config, c("pre1", "pre2"))
 
   # And the wrapper is genuinely a wrapper: an input that DOES raise inside the
   # derivation returns the empty record rather than propagating.
   local_mocked_bindings(
-    scored_candidates_impl = function(tuned) stop("boom")
+    candidate_set = function(metrics) stop("boom")
   )
-  expect_no_error(fallback <- scored_candidates(listy))
+  expect_no_error(fallback <- scored_candidates(fake_tuning(listy)))
   expect_identical(nrow(fallback), 0L)
 })

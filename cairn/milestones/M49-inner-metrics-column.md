@@ -51,9 +51,12 @@ for that generic → not planned; a user control on the inner run → M48.
       differing sets (the per-fold random grid whose folds share `.config` labels), a partial run, and the Bayesian
       rendering — with no snapshot edit, each fold's candidate set derived from the distinct parameter rows of
       `.inner_metrics`.
-- [ ] AC5: `.inner_metrics` is in the dplyr/vctrs invariant set and in `has_results_columns()`: removing it, or changing
-      one fold's table, drops the class through `dplyr_reconstruct()`, `[`, `rbind()` and `vec_restore()`, and an object
-      lacking the column fails `has_results_columns()`; asserted by tests.
+- [ ] AC5: `.inner_metrics` is in the dplyr/vctrs invariant set and in `has_results_columns()`: called directly with
+      the original as template, `dplyr_reconstruct()` and `vec_restore()` return a bare tibble for a frame lacking the
+      column, and for one whose table on a completed fold other than the first is replaced by a zero-row table or by
+      the same table with one row dropped; `[` returns a bare tibble for the column subset
+      `setdiff(names(x), ".inner_metrics")`, and a single-argument `rbind()` for a still-classed object from which the
+      column was removed beforehand; and a frame lacking the column fails `has_results_columns()`; asserted by tests.
 - [ ] AC6: `extract_scored_candidates()` on a `nested_final_fit` returns what it returns at the base commit (its existing
       tests unchanged), and its help page describes its shape without reference to `.grid`.
 - [ ] AC7: The profile's verify slot is clean; NEWS carries the breaking-change entry; DESIGN.md's results-object
@@ -95,7 +98,10 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: plan chose leaving `extract_scored_candidates()` unchanged over reshaping it to the metrics table because nothing on the final fit is broken and the divergence is one sentence in D-043; falsified by a user comparing the two surfaces row for row.
 - 2026-09-02: gate: proceed without escalation on the ip-touching criteria (the hand-run `collect_metrics()` oracle is available); one candidate derivation over the metrics table, the final fit applying it to `collect_metrics()` of its tuning run. T1: `.inner_metrics` oracles on both hand-run loops, the outer-fit-failed, nothing-scored (both branches), partial-inner-split and Bayesian nothing-scored shapes; red on the missing column until T2.
 - 2026-09-02: T2–T5 code landed together (a fold worker writing `.inner_metrics` leaves the readers and invariants red until they read it): `inner_metrics()` records `collect_metrics()` or a workflow-built zero-row prototype, `candidate_set()` derives the candidate set from a table and serves the final fit through `scored_candidates()`, `join_iteration()` and the per-resample pooling retired; readers and invariants swapped; the `.grid` sweep ran and the AC2 grep is empty; T5 probes written; T6 NEWS and DESIGN drafted. Checkpoint while the full suite runs; checkboxes wait on the verify slot. AC5's change-through-`[`-and-`rbind()` clause found unconstructible (those doors self-template); amended wording out to a fresh [O] reader before the mini gate.
+- 2026-09-02: amendment (substantive, narrowing) — AC5 rewritten at a mini gate: the change-through-`[`-and-`rbind()` clause was unconstructible, those doors taking the object they act on as their own template. Two fresh [O] readings in full mode: the first returned four findings (probe forms and fold location, `vec_restore()` call form, the two doors' constructions split, a home for the self-template gap), the second two findings and an ambiguity (exact `[` subset, single-argument `rbind()`, a completed fold); all applied, the final text user-approved. Two hand-built-run tests (final-fit print counts, the bookkeeping wrapper) rewritten over a `fake_tuning()` stand-in whose `collect_metrics()` is a table given by hand.
 
 ## Decisions
+
+- 2026-09-02: a record column altered under the class — `x$.inner_metrics[[1]] <- ...`, which tibble's `$<-` reattaches the class after without consulting the reconstruct rule — passes `[` and `rbind()`, which compare the object against itself; the template-taking doors refuse it. Pre-existing for every record column, recorded at the rule (`R/nested-results.R`) rather than fixed: intercepting `$<-` and `[[<-` is a fifth and sixth door the invariants D-031 fixed do not name, a candidate for a later milestone if a user meets it.
 
 ## Review
