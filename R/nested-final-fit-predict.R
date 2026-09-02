@@ -92,7 +92,13 @@ predict.nested_final_fit <- function(
   opts = list(),
   ...
 ) {
-  predict(object$workflow, new_data = new_data, type = type, opts = opts, ...)
+  stats::predict(
+    object$workflow,
+    new_data = new_data,
+    type = type,
+    opts = opts,
+    ...
+  )
 }
 
 #' @rdname predict.nested_final_fit
