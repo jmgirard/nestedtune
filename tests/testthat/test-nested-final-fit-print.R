@@ -17,7 +17,7 @@ test_that("printing names the selection and where the estimate lives", {
   expect_match(out, "final fit")
   expect_match(out, "num_comp = ")
   expect_match(out, "no performance estimate of its own")
-  expect_match(out, "nested_tune_grid")
+  expect_match(out, "results object this fit was built from")
   # RR02 B3: the moment of deployment is when selection instability matters.
   expect_match(out, "\\.selected")
 })
@@ -81,15 +81,23 @@ test_that("the printed report is stable", {
 # criterion forbidding that output to change cannot be pinned to it -- accepting
 # the new snapshot would satisfy the pin and falsify the promise at the same
 # time. These bytes have to be re-agreed by hand instead.
+#
+# M46 added a "Procedure:" line -- what search ran, grid or Bayesian, and at
+# what counts -- and pointed the estimate sentence at the results object
+# rather than naming `nested_tune_grid()`, since the record it reads from can
+# equally be a `nested_tune_bayes()` result. That is a change to what this
+# constant pins, re-agreed by hand rather than accepted from the snapshot for
+# the same reason the original was.
 PRINT_BEFORE_M40 <- paste(
   c(
     "",
     "-- Nested cross-validation final fit -------------------------------------------",
+    "Procedure: grid search, 3 candidates scored",
     "Selected: num_comp = 3",
     "",
     "i This model has no performance estimate of its own. Report the nested estimate",
-    "  from `collect_metrics()` on the `nested_tune_grid()` result, which describes",
-    "  the procedure that produced it.",
+    "  from `collect_metrics()` on the results object this fit was built from, which",
+    "  describes the procedure that produced it.",
     "i Compare the parameters above with `.selected` from that run. Outer folds",
     "  choosing differently is selection instability, and it is information about",
     "  the procedure rather than noise.",
@@ -120,7 +128,17 @@ test_that("AC2: summary() returns a classed object naming what was selected", {
   expect_s3_class(s, "summary.nested_final_fit")
   expect_identical(
     names(s),
-    c("tuning_label", "candidates", "selection", "estimate")
+    c(
+      "tuning_label",
+      "tuner",
+      "candidates",
+      "initial",
+      "initial_requested",
+      "iterations_completed",
+      "iterations_requested",
+      "selection",
+      "estimate"
+    )
   )
   # The absence is carried as a component rather than left out, so a caller
   # meets a recorded fact instead of a missing name (M40 Decisions).
@@ -136,7 +154,7 @@ test_that("AC2: summary() returns a classed object naming what was selected", {
   out <- print_text(s)
   expect_match(out, "num_comp: 3")
   expect_match(out, "no performance estimate of its own")
-  expect_match(out, "nested_tune_grid")
+  expect_match(out, "results object this fit was built from")
 })
 
 test_that("AC3: the summary shows no number from the stored tuning run", {

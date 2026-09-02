@@ -10,9 +10,9 @@
 
 test_that("AC1: the three entry points carry `...` after their required arguments", {
   # Written out rather than derived, so a signature that drifts has to be
-  # re-agreed here. `param_info`, `grid`, `metrics` and `event_level` all sit
-  # behind the barrier and therefore match by name only, as does `eval_time`
-  # (M41).
+  # re-agreed here. For nested_tune_grid(), `param_info`, `grid`, `metrics` and
+  # `event_level` all sit behind the barrier and therefore match by name only,
+  # as does `eval_time` (M41).
   expect_identical(
     names(formals(nested_tune_grid)),
     c(
@@ -26,18 +26,12 @@ test_that("AC1: the three entry points carry `...` after their required argument
       "eval_time"
     )
   )
+  # nested_final_fit() takes only `object` and `results` now (M46): the
+  # procedure that once sat behind its barrier -- `param_info`, `grid`,
+  # `metrics`, `event_level`, `eval_time` -- is read off `results` instead.
   expect_identical(
     names(formals(nested_final_fit)),
-    c(
-      "object",
-      "resamples",
-      "...",
-      "param_info",
-      "grid",
-      "metrics",
-      "event_level",
-      "eval_time"
-    )
+    c("object", "results", "...")
   )
   # All three of `nested_resamples()`'s arguments are required, so its barrier
   # is last rather than mid-signature.

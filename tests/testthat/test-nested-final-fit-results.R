@@ -13,7 +13,7 @@ test_that("the final fit returns a trained workflow inside its own object", {
   expect_s3_class(final, "nested_final_fit")
   expect_named(
     final,
-    c("workflow", "selected", "tuning", "tuning_seed", "fit_seed")
+    c("workflow", "selected", "tuning", "tuning_seed", "fit_seed", "procedure")
   )
 
   extracted <- extract_workflow(final)

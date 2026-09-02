@@ -73,21 +73,24 @@ test_that("AC3: param_info restricts what the final fit selects", {
   folds <- final_nested(d)
   wf <- cont_workflow(d)
 
-  set.seed(7)
-  unrestricted <- memoised(nested_final_fit(
+  res_unrestricted <- memoised(nested_tune_grid(
     wf,
     folds,
     grid = 5,
     metrics = reg_metrics()
   ))
-  set.seed(7)
-  restricted <- memoised(nested_final_fit(
+  res_restricted <- memoised(nested_tune_grid(
     wf,
     folds,
     param_info = narrow_param_info(wf),
     grid = 5,
     metrics = reg_metrics()
   ))
+
+  set.seed(7)
+  unrestricted <- memoised(nested_final_fit(wf, res_unrestricted))
+  set.seed(7)
+  restricted <- memoised(nested_final_fit(wf, res_restricted))
 
   expect_gte(restricted$selected$threshold, NARROW_THRESHOLD[[1L]])
   expect_lte(restricted$selected$threshold, NARROW_THRESHOLD[[2L]])
@@ -106,10 +109,6 @@ test_that("a param_info that is not a parameters object is refused up front", {
   # is fitted.
   expect_error(
     nested_tune_grid(wf, nested, param_info = "wide", grid = det_grid()),
-    "`param_info` must be"
-  )
-  expect_error(
-    nested_final_fit(wf, nested, param_info = "wide", grid = det_grid()),
     "`param_info` must be"
   )
 })

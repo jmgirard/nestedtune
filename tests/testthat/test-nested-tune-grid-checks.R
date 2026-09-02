@@ -339,16 +339,9 @@ test_that("an rsample design whose inside produced no rset is refused", {
 
   expect_error(nested_tune_grid(wf, bad, grid = det_grid()), "inner_resamples")
 
-  # And at the final fit, which used to abort further in -- from
-  # eval_inside_spec(), only because re-evaluating `inside` also failed, naming
-  # final_fit_worker() rather than the user's call.
-  cnd <- tryCatch(
-    nested_final_fit(wf, bad, grid = det_grid()),
-    error = function(e) e
-  )
-  expect_match(conditionMessage(cnd), "malformed")
-  expect_match(conditionMessage(cnd), "inner_resamples")
-  expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+  # The final fit no longer takes a design directly -- it takes a results
+  # object, and a malformed design like this one never reaches nested_tune_grid()
+  # far enough to produce one, so there is nothing further to check here.
 })
 
 # The negative half of the same rule: what the loop does not need, it does not
@@ -486,28 +479,11 @@ test_that("the new refusals fire before the RNG is drawn from", {
       nested_tune_grid(wf, bad, grid = det_grid())
     },
     function() {
-      bad <- folds
-      bad$inner_resamples[[2]] <- "not an rset"
-      nested_final_fit(wf, bad, grid = det_grid())
-    },
-    function() {
-      bad <- folds
-      bad$splits[[1]] <- "not an rsplit"
-      nested_final_fit(wf, bad, grid = det_grid())
-    },
-    function() {
       no_pre <- workflows::add_model(
         workflows::workflow(),
         parsnip::linear_reg()
       )
       nested_tune_grid(no_pre, folds, grid = det_grid())
-    },
-    function() {
-      no_pre <- workflows::add_model(
-        workflows::workflow(),
-        parsnip::linear_reg()
-      )
-      nested_final_fit(no_pre, folds, grid = det_grid())
     }
   )
 
