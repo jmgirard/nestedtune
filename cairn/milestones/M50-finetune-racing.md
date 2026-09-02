@@ -1,6 +1,6 @@
 # M50: `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -99,7 +99,7 @@ their M48 Out row.
       `test-parallel-identity.R`, gated on finetune and mirai.
 - [x] T5: The final fit on a racing result — grid re-check on the recorded `grid`'s presence, `procedure_label()`,
       `extract_scored_candidates()` on a `tune_race` — and `reference_race_final_fit()` for the AC6 identity.
-- [ ] T6: The shared help page with the control classification and the by-hand recipe (its test in AC4);
+- [x] T6: The shared help page with the control classification and the by-hand recipe (its test in AC4);
       `test-control-slots.R`'s `differences_section()` (`:51`) accepting "Differences from calling finetune directly"
       and a block for the racing page; `_pkgdown.yml`, `NEWS.md`, DESIGN.md architecture and function families;
       `DESCRIPTION` Suggests `finetune`, `BradleyTerry2` and the D-entry; `devtools::check()`.
@@ -130,6 +130,8 @@ their M48 Out row.
 - 2026-09-02: T6 in progress: help page `?nested_tune_race` shared by the two exports (six-heading classification, by-hand recipe), `test-control-slots.R` reads either "Differences from calling ... directly" title and classifies `control_race()`, the recipe test in `test-nested-tune-race-oracles.R`, `_pkgdown.yml` row, NEWS entry, DESIGN function families and architecture, DESCRIPTION Suggests finetune, lme4, BradleyTerry2 with D-044; per-file suites green, `pkgdown::check_pkgdown()` clean; `devtools::check()` and the full suite after T4 still running at this checkpoint.
 
 - 2026-09-02: first `devtools::check()` failed on one test only: the AC7 wording test matched phrases across an Rd line break, which the installed help database under `R CMD check` wraps where the source file does not; the test now collapses whitespace and matches the two full clauses, verified against both sources; full suite after T4 green (0 failures, no duplicate fixture build); check re-running.
+
+- 2026-09-02: T6 done; `devtools::check()` clean (0 errors, 0 warnings, 0 notes; tests 6m CPU / 29m elapsed under a concurrent suite run, 19m elapsed on the first attempt); status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->
