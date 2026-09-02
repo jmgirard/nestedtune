@@ -18,10 +18,10 @@ rather than silently ignored.}
 \item{x}{A \code{summary.nested_results} object from \code{\link[=summary.nested_results]{summary.nested_results()}}.}
 }
 \value{
-An object of class \code{summary.nested_results}: a list holding the
-outer resampling scheme's label, the outer design's requested and
-completed fold counts, the failed folds with the stage each failed at, the
-parameter values the completed folds selected, the candidate grid each
+\code{summary()} returns an object of class \code{summary.nested_results}: a list
+holding the outer resampling scheme's label, the outer design's requested
+and completed fold counts, the failed folds with the stage each failed at,
+the parameter values the completed folds selected, the candidate grid each
 completed fold searched, and the metric estimates averaged across them.
 Printing it is what most callers want; the components are there for a
 caller that needs a number rather than a line of text.
@@ -43,6 +43,30 @@ asked for more. A run where every fold failed is the same case — it warns
 and still returns, describing a failed run rather than refusing to answer.
 That is where this differs from \code{\link[=collect_metrics]{collect_metrics()}}, which aborts when no
 outer fold completed.
+}
+\examples{
+\dontshow{if (rlang::is_installed(c("recipes", "yardstick"))) withAutoprint(\{ # examplesIf}
+data(mtcars)
+
+rec <- recipes::step_pca(
+  recipes::recipe(mpg ~ ., data = mtcars),
+  recipes::all_predictors(),
+  num_comp = tune::tune()
+)
+wf <- workflows::workflow(rec, parsnip::linear_reg())
+
+set.seed(1)
+folds <- nested_resamples(
+  mtcars,
+  outside = rsample::vfold_cv(v = 3),
+  inside = rsample::vfold_cv(v = 3)
+)
+
+set.seed(2)
+res <- nested_tune_grid(wf, folds, grid = data.frame(num_comp = 1:3))
+
+summary(res)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=print.nested_results]{print.nested_results()}}, \code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{\link[=collect_metrics]{collect_metrics()}}

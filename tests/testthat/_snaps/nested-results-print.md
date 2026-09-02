@@ -7,12 +7,7 @@
       -- Nested cross-validation results ---------------------------------------------
       Outer resamples: 3-fold cross-validation
       # A tibble: 3 x 9
-        splits          id    .metrics         .selected .grid    .notes   .completed
-        <list>          <chr> <list>           <list>    <list>   <list>   <lgl>     
-      1 <split [60/30]> Fold1 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      2 <split [60/30]> Fold2 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      3 <split [60/30]> Fold3 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      # i 2 more variables: .tuning_seed <int>, .outer_fit_seed <int>
+      <tibble body: column types, rows and the more-variables footer>
       i Use `summary()` for what the run means: which folds failed, what each one
         selected, and the estimate across them.
 
@@ -25,12 +20,7 @@
       -- Nested cross-validation results ---------------------------------------------
       Outer resamples: 3-fold cross-validation
       # A tibble: 3 x 9
-        splits          id    .metrics         .selected .grid    .notes   .completed
-        <list>          <chr> <list>           <list>    <list>   <list>   <lgl>     
-      1 <split [60/30]> Fold1 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      2 <split [20/10]> Fold2 <tibble [0 x 4]> <NULL>    <tibble> <tibble> FALSE     
-      3 <split [60/30]> Fold3 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      # i 2 more variables: .tuning_seed <int>, .outer_fit_seed <int>
+      <tibble body: column types, rows and the more-variables footer>
       x 1 of 3 outer folds did not complete.
       i Use `summary()` for what the run means: which folds failed, what each one
         selected, and the estimate across them.
@@ -44,12 +34,7 @@
       -- Nested cross-validation results ---------------------------------------------
       Outer resamples: 3-fold cross-validation
       # A tibble: 3 x 9
-        splits          id    .metrics         .selected .grid    .notes   .completed
-        <list>          <chr> <list>           <list>    <list>   <list>   <lgl>     
-      1 <split [60/30]> Fold1 <tibble [0 x 4]> <NULL>    <tibble> <tibble> FALSE     
-      2 <split [60/30]> Fold2 <tibble [0 x 4]> <NULL>    <tibble> <tibble> FALSE     
-      3 <split [60/30]> Fold3 <tibble [0 x 4]> <NULL>    <tibble> <tibble> FALSE     
-      # i 2 more variables: .tuning_seed <int>, .outer_fit_seed <int>
+      <tibble body: column types, rows and the more-variables footer>
       x 3 of 3 outer folds did not complete.
       i Use `summary()` for what the run means: which folds failed, what each one
         selected, and the estimate across them.
@@ -63,12 +48,7 @@
       -- Nested cross-validation results ---------------------------------------------
       Outer resamples: 3-fold cross-validation
       # A tibble: 3 x 9
-        splits          id    .metrics         .selected .grid    .notes   .completed
-        <list>          <chr> <list>           <list>    <list>   <list>   <lgl>     
-      1 <split [60/30]> Fold1 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      2 <split [60/30]> Fold2 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      3 <split [60/30]> Fold3 <tibble [2 x 4]> <tibble>  <tibble> <tibble> TRUE      
-      # i 2 more variables: .tuning_seed <int>, .outer_fit_seed <int>
+      <tibble body: column types, rows and the more-variables footer>
       ! Candidates searched: 5, 5, 5 — the folds did not search the same grid
       i Use `summary()` for what the run means: which folds failed, what each one
         selected, and the estimate across them.
@@ -152,7 +132,7 @@
       Outer resamples: 3-fold cross-validation
       Outer folds: 3 requested, 2 completed
       x Fold2 failed during outer fit.
-      i See `x$.notes` for what went wrong.
+      i See the `.notes` column of the results object for what went wrong.
       
       -- Selected parameters --
       
@@ -179,7 +159,7 @@
       x Fold1 failed during inner tuning.
       x Fold2 failed during inner tuning.
       x Fold3 failed during inner tuning.
-      i See `x$.notes` for what went wrong.
+      i See the `.notes` column of the results object for what went wrong.
       
       -- Selected parameters --
       

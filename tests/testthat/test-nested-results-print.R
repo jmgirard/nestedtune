@@ -96,7 +96,7 @@ test_that("printing counts the folds that did not complete, and only then", {
   # and is summary()'s to say -- asserted here so the two cannot silently merge
   # back together.
   expect_no_match(txt, "failed during")
-  expect_no_match(txt, "\\$\\.notes")
+  expect_no_match(txt, "what went wrong")
 
   # The passing control: a whole run says nothing at all rather than "0 of 3",
   # so the line's presence is itself the signal.
@@ -174,6 +174,119 @@ test_that("print returns its input invisibly and is registered for S3 dispatch",
   # The rows are shown by stripping this class and letting the tibble
   # underneath render them, which must not leave the caller's object stripped.
   expect_s3_class(res, "nested_results")
+})
+
+# The rendered text of `print(x, ...)`, at a console width of the test's
+# choosing. Distinct from print_text() because the tibble `width` argument and
+# the console width are two different things and the M43 tests need both.
+print_text_at <- function(x, console, ...) {
+  op <- options(width = console, cli.width = console)
+  on.exit(options(op), add = TRUE)
+  paste(cli::cli_fmt(print(x, ...)), collapse = "\n")
+}
+
+# The tibble body's row lines: a row number, then the first cell.
+count_row_lines <- function(txt) {
+  sum(grepl("^\\s*[0-9]+ <split", strsplit(txt, "\n")[[1L]]))
+}
+
+# How many columns the `# i <k> more variables` footer lists, or 0 without one.
+footer_variables <- function(txt) {
+  m <- regmatches(txt, regexpr("# i [0-9]+ more variable", txt))
+  if (length(m) == 0L) {
+    return(0L)
+  }
+  as.integer(regmatches(m, regexpr("[0-9]+", m)))
+}
+
+test_that("print() takes `n` and hands it to the row rendering", {
+  skip_if_no_engines()
+
+  # More folds than tibble shows by default: a 3-fold design repeated seven
+  # times, through the constructor over stand-in records. Stacking the
+  # three-fold fixture with rbind() cannot reach this shape -- the stamp rule
+  # refuses a row count that differs from the run's, and hands back a bare
+  # tibble (M36).
+  wide <- repeated_results(v = 3, repeats = 7)
+  expect_s3_class(wide, "nested_results")
+  expect_identical(nrow(wide), 21L)
+
+  txt <- print_text(wide)
+  expect_identical(count_row_lines(txt), 10L)
+  expect_match(txt, "# i 11 more rows", fixed = TRUE)
+
+  txt_all <- print_text_at(wide, 200, n = Inf)
+  expect_identical(count_row_lines(txt_all), 21L)
+  expect_no_match(txt_all, "more row")
+
+  # And on the three-fold fixture, `n` below the row count truncates.
+  d <- make_reg_data()
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+  txt_two <- print_text_at(res, 200, n = 2)
+  expect_identical(count_row_lines(txt_two), 2L)
+  expect_match(txt_two, "# i 1 more row", fixed = TRUE)
+})
+
+test_that("print() takes `width` and hands it to the row rendering", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+
+  # Both rendered at a console width of 80, so the only difference between the
+  # two is the argument: the narrower rendering pushes more columns into the
+  # footer that lists what did not fit.
+  default_txt <- print_text_at(res, 80)
+  narrow_txt <- print_text_at(res, 80, width = 40)
+  expect_gt(footer_variables(default_txt), 0L)
+  expect_gt(footer_variables(narrow_txt), footer_variables(default_txt))
+})
+
+test_that("print() still fences `...`, so a partial spelling is refused", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+
+  # Written as the real calls a user would make -- `print(res, ...)` through
+  # dispatch -- rather than by calling the method directly (M42 lesson). The
+  # third is the case the fence exists for: `w` is a prefix of `width`, and
+  # because `width` sits after `...` it does not partially match and lands in
+  # the dots instead of being taken as `width`.
+  probes <- list(
+    quote(print(res, foo = 1)),
+    quote(print(res, n = 2, foo = 1)),
+    quote(print(res, w = 40))
+  )
+  for (probe in probes) {
+    cnd <- rlang::catch_cnd(eval(probe))
+    expect_s3_class(cnd, "rlib_error_dots_nonempty")
+    # The whole call, not its name alone: the inner `print(rows, ...)` in
+    # print_rows() is also a print() call, and only the user's own call with
+    # the stray argument still attached shows the fence fired at the method.
+    expect_identical(conditionCall(cnd), probe)
+  }
+
+  # The passing control: the full spellings are accepted by the same path.
+  expect_no_error(print_text_at(res, 200, n = 2, width = 40))
 })
 
 test_that("a subset missing the per-fold record prints as a plain tibble", {
@@ -363,7 +476,7 @@ test_that("printing the summary carries every section print() used to emit", {
   expect_match(txt, "3-fold cross-validation")
   expect_match(txt, "3 requested, 2 completed")
   expect_match(txt, "failed during outer fit")
-  expect_match(txt, "See .*\\$\\.notes")
+  expect_match(txt, "See the `.notes` column", fixed = TRUE)
   expect_match(txt, "Selected parameters")
   expect_match(txt, "num_comp")
   expect_match(txt, "2 of 3 outer folds")
@@ -373,6 +486,43 @@ test_that("printing the summary carries every section print() used to emit", {
   # The one section that did NOT come across: the candidate-set line stays in
   # print(), where it qualifies the object, and is not repeated here.
   expect_no_match(txt, "Candidates searched")
+})
+
+test_that("the failure advice names the results object's `.notes` column, never `x$`", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  # `x` inside the summary's print method is the summary bundle, which has no
+  # `.notes`; before M43 the advice read `x$.notes` and named nothing a reader
+  # could evaluate. Asserted on both failed fixtures -- one fold down and every
+  # fold down -- since the block is reached by each and the line closes both.
+  set.seed(2)
+  partial <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_fold(det_nested(d), 2L, "outer fit"),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+  set.seed(2)
+  nothing <- suppressWarnings(memoised(nested_tune_grid(
+    det_workflow(d),
+    break_every_fold(det_nested(d)),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+
+  for (res in list(partial, nothing)) {
+    lines <- strsplit(summary_text(res), "\n")[[1L]]
+    advice <- grep("what went wrong", lines, value = TRUE)
+    # One advice line, and it is the line that ends the failure block: the
+    # previous line is a failure line, the next opens the next section.
+    expect_length(advice, 1L)
+    expect_match(advice, "`.notes` column of the results object", fixed = TRUE)
+    expect_no_match(advice, "x$", fixed = TRUE)
+    at <- match(advice, lines)
+    expect_match(lines[[at - 1L]], "failed during")
+    expect_no_match(lines[[at + 1L]], "failed during")
+  }
 })
 
 test_that("summary() warns on a partial run and still returns its object", {
@@ -678,6 +828,65 @@ test_that("printing survives a list-valued parameter column (M21 review F1)", {
 
 # ---- shape ------------------------------------------------------------------
 
+# The tibble body is a dependency's rendering and not this package's to pin:
+# its column-type row, cell text and `# i <k> more variables` footer have all
+# changed wording across pillar releases. The four print snapshots keep the
+# `# A tibble: <n> x <k>` header and every cli line, and stand one marker in
+# for the body -- everything between the header and the first cli bullet
+# (M43). The rows themselves are asserted in words above (n, width, Fold1).
+scrub_tibble_body <- function(lines) {
+  header <- grep("^\\s*# A tibble: ", lines)
+  if (length(header) != 1L) {
+    return(lines)
+  }
+  # testthat hands the transform each cli message on its own, and the tibble
+  # block is one message, so usually nothing follows the body here; the bullet
+  # search is kept so the scrub is right about a block that does carry one.
+  after <- seq.int(header + 1L, length.out = length(lines) - header)
+  bullets <- after[grepl("^\\s*[xiv!] ", lines[after])]
+  keep <- if (length(bullets) == 0L) integer(0) else bullets[[1L]]:length(lines)
+  c(
+    lines[seq_len(header)],
+    "<tibble body: column types, rows and the more-variables footer>",
+    lines[keep]
+  )
+}
+
+test_that("the tibble-body scrub keeps the header and every cli line", {
+  # Discrimination for the transform: what it removes and what it keeps,
+  # asserted on a shape written here, so a scrub that swallowed a cli line or
+  # left a cell row behind could not go on recording a valid-looking snapshot.
+  lines <- c(
+    "-- Nested cross-validation results ----",
+    "Outer resamples: 3-fold cross-validation",
+    "# A tibble: 3 x 9",
+    "  splits id",
+    "  <list> <chr>",
+    "1 <split [60/30]> Fold1",
+    "# i 2 more variables: .tuning_seed <int>",
+    "x 1 of 3 outer folds did not complete.",
+    "i Use `summary()` for what the run means."
+  )
+  expect_identical(
+    scrub_tibble_body(lines),
+    c(
+      lines[1:3],
+      "<tibble body: column types, rows and the more-variables footer>",
+      lines[8:9]
+    )
+  )
+  # The shape the transform meets in practice: the tibble message alone.
+  expect_identical(
+    scrub_tibble_body(lines[3:7]),
+    c(
+      lines[[3L]],
+      "<tibble body: column types, rows and the more-variables footer>"
+    )
+  )
+  # A summary's output carries no tibble and passes through untouched.
+  expect_identical(scrub_tibble_body(lines[-(3:7)]), lines[-(3:7)])
+})
+
 test_that("printed output holds its shape", {
   skip_if_no_engines()
   d <- make_reg_data()
@@ -744,10 +953,10 @@ test_that("printed output holds its shape", {
     metrics = reg_metrics()
   )
 
-  expect_snapshot(print(complete))
-  expect_snapshot(print(partial))
-  expect_snapshot(print(nothing))
-  expect_snapshot(print(differing))
+  expect_snapshot(print(complete), transform = scrub_tibble_body)
+  expect_snapshot(print(partial), transform = scrub_tibble_body)
+  expect_snapshot(print(nothing), transform = scrub_tibble_body)
+  expect_snapshot(print(differing), transform = scrub_tibble_body)
 
   expect_snapshot(print(summary(complete)))
   expect_snapshot(print(summary(unanimous)))
