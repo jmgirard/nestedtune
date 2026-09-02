@@ -400,7 +400,10 @@
 #'
 #' **Refused: none.** No slot is refused on its own. What is refused at entry
 #' is a control of another class -- a `control_bayes()`, which tune itself
-#' would accept here -- and the `event_level` conflict above.
+#' would accept here -- and the `event_level` conflict above. The class is
+#' the contract: tune gives [tune::control_resamples()] and
+#' [tune::control_last_fit()] the `control_grid` class, so either is accepted
+#' as what `control_grid()` returns, its slots read under these headings.
 #'
 #' **Passed through: `verbose`, `pkgs`, `parallel_over`, `workflow_size`.**
 #' Each reaches `tune_grid()` as given. `verbose` prints from a serial run,
@@ -412,13 +415,17 @@
 #' candidates, and with it the seed each model fit starts from, so a
 #' stochastic engine's numbers differ between `"resamples"` and
 #' `"everything"`; left `NULL`, tune takes `"resamples"` when there is more
-#' than one inner resample. `workflow_size` speaks only when `save_workflow`
-#' is on, as tune's message about the size of the workflow being saved.
+#' than one inner resample. `workflow_size` is the size past which tune
+#' remarks on a workflow `save_workflow` keeps, so it speaks only beside that
+#' slot, and only where the run it lands on is kept.
 #'
 #' **Not returned: `extract`, `save_pred`, `save_workflow`.** Each lands on
-#' the inner `tune_results`, which a fold record discards once the fold
-#' succeeds: the fold keeps its metrics, its selection and the candidates it
-#' scored, not the run. Setting them costs the work and returns nothing.
+#' the inner `tune_results`. A fold record discards that run once the fold
+#' succeeds -- the fold keeps its metrics, its selection and the candidates it
+#' scored -- so on a nested run setting them costs the work and returns
+#' nothing. The final fit is the exception: [nested_final_fit()] re-runs the
+#' recorded control and keeps its tuning run as `$tuning`, where
+#' [extract_tune_results()] reaches what these saved.
 #'
 #' **Inert: `backend_options`.** Options for a parallel backend, with no
 #' backend to reach at `allow_par = FALSE`.

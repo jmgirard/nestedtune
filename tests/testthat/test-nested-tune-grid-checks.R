@@ -568,9 +568,7 @@ test_that("`control` must be what tune::control_grid() returns (M48, AC5)", {
   folds <- valid_folds(d)
 
   # A `control_bayes()` carries every slot `control_grid()` does and is still
-  # refused: the class is the contract, not the slot list. (`control_resamples()`
-  # is not in the list because tune 2.1.0 gives it the `control_grid` class,
-  # so it is what `control_grid()` returns.)
+  # refused: the class is the contract, not the slot list.
   bad <- list(
     tune::control_bayes(seed = 1L),
     list(allow_par = FALSE),
@@ -580,6 +578,15 @@ test_that("`control` must be what tune::control_grid() returns (M48, AC5)", {
   for (b in bad) {
     cnd <- grid_refusal(nested_tune_grid(wf, folds, control = b))
     expect_grid_refused(cnd, "nestedtune_bad_control", "control_grid")
+  }
+
+  # The other side of that contract: tune 2.1.0 gives `control_resamples()`
+  # and `control_last_fit()` the `control_grid` class, so each is what
+  # `control_grid()` returns and passes the fence -- the entry checks pass and
+  # fitting begins (M48 review round 1, finding 5).
+  for (ok in list(tune::control_resamples(), tune::control_last_fit())) {
+    cnd <- grid_refusal(nested_tune_grid(wf, folds, control = ok))
+    expect_s3_class(cnd, "nestedtune_sentinel")
   }
 })
 

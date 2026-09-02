@@ -151,7 +151,9 @@
 #'
 #' **Not returned: `extract`, `save_pred`, `save_workflow`.** As on
 #' [nested_tune_grid()]: each lands on the inner `tune_results` a fold record
-#' discards, so setting them costs the work and returns nothing.
+#' discards, so on a nested run setting them costs the work and returns
+#' nothing; the final fit keeps its tuning run as `$tuning`, where what they
+#' saved is reachable.
 #'
 #' **Inert: `backend_options`.** Options for a parallel backend, with no
 #' backend to reach at `allow_par = FALSE`.

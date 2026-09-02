@@ -231,7 +231,9 @@ stochastic engine produces even at \code{allow_par = FALSE}.
 
 \strong{Not returned: \code{extract}, \code{save_pred}, \code{save_workflow}.} As on
 \code{\link[=nested_tune_grid]{nested_tune_grid()}}: each lands on the inner \code{tune_results} a fold record
-discards, so setting them costs the work and returns nothing.
+discards, so on a nested run setting them costs the work and returns
+nothing; the final fit keeps its tuning run as \verb{$tuning}, where what they
+saved is reachable.
 
 \strong{Inert: \code{backend_options}.} Options for a parallel backend, with no
 backend to reach at \code{allow_par = FALSE}.

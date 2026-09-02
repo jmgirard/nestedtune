@@ -432,7 +432,10 @@ same reason: it changes a number the caller is shown.
 
 \strong{Refused: none.} No slot is refused on its own. What is refused at entry
 is a control of another class -- a \code{control_bayes()}, which tune itself
-would accept here -- and the \code{event_level} conflict above.
+would accept here -- and the \code{event_level} conflict above. The class is
+the contract: tune gives \code{\link[tune:control_resamples]{tune::control_resamples()}} and
+\code{\link[tune:control_last_fit]{tune::control_last_fit()}} the \code{control_grid} class, so either is accepted
+as what \code{control_grid()} returns, its slots read under these headings.
 
 \strong{Passed through: \code{verbose}, \code{pkgs}, \code{parallel_over}, \code{workflow_size}.}
 Each reaches \code{tune_grid()} as given. \code{verbose} prints from a serial run,
@@ -444,13 +447,17 @@ package's namespace in every worker. \code{parallel_over} is not inert at
 candidates, and with it the seed each model fit starts from, so a
 stochastic engine's numbers differ between \code{"resamples"} and
 \code{"everything"}; left \code{NULL}, tune takes \code{"resamples"} when there is more
-than one inner resample. \code{workflow_size} speaks only when \code{save_workflow}
-is on, as tune's message about the size of the workflow being saved.
+than one inner resample. \code{workflow_size} is the size past which tune
+remarks on a workflow \code{save_workflow} keeps, so it speaks only beside that
+slot, and only where the run it lands on is kept.
 
 \strong{Not returned: \code{extract}, \code{save_pred}, \code{save_workflow}.} Each lands on
-the inner \code{tune_results}, which a fold record discards once the fold
-succeeds: the fold keeps its metrics, its selection and the candidates it
-scored, not the run. Setting them costs the work and returns nothing.
+the inner \code{tune_results}. A fold record discards that run once the fold
+succeeds -- the fold keeps its metrics, its selection and the candidates it
+scored -- so on a nested run setting them costs the work and returns
+nothing. The final fit is the exception: \code{\link[=nested_final_fit]{nested_final_fit()}} re-runs the
+recorded control and keeps its tuning run as \verb{$tuning}, where
+\code{\link[=extract_tune_results]{extract_tune_results()}} reaches what these saved.
 
 \strong{Inert: \code{backend_options}.} Options for a parallel backend, with no
 backend to reach at \code{allow_par = FALSE}.
