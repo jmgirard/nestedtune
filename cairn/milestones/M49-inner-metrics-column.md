@@ -1,6 +1,6 @@
 # M49: Each outer fold keeps its inner search's metrics in place of `.grid`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -77,18 +77,18 @@ for that generic → not planned; a user control on the inner run → M48.
 - [x] T1: Tests first: extend the hand-run oracles (`test-nested-tune-grid-oracles.R` O3, `test-nested-tune-bayes-oracles.R`)
       to `.inner_metrics`; the tuned-then-failed, nothing-scored and partial-inner-split shapes in
       `test-nested-tune-grid-failures.R`; the zero-row prototype.
-- [ ] T2: Fold worker: `nested_fold_fit()` (`R/nested-tune-grid.R:643-652`) and `failed_fold()` (`:802-820`) record the
+- [x] T2: Fold worker: `nested_fold_fit()` (`R/nested-tune-grid.R:643-652`) and `failed_fold()` (`:802-820`) record the
       table; `new_nested_results()` (`R/nested-results.R:26-31`) writes `.inner_metrics`; `scored_candidates()`
       (`R/nested-tune-grid.R:669-736`) becomes the derivation of a candidate set from the table, `join_iteration()`
       retired where `collect_metrics()` already carries `.iter`.
-- [ ] T3: Readers: `print_candidate_sets()` and `candidate_key()` (`R/nested-results-print.R:329-393`) and summary's
+- [x] T3: Readers: `print_candidate_sets()` and `candidate_key()` (`R/nested-results-print.R:329-393`) and summary's
       candidate counts (`:230`) read the derived sets; the snapshot files stay byte-identical.
-- [ ] T4: The `.grid` sweep: roxygen on both orchestrators and the extract accessor page, the vignette
+- [x] T4: The `.grid` sweep: roxygen on both orchestrators and the extract accessor page, the vignette
       (`vignettes/nested-cv.Rmd:232-247` reads `.selected` only), the fold stand-ins in the payload and classify tests,
       the 21 test files the sweep listed; run the AC2 grep.
-- [ ] T5: Invariants: `record_columns()` (`R/nested-results.R:121-134`) and `has_results_columns()` (`:608-613`); the
+- [x] T5: Invariants: `record_columns()` (`R/nested-results.R:121-134`) and `has_results_columns()` (`:608-613`); the
       removal and mutation probes in `test-dplyr-compat.R` and `test-vctrs-compat.R` across the four doors.
-- [ ] T6: NEWS, DESIGN.md, D-043 (drafted at plan), verify slot.
+- [x] T6: NEWS, DESIGN.md, D-043 (drafted at plan), verify slot.
 
 ## Work log
 
@@ -99,6 +99,7 @@ for that generic → not planned; a user control on the inner run → M48.
 - 2026-09-02: gate: proceed without escalation on the ip-touching criteria (the hand-run `collect_metrics()` oracle is available); one candidate derivation over the metrics table, the final fit applying it to `collect_metrics()` of its tuning run. T1: `.inner_metrics` oracles on both hand-run loops, the outer-fit-failed, nothing-scored (both branches), partial-inner-split and Bayesian nothing-scored shapes; red on the missing column until T2.
 - 2026-09-02: T2–T5 code landed together (a fold worker writing `.inner_metrics` leaves the readers and invariants red until they read it): `inner_metrics()` records `collect_metrics()` or a workflow-built zero-row prototype, `candidate_set()` derives the candidate set from a table and serves the final fit through `scored_candidates()`, `join_iteration()` and the per-resample pooling retired; readers and invariants swapped; the `.grid` sweep ran and the AC2 grep is empty; T5 probes written; T6 NEWS and DESIGN drafted. Checkpoint while the full suite runs; checkboxes wait on the verify slot. AC5's change-through-`[`-and-`rbind()` clause found unconstructible (those doors self-template); amended wording out to a fresh [O] reader before the mini gate.
 - 2026-09-02: amendment (substantive, narrowing) — AC5 rewritten at a mini gate: the change-through-`[`-and-`rbind()` clause was unconstructible, those doors taking the object they act on as their own template. Two fresh [O] readings in full mode: the first returned four findings (probe forms and fold location, `vec_restore()` call form, the two doors' constructions split, a home for the self-template gap), the second two findings and an ambiguity (exact `[` subset, single-argument `rbind()`, a completed fold); all applied, the final text user-approved. Two hand-built-run tests (final-fit print counts, the bookkeeping wrapper) rewritten over a `fake_tuning()` stand-in whose `collect_metrics()` is a table given by hand.
+- 2026-09-02: T2–T6 checked off on the verify slot: `devtools::document()` no diff, `air format .` no diff, `devtools::test()` clean in full (an earlier full run failed the three daemon files whose hand-built fold records still carried `grid`, and `test-suite-hygiene.R` on the time-budget ledger's `test-parallel-classify.R` line numbers, which `fake_fold_record()`'s eight new lines had shifted — both fixed). AC2 grep matches nothing; the AC3 diff and snapshot diff are empty. Status → review.
 
 ## Decisions
 

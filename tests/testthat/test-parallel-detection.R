@@ -288,7 +288,7 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
       completed = TRUE,
       metrics = data.frame(.estimate = as.double(payload$seed)),
       selected = data.frame(seed = payload$seed),
-      grid = data.frame(.config = "pre0_mod1_post0"),
+      inner_metrics = data.frame(.config = "pre0_mod1_post0"),
       notes = data.frame(
         location = character(0),
         type = character(0),
