@@ -102,7 +102,7 @@ has passed.
       `expect_match(txt, "See .*\\$\\.notes")` assertion in
       `test-nested-results-print.R` with AC1's two assertions on both failed
       fixtures; re-record the two summary snapshots that carry the line.
-- [ ] T2: Signature `print.nested_results(x, ..., n = NULL, width = NULL)`;
+- [x] T2: Signature `print.nested_results(x, ..., n = NULL, width = NULL)`;
       `print_rows(x, n, width)` passes both to `print()` on the class-stripped
       rows. Roxygen `@param n` / `@param width` worded against `?print.tbl_df`
       as read, not recalled (M28 lesson). Build the more-than-twenty-fold
@@ -130,6 +130,7 @@ has passed.
 - 2026-09-01: plan gate chose scrubbing tibble's body from the four print snapshots (header and cli lines kept) over leaving them pinned, because the body is a dependency's rendering; falsified by a print regression the header line and the in-words assertions fail to catch.
 - 2026-09-01: plan gate chose rewording only the summary's advice line over one shared sentence at all four `.notes` sites, because the other three name the right object; falsified by a second site found wrong.
 - 2026-09-01: T1 done — advice line now reads ``See the `.notes` column of the results object for what went wrong.``; the print-side control assertion moved from `\$\.notes` (which the tibble body could never match anyway) to `what went wrong`; AC1's two assertions plus a block-position check on both failed fixtures; two summary snapshots re-recorded, diff read: the one line each.
+- 2026-09-01: T2 done — `print.nested_results(x, ..., n = NULL, width = NULL)`, both handed to `print_rows()`; `@param` text derived from tibble's `?print.tbl_df` as read at tibble 3.3.x; AC2 and AC3 tests added, the AC3 probes as real `print(res, …)` calls; registry probe passes with no new exemption. Minor amendment: the >20-fold fixture is `repeated_results(v = 3, repeats = 7)` (21 folds through the constructor over stand-in records), not an `rbind()` stack — measured: `rbind()` of seven copies returns a bare tibble, because `can_reconstruct_results()` refuses a row count differing from the template's (M36), which D-032's class-keeping does not override.
 
 ## Decisions
 

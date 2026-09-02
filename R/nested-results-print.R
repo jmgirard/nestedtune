@@ -33,7 +33,16 @@
 #'
 #' @param x A `nested_results` object from [nested_tune_grid()].
 #' @param ... Not used; must be empty. An argument passed here is an error
-#'   rather than silently ignored.
+#'   rather than silently ignored, so `n` and `width` must be spelled out in
+#'   full.
+#' @param n Number of rows to show, passed to the tibble printing of the outer
+#'   folds. `NULL`, the default, leaves it to tibble: every row when there are
+#'   fewer than the `print_max` option allows, and otherwise the `print_min`
+#'   option's count with a footer saying how many more there are. `Inf` shows
+#'   every fold.
+#' @param width Width of text output to generate for the rows, passed to the
+#'   tibble printing. `NULL`, the default, uses the `width` option. Columns that
+#'   do not fit are listed in the footer under their names.
 #'
 #' @return `x`, invisibly.
 #'
@@ -62,14 +71,18 @@
 #' @seealso [summary.nested_results()], [nested_tune_grid()],
 #'   [collect_metrics()]
 #' @export
-print.nested_results <- function(x, ...) {
+print.nested_results <- function(x, ..., n = NULL, width = NULL) {
+  # `n` and `width` sit after the fence, as tibble's own print method places
+  # them, so they match by full name only and a partial spelling lands in `...`
+  # and is refused rather than silently ignored (GP3). The two are the whole
+  # pass-through: any other tibble print option is not reachable from here.
   rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
   label <- attr(x, "outer_label")
   if (!is.null(label)) {
     cli::cli_text("Outer resamples: {label}")
   }
-  print_rows(x)
+  print_rows(x, n = n, width = width)
   print_failure_count(x)
   print_candidate_sets(x$.grid[x$.completed])
   cli::cli_bullets(c(
@@ -87,10 +100,10 @@ print.nested_results <- function(x, ...) {
 # straight to the console so the whole method writes to one stream -- cli
 # redirects to stderr whenever a sink is active on stdout, and a method that
 # wrote to both would come apart under capture.
-print_rows <- function(x) {
+print_rows <- function(x, n = NULL, width = NULL) {
   rows <- x
   class(rows) <- setdiff(class(rows), "nested_results")
-  cli::cli_verbatim(utils::capture.output(print(rows)))
+  cli::cli_verbatim(utils::capture.output(print(rows, n = n, width = width)))
   invisible(NULL)
 }
 

@@ -4,13 +4,24 @@
 \alias{print.nested_results}
 \title{Print a nested cross-validation result}
 \usage{
-\method{print}{nested_results}(x, ...)
+\method{print}{nested_results}(x, ..., n = NULL, width = NULL)
 }
 \arguments{
 \item{x}{A \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}}.}
 
 \item{...}{Not used; must be empty. An argument passed here is an error
-rather than silently ignored.}
+rather than silently ignored, so \code{n} and \code{width} must be spelled out in
+full.}
+
+\item{n}{Number of rows to show, passed to the tibble printing of the outer
+folds. \code{NULL}, the default, leaves it to tibble: every row when there are
+fewer than the \code{print_max} option allows, and otherwise the \code{print_min}
+option's count with a footer saying how many more there are. \code{Inf} shows
+every fold.}
+
+\item{width}{Width of text output to generate for the rows, passed to the
+tibble printing. \code{NULL}, the default, uses the \code{width} option. Columns that
+do not fit are listed in the footer under their names.}
 }
 \value{
 \code{x}, invisibly.

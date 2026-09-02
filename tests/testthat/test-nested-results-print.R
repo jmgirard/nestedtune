@@ -176,6 +176,116 @@ test_that("print returns its input invisibly and is registered for S3 dispatch",
   expect_s3_class(res, "nested_results")
 })
 
+# The rendered text of `print(x, ...)`, at a console width of the test's
+# choosing. Distinct from print_text() because the tibble `width` argument and
+# the console width are two different things and the M43 tests need both.
+print_text_at <- function(x, console, ...) {
+  op <- options(width = console, cli.width = console)
+  on.exit(options(op), add = TRUE)
+  paste(cli::cli_fmt(print(x, ...)), collapse = "\n")
+}
+
+# The tibble body's row lines: a row number, then the first cell.
+count_row_lines <- function(txt) {
+  sum(grepl("^\\s*[0-9]+ <split", strsplit(txt, "\n")[[1L]]))
+}
+
+# How many columns the `# i <k> more variables` footer lists, or 0 without one.
+footer_variables <- function(txt) {
+  m <- regmatches(txt, regexpr("# i [0-9]+ more variable", txt))
+  if (length(m) == 0L) {
+    return(0L)
+  }
+  as.integer(regmatches(m, regexpr("[0-9]+", m)))
+}
+
+test_that("print() takes `n` and hands it to the row rendering", {
+  skip_if_no_engines()
+
+  # More folds than tibble shows by default: a 3-fold design repeated seven
+  # times, through the constructor over stand-in records. Stacking the
+  # three-fold fixture with rbind() cannot reach this shape -- the stamp rule
+  # refuses a row count that differs from the run's, and hands back a bare
+  # tibble (M36).
+  wide <- repeated_results(v = 3, repeats = 7)
+  expect_s3_class(wide, "nested_results")
+  expect_identical(nrow(wide), 21L)
+
+  txt <- print_text(wide)
+  expect_identical(count_row_lines(txt), 10L)
+  expect_match(txt, "# i 11 more rows", fixed = TRUE)
+
+  txt_all <- print_text_at(wide, 200, n = Inf)
+  expect_identical(count_row_lines(txt_all), 21L)
+  expect_no_match(txt_all, "more row")
+
+  # And on the three-fold fixture, `n` below the row count truncates.
+  d <- make_reg_data()
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+  txt_two <- print_text_at(res, 200, n = 2)
+  expect_identical(count_row_lines(txt_two), 2L)
+  expect_match(txt_two, "# i 1 more row", fixed = TRUE)
+})
+
+test_that("print() takes `width` and hands it to the row rendering", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+
+  # Both rendered at a console width of 80, so the only difference between the
+  # two is the argument: the narrower rendering pushes more columns into the
+  # footer that lists what did not fit.
+  default_txt <- print_text_at(res, 80)
+  narrow_txt <- print_text_at(res, 80, width = 40)
+  expect_gt(footer_variables(default_txt), 0L)
+  expect_gt(footer_variables(narrow_txt), footer_variables(default_txt))
+})
+
+test_that("print() still fences `...`, so a partial spelling is refused", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+
+  set.seed(2)
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
+
+  # Written as the real calls a user would make -- `print(res, ...)` through
+  # dispatch -- rather than by calling the method directly (M42 lesson). The
+  # third is the case the fence exists for: `w` is a prefix of `width`, and
+  # because `width` sits after `...` it does not partially match and lands in
+  # the dots instead of being taken as `width`.
+  probes <- list(
+    quote(print(res, foo = 1)),
+    quote(print(res, n = 2, foo = 1)),
+    quote(print(res, w = 40))
+  )
+  for (probe in probes) {
+    cnd <- rlang::catch_cnd(eval(probe))
+    expect_s3_class(cnd, "rlib_error_dots_nonempty")
+    expect_identical(rlang::call_name(conditionCall(cnd)), "print")
+  }
+
+  # The passing control: the full spellings are accepted by the same path.
+  expect_no_error(print_text_at(res, 200, n = 2, width = 40))
+})
+
 test_that("a subset missing the per-fold record prints as a plain tibble", {
   skip_if_no_engines()
   d <- make_reg_data()
