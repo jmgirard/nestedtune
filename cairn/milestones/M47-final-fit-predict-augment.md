@@ -88,7 +88,7 @@ fold failed — stays on its own candidate row.
 
 ## Tasks
 
-- [ ] T1: Tests first, `tests/testthat/test-nested-final-fit-predict.R`: a final fit on each fixture
+- [x] T1: Tests first, `tests/testthat/test-nested-final-fit-predict.R`: a final fit on each fixture
       (regression via `det_workflow()`/`final_results()`, classification as
       `test-event-level.R:236-262` builds one, censored as `test-eval-time.R:480-500` builds one, each
       `memoised()`), the identity assertions of AC1 and AC2, the three argument cases of AC3, the
@@ -116,6 +116,8 @@ fold failed — stays on its own candidate row.
 - 2026-09-02: plan gate chose shipping `augment()` with the IP3 caveat on its help page over shipping `predict()` alone or escalating to a review brief, because a per-row residual is not a performance number and the documentation obligation IP3 carries is met by the caveat; falsified by a user reading `.resid` on the training rows as the model's estimate despite the page.
 - 2026-09-02: plan gate chose switching README and vignette to the direct call over leaving `extract_workflow()` examples, because the direct call is the one obvious path (GP3); no evidence class named — a presentation choice.
 - 2026-09-02: plan gate chose absorbing the M05 candidate row with no new D-entry over annotating D-014, because its "not shipped in M05" clause was a deferral; falsified by a later reading of that clause as a rejection, which would then take a superseding entry.
+
+- 2026-09-02: T1 — `tests/testthat/test-nested-final-fit-predict.R` written on the three fixtures; red on the branch as expected (`predict` falls to no-applicable-method, `augment` not found), 6 fixtures built.
 
 ## Decisions
 
