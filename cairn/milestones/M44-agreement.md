@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, IP4, GP3
-- **Branch/PR:** m044-agreement
+- **Branch/PR:** m044-agreement · https://github.com/tidymodels/nestedtune/pull/53
 
 ## Goal
 
@@ -47,21 +47,21 @@ is missing is the table.
 
 ## Acceptance criteria
 
-- [ ] AC1: `agreement()` is an exported S3 generic with a `nested_results`
+- [x] AC1: `agreement()` is an exported S3 generic with a `nested_results`
       method and a default method; calling `agreement()` on a `tune_results`,
       a data frame and a list each signals an error of class
       `nestedtune_no_agreement_method` whose message describes the object in
       the form `abort_no_extract_method()` uses and names `nested_results` as
       the class that answers; `agreement(res, foo = 1)` signals
       `rlib_error_dots_nonempty`.
-- [ ] AC2: On the three-fold `det_nested(d)` fixture (`num_comp` 3, 3, 3)
+- [x] AC2: On the three-fold `det_nested(d)` fixture (`num_comp` 3, 3, 3)
       `agreement(res)` returns a tibble with columns `num_comp`, `n`, `prop`
       and no `.config`, holding one row, `n = 3L`, `prop = 1`; on the four-fold
       `split` fixture (`num_comp` 4, 4, 4, 3) two rows in this order:
       `num_comp = 4` with `n = 3L`, `prop = 0.75`, then `num_comp = 3` with
       `n = 1L`, `prop = 0.25`; on each, `sum(n)` equals the completed fold
       count.
-- [ ] AC3: Identity is the whole tuple, and ordering follows the rows: on the
+- [x] AC3: Identity is the whole tuple, and ordering follows the rows: on the
       three-fold fixture with a second parameter column added to every
       selection in the test so that folds 1 and 3 carry the same pair and fold
       2 differs only in the second parameter, two rows: the shared pair with
@@ -70,12 +70,12 @@ is missing is the table.
       rows with `n = 1L` each in the object's row order (fold 2's first); and
       on the three-fold fixture with two folds' `.config` labels edited to
       differ, still one row with `n = 3L`.
-- [ ] AC4: On the partial-parameter fixture (one completed fold's selection
+- [x] AC4: On the partial-parameter fixture (one completed fold's selection
       carries only `.config`), that fold forms its own row with `num_comp` `NA`
       and `n = 1L`, separate from the folds that chose a value; on the
       NA-selected fixture, the fold that selected `NA` counts as one row with
       `num_comp` `NA`; on each, `sum(n)` equals the completed fold count.
-- [ ] AC5: On the one-fold-failed fixture `agreement()` signals a condition of
+- [x] AC5: On the one-fold-failed fixture `agreement()` signals a condition of
       class `nestedtune_partial_summary` whose message says the table covers 2
       of 3 outer folds and whose call is the `agreement()` call, and returns
       rows whose `n` sum to `2L` with `prop` over 2; on the every-fold-failed
@@ -84,7 +84,7 @@ is missing is the table.
       completed fold's selection carries only `.config` it returns a zero-row
       tibble with columns `n` and `prop` and signals no condition of class
       `nestedtune_partial_summary`.
-- [ ] AC6: `man/agreement.Rd`, as `devtools::document()` regenerates it,
+- [x] AC6: `man/agreement.Rd`, as `devtools::document()` regenerates it,
       carries a `\value` section naming the `n` and `prop` columns and the
       ordering, a sentence stating that the most frequent combination is not
       the final model's parameters and naming `nested_final_fit()`, and an
@@ -147,7 +147,17 @@ is missing is the table.
 - 2026-09-01: T2 done — AC3–AC5 tests; `warn_partial_summary()` gained `noun = "summary"`, `check_any_completed()` is called with `action = "tabulate"`. One subtlety found: `rbind()` of two row-subsets sheds the class (the vctrs template rule), so the reordered fixture is built by the single subset `paired[c(2, 1, 3), ]` the criterion names. No missing-parameter subtlety beyond the planned `NA` row.
 - 2026-09-01: T3 done — roxygen (claims checked against the example's output: two rows, `num_comp` 1 then 2, `n` 2 and 1, `prop` 0.667 and 0.333), `_pkgdown.yml` row, NEWS entry, DESIGN Function Families line; D-039 was written at planning.
 - 2026-09-01: T4 done — `air format .` and `devtools::document()` leave no diff, `devtools::check()` 0 errors, 0 warnings, 0 notes, `pkgdown::check_pkgdown()` no problems. Status → review.
+- 2026-09-01: review opened on PR #53; AC1–AC6 verified by command (checkpoint, AC7's full check and suite and the three reviewers still running).
 
 ## Decisions
 
 ## Review
+
+Review opened 2026-09-01 on PR #53. Default branch unmoved since the branch was cut (`origin/main` = merge base `fc022a8`). Evidence per criterion, each by command this session:
+
+- AC1 — pass. `tests/testthat/test-nested-results-agreement.R` first block (19 expectations, 0 failed): a `tune_results`, a data frame and a list each raise class `nestedtune_no_agreement_method`, message contains "has no method for" and "nested_results", the call's head is `agreement`; the object description "a <tune_results> object" matches `extract_tune_results()`'s refusal verbatim; `agreement(res, foo = 1)` raises `rlib_error_dots_nonempty`. NAMESPACE exports `agreement` and registers the `default` and `nested_results` methods.
+- AC2 — pass. Blocks 2–3 (8 and 6 expectations, 0 failed): three-fold fixture pinned at `num_comp` 3, 3, 3 gives columns `num_comp`, `n`, `prop`, one row, `n = 3L`, `prop = 1`; the four-fold `split` fixture pinned at 4, 4, 4, 3 gives `num_comp` 4 then 3, `n` 3L then 1L, `prop` 0.75 then 0.25; `sum(n)` equals `sum(.completed)` on each.
+- AC3 — pass. Blocks 4–5 (10 and 3 expectations, 0 failed): the paired object gives two rows, the shared pair `n = 2L` first then fold 2's `n = 1L`; `paired[c(2, 1, 3), ]` with fold 3's pair changed gives three rows `n = 1L` each in row order (fold 2's `mixture = 0.1` first); the `.config`-relabelled object still gives one row `n = 3L` and no `.config` column.
+- AC4 — pass. Blocks 6–7 (4 and 3 expectations, 0 failed): the `.config`-only fold forms its own row with `num_comp` `NA` and `n = 1L` beside the `n = 2L` row; the `NA`-selected fold likewise; `sum(n)` equals the completed count on each.
+- AC5 — pass. Blocks 8–10 (6, 5 and 4 expectations, 0 failed): one-fold-failed run raises class `nestedtune_partial_summary` with message "This table covers 2 of 3 outer folds" and call head `agreement`, returning `sum(n) = 2L` and `prop = n / 2`; the every-fold-failed run's error has the identical class vector to `collect_metrics()`'s and says "no outer fold completed" and "nothing to tabulate"; the all-`.config` object returns a zero-row tibble with columns `n`, `prop` and raises no `nestedtune_partial_summary`. File total: 10 tests, 68 expectations, 0 failed, 0 skipped.
+- AC6 — pass. `devtools::document()` then `git status`: no diff outside the milestone file. `man/agreement.Rd` `\value` names `n`, `prop` and "ordered by `n` decreasing, ties in the order the combination first appears" (lines 15–19); line 40 states the most frequent combination is not the final model's parameters and line 42 names `nested_final_fit()`; the example is wrapped in `\dontshow{if (rlang::is_installed(c("recipes", "yardstick")))` (line 46), builds `res` by `nested_tune_grid()` (line 64) and calls `agreement(res)` (line 66). `_pkgdown.yml` lists `agreement` under "Running the loop" (line 39). `NEWS.md` line 3 carries the one `agreement()` entry, stating it reports how often each candidate was selected across the outer folds. `git diff origin/main..HEAD -- DESCRIPTION` is empty.
