@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** IP3, GP1
 - **Resolves:** —
-- **Branch/PR:** m047-final-fit-predict-augment
+- **Branch/PR:** m047-final-fit-predict-augment · https://github.com/tidymodels/nestedtune/pull/56
 
 ## Goal
 
@@ -39,7 +39,7 @@ fold failed — stays on its own candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1: `predict(final, new_data, ...)` returns a result `identical()` to
+- [x] AC1: `predict(final, new_data, ...)` returns a result `identical()` to
       `predict(extract_workflow(final), new_data, ...)` under each argument set the test names, asserted
       by `tests/testthat/test-nested-final-fit-predict.R` on the suite's three fixture modes: the
       regression fixture at the default type and at `type = "conf_int", level = 0.9`; the
@@ -47,11 +47,11 @@ fold failed — stays on its own candidate row.
       `skip_if_no_engines(stochastic = TRUE)` as `test-event-level.R` gates its final fit; the
       censored-regression fixture at `type = "survival"` with `eval_time`, gated by
       `skip_if_no_censored()` as `test-eval-time.R` gates its final fit.
-- [ ] AC2: `augment(final, new_data, eval_time)` returns a result `identical()` to
+- [x] AC2: `augment(final, new_data, eval_time)` returns a result `identical()` to
       `augment(extract_workflow(final), new_data, eval_time)` on the same three fixtures under the
       method's own formals (`new_data`, and `eval_time` on the censored fixture), asserted in the same
       file.
-- [ ] AC3: Argument handling, asserted in the same file. `predict(final, new_data, nonesuch = 1)`
+- [x] AC3: Argument handling, asserted in the same file. `predict(final, new_data, nonesuch = 1)`
       raises the same error, by message, that `predict(extract_workflow(final), new_data, nonesuch
       = 1)` raises — parsnip's `check_pred_type_dots()` refusal, identified by its wording ("not used
       to pass args to the model function's predict function"; parsnip 1.6.0 prints the literal
@@ -60,19 +60,19 @@ fold failed — stays on its own candidate row.
       `predict(extract_workflow(final))` with no `new_data` (R's missing-argument error in both, the
       workflow forcing `new_data` before use), so the method adds no error of its own; `augment(final,
       new_data, nonesuch = 1)` raises `rlib_error_dots_nonempty`.
-- [ ] AC4: The help page documenting both methods states that augmenting the rows the model was
+- [x] AC4: The help page documenting both methods states that augmenting the rows the model was
       trained on yields in-sample residuals that are not this model's performance, that the number to
       report is `collect_metrics()` on the results object the fit was built from, and that
       `augment()` refuses extra arguments where workflows' method ignores them; and `augment` is
       re-exported, so `nestedtune::augment(final, new_data)` works with `tune` not attached, asserted
       by a test in the same file.
-- [ ] AC5: `_pkgdown.yml`'s "The final model" section lists the new help topic and the re-exports page
+- [x] AC5: `_pkgdown.yml`'s "The final model" section lists the new help topic and the re-exports page
       lists `augment`; NEWS.md carries an entry for the two methods; `README.Rmd` and
       `vignettes/nested-cv.Rmd` call `predict(final, ...)` where they call
       `predict(extract_workflow(final), ...)` today (`README.Rmd:121`, `vignettes/nested-cv.Rmd:328`),
       the vignette sentence at `:324-326` reworded to say the object predicts directly and still naming
       `extract_workflow()` as the way to the workflow itself; `README.md` regenerated from `README.Rmd`.
-- [ ] AC6: The refusals stand: `tune::collect_metrics()`, `tune::show_best()` and `tune::select_best()`
+- [x] AC6: The refusals stand: `tune::collect_metrics()`, `tune::show_best()` and `tune::select_best()`
       on a `nested_final_fit` each still raise the refusal tune's own default method raises, asserted
       by a test in the same file, each message matching tune's default wording (`No .* exists for`,
       tune 2.1.0) rather than R's "no applicable method", which is how D-010's and D-014's
@@ -134,3 +134,15 @@ fold failed — stays on its own candidate row.
 ## Decisions
 
 ## Review
+
+Review opened 2026-09-02 on the branch tip 7958754 (no default-branch movement since the cut: `git log HEAD..origin/main` empty). Draft PR #56.
+
+**Acceptance criteria (fresh evidence, 2026-09-02):**
+
+- AC1 — `devtools::test(filter = "nested-final-fit-predict")`: the three AC1 blocks pass with no skip (35 expectations in the file, all dots under the summary reporter), so the classification and censored fixtures ran rather than skipped; each block asserts `identical()` against `predict(extract_workflow(final), ...)` under the named argument sets (default and `conf_int`/`level = 0.9`; `class` and `prob`; `survival` with `eval_time`), each with a control showing the argument reached the model. PASS.
+- AC2 — same run: the three AC2 blocks pass, `identical()` against `augment(extract_workflow(final), ...)` on the same fixtures, `eval_time` on the censored one with its control. PASS.
+- AC3 — same run: `nonesuch = 1` on `predict()` yields an error matching parsnip's "not used to pass args to the model function's predict function" wording, message identical to the workflow's own; `predict(final)` with no `new_data` raises a message identical to `predict(extract_workflow(final))`'s and naming `new_data`; `augment(final, d, nonesuch = 1)` raises `rlib_error_dots_nonempty` with `augment` as the call. PASS.
+- AC4 — `man/predict.nested_final_fit.Rd` carries the section "Residuals on the training rows are not performance" stating in-sample residuals are not this model's performance and that `collect_metrics()` on the results object is the number to report, and the `...` entry stating `augment()` refuses what workflows' method lets vanish; the AC4 test block passes with `package:tune` absent from `search()` and `augment` in `getNamespaceExports("nestedtune")`. PASS.
+- AC5 — `_pkgdown.yml` "The final model" lists `predict.nested_final_fit`; `man/reexports.Rd` lists `augment` under tune; NEWS.md's first entry names both methods; `README.Rmd:121` and `README.md:119` read `predict(final, new_data = mtcars[1:3, ])`; `vignettes/nested-cv.Rmd:324-326` says the object predicts directly and names `extract_workflow()` for the workflow itself, `:329` calls `predict(final, ...)`; `pkgdown::check_pkgdown()` no problems; no milestone id in user-facing text. PASS.
+- AC6 — same run: the AC6 block passes, each of `collect_metrics()`, `show_best()`, `select_best()` raising a message matching `No <generic>() exists for`, and the registry read shows none of the three registered on `nested_final_fit` while `extract_workflow` is. PASS.
+- README sync: `devtools::build_readme()` on the branch tip leaves `README.md` unchanged (git diff empty). `devtools::document()` no diff. `cairn_validate.py` exit 0, all checks pass, 18 references-staleness advisories only. No DESIGN principle text changed (no IP/GP-numbered line in the DESIGN diff), so `cairn_impact` is skipped.
