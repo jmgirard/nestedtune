@@ -810,8 +810,14 @@ check_any_completed <- function(
 
 # A partial run is still summarized -- expensive compute is not thrown away --
 # but never quietly. The count in `n` says how many folds contributed; this
-# says which ones did not, and that the design asked for more.
-warn_partial_summary <- function(x, call = rlang::caller_env()) {
+# says which ones did not, and that the design asked for more. `noun` names
+# what the caller is handing back -- a summary, or agreement()'s table -- so
+# every partial-run warning has one shape and one class.
+warn_partial_summary <- function(
+  x,
+  noun = "summary",
+  call = rlang::caller_env()
+) {
   failed <- fold_ids(x)[!x$.completed]
   if (length(failed) == 0L) {
     return(invisible(x))
@@ -819,7 +825,7 @@ warn_partial_summary <- function(x, call = rlang::caller_env()) {
   n <- nrow(x)
   cli::cli_warn(
     c(
-      "!" = "This summary covers {sum(x$.completed)} of {n} outer fold{?s}.",
+      "!" = "This {noun} covers {sum(x$.completed)} of {n} outer fold{?s}.",
       x = "Failed: {.val {failed}}.",
       i = "It describes the folds that ran, not the design that was requested."
     ),

@@ -142,6 +142,7 @@ is missing is the table.
 - 2026-09-01: plan gate chose zero rows for a run with nothing tuned over one row for the empty tuple, because it matches `summary()`'s "No tuned parameters" and claims no candidate exists; falsified by a caller needing `sum(n)` to hold on such a run.
 - 2026-09-01: plan gate chose aborting on an all-failed run, through `check_any_completed()`, over warning and returning an empty table, because `collect_metrics()`, `summary()` and `autoplot()` already refuse there (IP4); falsified by a caller who needs an empty table to loop over.
 - 2026-09-01: the gate declined a long-form `tidy()` method; no candidate row, at the user's choice.
+- 2026-09-01: checkpoint, half-done: `R/nested-results-agreement.R`, its 68-expectation test file (AC1–AC5 all asserted and passing on the file alone), `warn_partial_summary(noun)`, the pkgdown row, NEWS entry and DESIGN line are written; T1–T3 stay unticked until the full `devtools::test()` run finishes clean.
 
 ## Decisions
 
