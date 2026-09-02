@@ -26,7 +26,9 @@ print(x, ..., n = NULL, width = NULL)
 - x:
 
   A `nested_results` object from
-  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md).
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  or
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md).
 
 - ...:
 

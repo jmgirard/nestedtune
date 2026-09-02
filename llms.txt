@@ -150,6 +150,9 @@ the outer split — and keep what each fold chose.
 
 - [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   : Run the nested cross-validation loop
+- [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+  : Run the nested cross-validation loop with Bayesian optimization
+  inside
 - [`collect_metrics(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/collect_metrics.nested_results.md)
   : Collect the metrics from a nested resampling run
 - [`print(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_results.md)

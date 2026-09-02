@@ -159,6 +159,17 @@ a zero-row table, never `NULL`.
 than `NULL` when none was supplied. `.grid` is a column, so it travels
 with the fold it describes.
 
+`attr(x, "procedure")` records what ran, on the result of either
+orchestrator: a named list giving the tuner (`"tune_grid"` here,
+`"tune_bayes"` from
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)),
+that tuner's own arguments (`grid` here; `iter`, `initial` and
+`objective` there), and `param_info`, `event_level` and `eval_time` on
+both. A Bayesian result carries the `procedure` attribute and no `grid`
+attribute, and its `.grid` tables carry an `.iter` column;
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+documents both.
+
 **What an operation on the object may and may not do.** The result
 carries the invariants `tune` declares on its own results objects:
 
@@ -228,6 +239,12 @@ can deploy, and no final model is returned here: build that with
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
 which runs the same procedure again with the whole dataset in hand. The
 estimate from this function is what you report for it.
+
+For a Bayesian inner loop –
+[`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
+proposing candidates one at a time – see
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
+which runs this same outer loop with the inner tuner swapped.
 
 ## Reproducibility
 
@@ -482,6 +499,7 @@ where the run is serial.
 
 ## See also
 
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
 [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md),
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md),
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
