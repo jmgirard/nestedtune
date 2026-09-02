@@ -135,14 +135,15 @@ res
 #> ── Nested cross-validation results ────────────────────────────────────
 #> Outer resamples: 5-fold cross-validation
 #> # A tibble: 5 × 9
-#>   splits         id    .metrics .selected .grid    .notes   .completed
-#>   <list>         <chr> <list>   <list>    <list>   <list>   <lgl>     
-#> 1 <split [25/7]> Fold1 <tibble> <tibble>  <tibble> <tibble> TRUE      
-#> 2 <split [25/7]> Fold2 <tibble> <tibble>  <tibble> <tibble> TRUE      
-#> 3 <split [26/6]> Fold3 <tibble> <tibble>  <tibble> <tibble> TRUE      
-#> 4 <split [26/6]> Fold4 <tibble> <tibble>  <tibble> <tibble> TRUE      
-#> 5 <split [26/6]> Fold5 <tibble> <tibble>  <tibble> <tibble> TRUE      
-#> # ℹ 2 more variables: .tuning_seed <int>, .outer_fit_seed <int>
+#>   splits         id    .metrics .selected .inner_metrics    .notes  
+#>   <list>         <chr> <list>   <list>    <list>            <list>  
+#> 1 <split [25/7]> Fold1 <tibble> <tibble>  <tibble [12 × 8]> <tibble>
+#> 2 <split [25/7]> Fold2 <tibble> <tibble>  <tibble [12 × 8]> <tibble>
+#> 3 <split [26/6]> Fold3 <tibble> <tibble>  <tibble [12 × 8]> <tibble>
+#> 4 <split [26/6]> Fold4 <tibble> <tibble>  <tibble [12 × 8]> <tibble>
+#> 5 <split [26/6]> Fold5 <tibble> <tibble>  <tibble [12 × 8]> <tibble>
+#> # ℹ 3 more variables: .completed <lgl>, .tuning_seed <int>,
+#> #   .outer_fit_seed <int>
 #> ℹ Use `summary()` for what the run means: which folds failed, what
 #>   each one selected, and the estimate across them.
 ```

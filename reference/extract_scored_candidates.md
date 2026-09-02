@@ -2,13 +2,15 @@
 
 Returns the candidate parameter settings that
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)'s
-tuning run actually evaluated — the full-data counterpart of the `.grid`
-column
+tuning run actually evaluated — the full-data counterpart of the
+candidate set each outer fold's `.inner_metrics` table describes on a
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-and
+or
 [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
-record for each outer fold, derived the same way, so a Bayesian final
-fit's table carries the `.iter` column that path's `.grid` does.
+result, derived the same way from the run's
+[`tune::collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+table, so a Bayesian final fit's table carries the `.iter` column that
+path's tables do.
 
 ## Usage
 
@@ -31,15 +33,23 @@ extract_scored_candidates(x, ...)
 ## Value
 
 A tibble with one row per candidate scored, carrying one column per
-tuned parameter plus tune's `.config` label for the candidate. It is the
-same shape as one element of
-[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)'s
-`.grid` column, so the two can be compared directly.
+tuned parameter plus tune's `.config` label for the candidate, and
+`.iter` on a Bayesian fit. It is the distinct parameter rows of the
+run's
+[`tune::collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+table with those labels — the same shape one element of a result's
+`.inner_metrics` column reduces to when its metric columns are dropped —
+so the two can be compared directly. Everything tune wrote per metric is
+dropped: `.metric`, `.estimator`, `mean`, `n`, `std_err`, and on a fit
+that scored a dynamic survival metric the `.eval_time` column, so a
+candidate has one row here however many evaluation times it was scored
+at. The times and the scores are in
+`collect_metrics(extract_tune_results(x))`.
 
 This is what was **scored**, not what was **asked for**. A `grid` given
 as a size is expanded by tune and may reach fewer candidates than the
 number requested; a candidate that failed everywhere scored nothing. See
-the `.grid` discussion in
+the `.inner_metrics` discussion in
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 for the full account of how the two records diverge, which holds here
 too — this record is derived the same way.

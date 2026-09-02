@@ -176,13 +176,13 @@ columns
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
 documents. Two things differ from a grid run.
 
-Each fold's `.grid` – the candidates its inner search actually scored –
-carries an `.iter` column beside the parameter columns and `.config`:
-`0` for the initial candidates and `i` for the candidate the `i`-th
-iteration proposed. Every candidate that scored on at least one inner
-resample is a row, so a fold that stopped early holds the rows it
-reached. As on the grid path, a candidate that failed on every inner
-resample is absent, and its failure is in `.notes`.
+Each fold's `.inner_metrics` – its inner search's own metrics – carries
+an `.iter` column after `.config`: `0` for the initial candidates and
+`i` for the candidate the `i`-th iteration proposed, so the search's
+trajectory can be drawn from it. Every candidate that scored on at least
+one inner resample has its rows, so a fold that stopped early holds the
+iterations it reached. As on the grid path, a candidate that failed on
+every inner resample is absent, and its failure is in `.notes`.
 
 There is no `grid` attribute: `attr(x, "grid")` is `NULL`, because
 nothing was asked for as a grid. What was asked for is on the
@@ -283,15 +283,15 @@ itself would accept here – and the `event_level` conflict above.
 `verbose_iter`, `save_gp_scoring`, `pkgs`, `parallel_over`,
 `workflow_size`.** Each reaches `tune_bayes()` as given. `no_improve`
 and `uncertain` govern each fold's search as they would a direct call,
-so a fold may stop short of `iter`, and its `.grid` records how far it
-went. `time_limit` is a wall-clock stop, and a wall-clock stop makes the
-candidate set depend on the machine: two runs under the same seed can
-stop at different iterations, which is outside what the seed contract
-above can promise. `verbose` and `verbose_iter` print from a serial run,
-and from a mirai daemon where nothing shows it. `save_gp_scoring` writes
-its files to the temporary directory of the process that tuned, a
-daemon's own on the parallel path. `pkgs`, `parallel_over` and
-`workflow_size` behave as on
+so a fold may stop short of `iter`, and its `.inner_metrics` records how
+far it went. `time_limit` is a wall-clock stop, and a wall-clock stop
+makes the candidate set depend on the machine: two runs under the same
+seed can stop at different iterations, which is outside what the seed
+contract above can promise. `verbose` and `verbose_iter` print from a
+serial run, and from a mirai daemon where nothing shows it.
+`save_gp_scoring` writes its files to the temporary directory of the
+process that tuned, a daemon's own on the parallel path. `pkgs`,
+`parallel_over` and `workflow_size` behave as on
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 `parallel_over` included: it changes the numbers a stochastic engine
 produces even at `allow_par = FALSE`.
@@ -343,17 +343,23 @@ if (rlang::is_installed(c("recipes", "yardstick"))) {
   res <- nested_tune_bayes(wf, folds, iter = 2, initial = 3)
   collect_metrics(res)
 
-  # What each fold searched: the initial candidates at `.iter` 0, then one
-  # proposal per iteration.
-  res$.grid[[1]]
+  # What each fold searched and how each candidate scored: the initial
+  # candidates at `.iter` 0, then one proposal per iteration.
+  res$.inner_metrics[[1]]
 }
-#> # A tibble: 5 × 4
-#>   deg_free num_comp .config         .iter
-#>      <int>    <int> <chr>           <int>
-#> 1        1        4 pre1_mod0_post0     0
-#> 2        8        1 pre2_mod0_post0     0
-#> 3       15        2 pre3_mod0_post0     0
-#> 4        1        3 iter1               1
-#> 5        1        1 iter2               2
+#> # A tibble: 10 × 9
+#>    deg_free num_comp .metric .estimator  mean     n std_err .config    
+#>       <int>    <int> <chr>   <chr>      <dbl> <int>   <dbl> <chr>      
+#>  1        1        4 rmse    standard   3.63      3  0.648  pre1_mod0_…
+#>  2        1        4 rsq     standard   0.838     3  0.0713 pre1_mod0_…
+#>  3        8        1 rmse    standard   5.04      3  0.522  pre2_mod0_…
+#>  4        8        1 rsq     standard   0.742     3  0.0515 pre2_mod0_…
+#>  5       15        2 rmse    standard   4.88      3  0.585  pre3_mod0_…
+#>  6       15        2 rsq     standard   0.766     3  0.0241 pre3_mod0_…
+#>  7        1        3 rmse    standard   3.45      3  0.619  iter1      
+#>  8        1        3 rsq     standard   0.826     3  0.0499 iter1      
+#>  9        1        1 rmse    standard   5.04      3  0.522  iter2      
+#> 10        1        1 rsq     standard   0.742     3  0.0515 iter2      
+#> # ℹ 1 more variable: .iter <int>
 # }
 ```

@@ -136,9 +136,9 @@ nested_tune_grid(
 An object of class `nested_results`: one row per outer fold, with the
 fold's split and id, the metrics scored on its assessment set
 (`.metrics`), the parameters chosen for it by inner tuning
-(`.selected`), the candidates its inner tuning actually scored
-(`.grid`), whether the fold finished (`.completed`), anything that went
-wrong (`.notes`), and the two seeds that reproduce it (`.tuning_seed`,
+(`.selected`), the inner tuning run's own metrics (`.inner_metrics`),
+whether the fold finished (`.completed`), anything that went wrong
+(`.notes`), and the two seeds that reproduce it (`.tuning_seed`,
 `.outer_fit_seed`). Use
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
 to summarize.
@@ -146,8 +146,19 @@ to summarize.
 **Two records describe the grid, and they answer different questions.**
 `attr(x, "grid")` holds the `grid` argument **as it was given** — a
 positive whole number, not a table of candidates, whenever a size was
-passed. The `.grid` column holds what each outer fold's inner tuning
-actually scored, one table per fold with a column per tuned parameter.
+passed. The `.inner_metrics` column holds what each outer fold's inner
+tuning actually scored:
+[`tune::collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+of that fold's tuning run, one table per fold with a column per tuned
+parameter, one row per candidate and metric, and tune's `.metric`,
+`.estimator`, `mean`, `n`, `std_err` and `.config` columns, with
+`.eval_time` beside them when a dynamic survival metric was scored. The
+candidates a fold searched are the table's distinct parameter rows.
+Ranking those rows on one metric by `mean` reproduces the fold's
+`.selected` except where candidates tie, which
+[`tune::select_best()`](https://tune.tidymodels.org/reference/show_best.html)
+resolved on the inner run in its own order; `.selected` records the
+candidate the fold's outer fit used.
 
 The two diverge routinely, in both directions. A size is expanded by
 tune and may reach fewer candidates than were asked for — a request for
@@ -157,16 +168,17 @@ other*: expanding a size draws from the generator, and each fold tunes
 under its own seed, so a continuous parameter gives every fold its own
 candidates. Printing says so when it happens.
 
-One limit is worth stating plainly. `.grid` is derived from the tuning
-run's own metrics, because that is the only place tune records
-candidates at all. A candidate that failed on **every** inner resample
-scored nothing and is therefore absent from `.grid` — `.notes` is where
-its failure is recorded. A fold that scored no candidate at all carries
-a zero-row table, never `NULL`.
+One limit is worth stating plainly. `.inner_metrics` is tune's summary
+of the tuning run, and a candidate that failed on **every** inner
+resample scored nothing: it has no row there — `.notes` is where its
+failure is recorded. A candidate that failed on some inner resamples and
+scored on others has its rows, with `n` below the inner resample count.
+A fold that scored no candidate at all carries a zero-row table with a
+completed fold's columns, never `NULL`.
 
 `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
-than `NULL` when none was supplied. `.grid` is a column, so it travels
-with the fold it describes.
+than `NULL` when none was supplied. `.inner_metrics` is a column, so it
+travels with the fold it describes.
 
 `attr(x, "procedure")` records what ran, on the result of either
 orchestrator: a named list giving the tuner (`"tune_grid"` here,
@@ -175,7 +187,7 @@ orchestrator: a named list giving the tuner (`"tune_grid"` here,
 that tuner's own arguments (`grid` here; `iter`, `initial` and
 `objective` there), and `param_info`, `event_level` and `eval_time` on
 both. A Bayesian result carries the `procedure` attribute and no `grid`
-attribute, and its `.grid` tables carry an `.iter` column;
+attribute, and its `.inner_metrics` tables carry an `.iter` column;
 [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
 documents both.
 
@@ -316,11 +328,11 @@ the whole design.
 
 A failed fold still records the candidates it got as far as scoring,
 whatever stage it failed at. A fold that died at the outer fit had
-already tuned, so its `.grid` holds the full set — and so does one that
-tuned successfully and then failed while selecting from the results.
-Only a fold that never reached a scored candidate at all — tuning itself
-raised, or every candidate failed — holds a zero-row table. No fold is
-reported as having searched a grid it did not.
+already tuned, so its `.inner_metrics` holds the full table — and so
+does one that tuned successfully and then failed while selecting from
+the results. Only a fold that never reached a scored candidate at all —
+tuning itself raised, or every candidate failed — holds a zero-row
+table. No fold is reported as having searched a grid it did not.
 
 Any operation outside the invariants stated under **Value** above
 returns a bare tibble, and both counts go with the class rather than

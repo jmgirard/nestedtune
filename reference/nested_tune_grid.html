@@ -164,15 +164,23 @@ inappropriate evaluation time points were removed, once per tune call.</p></dd>
     <p>An object of class <code>nested_results</code>: one row per outer fold, with the
 fold's split and id, the metrics scored on its assessment set
 (<code>.metrics</code>), the parameters chosen for it by inner tuning (<code>.selected</code>),
-the candidates its inner tuning actually scored (<code>.grid</code>), whether the fold
+the inner tuning run's own metrics (<code>.inner_metrics</code>), whether the fold
 finished (<code>.completed</code>), anything that went wrong (<code>.notes</code>), and the two
 seeds that reproduce it (<code>.tuning_seed</code>, <code>.outer_fit_seed</code>). Use
 <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code> to summarize.</p>
 <p><strong>Two records describe the grid, and they answer different questions.</strong>
 <code>attr(x, "grid")</code> holds the <code>grid</code> argument <strong>as it was given</strong> — a
 positive whole number, not a table of candidates, whenever a size was
-passed. The <code>.grid</code> column holds what each outer fold's inner tuning
-actually scored, one table per fold with a column per tuned parameter.</p>
+passed. The <code>.inner_metrics</code> column holds what each outer fold's inner
+tuning actually scored: <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">tune::collect_metrics()</a></code> of that fold's tuning
+run, one table per fold with a column per tuned parameter, one row per
+candidate and metric, and tune's <code>.metric</code>, <code>.estimator</code>, <code>mean</code>, <code>n</code>,
+<code>std_err</code> and <code>.config</code> columns, with <code>.eval_time</code> beside them when a
+dynamic survival metric was scored. The candidates a fold searched are the
+table's distinct parameter rows. Ranking those rows on one metric by
+<code>mean</code> reproduces the fold's <code>.selected</code> except where candidates tie,
+which <code><a href="https://tune.tidymodels.org/reference/show_best.html" class="external-link">tune::select_best()</a></code> resolved on the inner run in its own order;
+<code>.selected</code> records the candidate the fold's outer fit used.</p>
 <p>The two diverge routinely, in both directions. A size is expanded by tune
 and may reach fewer candidates than were asked for — a request for 20 on a
 parameter with four reachable values evaluates four — and a candidate that
@@ -180,22 +188,23 @@ fails scores nothing. Folds can also differ from <em>each other</em>: expanding 
 size draws from the generator, and each fold tunes under its own seed, so
 a continuous parameter gives every fold its own candidates. Printing says
 so when it happens.</p>
-<p>One limit is worth stating plainly. <code>.grid</code> is derived from the tuning
-run's own metrics, because that is the only place tune records candidates
-at all. A candidate that failed on <strong>every</strong> inner resample scored nothing
-and is therefore absent from <code>.grid</code> — <code>.notes</code> is where its failure is
-recorded. A fold that scored no candidate at all carries a zero-row table,
-never <code>NULL</code>.</p>
+<p>One limit is worth stating plainly. <code>.inner_metrics</code> is tune's summary of
+the tuning run, and a candidate that failed on <strong>every</strong> inner resample
+scored nothing: it has no row there — <code>.notes</code> is where its failure is
+recorded. A candidate that failed on some inner resamples and scored on
+others has its rows, with <code>n</code> below the inner resample count. A fold that
+scored no candidate at all carries a zero-row table with a completed
+fold's columns, never <code>NULL</code>.</p>
 <p><code>attr(x, "metrics")</code> holds the <code>metrics</code> argument, and is absent rather
-than <code>NULL</code> when none was supplied. <code>.grid</code> is a column, so it travels
-with the fold it describes.</p>
+than <code>NULL</code> when none was supplied. <code>.inner_metrics</code> is a column, so it
+travels with the fold it describes.</p>
 <p><code>attr(x, "procedure")</code> records what ran, on the result of either
 orchestrator: a named list giving the tuner (<code>"tune_grid"</code> here,
 <code>"tune_bayes"</code> from <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code>), that tuner's own arguments
 (<code>grid</code> here; <code>iter</code>, <code>initial</code> and <code>objective</code> there), and <code>param_info</code>,
 <code>event_level</code> and <code>eval_time</code> on both. A Bayesian result carries the
-<code>procedure</code> attribute and no <code>grid</code> attribute, and its <code>.grid</code> tables
-carry an <code>.iter</code> column; <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code> documents both.</p>
+<code>procedure</code> attribute and no <code>grid</code> attribute, and its <code>.inner_metrics</code>
+tables carry an <code>.iter</code> column; <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code> documents both.</p>
 <p><strong>What an operation on the object may and may not do.</strong> The result carries
 the invariants <code>tune</code> declares on its own results objects:</p><ul><li><p>rows may be reordered, but never added or removed;</p></li>
 <li><p>columns may be added or reordered;</p></li>
@@ -310,11 +319,11 @@ Those notes are kept, so <code>.completed</code> being <code>TRUE</code> with a 
 means exactly that: it worked, on less than the whole design.</p>
 <p>A failed fold still records the candidates it got as far as scoring, whatever
 stage it failed at. A fold that died at the outer fit had already tuned, so
-its <code>.grid</code> holds the full set — and so does one that tuned successfully and
-then failed while selecting from the results. Only a fold that never reached
-a scored candidate at all — tuning itself raised, or every candidate failed —
-holds a zero-row table. No fold is reported as having searched a grid it did
-not.</p>
+its <code>.inner_metrics</code> holds the full table — and so does one that tuned
+successfully and then failed while selecting from the results. Only a fold
+that never reached a scored candidate at all — tuning itself raised, or every
+candidate failed — holds a zero-row table. No fold is reported as having
+searched a grid it did not.</p>
 <p>Any operation outside the invariants stated under <strong>Value</strong> above returns a
 bare tibble, and both counts go with the class rather than being recomputed
 for whatever rows are left. Dropping the <code>.completed</code> column is one such

@@ -2,6 +2,27 @@
 
 ## nestedtune 0.0.0.9000
 
+- Breaking: each outer fold of a `nested_results` now carries its inner
+  tuning run’s metrics as `.inner_metrics` –
+  [`tune::collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
+  of that fold’s run, one row per candidate and metric with `.metric`,
+  `.estimator`, `mean`, `n`, `std_err` and `.config`, plus `.iter` from
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+  – in place of the `.grid` column, which held the candidates alone. The
+  candidates a fold searched are the table’s distinct parameter rows, so
+  nothing `.grid` recorded is lost, and a Bayesian search’s trajectory
+  or a fold’s best candidate can now be computed from the object. A fold
+  that tuned and then failed its outer fit keeps its table; a fold that
+  scored nothing carries a zero-row table under a completed fold’s
+  columns. The column is part of the record the dplyr and vctrs
+  invariants check, as `.grid` was. `.selected` is unchanged.
+  [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)
+  on a `nested_final_fit` keeps its candidate columns and `.config`, and
+  no longer carries `.eval_time` on a fit that scored a dynamic survival
+  metric – the column held one arbitrary evaluation time per candidate;
+  the times are in `collect_metrics(extract_tune_results(x))`
+  ([\#57](https://github.com/tidymodels/nestedtune/issues/57)).
+
 - [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   and
   [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
