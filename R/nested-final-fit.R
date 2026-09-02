@@ -46,7 +46,9 @@
 #'   now come from `results`.
 #'
 #' @return An object of class `nested_final_fit` with elements `workflow` (the
-#'   trained workflow, better reached with [extract_workflow()]), `selected`
+#'   trained workflow; the object answers [predict()][predict.nested_final_fit]
+#'   and `augment()` directly, and [extract_workflow()] returns the workflow
+#'   itself), `selected`
 #'   (the parameters chosen), `tuning` (the tuning run they were chosen from),
 #'   `tuning_seed` and `fit_seed` (the two seeds that reproduce it), and
 #'   `procedure` (the record re-run, as `results` carried it).
@@ -182,7 +184,7 @@
 #' final <- nested_final_fit(wf, res)
 #' final
 #'
-#' predict(extract_workflow(final), new_data = mtcars[1:3, ])
+#' predict(final, new_data = mtcars[1:3, ])
 #'
 #' @references
 #' Varma, S., & Simon, R. (2006). Bias in error estimation when using
@@ -192,7 +194,8 @@
 #' examples of cross-validation for model development and evaluation in health
 #' care: Tutorial. *JMIR AI*, 2, e49023.
 #'
-#' @seealso [nested_tune_grid()], [nested_tune_bayes()], [extract_workflow()]
+#' @seealso [nested_tune_grid()], [nested_tune_bayes()],
+#'   [predict.nested_final_fit()], [extract_workflow()]
 #' @export
 nested_final_fit <- function(object, results, ...) {
   rlang::check_dots_empty()

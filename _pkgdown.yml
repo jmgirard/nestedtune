@@ -48,6 +48,7 @@ reference:
   - nested_final_fit
   - print.nested_final_fit
   - summary.nested_final_fit
+  - predict.nested_final_fit
   - extract_tune_results
   - extract_scored_candidates
 

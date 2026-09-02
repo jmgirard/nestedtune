@@ -321,11 +321,12 @@ The outer folds play no part here. Their selections are not pooled or voted on
 — they belong to the estimate, which describes the procedure across the
 instability they reveal.
 
-The trained workflow comes out with `extract_workflow()`, and predicts as any
-workflow does:
+The object predicts directly -- `predict()` and `augment()` on it are the
+trained workflow's own methods -- and `extract_workflow()` returns the workflow
+itself:
 
 ```{r predict}
-predict(extract_workflow(final), new_data = mtcars[1:3, ])
+predict(final, new_data = mtcars[1:3, ])
 ```
 
 Now the comparison promised above. `final$tuning` is the tuning run this model's

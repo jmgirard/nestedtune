@@ -6,6 +6,7 @@
 \alias{collect_metrics}
 \alias{extract_workflow}
 \alias{autoplot}
+\alias{augment}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -15,6 +16,6 @@ below to see their documentation.
 \describe{
   \item{ggplot2}{\code{\link[ggplot2:autoplot]{autoplot()}}}
 
-  \item{tune}{\code{\link[tune:collect_metrics]{collect_metrics()}}, \code{\link[tune:extract_workflow]{extract_workflow}}}
+  \item{tune}{\code{\link[tune:augment]{augment}}, \code{\link[tune:collect_metrics]{collect_metrics()}}, \code{\link[tune:extract_workflow]{extract_workflow}}}
 }}
 
