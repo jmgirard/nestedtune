@@ -279,7 +279,10 @@ test_that("print() still fences `...`, so a partial spelling is refused", {
   for (probe in probes) {
     cnd <- rlang::catch_cnd(eval(probe))
     expect_s3_class(cnd, "rlib_error_dots_nonempty")
-    expect_identical(rlang::call_name(conditionCall(cnd)), "print")
+    # The whole call, not its name alone: the inner `print(rows, ...)` in
+    # print_rows() is also a print() call, and only the user's own call with
+    # the stray argument still attached shows the fence fired at the method.
+    expect_identical(conditionCall(cnd), probe)
   }
 
   # The passing control: the full spellings are accepted by the same path.

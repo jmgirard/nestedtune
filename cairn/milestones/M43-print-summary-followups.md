@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP3
-- **Branch/PR:** m043-print-summary-followups
+- **Branch/PR:** m043-print-summary-followups · https://github.com/tidymodels/nestedtune/pull/52
 
 ## Goal
 
@@ -53,12 +53,12 @@ has passed.
 
 ## Acceptance criteria
 
-- [ ] AC1: Printing a `summary.nested_results` whose run has at least one
+- [x] AC1: Printing a `summary.nested_results` whose run has at least one
       failed fold ends the failure block with one advice line that names the
       results object's `.notes` column, and that line does not contain the
       characters `x$`; asserted on the one-failed-fold and every-fold-failed
       fixtures in `test-nested-results-print.R`.
-- [ ] AC2: `print.nested_results()` accepts `n` and `width` by name after `...`
+- [x] AC2: `print.nested_results()` accepts `n` and `width` by name after `...`
       and hands them to the tibble rendering of the rows: on a results object
       of more than twenty outer folds, `print(x)` shows ten rows and tibble's
       `# i <k> more rows` footer while `print(x, n = Inf)` shows every row and
@@ -66,11 +66,11 @@ has passed.
       rows and a `# i 1 more row` footer; and at console width 80,
       `print(x, width = 40)` lists more columns in the `# i <k> more variables`
       footer than `print(x)` does.
-- [ ] AC3: `print.nested_results()` still fences `...`: `print(x, foo = 1)`,
+- [x] AC3: `print.nested_results()` still fences `...`: `print(x, foo = 1)`,
       `print(x, n = 2, foo = 1)` and `print(x, w = 40)` each signal an error of
       class `rlib_error_dots_nonempty` whose call is the `print()` call, so a
       prefix of a new argument is refused rather than partially matched.
-- [ ] AC4: `man/summary.nested_results.Rd`, as `devtools::document()`
+- [x] AC4: `man/summary.nested_results.Rd`, as `devtools::document()`
       regenerates it, carries a `\value` section whose first paragraph opens
       with `summary()` returns and whose second opens with `print()` returns,
       and an `\examples` section guarded by
@@ -78,11 +78,11 @@ has passed.
       a `nested_results` and calls `summary()` on it; and
       `man/print.nested_results.Rd` documents `n` and `width` in its usage and
       arguments.
-- [ ] AC5: `NEWS.md` carries one entry stating that `print()` on a
+- [x] AC5: `NEWS.md` carries one entry stating that `print()` on a
       `nested_results` accepts `n` and `width` and passes them to the row
       rendering, and one stating that the summary's failure advice now names
       the results object's `.notes` column.
-- [ ] AC6: `devtools::document()` leaves no diff, `devtools::test()` is clean,
+- [x] AC6: `devtools::document()` leaves no diff, `devtools::test()` is clean,
       `air format .` changes nothing, and `devtools::check()` reports 0 errors
       and 0 warnings.
 
@@ -133,7 +133,30 @@ has passed.
 - 2026-09-01: T2 done — `print.nested_results(x, ..., n = NULL, width = NULL)`, both handed to `print_rows()`; `@param` text derived from tibble's `?print.tbl_df` as read at tibble 3.3.x; AC2 and AC3 tests added, the AC3 probes as real `print(res, …)` calls; registry probe passes with no new exemption. Minor amendment: the >20-fold fixture is `repeated_results(v = 3, repeats = 7)` (21 folds through the constructor over stand-in records), not an `rbind()` stack — measured: `rbind()` of seven copies returns a bare tibble, because `can_reconstruct_results()` refuses a row count differing from the template's (M36), which D-032's class-keeping does not override.
 - 2026-09-01: T3 done — `?summary.nested_results` regenerated: `\value` opens ``summary()` returns` then ``print()` returns`, `\examples` under the engines guard ends in `summary(res)`. T4 done — `scrub_tibble_body()` transform on the four print blocks; testthat hands a transform each cli message alone, so the first cut (which looked for the next bullet) errored and was made to accept a body with nothing after it; re-recorded blocks read: header, marker, cli lines.
 - 2026-09-01: T5 done — two NEWS entries; `devtools::document()` no diff, `air format --check .` clean, `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
+- 2026-09-01: review — PR #52 opened as draft; every criterion verified with fresh evidence; three-lens review: two lenses clean, the diff lens reported eight findings, three fixed at the gate (NEWS threshold, signature comment, AC3 whole-call assertion), five rejected with reasons in the Review section.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-09-01 on branch `m043-print-summary-followups` at 03e340a plus the gate fixes below; PR #52. `main` had not moved since the branch was cut.
+
+**Acceptance criteria — fresh evidence:**
+- AC1: the two summary snapshots (`_snaps/nested-results-print.md` lines 135 and 162) carry ``i See the `.notes` column of the results object for what went wrong.`` as the failure block's last line; the `never x$` test asserts on both failed fixtures that exactly one advice line exists, it contains ``` `.notes` column of the results object ```, does not contain `x$`, follows a `failed during` line and precedes a non-failure line. Passes.
+- AC2: the `n` test builds a 21-fold `nested_results` through `repeated_results(v = 3, repeats = 7)`; default print counts 10 row lines with `# i 11 more rows`; `n = Inf` counts 21 with no `more row` text; on the three-fold fixture `n = 2` counts 2 with `# i 1 more row`. The `width` test renders both at console width 80 and asserts the `width = 40` footer lists more variables than the default's. Both pass.
+- AC3: three probes as real `print(res, …)` calls (`foo = 1`; `n = 2, foo = 1`; `w = 40`) each signal `rlib_error_dots_nonempty`; after the gate fix the test asserts the condition's call is identical to the probe call itself (probed: `print(res, w = 40)`), not merely named `print`. `test-dots-barrier.R` passes with no new exemption. Passes.
+- AC4: `man/summary.nested_results.Rd` as regenerated: `\value` opens ``\code{summary()} returns`` (line 21) then ``\code{print()} returns`` (line 29); `\examples` is wrapped in the `rlang::is_installed(c("recipes", "yardstick"))` examplesIf guard (line 48), builds a results object with `nested_tune_grid()` and ends in `summary(res)` (line 68). `man/print.nested_results.Rd` usage reads `(x, ..., n = NULL, width = NULL)` with `\item{n}` and `\item{width}` in arguments. Verified by reading the files.
+- AC5: `NEWS.md` diff carries the two entries — `print()` accepts `n` and `width` and passes them to the row rendering; the summary's failure advice names the results object's `.notes` column. The first entry's threshold was corrected at the gate (finding 1).
+- AC6: `devtools::document()` leaves no diff (before and after the gate fixes); `devtools::test()` 0 failures, 0 warnings, 0 skips, 2746 passes; `air format --check .` exit 0; `devtools::check()` 0 errors, 0 warnings, 0 notes in 3m 17s.
+
+**Consistency gate:** `cairn_validate.py` all checks passed (18 references-staleness advisories, pre-existing; no release window). No DESIGN principle changed, `cairn_impact` skipped. Toolchain slot: document() no diff; no generated file hand-edited; README.Rmd untouched and older than README.md; `pkgdown::check_pkgdown()` no problems; NEWS carries the milestone's user-visible changes with no milestone numbers; no new top-level files; check clean. Driving RR: none.
+
+**Independent review (three lenses, fresh context).** [S] blame-history: no findings — each touched line traces to M43's own plan, the retargeted print-side assertion still fences print from summary's advice, the scrub still fails on D-037's falsifier (a vanished `# A tibble` header). [S] prior-review: no regressions — each of M39's O1, R1, R4, R9, R10 addressed as recorded, R3 left Out as scoped; one real inline PR comment exists in the repo, on an unrelated workflow file. [O] diff-bug, eight findings ranked, dispositions:
+1. NEWS said `n = Inf` matters for a run "wider than ten"; tibble truncates above twenty → **fixed now**: "a run of more than twenty".
+2. Code comment claimed tibble places `width` after its dots; tibble's is `(x, width = NULL, ..., n = NULL)` → **fixed now**: the comment states the deliberate difference.
+3. `print(res, n = 5)` would fail as a partial match for `na.print` if rows ever rendered through `print.data.frame` → **rejected**: that configuration is D-037's recorded falsifier, under which the default print is already wrong; no new row.
+4. AC3's test checked only the condition call's name, which the inner `print(rows, …)` also carries → **fixed now**: asserts the whole call identical to the probe.
+5. The scrub no longer pins how many rows the three-fold snapshots render → **rejected**: the plan gate's recorded falsifier for the scrub; the 21-fold test pins rendered-row counts.
+6. The scrub's discrimination test runs on synthetic lines only → **rejected**: a change in testthat's chunking surfaces as a visible snapshot mismatch, the loud failure mode.
+7. The AC3 test is engine-gated though the fence fires before `x` is read → **rejected**: the file's fixtures are all engine-gated and CI carries the engines; no coverage loss where the tests run.
+8. The three other `.notes` advice sites word the advice differently → **rejected**: Scope Out, the gate line records why.

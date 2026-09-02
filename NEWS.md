@@ -2,7 +2,8 @@
 
 * `print()` on a `nested_results` accepts `n` and `width` and passes them to
   the rendering of the outer-fold rows, so `print(res, n = Inf)` shows every
-  fold of a run wider than ten and `print(res, width = 40)` narrows the table.
+  fold of a run of more than twenty and `print(res, width = 40)` narrows the
+  table.
   Both are matched by full name only; any other argument is still refused.
   Previously `print(res, n = 25)` was an error.
 

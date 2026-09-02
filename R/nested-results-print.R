@@ -72,9 +72,10 @@
 #'   [collect_metrics()]
 #' @export
 print.nested_results <- function(x, ..., n = NULL, width = NULL) {
-  # `n` and `width` sit after the fence, as tibble's own print method places
-  # them, so they match by full name only and a partial spelling lands in `...`
-  # and is refused rather than silently ignored (GP3). The two are the whole
+  # `n` and `width` sit after the fence so they match by full name only: a
+  # partial spelling lands in `...` and is refused rather than silently ignored
+  # (GP3). tibble's own method takes `width` before its dots, so this is one
+  # place the two signatures differ on purpose. The two are the whole
   # pass-through: any other tibble print option is not reachable from here.
   rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
