@@ -119,4 +119,4 @@ Reviewed 2026-09-02 on c0d3e19 (branch tip at review start; main unmoved since t
   10. A results object whose every fold failed is accepted: confirmed and outside AC1/RR05 Q3; follow-up — a candidate row at the hygiene pass (no existing row covers it).
   11. README guide link moved to nestedtune.tidymodels.org outside scope: rejected — logged in the work log at T2, and the URL answers 200.
   12. DESIGN paragraph wrap and a local named `missing`: confirmed; both fixed.
-  Gate-fix tree: `test-nested-final-fit-checks` 66, `-print` 158 (+3 snapshots), `-rng` 52, `test-nested-tune-grid-checks` 65, `test-dots-barrier` 35, all green; the full suite and check re-run below.
+  Gate-fix tree: `test-nested-final-fit-checks` 66, `-print` 158 (+3 snapshots), `-rng` 52, `test-nested-tune-grid-checks` 65, `test-dots-barrier` 35, all green; on the gate-fix tree c36eb3f the full suite is 0 failed / 0 warnings / 0 skipped / 3271 passed, `devtools::check()` Status OK (0 errors, 0 warnings, 0 notes), `devtools::document()` no diff — AC7's evidence on the tree going to merge.
