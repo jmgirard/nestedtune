@@ -106,3 +106,17 @@ Reviewed 2026-09-02 on c0d3e19 (branch tip at review start; main unmoved since t
 **Independent review** (three fresh-context lenses, PR #55):
 - [S] blame-history: no findings. Traced the diff against D-041, D-016, D-011, D-014, D-023, D-040, D-010, M40's print constant and the M45 tuner machinery; every deleted test assertion targets a formal or design-column check the new signature makes unreachable, each with an inline comment.
 - [S] prior-review: no findings. Probe found one real inline comment in the repo (PR #30, pkgdown workflow, unrelated); the PRs touching these files carry none. RR05 Q1-Q3 and RR02 BC1/BC6 implemented as recorded; the M37/M38 attribute-carriage, M40 print-pinning, M42 fixture-key and M45 inlining patterns preserved.
+- [O] diff-bug: twelve findings, ranked by the reviewer, each verified against the implementation before disposition:
+  1. Bayesian same-seed test compares a cache hit with itself (`test-nested-final-fit-rng.R`, "the same seed produces the same Bayesian final fit"): confirmed — `fixture_key()` hashes the RNG state and the final fit is net-zero, so the second `set.seed(77)` call hit the first's key. Fixed at the gate: both calls direct, as the grid strand; the unmemoised pair passes, so the property holds.
+  2. Bayesian net-zero test's second call is the same cache hit: confirmed. Fixed at the gate the same way; passes.
+  3. `check_grid_params()` on the final fit named `grid`, a formal D-041 removed: confirmed. Fixed at the gate — `recorded = TRUE` wording names `object` and `results` ("`object` tunes 1 parameter the recorded grid has no column for"; "hand over the workflow the nested run in `results` was built around"); the test asserts both names and the absence of `grid`.
+  4. `nested_tune_bayes()`'s page had no final-fit pointer: confirmed. Fixed at the gate — the paragraph and `@seealso` link added, `document()` re-run.
+  5. `procedure_tuner()` splices any future record field into the tune call: rejected — no defect today (`new_procedure()` writes exactly the fields the tuner takes, asserted by the oracles' round trip), and the record is package-internal; a field added later is added with its consumer.
+  6. Scored counts degrade to zero when the candidate derivation fails: confirmed as the RR05 Q2 reading; fixed at the gate by one sentence in `summary()`'s roxygen saying so.
+  7. The missing-engine test passes only because tune's extraction fails: refuted — `check_workflow()` runs before the grid check and `check_model_spec()` raises "not installed" itself (`R/checks.R`, and the M46 AC1 probe's traceback shows that path); the grid check is never reached.
+  8. Singular wordings half pinned: confirmed. Fixed at the gate — the one-initial-candidate and one-grid-candidate lines pinned on hand-built records.
+  9. Dead `iter` parameter in the print fixture: confirmed; removed.
+  10. A results object whose every fold failed is accepted: confirmed and outside AC1/RR05 Q3; follow-up — a candidate row at the hygiene pass (no existing row covers it).
+  11. README guide link moved to nestedtune.tidymodels.org outside scope: rejected — logged in the work log at T2, and the URL answers 200.
+  12. DESIGN paragraph wrap and a local named `missing`: confirmed; both fixed.
+  Gate-fix tree: `test-nested-final-fit-checks` 66, `-print` 158 (+3 snapshots), `-rng` 52, `test-nested-tune-grid-checks` 65, `test-dots-barrier` 35, all green; the full suite and check re-run below.
