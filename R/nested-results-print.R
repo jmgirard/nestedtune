@@ -31,7 +31,8 @@
 #' reports each fold's candidate count and appears only when the sets actually
 #' differ.
 #'
-#' @param x A `nested_results` object from [nested_tune_grid()].
+#' @param x A `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()].
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored, so `n` and `width` must be spelled out in
 #'   full.
@@ -141,7 +142,8 @@ print_failure_count <- function(x) {
 #' That is where this differs from [collect_metrics()], which aborts when no
 #' outer fold completed.
 #'
-#' @param object A `nested_results` object from [nested_tune_grid()].
+#' @param object A `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()].
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored.
 #'

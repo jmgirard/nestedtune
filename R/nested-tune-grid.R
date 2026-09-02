@@ -14,6 +14,10 @@
 #' which runs the same procedure again with the whole dataset in hand. The
 #' estimate from this function is what you report for it.
 #'
+#' For a Bayesian inner loop -- [tune::tune_bayes()] proposing candidates one
+#' at a time -- see [nested_tune_bayes()], which runs this same outer loop with
+#' the inner tuner swapped.
+#'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
 #' @param ... Not used; must be empty. Everything after it is matched by name,
@@ -102,6 +106,14 @@
 #'   `attr(x, "metrics")` holds the `metrics` argument, and is absent rather
 #'   than `NULL` when none was supplied. `.grid` is a column, so it travels
 #'   with the fold it describes.
+#'
+#'   `attr(x, "procedure")` records what ran, on the result of either
+#'   orchestrator: a named list giving the tuner (`"tune_grid"` here,
+#'   `"tune_bayes"` from [nested_tune_bayes()]), that tuner's own arguments
+#'   (`grid` here; `iter`, `initial` and `objective` there), and `param_info`,
+#'   `event_level` and `eval_time` on both. A Bayesian result carries the
+#'   `procedure` attribute and no `grid` attribute, and its `.grid` tables
+#'   carry an `.iter` column; [nested_tune_bayes()] documents both.
 #'
 #'   **What an operation on the object may and may not do.** The result carries
 #'   the invariants `tune` declares on its own results objects:
@@ -417,7 +429,8 @@
 #' }
 #' }
 #'
-#' @seealso [nested_resamples()], [nested_final_fit()], [tune::tune_grid()]
+#' @seealso [nested_tune_bayes()], [nested_resamples()], [nested_final_fit()],
+#'   [tune::tune_grid()]
 #' @export
 nested_tune_grid <- function(
   object,

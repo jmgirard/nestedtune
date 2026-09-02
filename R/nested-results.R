@@ -617,7 +617,8 @@ new_tbl <- function(cols) {
 
 #' Collect the metrics from a nested resampling run
 #'
-#' @param x A `nested_results` object from [nested_tune_grid()].
+#' @param x A `nested_results` object from [nested_tune_grid()] or
+#'   [nested_tune_bayes()].
 #' @param summarize Whether to average the per-fold metrics (`TRUE`, the
 #'   default) or return them one row per outer fold (`FALSE`).
 #' @param ... Not used; must be empty. An argument passed here is an error

@@ -783,6 +783,23 @@ bayes_results <- function() {
   ))
 }
 
+# The stochastic sibling's parameter set: ranger's `min_n`, integer-valued,
+# over 2..25 rather than dials' default 2..40. `stoch_workflow()` is the
+# sibling; this narrows the space it searches, for one reason. The fixture's
+# inner analysis sets hold 40 rows, a candidate at `min_n = 40` predicts a
+# constant, yardstick warns that R-squared is undefined, and tune files the
+# warning as a note carrying a backtrace -- which the host and a daemon render
+# differently (`?nested_tune_grid`, "Parallel execution"), so BC10's
+# whole-object identity would fail on the trace and on nothing else, and the
+# whole-record identities in test-nested-tune-bayes-rng.R with it. 25 is the
+# largest value `stoch_grid()` has always scored without a note.
+bayes_stoch_param_info <- function(wf) {
+  update(
+    tune::extract_parameter_set_dials(wf),
+    min_n = dials::min_n(c(2L, 25L))
+  )
+}
+
 skip_if_no_bayes_fixture <- function(stochastic = FALSE) {
   skip_if_no_engines(stochastic = stochastic)
   testthat::skip_if_not_installed("dials")

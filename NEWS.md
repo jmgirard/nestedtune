@@ -1,5 +1,34 @@
 # nestedtune 0.0.0.9000
 
+* `nested_tune_bayes()` runs the outer loop of nested cross-validation with
+  `tune::tune_bayes()` as the inner tuner. On each outer fold it scores
+  `initial` space-filling candidates on the fold's inner resamples, lets a
+  Gaussian process propose `iter` more under `objective`, selects the best,
+  and fits and scores the outer split -- what `nested_tune_grid()` does around
+  `tune::tune_grid()`, through the same loop, so the seed contract, the
+  parallel path, the results object and its methods are shared. Two rules are
+  its own. The Gaussian process is seeded from the fold's tuning seed, so a
+  fold reproduces from its `.tuning_seed` alone, and `iter = 0` gives the
+  numbers `nested_tune_grid()` gives on the same space-filling grid. And
+  `initial` is a count only: a `tune_results` object, which tune accepts
+  there, is refused, since one tuning run cannot serve every outer fold.
+  `iter`, `initial` and `objective` are refused at entry, each with its own
+  condition class, unless a single non-negative whole number, a single whole
+  number of at least 2, and an acquisition function.
+
+* Each fold's `.grid` from `nested_tune_bayes()` carries an `.iter` column
+  naming the search iteration each candidate was proposed in, `0` for the
+  initial candidates. The candidates-searched line `print()` shows and the
+  candidate counts `summary()` holds count those rows.
+
+* Every `nested_results`, from either orchestrator, carries a `procedure`
+  attribute: a named list of the tuner that ran (`"tune_grid"` or
+  `"tune_bayes"`), its own arguments (`grid`, or `iter`, `initial` and
+  `objective`), and `param_info`, `event_level` and `eval_time`. It travels
+  with the class through the dplyr and vctrs doors and is shed with it. A
+  Bayesian result has no `grid` attribute. The `grid` and `metrics`
+  attributes of a grid result are as they were.
+
 * `agreement()` reports how often each candidate was selected across the
   outer folds of a `nested_results`: one row per distinct combination of
   selected parameter values, with `n`, the number of completed outer folds that

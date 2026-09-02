@@ -62,12 +62,14 @@ naming convention.
 - **Resampling construction** — `nested_resamples()`. Builds a nested
   resampling design and returns an object carrying rsample's `nested_cv`
   classes, so it is a drop-in for `rsample::nested_cv()`'s output (D-008).
-- **Orchestration — `nested_tune_*`** — `nested_tune_grid()`, plus the
-  `collect_metrics()` method on the `nested_results` object it returns and
-  `agreement()`, the package-owned generic tabulating how often each selected
-  parameter combination was chosen across the outer folds (D-039). The
-  suffix names the inner tuning method, leaving `nested_tune_bayes()` free for
-  a Bayesian inner loop (D-010).
+- **Orchestration — `nested_tune_*`** — `nested_tune_grid()` and
+  `nested_tune_bayes()`: one outer loop, told which inner tuner to call by an
+  internal *tuner description* — the tune function's name and its static
+  arguments (`R/tuner.R`, D-040) — plus the `collect_metrics()` method on the
+  `nested_results` object both return and `agreement()`, the package-owned
+  generic tabulating how often each selected parameter combination was chosen
+  across the outer folds (D-039). The suffix names the inner tuning method
+  (D-010).
 - **Final fit** — `nested_final_fit()`, returning a `nested_final_fit` object
   reached with `extract_workflow()`. It runs the same procedure the estimate
   describes over the whole dataset, and answers none of tune's ranking or
@@ -233,15 +235,21 @@ against each outer fold's analysis frame exactly as rsample does, then keeps
 only the row indices and remaps them onto the original data, so the inner
 splits reference the one copy the caller already holds.
 
-`nested_tune_grid()` (`R/nested-tune-grid.R`) is a serial loop over outer
-folds. It validates its arguments (`R/checks.R`), draws every fold's seeds up
-front, and hands each fold to `nested_fold_fit()` — a worker whose inputs are
-the outer split, the inner `rset`, the fold's two seeds, and the static
-workflow/grid/metrics. The worker delegates the entire statistical pipeline to
-tune: `tune_grid()` on the inner `rset` with `control_grid(allow_par = FALSE,
-event_level = event_level)`, `select_best()`, `finalize_workflow()`,
-`last_fit()` on the outer split under `control_last_fit(event_level =
-event_level)`.
+`nested_tune_grid()` (`R/nested-tune-grid.R`) and `nested_tune_bayes()`
+(`R/nested-tune-bayes.R`) each validate their arguments (`R/checks.R`), build a
+tuner description — `tuner_grid(grid)` or `tuner_bayes(iter, initial,
+objective)` (`R/tuner.R`) — and hand it to `nested_loop()`, the one outer
+loop. It draws every fold's seeds up front and hands each fold to
+`nested_fold_fit()` — a worker whose inputs are the outer split, the inner
+`rset`, the fold's two seeds, the tuner description and the static
+workflow/metrics. The worker delegates the entire statistical pipeline to
+tune: `run_tuner()` assembles the inner call with `rlang::call2()` —
+`tune_grid()` under `control_grid(allow_par = FALSE, event_level)`, or
+`tune_bayes()` under `control_bayes(allow_par = FALSE, event_level, seed =
+<the fold's tuning seed>)`, the control built inside the fold's seed scope —
+then `select_best()`, `finalize_workflow()`, `last_fit()` on the outer split
+under `control_last_fit(event_level = event_level)`. The results object
+records the description as its `procedure` attribute.
 Nothing is read from the enclosing loop and nothing is drawn inside it, which
 is what makes fold results independent of execution order and the loop safe to
 parallelize later.

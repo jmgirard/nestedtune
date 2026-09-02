@@ -112,6 +112,14 @@ never \code{NULL}.
 than \code{NULL} when none was supplied. \code{.grid} is a column, so it travels
 with the fold it describes.
 
+\code{attr(x, "procedure")} records what ran, on the result of either
+orchestrator: a named list giving the tuner (\code{"tune_grid"} here,
+\code{"tune_bayes"} from \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}), that tuner's own arguments
+(\code{grid} here; \code{iter}, \code{initial} and \code{objective} there), and \code{param_info},
+\code{event_level} and \code{eval_time} on both. A Bayesian result carries the
+\code{procedure} attribute and no \code{grid} attribute, and its \code{.grid} tables
+carry an \code{.iter} column; \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} documents both.
+
 \strong{What an operation on the object may and may not do.} The result carries
 the invariants \code{tune} declares on its own results objects:
 \itemize{
@@ -183,6 +191,10 @@ any single fitted model. It is not the performance of a model you can deploy,
 and no final model is returned here: build that with \code{\link[=nested_final_fit]{nested_final_fit()}},
 which runs the same procedure again with the whole dataset in hand. The
 estimate from this function is what you report for it.
+
+For a Bayesian inner loop -- \code{\link[tune:tune_bayes]{tune::tune_bayes()}} proposing candidates one
+at a time -- see \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, which runs this same outer loop with
+the inner tuner swapped.
 }
 \section{Reproducibility}{
 
@@ -452,5 +464,6 @@ if (rlang::is_installed(c("recipes", "yardstick"))) {
 
 }
 \seealso{
-\code{\link[=nested_resamples]{nested_resamples()}}, \code{\link[=nested_final_fit]{nested_final_fit()}}, \code{\link[tune:tune_grid]{tune::tune_grid()}}
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{\link[=nested_resamples]{nested_resamples()}}, \code{\link[=nested_final_fit]{nested_final_fit()}},
+\code{\link[tune:tune_grid]{tune::tune_grid()}}
 }
