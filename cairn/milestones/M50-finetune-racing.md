@@ -134,6 +134,7 @@ their M48 Out row.
 - 2026-09-02: T6 done; `devtools::check()` clean (0 errors, 0 warnings, 0 notes; tests 6m CPU / 29m elapsed under a concurrent suite run, 19m elapsed on the first attempt); status → review.
 - 2026-09-02: /milestone-review started; main unmoved since the branch was cut; branch pushed, draft PR #60 opened (Refs #35); cairn_validate, document() no-diff and pkgdown check clean; full suite, devtools::check() and the three reviewers running at this checkpoint — criterion evidence pending.
 - 2026-09-02: step-7 gate round 1: the user chose fix-now for diff-bug findings 1–7 and 9 (rejections 8, 10–12 recorded); fixes landed with tests, D-045 written for the finetune floor; approval to be re-asked after the second check.
+- 2026-09-02: step-7 approval: PR #60 approved for merge (second gate, after the fix-now round).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->
