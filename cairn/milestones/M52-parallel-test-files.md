@@ -1,6 +1,6 @@
 # M52: The test suite runs its files in parallel and fits its CI caps with headroom
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -43,17 +43,23 @@ beyond the sentences this milestone adds.
 
 ## Acceptance criteria
 
-- [ ] AC1: On the milestone's PR head, the `test-coverage` workflow's
-      `Test coverage` step completes with conclusion `success` in 12 minutes or
-      less, read as `completedAt - startedAt` from
-      `gh run view <run-id> --json jobs`.
-- [x] AC2: On the same PR head, every leg the `R-CMD-check` workflow's
-      `gh run view <run-id> --json jobs` lists completes its
-      `Run r-lib/actions/check-r-package@v2` step with conclusion `success` in
-      20 minutes or less, read the same way.
+- [ ] AC1: On the measured head AC3 names, the `test-coverage` workflow's
+      `Test coverage` step concludes `success` on each of AC3's three
+      attempts, and the median of its three durations, each read as
+      `completedAt - startedAt` from `gh run view <run-id> --attempt <k>
+      --json jobs`, is 12 minutes or less.
+- [ ] AC2: On the same head, every leg the `R-CMD-check` workflow's
+      `gh run view <run-id> --attempt <k> --json jobs` lists concludes its
+      `Run r-lib/actions/check-r-package@v2` step `success` on each of the
+      three attempts, and the median of each leg's three durations, read the
+      same way, is 20 minutes or less.
 - [ ] AC3: The `R-CMD-check` and `test-coverage` workflows are green on three
-      runs of the milestone's final head — the PR's own run and two
-      `gh run rerun` of it — with no job cancelled at a `timeout-minutes` cap.
+      attempts of the milestone's measured head — the PR's own run and two
+      `gh run rerun` of it — with no job cancelled at a `timeout-minutes`
+      cap. The measured head is a pushed commit on the branch from which the
+      branch head at the moment of merge differs only under `cairn/`
+      (`git diff --quiet <measured> HEAD -- . ':!cairn'` exits 0, run
+      immediately before the merge).
 - [x] AC4: `as.data.frame(testthat::test_local(".", reporter =
       testthat::ListReporter$new()))` on the branch reports zero failures, and
       its rows with `skipped > 0` equal, by `file` and `test`, the rows the
@@ -213,6 +219,11 @@ beyond the sentences this milestone adds.
   under check. Status → review. The T5–T7 and completion commits are local
   only: pushing restarts the PR matrix, and the squash carries them.
 - 2026-09-03: review, defect return 1 — AC1 failed: the pushed head c1b4cc3's `Test coverage` step ran 722 s against the 720 s bar (earlier reads 9.23, 11.43, 11.87 min on 02d254a); AC2, AC4, AC5, AC6 verified; AC3 unverified and its "final head" wording unmeasurable as written (see Review); [O] lens never reported (API overload ×3). Status → in-progress.
+- 2026-09-03: implement resumed for the amendment review's return 1 left open. Criteria audit ran in reduced mode on fresh readers — on Sonnet, logged deviation: Opus answered 529 overload on three spawns. Reader 1 passed AC1 and AC2 and found AC3's "final head" circular (unknown when checked); reader 2 on the reworded AC3 found its "every commit" clause wider than the net-diff command checks (fixed to the net diff) and two notes rejected: the provenance clause binds merged code to measured code, a deliverable property; headroom is AC1/AC2's promise. Gate chose amending all three over amending AC3 alone; nothing widened.
+- 2026-09-03: amendment return: AC1 — "On the measured head AC3 names, the `test-coverage` workflow's `Test coverage` step concludes `success` on each of AC3's three attempts, and the median of its three durations, each read as `completedAt - startedAt` from `gh run view <run-id> --attempt <k> --json jobs`, is 12 minutes or less."
+- 2026-09-03: amendment return: AC2 — "On the same head, every leg the `R-CMD-check` workflow's `gh run view <run-id> --attempt <k> --json jobs` lists concludes its `Run r-lib/actions/check-r-package@v2` step `success` on each of the three attempts, and the median of each leg's three durations, read the same way, is 20 minutes or less."
+- 2026-09-03: amendment return: AC3 — "The `R-CMD-check` and `test-coverage` workflows are green on three attempts of the milestone's measured head — the PR's own run and two `gh run rerun` of it — with no job cancelled at a `timeout-minutes` cap. The measured head is a pushed commit on the branch from which the branch head at the moment of merge differs only under `cairn/` (`git diff --quiet <measured> HEAD -- . ':!cairn'` exits 0, run immediately before the merge)."
+- 2026-09-03: AC2's tick cleared with its wording; AC1–AC3 re-measure at re-review. No code moved since completion's `devtools::check()` (0/0/0 at `TESTTHAT_CPUS=4`); status → review.
 
 ## Decisions
 
