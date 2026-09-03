@@ -94,7 +94,7 @@ beyond the sentences this milestone adds.
       measuring serial per-file cost. Run AC4's command on both branches at
       `TESTTHAT_CPUS=4`; fix what the parallel run reveals (a helper assuming
       one process, a shared path, a port) — each fix one work-log line.
-- [ ] T4: Contention: run `devtools::test()` three times at `TESTTHAT_CPUS=4`;
+- [x] T4: Contention: run `devtools::test()` three times at `TESTTHAT_CPUS=4`;
       an elapsed-bound assertion that fails (`test-parallel-classify.R:268`,
       `test-parallel-detection.R:104`, the metrics-delivery ceiling) gets its
       bound revisited with `helper-time-budget.R`'s row re-pointed in the same
@@ -177,6 +177,13 @@ beyond the sentences this milestone adds.
   test-doctrine text (folded into the divergences bullet, header comment
   compressed, 119 lines) landed early; neither task ticks until its remaining
   half (T5's Codecov comparison, T7's ci-usage-baseline decision) is done.
+- 2026-09-03: T4 — three `devtools::test()` runs at `TESTTHAT_CPUS=4`, none
+  of my other processes running: 569 rows, 4790 expectations, 0 failed, 0
+  skipped on every run; walls 648, 495 and 143 s, per-file sums 2497, 1944
+  and 555 s against the 1397 s serial baseline — the machine carried other
+  load throughout (load average 6–9 read afterwards with two R processes
+  alive), so the figures are noise around an unmeasured true cost. No
+  elapsed bound failed; `helper-time-budget.R` untouched.
 
 ## Decisions
 
