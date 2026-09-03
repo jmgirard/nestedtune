@@ -56,7 +56,19 @@ nested_final_fit(object, results, ...)
   one that is no longer a `nested_results` (an operation that added or
   removed rows returns a plain tibble), and one with no rows are each
   refused before any fitting, with condition class
-  `nestedtune_bad_results`.
+  `nestedtune_bad_results`. A results object in which no outer fold
+  completed is refused next, with condition class
+  `nestedtune_no_completed_folds`: there is no estimate to report a
+  model with, and [`summary()`](https://rdrr.io/r/base/summary.html) on
+  the object lists the stage each fold failed at. That is the class
+  [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html),
+  [autoplot()](https://nestedtune.tidymodels.org/reference/autoplot.nested_results.md)
+  and
+  [`agreement()`](https://nestedtune.tidymodels.org/reference/agreement.md)
+  refuse the same object with. A run in which some folds failed is
+  fitted; its estimate is
+  [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)'s,
+  with that function's partial-run warning.
 
 - ...:
 

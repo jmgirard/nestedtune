@@ -102,7 +102,9 @@ rather than silently ignored.</p></dd>
     <p>An outer fold that failed keeps its place on the x axis and draws no point,
 as does a fold that completed without recording a value for a parameter.
 Neither is imputed and neither is dropped from the axis, so the shortfall is
-visible in the figure itself.</p>
+visible in the figure itself. A run in which no fold completed is refused
+with condition class <code>nestedtune_no_completed_folds</code>, as
+<code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code>, <code><a href="agreement.html">agreement()</a></code> and <code><a href="nested_final_fit.html">nested_final_fit()</a></code> refuse it.</p>
 <p>The subtitle states how much of the requested design ran. Contribution is
 counted per panel instead, because it differs between them: a panel says so
 when fewer folds contributed to it than completed — <code>mtry (2 of 3 chose)</code>,

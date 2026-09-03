@@ -50,7 +50,13 @@ Only the outer folds that completed are summarized, and `n` counts the
 folds contributing to each row, so a run with failures never reports its
 estimate as though the whole design had run. Those folds are dropped
 with a warning naming them; when no fold completed at all, this errors
-instead of returning `NA`.
+instead of returning `NA`, with condition class
+`nestedtune_no_completed_folds` – the class
+[autoplot()](https://nestedtune.tidymodels.org/reference/autoplot.nested_results.md),
+[`agreement()`](https://nestedtune.tidymodels.org/reference/agreement.md)
+and
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+refuse such an object with.
 
 A metric measured at several evaluation times (`eval_time` on
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md))

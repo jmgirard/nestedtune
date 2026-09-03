@@ -2,6 +2,22 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  refuses a results object in which no outer fold completed, with
+  condition class `nestedtune_no_completed_folds`: such a run has no
+  estimate to report a model with, and the message points at
+  [`summary()`](https://rdrr.io/r/base/summary.html) on the object,
+  which lists the stage each fold failed at. The refusal comes after the
+  three `nestedtune_bad_results` refusals and before anything is fitted
+  or drawn.
+  [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html),
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  and
+  [`agreement()`](https://nestedtune.tidymodels.org/reference/agreement.md)
+  already refused the same object; their error now carries the same
+  class, so the fact is catchable one way at every door. A run in which
+  some folds failed is fitted as before.
+
 - [`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md)
   runs the outer loop of nested cross-validation with finetune’s
   simulated annealing inside: each outer fold scores `initial`

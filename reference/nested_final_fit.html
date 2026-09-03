@@ -98,7 +98,14 @@ nestedtune, or from a design assembled by hand rather than by
 <code><a href="nested_resamples.html">nested_resamples()</a></code> or <code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>), one that is no longer a
 <code>nested_results</code> (an operation that added or removed rows returns a plain
 tibble), and one with no rows are each refused before any fitting, with
-condition class <code>nestedtune_bad_results</code>.</p></dd>
+condition class <code>nestedtune_bad_results</code>. A results object in which no
+outer fold completed is refused next, with condition class
+<code>nestedtune_no_completed_folds</code>: there is no estimate to report a model
+with, and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on the object lists the stage each fold failed at.
+That is the class <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code>,
+<a href="autoplot.nested_results.html">autoplot()</a> and <code><a href="agreement.html">agreement()</a></code> refuse the same
+object with. A run in which some folds failed is fitted; its estimate is
+<code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code>'s, with that function's partial-run warning.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

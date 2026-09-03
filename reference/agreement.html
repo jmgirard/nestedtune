@@ -104,7 +104,9 @@ and no rows. A parameter whose id is <code>n</code> or <code>prop</code> cannot 
 because its column would collide with the counts, and is an error.</p>
 <p>A run in which some outer folds failed is tabulated over the folds that
 completed, with a warning saying so; a run in which no fold completed is an
-error, as it is for <code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code>.</p>
+error with condition class <code>nestedtune_no_completed_folds</code>, as it is for
+<code><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics()</a></code>, <a href="autoplot.nested_results.html">autoplot()</a> and
+<code><a href="nested_final_fit.html">nested_final_fit()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

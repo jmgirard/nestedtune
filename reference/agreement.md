@@ -56,8 +56,12 @@ counts, and is an error.
 
 A run in which some outer folds failed is tabulated over the folds that
 completed, with a warning saying so; a run in which no fold completed is
-an error, as it is for
-[`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html).
+an error with condition class `nestedtune_no_completed_folds`, as it is
+for
+[`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html),
+[autoplot()](https://nestedtune.tidymodels.org/reference/autoplot.nested_results.md)
+and
+[`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md).
 
 ## See also
 
