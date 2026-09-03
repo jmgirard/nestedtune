@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 55 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M49 archive summary 25. Both byte budgets stay over: ROADMAP.md ~41,300 B against 24,000, LESSONS.md ~32,900 B against 20,000. This pass pruned M44's terminal row; no candidate row added (M49's rejected findings stay rejected, its accepted `$<-` door limitation went to DESIGN Known issues) and no finding-absorbing row touched. LESSONS extended the M03 line with M49's zero-row prototype lesson rather than adding one; no line pruned. Closing the byte gap still means graduating or dropping candidates — a user call, now fifteen passes overdue. Since the last check: M49 shipped `.inner_metrics` in place of `.grid`, archived after two review rounds; issue #57 closed by the merge.)_
+_Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 55 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M50 archive summary 11. Both byte budgets stay over: ROADMAP.md ~41,000 B against 24,000, LESSONS.md ~33,000 B against 20,000. This pass pruned M45's terminal row; no candidate row added (M50's rejected findings stay rejected, its Out items were routed to standing rows at plan time) and no finding-absorbing row touched. LESSONS added M50's CI-restart line and pruned the M11 `git diff-tree` line to hold the cap; nothing retired. Closing the byte gap still means graduating or dropping candidates — a user call, now sixteen passes overdue. Since the last check: M50 shipped the two racing exports and the tuner registry, archived after one review round with a fix-now batch; issue #35 commented as partial, M51 next.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | review | — | normal | milestones/M50-finetune-racing.md |
+| M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | done | — | normal | milestones/archive/M50-finetune-racing.md |
 | M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | planned | M50 | normal | milestones/M51-sim-anneal.md |
 | M48 | `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert | done | — | normal | milestones/archive/M48-dots-control-passthrough.md |
 | M49 | Each outer fold keeps its inner search's metrics in place of `.grid` | done | — | normal | milestones/archive/M49-inner-metrics-column.md |
 | M47 | `predict()` and `augment()` on a `nested_final_fit` | done | — | normal | milestones/archive/M47-final-fit-predict-augment.md |
-| M45 | The inner loop takes its tuner as an argument, and `nested_tune_bayes()` is its second consumer | done | — | normal | milestones/archive/M45-nested-tune-bayes.md |
 | M46 | `nested_final_fit()` re-runs the procedure a result recorded | done | M45 | normal | milestones/archive/M46-final-fit-recorded-procedure.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
