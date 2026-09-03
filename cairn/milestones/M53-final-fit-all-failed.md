@@ -89,7 +89,9 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: T2 `check_completed_folds()` added after `check_results_record()` in `R/checks.R`, called from `nested_final_fit()` right after it; the file's 82 tests pass, both `break_every_fold()` stages built.
 - 2026-09-03: T3 `check_any_completed()` carries the class; the three doors' all-failed tests assert it (each `summarize`, each `type`) and their roxygen names it; 315 tests across the three files pass.
 - 2026-09-03: T4 `@param results` names the fourth refusal, its class and `summary()`; NEWS carries one entry covering the final fit and the three doors; `document()` rewrote `nested_final_fit.Rd` only.
+- 2026-09-03: T5 first full run: 4810 pass, 1 error — M46's read-nothing-but-splits probe (`test-nested-final-fit-rng.R`) corrupts `.completed` to `NA`, which the new check reads; `check()` failed on the same test. The probe now exempts `.completed` (minor amendment under T2, decision below); the file's 52 tests pass; full suite and `check()` re-run.
 
 ## Decisions
 
+- 2026-09-03: the final fit reads `.completed` from the fold rows beside `splits`, and M46's probe that it reads nothing else now exempts that column. AC1 bound the check to `.completed` at the plan gate, and `check_any_completed()` reads the column for the same reason: the column travels with the rows in hand, where the stamped `folds_completed` count is a copy of it. The probe was an M46 oracle, recorded in no D-entry, DESIGN line or lesson. Falsified by a reader that needs the fold rows to be opaque to the final fit.
 ## Review
