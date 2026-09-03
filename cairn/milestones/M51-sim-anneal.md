@@ -106,6 +106,7 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
 - 2026-09-03: step-7 approval: PR #61 approved for merge (chip, recommended option), authorizing the post-merge close of issue #35 if GitHub leaves it open.
 - 2026-09-03: step 8 — PR #61 marked ready; the CI watch reached the harness ceiling with pkgdown and format-suggest green and the five R CMD check legs plus test-coverage still pending; merge marker written; stopped here for a stateless resume via /milestone-review M51.
 - 2026-09-03: resume: PR #61 open, main unmoved, all criteria evidenced and approval on record; re-entering at step 7 (route c), the chip re-posed and approved — step-7 approval: PR #61 approved for merge (re-posed); step 8 from the marker write onward.
+- 2026-09-03: step 8 — marker rewritten for PR #61; pushing the approval line restarted the check matrix (the M50 lesson), and the foreground watch reached the harness ceiling with pkgdown and format-suggest green and seven legs pending; watcher stopped; this line is committed locally and pushed with nothing else before the merge; resume via /milestone-review M51.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->
