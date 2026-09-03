@@ -4,11 +4,13 @@
 once more, with the whole dataset in hand: it re-evaluates the design's
 inner resampling specification against every row, tunes with
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html),
-[`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
-or one of finetune's racers under the arguments the results object
-carries, selects the best candidate, finalizes the workflow, and fits it
-on all the data. The result is the model to deploy, built by the same
-search the estimate you report describes.
+[`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html),
+one of finetune's racers or
+[`finetune::tune_sim_anneal()`](https://finetune.tidymodels.org/reference/tune_sim_anneal.html)
+under the arguments the results object carries, selects the best
+candidate, finalizes the workflow, and fits it on all the data. The
+result is the model to deploy, built by the same search the estimate you
+report describes.
 
 ## Usage
 
@@ -35,17 +37,19 @@ nested_final_fit(object, results, ...)
   The `nested_results` object from
   [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
   [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
-  [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
-  or
+  [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md),
   [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  or
+  [`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md)
   whose estimate you will report for this model. Everything the re-run
   needs is read from it: the design's inner resampling specification,
   recorded on the result as the design stored it; the data, which every
   split references; and the procedure – the tuner and its own arguments
-  (`grid`, or `iter`, `initial` and `objective`) with `param_info`,
-  `event_level` and `eval_time`, and the metric set. A results object
-  that carries no such record (one built by an earlier version of
-  nestedtune, or from a design assembled by hand rather than by
+  (`grid`; `iter`, `initial` and `objective`; or `iter` and `initial`)
+  with `param_info`, `event_level` and `eval_time`, and the metric set.
+  A results object that carries no such record (one built by an earlier
+  version of nestedtune, or from a design assembled by hand rather than
+  by
   [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   or
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)),

@@ -2,6 +2,34 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md)
+  runs the outer loop of nested cross-validation with finetune’s
+  simulated annealing inside: each outer fold scores `initial`
+  space-filling candidates on its inner resamples, then for `iter`
+  iterations perturbs the current candidate and keeps or discards the
+  result by finetune’s annealing rule. It is
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)’s
+  sibling: the same arguments less `objective`, `initial` defaulting to
+  1 (finetune’s default; at least 1 rather than the Bayesian sibling’s
+  2), and a
+  [`finetune::control_sim_anneal()`](https://finetune.tidymodels.org/reference/control_sim_anneal.html)
+  through `...` as `control`. Each fold’s `.inner_metrics` carries
+  `.iter`, `0` on the initial candidates. Refused at entry, before any
+  fold runs: finetune not installed (`nestedtune_pkg_not_installed`);
+  `iter` below 1 (`nestedtune_bad_iter`) – finetune 1.3.0 runs two
+  iterations at `iter = 0`, not none, so the 0 the Bayesian sibling
+  accepts is refused here; `initial` below 1 or a `tune_results`
+  (`nestedtune_bad_initial`); a control that is not a
+  `control_sim_anneal()` (`nestedtune_bad_control`).
+  `control_sim_anneal()` defaults `verbose_iter` to `TRUE`, which prints
+  finetune’s annealing log from every fold of a serial run; pass
+  `control = control_sim_anneal(verbose_iter = FALSE)` for a quiet run.
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  on an annealing result runs the search again on the full data and
+  prints the initial and iteration counts that ran beside the ones
+  requested, as it does for a Bayesian result
+  ([\#35](https://github.com/tidymodels/nestedtune/issues/35)).
+
 - [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
   and
   [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)

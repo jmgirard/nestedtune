@@ -186,11 +186,13 @@ orchestrator: a named list giving the tuner (`"tune_grid"` here,
 [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
 `"tune_race_anova"` or `"tune_race_win_loss"` from
 [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
-and its sibling), that tuner's own arguments (`grid` here and for the
-racers; `iter`, `initial` and `objective` for the Bayesian tuner), and
-`param_info`, `event_level` and `eval_time` on all. A Bayesian result
-carries the `procedure` attribute and no `grid` attribute, and its
-`.inner_metrics` tables carry an `.iter` column;
+and its sibling, `"tune_sim_anneal"` from
+[`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md)),
+that tuner's own arguments (`grid` here and for the racers; `iter`,
+`initial` and `objective` for the Bayesian tuner, `iter` and `initial`
+for annealing), and `param_info`, `event_level` and `eval_time` on all.
+A Bayesian result carries the `procedure` attribute and no `grid`
+attribute, and its `.inner_metrics` tables carry an `.iter` column;
 [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
 documents both.
 
@@ -268,13 +270,16 @@ report for it.
 For a Bayesian inner loop –
 [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
 proposing candidates one at a time – see
-[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
-and for a raced grid – finetune eliminating candidates as the inner
+[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md);
+for a raced grid – finetune eliminating candidates as the inner
 resamples come in – see
 [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
 and
 [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md);
-each runs this same outer loop with the inner tuner swapped.
+and for simulated annealing – finetune perturbing the current candidate
+one iteration at a time – see
+[`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md).
+Each runs this same outer loop with the inner tuner swapped.
 
 ## Reproducibility
 

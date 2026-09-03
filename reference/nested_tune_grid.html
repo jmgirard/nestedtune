@@ -201,9 +201,11 @@ travels with the fold it describes.</p>
 <p><code>attr(x, "procedure")</code> records what ran, on the result of every
 orchestrator: a named list giving the tuner (<code>"tune_grid"</code> here,
 <code>"tune_bayes"</code> from <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code>, <code>"tune_race_anova"</code> or
-<code>"tune_race_win_loss"</code> from <code><a href="nested_tune_race.html">nested_tune_race_anova()</a></code> and its sibling),
+<code>"tune_race_win_loss"</code> from <code><a href="nested_tune_race.html">nested_tune_race_anova()</a></code> and its sibling,
+<code>"tune_sim_anneal"</code> from <code><a href="nested_tune_sim_anneal.html">nested_tune_sim_anneal()</a></code>),
 that tuner's own arguments (<code>grid</code> here and for the racers; <code>iter</code>,
-<code>initial</code> and <code>objective</code> for the Bayesian tuner), and <code>param_info</code>,
+<code>initial</code> and <code>objective</code> for the Bayesian tuner, <code>iter</code> and <code>initial</code>
+for annealing), and <code>param_info</code>,
 <code>event_level</code> and <code>eval_time</code> on all. A Bayesian result carries the
 <code>procedure</code> attribute and no <code>grid</code> attribute, and its <code>.inner_metrics</code>
 tables carry an <code>.iter</code> column; <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code> documents both.</p>
@@ -263,10 +265,12 @@ which takes this result and runs the procedure it recorded again with the
 whole dataset in hand. The estimate from this function is what you report
 for it.</p>
 <p>For a Bayesian inner loop – <code><a href="https://tune.tidymodels.org/reference/tune_bayes.html" class="external-link">tune::tune_bayes()</a></code> proposing candidates one
-at a time – see <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code>, and for a raced grid – finetune
+at a time – see <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code>; for a raced grid – finetune
 eliminating candidates as the inner resamples come in – see
-<code><a href="nested_tune_race.html">nested_tune_race_anova()</a></code> and <code><a href="nested_tune_race.html">nested_tune_race_win_loss()</a></code>; each runs
-this same outer loop with the inner tuner swapped.</p>
+<code><a href="nested_tune_race.html">nested_tune_race_anova()</a></code> and <code><a href="nested_tune_race.html">nested_tune_race_win_loss()</a></code>; and for
+simulated annealing – finetune perturbing the current candidate one
+iteration at a time – see <code><a href="nested_tune_sim_anneal.html">nested_tune_sim_anneal()</a></code>. Each runs this same
+outer loop with the inner tuner swapped.</p>
     </div>
     <div class="section level2">
     <h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a></h2>

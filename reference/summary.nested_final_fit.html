@@ -105,11 +105,11 @@ rather than silently ignored.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> returns an object of class <code>summary.nested_final_fit</code>: a list
 holding the full-data tuning run's resampling label (<code>tuning_label</code>), the
-tuner that ran (<code>tuner</code>: <code>"tune_grid"</code>, <code>"tune_bayes"</code>, <code>"tune_race_anova"</code>
-or <code>"tune_race_win_loss"</code>), the number of
-candidates that run scored (<code>candidates</code>), the Bayesian counts (<code>initial</code>
-and <code>initial_requested</code>, <code>iterations_completed</code> and
-<code>iterations_requested</code>, each <code>NULL</code> on a grid fit; the scored figures are
+tuner that ran (<code>tuner</code>: <code>"tune_grid"</code>, <code>"tune_bayes"</code>, <code>"tune_race_anova"</code>,
+<code>"tune_race_win_loss"</code> or <code>"tune_sim_anneal"</code>), the number of
+candidates that run scored (<code>candidates</code>), the iterating tuners' counts
+(<code>initial</code> and <code>initial_requested</code>, <code>iterations_completed</code> and
+<code>iterations_requested</code>, each <code>NULL</code> on a grid or a racing fit; the scored figures are
 read from the candidate record, the requested ones from the procedure, and
 a run whose candidate record cannot be derived reports its scored figures
 as zero rather than failing to print), the
