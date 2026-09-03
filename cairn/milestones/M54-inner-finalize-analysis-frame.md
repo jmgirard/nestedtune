@@ -52,7 +52,7 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 
 ## Acceptance criteria
 
-- [ ] AC1: For each tuner `tuner_registry` (`R/tuner.R:67`) enumerates other than `tune_bayes`, a
+- [x] AC1: For each tuner `tuner_registry` (`R/tuner.R:67`) enumerates other than `tune_bayes`, a
       run on a `nested_resamples()` design with a `param_info` whose `min_n` object carries an
       unknown upper bound and a finalizer recording every frame it is handed sees, in every outer
       fold, only frames whose row count equals `nrow(rsample::analysis(split))` for that fold and
@@ -60,23 +60,23 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
       the same holds for a `nested_tune_grid()` run on a design whose `outside` is an evaluated
       `vfold_cv()` rset; asserted by one test over the registry, the finetune entries skipped where
       finetune is absent.
-- [ ] AC2: On a `nested_tune_grid()` run under a pinned seed with `grid = 5` and the `min_n`
+- [x] AC2: On a `nested_tune_grid()` run under a pinned seed with `grid = 5` and the `min_n`
       finalizer `dials::get_n_frac_range(frac = c(1/10, 5/10))`, every candidate each fold searched
       (`.inner_metrics$min_n`) lies within `floor(n * c(1/10, 5/10))` computed in the test from that
       fold's `n = nrow(rsample::analysis(split))`; asserted by a test whose upper bound the full
       frame's `floor(nrow(data) / 2)` exceeds by 20 on the 200-row fixture.
-- [ ] AC3: On the same data, `nested_tune_grid()` on a `nested_resamples()` design and on the
+- [x] AC3: On the same data, `nested_tune_grid()` on a `nested_resamples()` design and on the
       `rsample::nested_cv()` design built under the same seed — inner rows asserted identical in the
       test — returns `identical()` `.inner_metrics` and `.metrics` columns under the same run seed,
       once with the unknown-range `param_info` of AC2 and once with `stoch_grid()`'s data-frame grid;
       asserted by a test on two direct calls.
-- [ ] AC4: An inner rset the rebuild does not apply to reaches `run_tuner()` untouched: on a
+- [x] AC4: An inner rset the rebuild does not apply to reaches `run_tuner()` untouched: on a
       `rsample::nested_cv()` design, and on a `nested_resamples()` design whose evaluated `outside`
       is a `manual_rset()` with a repeated `in_id`, the `resamples` argument `run_tuner()` receives in
       every outer fold of a `nested_tune_grid()` run is `identical()` to the design's
       `inner_resamples` element; asserted by a test through `local_mocked_bindings()` on `run_tuner`,
       the mock recording its argument and delegating to the original.
-- [ ] AC5: The `@param param_info` roxygen at its three sites (`grep -n '@param param_info' R/`:
+- [x] AC5: The `@param param_info` roxygen at its three sites (`grep -n '@param param_info' R/`:
       `nested_tune_grid()`, inherited by the racers, `nested_tune_bayes()`, `nested_tune_sim_anneal()`)
       states that an unknown range is finalized on the outer fold's analysis rows; `?nested_final_fit`'s
       `@param results` states that the final fit finalizes on the full data; `cairn/DESIGN.md`'s
@@ -129,3 +129,16 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - 2026-09-03: T2 — `analysis_framed_inner()` added beside `inner_resamples_from_split()` and called in `nested_fold_fit()` immediately before `run_tuner()`, inside the tuning seed's scope (probed: `.Random.seed` unchanged across the call; the rebuilt splits' `analysis()`/`assessment()` rows identical to the design's; a `nested_cv()` inner rset returned as is). One deviation from the task text: the analysis frame is materialized only after every inner index maps, so an outer split whose own `in_id` reaches past the data (the "raising last_fit()" test in `test-nested-tune-grid-failures.R`) still fails at the outer fit, not the inner stage — the first full-suite run failed that one test before the reorder. Full suite after it: 4922 passes, 0 failures, 0 warnings, the serial/parallel identity file included; the finalize file 105 passes.
 - 2026-09-03: T3 — `@param param_info` at the grid, Bayesian and annealing sites (the racers inherit the grid's), `?nested_final_fit`'s `@param results`, the DESIGN architecture paragraph naming the rebuild as the GP1 divergence, one NEWS entry; `devtools::document()` run, five Rd files regenerated, `air format --check R/` clean. The Bayesian text was written against a run: `nested_tune_bayes()` on an unknown-range `min_n` fails every fold with tune's "must be a <param> object without unknowns" note (executed 2026-09-03), so that site says it refuses rather than finalizes.
 - 2026-09-03: T4 — `devtools::document()` on the committed tree leaves no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes (the suite inside it green after T2's 4922-pass run). All tasks checked; status set to review.
+
+## Review
+
+- 2026-09-03 step 1: `git fetch`; origin/main at `5146278`, the branch's base — nothing to merge, no unpushed default-branch commits.
+- 2026-09-03 step 2: branch pushed; draft PR #64 opened; `Resolves: —`, so no closing lines.
+- AC1 evidence (2026-09-03): `devtools::test(filter = "nested-tune-finalize")` 105 passes, 0 failures, 0 skips, 25 s. The AC1 block ran all four registry entries other than `tune_bayes` (finetune 1.3.0, lme4, BradleyTerry2 installed, no skip) plus the evaluated-`vfold_cv()` outer design; each asserts every recorded finalizer frame matches exactly one fold's sorted `x1` key under `identical()` with `n == nrow(rsample::analysis(split))`, and that every fold was hit. Verified by reading the test.
+- AC2 evidence (2026-09-03): same run; per fold, `full_upper - bounds[2] == 20` asserted, and every unique `.inner_metrics$min_n` inside `floor(160 * c(1/10, 5/10)) = [16, 80]`; T1's log records this red before T2 (candidates up to 100).
+- AC3 evidence (2026-09-03): same run; `expect_inner_identical(lean, ref)` precondition, then two direct `nested_tune_grid()` calls under `set.seed(3)` per grid shape (unknown-range `param_info`, then `stoch_grid()`), `.inner_metrics` and `.metrics` `expect_identical()` on both pairs.
+- AC4 evidence (2026-09-03): same run; `local_mocked_bindings(run_tuner = ...)` records the `resamples` argument and delegates; on the `nested_cv()` design and on the repeated-`in_id` `manual_rset()` outer design every fold's argument is `identical()` to `design$inner_resamples[[i]]`.
+- AC5 evidence (2026-09-03): `grep -n '@param param_info' R/` → the grid, Bayesian and annealing sites; the grid and annealing text state finalization on the outer fold's analysis rows, the Bayesian text states tune's refusal before any frame is read and that the other tuners finalize on the analysis rows; `?nested_final_fit` `@param results` states the full-data finalization; `cairn/DESIGN.md:267-278` names `analysis_framed_inner()` as the GP1 divergence; `Rscript -e 'devtools::document()'` on the branch head leaves `git status --porcelain` empty.
+- Gate, universal (2026-09-03): `cairn_validate.py` exit 0, all checks pass, 18 `references staleness` advisories (pre-existing). No IP/GP principle line changed in `cairn/DESIGN.md` (`git diff` shows none); `cairn_impact.py --changed` run anyway on the declared GP1/IP1 — its listed citations are the architecture paragraph this milestone added (`DESIGN.md:267`, `:275`) and prior records; none diverges.
+- Gate, toolchain (2026-09-03): `devtools::document()` no diff; `NAMESPACE`/`man/` regenerated, not hand-edited; README.md and README.Rmd last changed in the same commit (`bbf51da`), in sync; `pkgdown::check_pkgdown()` "No problems found"; NEWS.md carries the entry, no milestone number in it; no new top-level file. `devtools::check()` result under AC6 below.
+- Review lens [S] blame-history (2026-09-03): zero findings — the rebuild runs inside `fold_task()` on both dispatch paths, mutates no shared object, sits inside the fold seed's scope and the fold's `tryCatch`, and the `nested_cv()` / repeated-`in_id` bail-outs match M15's payload design and M03's fold isolation; no commit or D-entry undone.
