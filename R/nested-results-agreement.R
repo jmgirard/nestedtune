@@ -46,7 +46,9 @@
 #'
 #' A run in which some outer folds failed is tabulated over the folds that
 #' completed, with a warning saying so; a run in which no fold completed is an
-#' error, as it is for [collect_metrics()].
+#' error with condition class `nestedtune_no_completed_folds`, as it is for
+#' [collect_metrics()], [autoplot()][autoplot.nested_results] and
+#' [nested_final_fit()].
 #'
 #' @examplesIf rlang::is_installed(c("recipes", "yardstick"))
 #' data(mtcars)

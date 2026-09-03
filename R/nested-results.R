@@ -666,7 +666,9 @@ new_tbl <- function(cols) {
 #' contributing to each row, so a run with failures never reports its estimate
 #' as though the whole design had run. Those folds are dropped with a warning
 #' naming them; when no fold completed at all, this errors instead of returning
-#' `NA`.
+#' `NA`, with condition class `nestedtune_no_completed_folds` -- the class
+#' [autoplot()][autoplot.nested_results], [agreement()] and
+#' [nested_final_fit()] refuse such an object with.
 #'
 #' A metric measured at several evaluation times (`eval_time` on
 #' [nested_tune_grid()]) is summarized per time, never averaged across them:
@@ -824,6 +826,9 @@ summarize_folds <- function(per_fold) {
 # treat the absence of a result as a result. `action` names what the caller was
 # asking for -- summarizing or plotting -- so both refusals say the same thing
 # about the same object and cannot drift apart.
+# The class is the one `check_completed_folds()` (R/checks.R) raises when the
+# final fit is asked for a model from such a run, so the fact "no outer fold
+# completed" is catchable one way at every door that asks for something.
 check_any_completed <- function(
   x,
   action = "summarize",
@@ -841,6 +846,7 @@ check_any_completed <- function(
       x = "All {n} outer fold{?s} failed.",
       i = "See {.code x$.notes} for what went wrong."
     ),
+    class = "nestedtune_no_completed_folds",
     call = call
   )
 }

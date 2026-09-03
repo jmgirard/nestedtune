@@ -37,7 +37,9 @@ assessment set, with a rule at the nested estimate: the same value
 An outer fold that failed keeps its place on the x axis and draws no point,
 as does a fold that completed without recording a value for a parameter.
 Neither is imputed and neither is dropped from the axis, so the shortfall is
-visible in the figure itself.
+visible in the figure itself. A run in which no fold completed is refused
+with condition class \code{nestedtune_no_completed_folds}, as
+\code{\link[=collect_metrics]{collect_metrics()}}, \code{\link[=agreement]{agreement()}} and \code{\link[=nested_final_fit]{nested_final_fit()}} refuse it.
 
 The subtitle states how much of the requested design ran. Contribution is
 counted per panel instead, because it differs between them: a panel says so

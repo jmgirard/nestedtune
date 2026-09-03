@@ -40,7 +40,9 @@
 #' An outer fold that failed keeps its place on the x axis and draws no point,
 #' as does a fold that completed without recording a value for a parameter.
 #' Neither is imputed and neither is dropped from the axis, so the shortfall is
-#' visible in the figure itself.
+#' visible in the figure itself. A run in which no fold completed is refused
+#' with condition class `nestedtune_no_completed_folds`, as
+#' [collect_metrics()], [agreement()] and [nested_final_fit()] refuse it.
 #'
 #' The subtitle states how much of the requested design ran. Contribution is
 #' counted per panel instead, because it differs between them: a panel says so

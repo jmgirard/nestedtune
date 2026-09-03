@@ -291,6 +291,7 @@ test_that("a run where every fold failed is refused the way collect_metrics() re
   ours <- rlang::catch_cnd(agreement(res), "error")
   theirs <- rlang::catch_cnd(collect_metrics(res), "error")
   expect_identical(class(ours), class(theirs))
+  expect_s3_class(ours, "nestedtune_no_completed_folds")
   expect_match(conditionMessage(ours), "nothing to tabulate", fixed = TRUE)
   expect_match(conditionMessage(ours), "no outer fold completed", fixed = TRUE)
   expect_match(
