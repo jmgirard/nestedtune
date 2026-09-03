@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, GP1, GP2, GP4
 - **Resolves:** —
-- **Branch/PR:** m054-inner-finalize-analysis-frame
+- **Branch/PR:** m054-inner-finalize-analysis-frame · https://github.com/tidymodels/nestedtune/pull/64
 
 ## Goal
 
