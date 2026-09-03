@@ -161,7 +161,8 @@ initial candidates are a space-filling design drawn under the fold's tuning
 seed, and each perturbation is drawn from the stream that seed started.
 \code{\link[finetune:control_sim_anneal]{finetune::control_sim_anneal()}} has no seed slot, so nothing is injected
 into the control; the fold's tuning seed alone governs the search. Fold
-\code{i} is exactly:
+\code{i} is exactly (with \code{resamples$inner_resamples[[i]]} read as
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}'s reproducibility section reads it):
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")

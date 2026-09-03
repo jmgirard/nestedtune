@@ -155,9 +155,11 @@ expect_frames_are_analysis_rows <- function(record, nested, label) {
     },
     integer(1)
   )
-  expect_false(
-    anyNA(matched),
-    label = paste(label, "every finalized frame is one fold's analysis frame")
+  # Which recorded frames, by position, were no fold's analysis frame.
+  expect_identical(
+    which(is.na(matched)),
+    integer(0),
+    label = paste(label, "frames that are no fold's analysis frame")
   )
   expect_setequal(matched, seq_along(nested$splits))
 }
@@ -240,12 +242,14 @@ test_that("AC2: every candidate a fold searched lies inside the range its analys
     expect_equal(full_upper - bounds[[2L]], 20L)
     candidates <- unique(res$.inner_metrics[[i]]$min_n)
     expect_gt(length(candidates), 1L)
-    expect_true(
-      all(candidates >= bounds[[1L]] & candidates <= bounds[[2L]]),
+    # Which candidates, if any, fall outside the fold's own range.
+    outside <- candidates[candidates < bounds[[1L]] | candidates > bounds[[2L]]]
+    expect_identical(
+      outside,
+      candidates[0],
       label = sprintf(
-        "fold %d candidates %s inside [%d, %d]",
+        "fold %d candidates outside [%d, %d]",
         i,
-        paste(candidates, collapse = ", "),
         bounds[[1L]],
         bounds[[2L]]
       )

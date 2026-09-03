@@ -9,8 +9,8 @@
   folds, a `min_n` finalized at half the row count searched candidates up to
   100 where the fold's 160 analysis rows give 80. The candidates such a run
   searches, and so its selections and estimate, change; a `param_info` with
-  no unknown range, a data-frame `grid`, and a `nested_cv()` design are
-  unaffected, and `nested_tune_grid()` on the two designs built under one
+  no unknown range, a data-frame `grid`, a `nested_cv()` design, and an
+  outer split that repeats a row are unaffected, and `nested_tune_grid()` on the two designs built under one
   seed now returns identical `.inner_metrics` and `.metrics`. This applies to
   `nested_tune_grid()`, both racing functions and `nested_tune_sim_anneal()`;
   `nested_tune_bayes()` refuses an unknown range before any frame is read,

@@ -72,7 +72,8 @@
 #' `randomize = TRUE` (finetune's default) the inner resamples are shuffled
 #' before the burn-in, so which resamples the burn-in uses, and with it which
 #' candidates are eliminated when, comes from the fold's tuning seed. Fold `i`
-#' is exactly:
+#' is exactly (with `resamples$inner_resamples[[i]]` read as
+#' [nested_tune_grid()]'s reproducibility section reads it):
 #'
 #' ```
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",

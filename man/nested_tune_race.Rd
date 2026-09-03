@@ -56,7 +56,9 @@ out -- so on a \code{\link[=nested_resamples]{nested_resamples()}} design the in
 fold's inner resamples re-pointed at its analysis set rather than the
 design's own \code{inner_resamples} element, which indexes the whole data.
 A design from \code{\link[rsample:nested_cv]{rsample::nested_cv()}} already carries the analysis set
-and is passed as it is. \code{\link[=nested_final_fit]{nested_final_fit()}} finalizes on the full data.}
+and is passed as it is, as is the design's element under an outer split
+that repeats a row (an evaluated \code{\link[rsample:manual_rset]{rsample::manual_rset()}}), where the
+re-pointing is ambiguous. \code{\link[=nested_final_fit]{nested_final_fit()}} finalizes on the full data.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate: the design the race is
@@ -163,7 +165,8 @@ A race draws from the generator even with a deterministic engine: with
 \code{randomize = TRUE} (finetune's default) the inner resamples are shuffled
 before the burn-in, so which resamples the burn-in uses, and with it which
 candidates are eliminated when, comes from the fold's tuning seed. Fold \code{i}
-is exactly:
+is exactly (with \code{resamples$inner_resamples[[i]]} read as
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}'s reproducibility section reads it):
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")

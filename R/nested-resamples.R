@@ -252,9 +252,14 @@ analysis_framed_inner <- function(inner, split) {
     inner_split$out_id <- out_id
     splits[[i]] <- inner_split
   }
-  # Materialized only once every index is known to map: an outer split whose
-  # own `in_id` reaches past the data is left for `last_fit()` to refuse, as
-  # the fold's outer-fit failure, rather than raised here as its inner one.
+  # Materialized only once every index is known to map, and only when the
+  # outer split's own `in_id` lies inside its frame: one reaching past the
+  # data is left for `last_fit()` to refuse, as the fold's outer-fit failure,
+  # rather than raised here as its inner one -- whether the inner indices
+  # happen to map (an index appended to `in_id`) or not (one replaced).
+  if (any(outer_idx < 1L) || max(outer_idx) > nrow(split$data)) {
+    return(inner)
+  }
   analysis_frame <- rsample::analysis(split)
   splits <- lapply(splits, function(inner_split) {
     inner_split$data <- analysis_frame

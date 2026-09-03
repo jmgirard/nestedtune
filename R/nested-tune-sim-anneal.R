@@ -91,7 +91,8 @@
 #' seed, and each perturbation is drawn from the stream that seed started.
 #' [finetune::control_sim_anneal()] has no seed slot, so nothing is injected
 #' into the control; the fold's tuning seed alone governs the search. Fold
-#' `i` is exactly:
+#' `i` is exactly (with `resamples$inner_resamples[[i]]` read as
+#' [nested_tune_grid()]'s reproducibility section reads it):
 #'
 #' ```
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",

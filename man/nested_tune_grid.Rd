@@ -46,7 +46,9 @@ out -- so on a \code{\link[=nested_resamples]{nested_resamples()}} design the in
 fold's inner resamples re-pointed at its analysis set rather than the
 design's own \code{inner_resamples} element, which indexes the whole data.
 A design from \code{\link[rsample:nested_cv]{rsample::nested_cv()}} already carries the analysis set
-and is passed as it is. \code{\link[=nested_final_fit]{nested_final_fit()}} finalizes on the full data.}
+and is passed as it is, as is the design's element under an outer split
+that repeats a row (an evaluated \code{\link[rsample:manual_rset]{rsample::manual_rset()}}), where the
+re-pointing is ambiguous. \code{\link[=nested_final_fit]{nested_final_fit()}} finalizes on the full data.}
 
 \item{grid}{A data frame of candidate parameter values, or a positive whole
 number giving the size of a grid to generate. Passed to
@@ -237,7 +239,12 @@ element \code{2 * i} for its outer fit, each applied with the generator kind
 pinned. Because a fold's seed depends on its position and not on the order
 folds are executed in, the result is the same however the loop is scheduled.
 
-This makes any single fold reproducible by hand. Fold \code{i} is exactly:
+This makes any single fold reproducible by hand. Fold \code{i} is exactly
+(on a \code{\link[=nested_resamples]{nested_resamples()}} design, \code{resamples$inner_resamples[[i]]} here
+stands for that inner rset re-pointed at \code{analysis(resamples$splits[[i]])}
+-- the frame each inner split carries is the fold's analysis set, its
+indices remapped -- which changes the call only when \code{param_info} carries
+an unknown range, finalized on those rows as \code{param_info} describes):
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")
