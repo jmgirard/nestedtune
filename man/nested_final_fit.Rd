@@ -22,7 +22,12 @@ resampling specification, recorded on the result as the design stored it;
 the data, which every split references; and the procedure -- the tuner
 and its own arguments (\code{grid}; \code{iter}, \code{initial} and \code{objective}; or
 \code{iter} and \code{initial}) with
-\code{param_info}, \code{event_level} and \code{eval_time}, and the metric set. A results
+\code{param_info}, \code{event_level} and \code{eval_time}, and the metric set. A
+\code{param_info} parameter whose range is unknown until the data is seen is
+finalized here on the full data -- every row is this model's training
+data -- where each outer fold of the nested run finalized it on that
+fold's analysis rows alone, so the final model's candidate range can
+exceed any fold's. A results
 object that carries no such record (one built by an earlier version of
 nestedtune, or from a design assembled by hand rather than by
 \code{\link[=nested_resamples]{nested_resamples()}} or \code{\link[rsample:nested_cv]{rsample::nested_cv()}}), one that is no longer a

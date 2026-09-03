@@ -52,7 +52,13 @@ scored so far, and nothing about the early stop reaches \code{.notes}.}
 \item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
 derive one from the workflow. Passed unchanged to \code{\link[tune:tune_bayes]{tune::tune_bayes()}} on
 every outer fold: the initial candidates are drawn from its ranges, and
-every proposal stays inside them.}
+every proposal stays inside them. A parameter whose range is unknown
+until the data is seen is not finalized here: \code{\link[tune:tune_bayes]{tune::tune_bayes()}}
+refuses it before any frame is read ("must be a \if{html}{\out{<param>}} object without
+unknowns"), which every outer fold records as its failure. Finalize it
+first with \code{\link[dials:finalize]{dials::finalize()}} on the data. Where \code{\link[=nested_tune_grid]{nested_tune_grid()}}
+and the finetune procedures do finalize, it is on the outer fold's
+analysis rows.}
 
 \item{metrics}{A \code{\link[yardstick:metric_set]{yardstick::metric_set()}}, or \code{NULL} to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner

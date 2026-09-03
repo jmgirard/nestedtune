@@ -264,7 +264,19 @@ workflow's (`attach_daemon_pkgs()`). It draws every fold's seeds up front and ha
 `nested_fold_fit()` — a worker whose inputs are the outer split, the inner
 `rset`, the fold's two seeds, the tuner description and the static
 workflow/metrics. The worker delegates the entire statistical pipeline to
-tune: `run_tuner()` assembles the inner call with `rlang::call2()` in the
+tune, with one documented divergence from GP1 (M54): before the inner call,
+`analysis_framed_inner()` (`R/nested-resamples.R`) re-points an inner `rset`
+whose splits carry the outer split's own frame — a `nested_resamples()`
+design's — at `rsample::analysis(split)`, indices remapped and fingerprint
+recomputed, the inverse of `inner_resamples_from_split()`; tune finalizes an
+unknown parameter range on the first inner split's whole frame, molded
+through the preprocessor, so the inner call receives that rebuilt `rset`
+rather than the design's `inner_resamples` element, and finalizes on the
+analysis rows alone (IP1). A `nested_cv()` design's inner `rset`, and one
+under an outer split whose `in_id` repeats a row, reach tune untouched; the
+design, its size and the wire payload do not change, each running fold
+materializing one analysis-set copy for the tune call's duration. Then
+`run_tuner()` assembles the inner call with `rlang::call2()` in the
 registry's namespace — `tune_grid()`, `tune_bayes()`, `tune_race_anova()` or
 `tune_race_win_loss()` under the effective control (D-042): the
 `control_grid()` / `control_bayes()` the caller passed through `...`, or

@@ -38,7 +38,12 @@
 #'   the data, which every split references; and the procedure -- the tuner
 #'   and its own arguments (`grid`; `iter`, `initial` and `objective`; or
 #'   `iter` and `initial`) with
-#'   `param_info`, `event_level` and `eval_time`, and the metric set. A results
+#'   `param_info`, `event_level` and `eval_time`, and the metric set. A
+#'   `param_info` parameter whose range is unknown until the data is seen is
+#'   finalized here on the full data -- every row is this model's training
+#'   data -- where each outer fold of the nested run finalized it on that
+#'   fold's analysis rows alone, so the final model's candidate range can
+#'   exceed any fold's. A results
 #'   object that carries no such record (one built by an earlier version of
 #'   nestedtune, or from a design assembled by hand rather than by
 #'   [nested_resamples()] or [rsample::nested_cv()]), one that is no longer a

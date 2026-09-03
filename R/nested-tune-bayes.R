@@ -21,7 +21,13 @@
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
 #'   derive one from the workflow. Passed unchanged to [tune::tune_bayes()] on
 #'   every outer fold: the initial candidates are drawn from its ranges, and
-#'   every proposal stays inside them.
+#'   every proposal stays inside them. A parameter whose range is unknown
+#'   until the data is seen is not finalized here: [tune::tune_bayes()]
+#'   refuses it before any frame is read ("must be a <param> object without
+#'   unknowns"), which every outer fold records as its failure. Finalize it
+#'   first with [dials::finalize()] on the data. Where [nested_tune_grid()]
+#'   and the finetune procedures do finalize, it is on the outer fold's
+#'   analysis rows.
 #' @param iter The maximum number of search iterations, passed to
 #'   [tune::tune_bayes()]. A single non-negative whole number. Each iteration
 #'   proposes one candidate and scores it on the fold's inner resamples. `0`

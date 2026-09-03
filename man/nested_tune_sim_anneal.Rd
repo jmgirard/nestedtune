@@ -50,7 +50,11 @@ scored so far, and nothing about the early stop reaches \code{.notes}.}
 \item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
 derive one from the workflow. Passed unchanged to
 \code{\link[finetune:tune_sim_anneal]{finetune::tune_sim_anneal()}} on every outer fold: the initial candidates
-are drawn from its ranges, and every perturbation stays inside them.}
+are drawn from its ranges, and every perturbation stays inside them. A
+parameter whose range is unknown until the data is seen is finalized by
+finetune on the outer fold's analysis rows, never on the rows that fold
+holds out, as \code{\link[=nested_tune_grid]{nested_tune_grid()}} describes; \code{\link[=nested_final_fit]{nested_final_fit()}}
+finalizes on the full data.}
 
 \item{metrics}{A \code{\link[yardstick:metric_set]{yardstick::metric_set()}}, or \code{NULL} to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner

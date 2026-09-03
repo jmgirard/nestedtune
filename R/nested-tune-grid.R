@@ -43,7 +43,14 @@
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
 #'   derive one from the workflow. Passed unchanged to [tune::tune_grid()] on
 #'   every outer fold, so a restricted range restricts the grid every fold
-#'   searches.
+#'   searches. A parameter whose range is unknown until the data is seen
+#'   (`mtry()`, or a `min_n()` finalized by row count) is finalized by tune
+#'   on the outer fold's analysis rows -- never on the rows that fold holds
+#'   out -- so on a [nested_resamples()] design the inner call receives the
+#'   fold's inner resamples re-pointed at its analysis set rather than the
+#'   design's own `inner_resamples` element, which indexes the whole data.
+#'   A design from [rsample::nested_cv()] already carries the analysis set
+#'   and is passed as it is. [nested_final_fit()] finalizes on the full data.
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
 #'   [tune::tune_grid()]. A data frame is checked against the workflow before
