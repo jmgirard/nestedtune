@@ -120,7 +120,14 @@ test_that("the racing reference loop also matches on the metric-separating fixtu
 
   for (fn in RACERS) {
     set.seed(23)
-    res <- race_call_by_name(fn, wf, folds, grid = sep_grid(), metrics = ms, control = ctrl)
+    res <- race_call_by_name(
+      fn,
+      wf,
+      folds,
+      grid = sep_grid(),
+      metrics = ms,
+      control = ctrl
+    )
     ref <- reference_nested_race_loop(
       fn,
       wf,
@@ -185,7 +192,14 @@ test_that("the fold record is every candidate the race scored, and the selection
 
   for (fn in RACERS) {
     set.seed(24)
-    res <- race_call_by_name(fn, wf, folds, grid = stoch_grid(), metrics = ms, control = ctrl)
+    res <- race_call_by_name(
+      fn,
+      wf,
+      folds,
+      grid = stoch_grid(),
+      metrics = ms,
+      control = ctrl
+    )
     ref <- reference_nested_race_loop(
       fn,
       wf,
@@ -207,7 +221,10 @@ test_that("the fold record is every candidate the race scored, and the selection
         res$.inner_metrics[[i]],
         tune::collect_metrics(raced, all_configs = TRUE)
       )
-      expect_identical(res$.selected[[i]], tune::select_best(raced, metric = "rmse"))
+      expect_identical(
+        res$.selected[[i]],
+        tune::select_best(raced, metric = "rmse")
+      )
 
       tbl <- res$.inner_metrics[[i]]
       n_max <- nrow(folds$inner_resamples[[i]])

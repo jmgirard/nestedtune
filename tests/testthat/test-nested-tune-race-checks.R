@@ -81,7 +81,8 @@ test_that("finetune must be installed, for both racers", {
     })
     # The discrimination: with nothing made absent, the same call passes the
     # check and reaches the sentinel.
-    cnd <- refusal(race_call(fn, 
+    cnd <- refusal(race_call(
+      fn,
       wf,
       folds,
       grid = det_grid(),
@@ -189,7 +190,8 @@ test_that("an inner design not larger than the burn-in is refused at entry", {
 
     # A burn-in above the count, and one fold alone falling short: the
     # refusal names the fold.
-    cnd <- refusal(race_call(fn, 
+    cnd <- refusal(race_call(
+      fn,
       wf,
       folds,
       grid = det_grid(),
@@ -204,7 +206,8 @@ test_that("an inner design not larger than the burn-in is refused at entry", {
       rsample::analysis(folds$splits[[2L]]),
       v = 2
     )
-    cnd <- refusal(race_call(fn, 
+    cnd <- refusal(race_call(
+      fn,
       wf,
       short,
       grid = det_grid(),
@@ -250,7 +253,9 @@ test_that("each shared check fires through both racing exports", {
 
   for (fn in RACERS) {
     fired <- list(
-      check_dots_control = function() race_call(fn, wf, folds, 3, control = ctrl),
+      check_dots_control = function() {
+        race_call(fn, wf, folds, 3, control = ctrl)
+      },
       check_control = function() race_call(fn, wf, folds, control = "no"),
       check_workflow = function() {
         race_call(fn, parsnip::linear_reg(), folds, control = ctrl)
@@ -258,18 +263,36 @@ test_that("each shared check fires through both racing exports", {
       check_nested = function() {
         race_call(fn, wf, rsample::vfold_cv(d, v = 2), control = ctrl)
       },
-      check_grid = function() race_call(fn, wf, folds, grid = 0, control = ctrl),
-      check_grid_params = function() {
-        race_call(fn, wf, folds, grid = data.frame(nonesuch = 1:3), control = ctrl)
+      check_grid = function() {
+        race_call(fn, wf, folds, grid = 0, control = ctrl)
       },
-      check_metrics = function() race_call(fn, wf, folds, metrics = "rmse", control = ctrl),
+      check_grid_params = function() {
+        race_call(
+          fn,
+          wf,
+          folds,
+          grid = data.frame(nonesuch = 1:3),
+          control = ctrl
+        )
+      },
+      check_metrics = function() {
+        race_call(fn, wf, folds, metrics = "rmse", control = ctrl)
+      },
       check_param_info = function() {
-        race_call(fn, wf, folds, param_info = data.frame(num_comp = 1:3), control = ctrl)
+        race_call(
+          fn,
+          wf,
+          folds,
+          param_info = data.frame(num_comp = 1:3),
+          control = ctrl
+        )
       },
       check_event_level = function() {
         race_call(fn, wf, folds, event_level = "third", control = ctrl)
       },
-      check_eval_time = function() race_call(fn, wf, folds, eval_time = -1, control = ctrl)
+      check_eval_time = function() {
+        race_call(fn, wf, folds, eval_time = -1, control = ctrl)
+      }
     )
     patterns <- c(
       check_dots_control = "accepts `control`",
@@ -307,16 +330,23 @@ test_that("a control naming another event level is refused at entry", {
   folds <- race_folds(d)
 
   for (fn in RACERS) {
-    cnd <- refusal(race_call(fn, 
+    cnd <- refusal(race_call(
+      fn,
       wf,
       folds,
       event_level = "first",
       control = finetune::control_race(burn_in = 2, event_level = "second")
     ))
-    expect_refused(cnd, "nestedtune_bad_control", "event_level", export_name(fn))
+    expect_refused(
+      cnd,
+      "nestedtune_bad_control",
+      "event_level",
+      export_name(fn)
+    )
 
     # A control left at finetune's default takes the argument's level.
-    cnd <- refusal(race_call(fn, 
+    cnd <- refusal(race_call(
+      fn,
       wf,
       folds,
       event_level = "second",

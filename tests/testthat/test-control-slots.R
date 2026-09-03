@@ -161,7 +161,11 @@ test_that("the racing page says what the recorded grid is, and what `n` is (AC7)
   txt <- gsub("\\s+", " ", rd_text(help_rd("nested_tune_race")))
   # The two records, each named for what it is: the grid as the design
   # offered, `n` as the resamples each candidate was scored on.
-  expect_match(txt, "is the design the race was offered, exactly as given", fixed = TRUE)
+  expect_match(
+    txt,
+    "is the design the race was offered, exactly as given",
+    fixed = TRUE
+  )
   expect_match(
     txt,
     "n is the number of inner resamples each candidate was scored on",

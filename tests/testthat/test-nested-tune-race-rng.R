@@ -8,7 +8,14 @@
 race_tuner <- function(fn) tuner_race(fn, stoch_grid())
 
 race_run <- function(fn, wf, folds, ms, ctrl = race_control()) {
-  race_call_by_name(fn, wf, folds, grid = stoch_grid(), metrics = ms, control = ctrl)
+  race_call_by_name(
+    fn,
+    wf,
+    folds,
+    grid = stoch_grid(),
+    metrics = ms,
+    control = ctrl
+  )
 }
 
 test_that("the same seed produces the same result", {
@@ -181,7 +188,14 @@ test_that("the caller's RNG state and kind survive the call untouched", {
     set.seed(404)
     before_seed <- .Random.seed
     before_kind <- RNGkind()
-    invisible(race_call_by_name(fn, wf, folds, grid = det_grid(), metrics = ms, control = ctrl))
+    invisible(race_call_by_name(
+      fn,
+      wf,
+      folds,
+      grid = det_grid(),
+      metrics = ms,
+      control = ctrl
+    ))
 
     expect_identical(.Random.seed, before_seed)
     expect_identical(RNGkind(), before_kind)
@@ -190,7 +204,14 @@ test_that("the caller's RNG state and kind survive the call untouched", {
     # what they would have drawn had the call not been there.
     set.seed(404)
     with_call <- {
-      invisible(race_call_by_name(fn, wf, folds, grid = det_grid(), metrics = ms, control = ctrl))
+      invisible(race_call_by_name(
+        fn,
+        wf,
+        folds,
+        grid = det_grid(),
+        metrics = ms,
+        control = ctrl
+      ))
       runif(3)
     }
     set.seed(404)
