@@ -1405,6 +1405,30 @@ Passed through though finetune defaults it on, so a default run prints from
 every fold. Falsified for `iter` by a finetune release whose loop runs no
 iteration at 0, which would reopen accepting it.
 
+### D-047 (2026-09-03): the orchestrators hold a design to rsample's reader contract at entry — label columns named `id` or `id[1-9]`, character or factor, with no `NA` and no repeated label tuple, and every inner `rset` non-empty — annotates the consequences clause D-036 left open
+
+**Context:** D-036 records every column beside `splits` and `inner_resamples`
+as a fold label and says `check_nested()` still admits a design carrying any
+such column, leaving the tightening to a ROADMAP row. Probed at M55's plan
+gate: a stray column is pasted into every fold label, a repeated label makes
+`autoplot()` abort, an `NA` label and an integer `id` pass silently, and a
+zero-row inner `rset` fails its fold after the run with tune's message.
+
+**Decision:** the entry check refuses a label column whose name does not
+match the pattern rsample's and tune's own readers find id columns by, or
+that is neither character nor factor, along with `NA` labels, a label tuple
+two rows share, and an inner `rset` with no rows. The rule binds the entry
+check alone: the results class keeps reading its labels from D-036's record,
+and no name pattern returns to it. Considered and rejected: rsample's
+constructor prefix `^id` (admits names tune's readers ignore); no name rule,
+type and uniqueness only (a stray column still prints into every fold label).
+
+**Consequences:** a hand-built design must name its label columns as rsample
+does; a `manual_rset()` of inner splits over another frame is still admitted
+and handled by the parallel fat path. Falsified by a design rsample itself
+builds that the rule refuses, or by an rsample or tune release whose readers
+find id columns by another rule.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
