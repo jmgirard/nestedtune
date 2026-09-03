@@ -58,7 +58,7 @@ beyond the sentences this milestone adds.
       testthat::ListReporter$new()))` on the branch reports zero failures, and
       its rows with `skipped > 0` equal, by `file` and `test`, the rows the
       same command reports on the default branch at the branch point.
-- [ ] AC5: Under `devtools::check()`, the check directory's
+- [x] AC5: Under `devtools::check()`, the check directory's
       `tests/testthat.Rout` carries a `[hang-trace] … start <file>` line and a
       matching `end <file>` line for every file
       `list.files("tests/testthat", "^test-.*\\.R$")` names.
@@ -228,3 +228,13 @@ beyond the sentences this milestone adds.
   bookkeeping inert but not wrong.
 
 ## Review
+
+Evidence gathered 2026-09-03 on branch head c1b4cc3 (pushed; CI head) plus the
+local checkpoint 19829d4 (tracking-only). Default branch unmoved at the branch
+point b0d76a4 (`git merge-base` equals `origin/main`).
+
+- AC5: `devtools::check()` at `TESTTHAT_CPUS=4` (check dir in the session
+  scratchpad); its `tests/testthat.Rout` holds 1250 `[hang-trace]` lines, and
+  the 56 files `list.files("tests/testthat", "^test-.*\\.R$")` names each
+  have exactly one `start <file>` and one `end <file>` line — 56 of 56 paired,
+  none missing, none duplicated. Verified.
