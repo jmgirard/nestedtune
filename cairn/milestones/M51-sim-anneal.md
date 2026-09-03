@@ -100,6 +100,7 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
 - 2026-09-03: `devtools::check()` on the checkpoint: 0 warnings, 0 notes, 1 test failure — `test-suite-hygiene.R` found BC13's `start_daemons(n)` (`test-parallel-identity.R:761`) with no row in `helper-time-budget.R`; row added (2 × the daemon-start bound, M50's shape); the hygiene and identity files pass; a second full check runs on the fixed tree before the ticks.
 - 2026-09-03: second `devtools::check()` on the fixed tree: Status OK, 0 errors, 0 warnings, 0 notes, 4705 tests passing and 15 skips that are the built-package skips; T1–T5 ticked on it; status → review.
 - 2026-09-03: review started — main unmoved since the cut; branch pushed and draft PR #61 opened; cairn_validate, `document()` no-diff and `check_pkgdown()` clean; full `devtools::test()` and the three review lenses in flight, evidence to follow.
+- 2026-09-03: review, fix-now on the [S] prior-review lens's finding: the DESIGN.md registry paragraph still said `procedure_counts()` and `procedure_label()` key on the Bayesian name; reworded to the registry read the code makes (verified against `R/nested-final-fit-print.R:198,221`), disposition to be recorded in the Review section at the gate.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->

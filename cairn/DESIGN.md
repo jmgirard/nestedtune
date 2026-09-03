@@ -251,11 +251,10 @@ description names the tuner; `tuner_registry` (`R/tuner.R`, M50) holds what
 the package knows about each name — its package, the packages it requires,
 its default control and control class, whether it takes a grid, whether its
 tables carry `.iter`, its print label — and the sites that once switched on
-the name for a package, control, grid or label read the registry; the
-Bayesian tuner's seed injection, its iteration counts and its print line
-still key on its name (`tuner_control()`, `procedure_counts()`,
-`procedure_label()`), so a new tuner that does not iterate is one entry and
-its export. The
+the name for a package, control, grid, iteration counts or label read the
+registry (`procedure_counts()` and `procedure_label()` since M51); the
+Bayesian tuner's seed injection alone still keys on its name
+(`tuner_control()`), so a new tuner is one entry and its export. The
 racers add two entry refusals (`check_tuner_installed()`,
 `check_race_burn_in()`) and attach their package in every daemon beside the
 workflow's (`attach_daemon_pkgs()`). It draws every fold's seeds up front and hands each fold to
