@@ -54,7 +54,7 @@ beyond the sentences this milestone adds.
 - [ ] AC3: The `R-CMD-check` and `test-coverage` workflows are green on three
       runs of the milestone's final head — the PR's own run and two
       `gh run rerun` of it — with no job cancelled at a `timeout-minutes` cap.
-- [ ] AC4: `as.data.frame(testthat::test_local(".", reporter =
+- [x] AC4: `as.data.frame(testthat::test_local(".", reporter =
       testthat::ListReporter$new()))` on the branch reports zero failures, and
       its rows with `skipped > 0` equal, by `file` and `test`, the rows the
       same command reports on the default branch at the branch point.
@@ -233,6 +233,14 @@ Evidence gathered 2026-09-03 on branch head c1b4cc3 (pushed; CI head) plus the
 local checkpoint 19829d4 (tracking-only). Default branch unmoved at the branch
 point b0d76a4 (`git merge-base` equals `origin/main`).
 
+- AC4: `as.data.frame(testthat::test_local(".", reporter =
+  testthat::ListReporter$new()))` at `TESTTHAT_CPUS=4`: branch 569 rows, 0
+  failed, 0 errors, 0 rows with `skipped > 0` (wall 140 s); the same command
+  in a scratch worktree of the branch point b0d76a4 (serial, no parallel
+  config there): 567 rows, 0 failed, 0 errors, 0 skipped rows (wall 379 s).
+  The two `skipped > 0` sets, ordered by `file` and `test`, are identical
+  (both empty); the two rows the branch adds are `test-hang-trace.R`'s new
+  tests. Verified.
 - AC5: `devtools::check()` at `TESTTHAT_CPUS=4` (check dir in the session
   scratchpad); its `tests/testthat.Rout` holds 1250 `[hang-trace]` lines, and
   the 56 files `list.files("tests/testthat", "^test-.*\\.R$")` names each
