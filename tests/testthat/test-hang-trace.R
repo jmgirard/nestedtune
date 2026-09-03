@@ -83,3 +83,125 @@ test_that("a block that never ends leaves an unmatched start", {
   expect_length(per_test, 2L)
   expect_true(all(grepl("start", per_test)))
 })
+
+# --- Parallel test files (M52) ----------------------------------------------
+#
+# With `Config/testthat/parallel: true` the reporter runs in the parent and
+# testthat forwards each worker's events to it. Which way it forwards them is
+# the reporter's choice, and the choice is the whole difference between a log
+# that names the block a killed job died in and one that names nothing: without
+# live updates a file's events are replayed in one burst when the file
+# finishes, so a file that hangs prints no line at all. So the assertions here
+# are on the mode, not merely on the lines.
+
+# A fixture directory of two files, one holding a block that sleeps, run under
+# the runner's own composite reporter with two workers. `package = "testthat"`
+# because a worker must `library()` something and the fixture is not a
+# package; nothing else about the run depends on which package that is.
+trace_lines_parallel <- function(reporter = check_reporter_with_hang_trace()) {
+  dir <- tempfile("hang-trace-parallel-")
+  dir.create(dir)
+  writeLines(
+    c(
+      'test_that("sleeping block", { Sys.sleep(0.5); expect_true(TRUE) })',
+      'test_that("quick block", { expect_equal(1, 1) })'
+    ),
+    file.path(dir, "test-sleeper.R")
+  )
+  writeLines(
+    'test_that("other block", { expect_true(TRUE) })',
+    file.path(dir, "test-other.R")
+  )
+  # Base R rather than withr, which is not a dependency of this package: the
+  # variables are forced on so the fixture runs parallel whatever the caller's
+  # environment says, and restored on exit so nothing leaks into the next file.
+  old <- Sys.getenv(c("TESTTHAT_PARALLEL", "TESTTHAT_CPUS"), unset = NA)
+  on.exit(restore_envvar(old), add = TRUE)
+  Sys.setenv(TESTTHAT_PARALLEL = "TRUE", TESTTHAT_CPUS = "2")
+  capture.output(
+    testthat::test_dir(
+      dir,
+      package = "testthat",
+      load_package = "installed",
+      reporter = reporter,
+      stop_on_failure = FALSE
+    ),
+    type = "message"
+  )
+}
+
+restore_envvar <- function(old) {
+  for (name in names(old)) {
+    if (is.na(old[[name]])) {
+      Sys.unsetenv(name)
+    } else {
+      do.call(Sys.setenv, as.list(stats::setNames(old[[name]], name)))
+    }
+  }
+}
+
+trace_stamp <- function(line) {
+  as.POSIXct(
+    sub("^\\[hang-trace\\] (\\S+) .*$", "\\1", line),
+    format = "%Y-%m-%dT%H:%M:%OS",
+    tz = "UTC"
+  )
+}
+
+test_that("the reporter and the runner's composite both declare live updates", {
+  # Both capabilities on the reporter itself, so a bare HangTraceReporter
+  # handed to test_dir() runs parallel rather than silently serial.
+  caps <- HangTraceReporter$new()$capabilities
+  expect_true(caps$parallel_support)
+  expect_true(caps$parallel_updates)
+
+  # And on the composite tests/testthat.R hands to test_check(), which is the
+  # object testthat actually reads: MultiReporter sets parallel_support on
+  # itself and leaves parallel_updates at the base default of FALSE, so the
+  # member's declaration alone would leave the suite in burst replay.
+  composite <- check_reporter_with_hang_trace()
+  expect_true(composite$capabilities$parallel_support)
+  expect_true(composite$capabilities$parallel_updates)
+  expect_true(any(vapply(
+    composite$reporters,
+    inherits,
+    logical(1),
+    what = "HangTraceReporter"
+  )))
+  expect_true(any(vapply(
+    composite$reporters,
+    inherits,
+    logical(1),
+    what = "CheckReporter"
+  )))
+})
+
+test_that("under parallel files every file and block gets exactly one live pair", {
+  out <- grep("^\\[hang-trace\\]", trace_lines_parallel(), value = TRUE)
+
+  # One start and one end per file and per block: live mode re-announces the
+  # file and the block before every forwarded event, and without the
+  # reporter's bookkeeping each block printed four to five starts.
+  for (target in c(
+    "test-sleeper\\.R",
+    "test-other\\.R",
+    "test-sleeper\\.R :: sleeping block",
+    "test-sleeper\\.R :: quick block",
+    "test-other\\.R :: other block"
+  )) {
+    starts <- grep(paste0("start ", target, "$"), out)
+    ends <- grep(paste0("end +", target, "$"), out)
+    expect_length(starts, 1L)
+    expect_length(ends, 1L)
+    expect_lt(starts, ends)
+  }
+
+  # Live, not replayed: the sleeping block's end is stamped after its sleep,
+  # where burst replay stamps a file's every line within a millisecond.
+  start <- grep("start test-sleeper\\.R :: sleeping block$", out, value = TRUE)
+  end <- grep("end +test-sleeper\\.R :: sleeping block$", out, value = TRUE)
+  expect_gte(
+    as.numeric(trace_stamp(end) - trace_stamp(start), units = "secs"),
+    0.4
+  )
+})

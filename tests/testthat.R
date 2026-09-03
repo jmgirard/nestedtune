@@ -11,11 +11,7 @@ library(nestedtune)
 # this file from.
 source("testthat/helper-hang-trace.R")
 
-test_check(
-  "nestedtune",
-  # CheckReporter$new(), never check_reporter(): the latter returns the string
-  # "Check" for test_check() to resolve, and MultiReporter needs the object.
-  reporter = MultiReporter$new(
-    reporters = list(CheckReporter$new(), HangTraceReporter$new())
-  )
-)
+# Composed in the helper rather than here, so `test-hang-trace.R` can assert
+# the composite declares the live-update mode the trace needs under parallel
+# test files (M52); see the comment on check_reporter_with_hang_trace().
+test_check("nestedtune", reporter = check_reporter_with_hang_trace())

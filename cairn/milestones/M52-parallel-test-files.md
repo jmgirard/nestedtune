@@ -1,12 +1,12 @@
 # M52: The test suite runs its files in parallel and fits its CI caps with headroom
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m052-parallel-test-files` · https://github.com/tidymodels/nestedtune/pull/62
 
 ## Goal
 
@@ -43,26 +43,32 @@ beyond the sentences this milestone adds.
 
 ## Acceptance criteria
 
-- [ ] AC1: On the milestone's PR head, the `test-coverage` workflow's
-      `Test coverage` step completes with conclusion `success` in 12 minutes or
-      less, read as `completedAt - startedAt` from
-      `gh run view <run-id> --json jobs`.
-- [ ] AC2: On the same PR head, every leg the `R-CMD-check` workflow's
-      `gh run view <run-id> --json jobs` lists completes its
-      `Run r-lib/actions/check-r-package@v2` step with conclusion `success` in
-      20 minutes or less, read the same way.
-- [ ] AC3: The `R-CMD-check` and `test-coverage` workflows are green on three
-      runs of the milestone's final head — the PR's own run and two
-      `gh run rerun` of it — with no job cancelled at a `timeout-minutes` cap.
-- [ ] AC4: `as.data.frame(testthat::test_local(".", reporter =
+- [x] AC1: On the measured head AC3 names, the `test-coverage` workflow's
+      `Test coverage` step concludes `success` on each of AC3's three
+      attempts, and the median of its three durations, each read as
+      `completedAt - startedAt` from `gh run view <run-id> --attempt <k>
+      --json jobs`, is 12 minutes or less.
+- [x] AC2: On the same head, every leg the `R-CMD-check` workflow's
+      `gh run view <run-id> --attempt <k> --json jobs` lists concludes its
+      `Run r-lib/actions/check-r-package@v2` step `success` on each of the
+      three attempts, and the median of each leg's three durations, read the
+      same way, is 20 minutes or less.
+- [x] AC3: The `R-CMD-check` and `test-coverage` workflows are green on three
+      attempts of the milestone's measured head — the PR's own run and two
+      `gh run rerun` of it — with no job cancelled at a `timeout-minutes`
+      cap. The measured head is a pushed commit on the branch from which the
+      branch head at the moment of merge differs only under `cairn/`
+      (`git diff --quiet <measured> HEAD -- . ':!cairn'` exits 0, run
+      immediately before the merge).
+- [x] AC4: `as.data.frame(testthat::test_local(".", reporter =
       testthat::ListReporter$new()))` on the branch reports zero failures, and
       its rows with `skipped > 0` equal, by `file` and `test`, the rows the
       same command reports on the default branch at the branch point.
-- [ ] AC5: Under `devtools::check()`, the check directory's
+- [x] AC5: Under `devtools::check()`, the check directory's
       `tests/testthat.Rout` carries a `[hang-trace] … start <file>` line and a
       matching `end <file>` line for every file
       `list.files("tests/testthat", "^test-.*\\.R$")` names.
-- [ ] AC6: `devtools::document()` produces no diff; `devtools::test()` and
+- [x] AC6: `devtools::document()` produces no diff; `devtools::test()` and
       `devtools::check()` report 0 errors and 0 warnings.
 
 ## Coverage
@@ -76,38 +82,40 @@ beyond the sentences this milestone adds.
 
 ## Tasks
 
-- [ ] T1: Record the baseline in the work log: per-file seconds from
+- [x] T1: Record the baseline in the work log: per-file seconds from
       `benchmarks/profile-tests.R 1` on this machine (serial) and from the
       `[hang-trace]` lines of the last green `test-coverage` run (33710255888),
       and the check-step durations of run 33715373356 — one line each.
-- [ ] T2: `HangTraceReporter` (`tests/testthat/helper-hang-trace.R`) declares
-      `capabilities = list(parallel_support = TRUE, parallel_updates = FALSE)`;
-      `test-hang-trace.R` asserts it and that the `MultiReporter` composed as
-      `tests/testthat.R` composes it reports parallel support. In parallel mode
-      the reporter runs in the parent, so its lines still reach the parent's
-      stderr; verify by execution before writing the assertion.
-- [ ] T3: `DESCRIPTION` gains `Config/testthat/parallel: true` and
+- [x] T2: `HangTraceReporter` (`tests/testthat/helper-hang-trace.R`) declares
+      `capabilities = list(parallel_support = TRUE, parallel_updates = TRUE)`
+      and prints each `start` on first sight and each `end` once, since live
+      mode re-announces the file and block before every forwarded event;
+      `tests/testthat.R` composes its reporter through a helper function that
+      sets `parallel_updates` on the composite, and `test-hang-trace.R` asserts
+      both declarations and one live start/end pair per file and block under a
+      two-worker run.
+- [x] T3: `DESCRIPTION` gains `Config/testthat/parallel: true` and
       `Config/testthat/start-first:` naming the slowest files from T1;
       `benchmarks/profile-tests.R` sets `TESTTHAT_PARALLEL=FALSE` so it keeps
       measuring serial per-file cost. Run AC4's command on both branches at
       `TESTTHAT_CPUS=4`; fix what the parallel run reveals (a helper assuming
       one process, a shared path, a port) — each fix one work-log line.
-- [ ] T4: Contention: run `devtools::test()` three times at `TESTTHAT_CPUS=4`;
+- [x] T4: Contention: run `devtools::test()` three times at `TESTTHAT_CPUS=4`;
       an elapsed-bound assertion that fails (`test-parallel-classify.R:268`,
       `test-parallel-detection.R:104`, the metrics-delivery ceiling) gets its
       bound revisited with `helper-time-budget.R`'s row re-pointed in the same
       commit and a work-log line naming the old and new figures — never
       loosened silently.
-- [ ] T5: Both workflows set `TESTTHAT_CPUS` — 4 on ubuntu and windows, 3 on
+- [x] T5: Both workflows set `TESTTHAT_CPUS` — 4 on ubuntu and windows, 3 on
       macOS, via a `matrix.config.os` ternary in `R-CMD-check.yaml`; the covr
       job's subprocess inherits it. Compare the PR's Codecov total with the
       default branch's last figure (work-log line); a drop past one percentage
       point means covr lost a worker's counters and is a defect to fix, not to
       note.
-- [ ] T6: Measure on the PR head: read AC1 and AC2 from `gh run view --json
+- [x] T6: Measure on the PR head: read AC1 and AC2 from `gh run view --json
       jobs`, then `gh run rerun` twice for AC3 — pushing nothing in between,
       since every push restarts the matrix (M50 lesson).
-- [ ] T7: Records: the PROFILE test-doctrine slot states the parallel setting,
+- [x] T7: Records: the PROFILE test-doctrine slot states the parallel setting,
       the `start-first` list's purpose and where `TESTTHAT_CPUS` is set, beside
       the cap numbers it already carries; `.github/ci-usage-baseline.md` only
       if a number it states changed. No NEWS entry: nothing user-facing moves.
@@ -130,7 +138,271 @@ beyond the sentences this milestone adds.
   8 / 15 because runner core counts and contention are unmeasured; falsified
   by the PR's first run landing under 8 and 15, which would say the bar was
   slack.
+- 2026-09-03: implement started; branch `m052-parallel-test-files` cut from
+  the pushed default branch. Gate (one question): the hang trace takes
+  testthat's live-update mode, not the burst replay T2 named — measured on a
+  three-file fixture at two workers, burst replay stamped a finished file's
+  lines within 1 ms of each other and would print nothing for a file that
+  never finishes, while live mode kept a 1.0 s sleeping block's start and end
+  1.08 s apart. T2's wording refined to match (minor amendment).
+- 2026-09-03: T2 — reporter rewritten with first-sight bookkeeping (live mode
+  had printed four to five `start` lines per block and a fresh `start` for a
+  block already ended, measured); `check_reporter_with_hang_trace()` builds
+  the runner's composite because `MultiReporter` sets `parallel_support` on
+  itself and leaves `parallel_updates` at the base default, and testthat reads
+  both off the composite. Two tests added; planting `parallel_updates = FALSE`
+  on the composite redded both (one failure each), helper restored. Ran green
+  serially and nested inside a two-worker run.
+- 2026-09-03: T1 baseline, local serial (`benchmarks/profile-tests.R 1` on the
+  b0d76a4 tree, R 4.6.1, 18 cores): 1396.7 s over 56 files, wall 1400.9 s;
+  bayes-oracles 160.4, parallel-identity 144.5, race-rng 120.8, bayes-rng
+  104.9, race-oracles 103.0, bayes-results 73.6, sim-anneal-rng 70.4,
+  grid-failures 68.2, sim-anneal-oracles 62.8, grid-oracles 52.7; every other
+  file under 41 s.
+- 2026-09-03: T1 baseline, covr trace (run 33710255888, `[hang-trace]` file
+  pairs): 1013.2 s over 56 files; parallel-identity 154.1, bayes-oracles
+  111.2, race-rng 60.0, final-fit-oracles 59.0, bayes-rng 57.4, race-oracles
+  48.9, sim-anneal-rng 46.9, bayes-results 41.5, grid-failures 35.3,
+  final-fit-rng 32.7, sim-anneal-oracles 31.3, eval-time 30.9; the rest under
+  26 s. `Test coverage` step 17m10s.
+- 2026-09-03: T1 baseline, check steps (run 33715373356, `completedAt -
+  startedAt`): windows 26m56s, devel 25m10s, ubuntu release 21m42s, oldrel-1
+  17m59s, macOS 15m32s.
+- 2026-09-03: T3 — `Config/testthat/parallel: true` and an eleven-file
+  `start-first` list (the ten files over 50 s locally plus final-fit-oracles,
+  59 s under covr where the fixture cache is cold), order checked through
+  `find_test_scripts()`; `benchmarks/profile-tests.R` sets
+  `TESTTHAT_PARALLEL=FALSE`. AC4's command at `TESTTHAT_CPUS=4`: branch 569
+  rows, 0 failed, 0 skipped, wall 818 s while the default-branch run shared
+  the machine; default branch (scratch worktree of origin/main, serial) 567
+  rows, 0 failed, 0 skipped; skip rows equal (both empty), the two extra rows
+  the T2 tests. The parallel run revealed nothing to fix.
+- 2026-09-03: checkpoint while T4's three runs execute — T5's workflow edits
+  (`TESTTHAT_CPUS` 4/4/3 via the os ternary, 4 on the covr job; runner core
+  counts read from GitHub's hosted-runner sizes page) and T7's PROFILE
+  test-doctrine text (folded into the divergences bullet, header comment
+  compressed, 119 lines) landed early; neither task ticks until its remaining
+  half (T5's Codecov comparison, T7's ci-usage-baseline decision) is done.
+- 2026-09-03: T4 — three `devtools::test()` runs at `TESTTHAT_CPUS=4`, none
+  of my other processes running: 569 rows, 4790 expectations, 0 failed, 0
+  skipped on every run; walls 648, 495 and 143 s, per-file sums 2497, 1944
+  and 555 s against the 1397 s serial baseline — the machine carried other
+  load throughout (load average 6–9 read afterwards with two R processes
+  alive), so the figures are noise around an unmeasured true cost. No
+  elapsed bound failed; `helper-time-budget.R` untouched.
+- 2026-09-03: T5 — PR #62 opened at head 02d254a; its
+  `test-coverage` run 33725075689 reports `nestedtune Coverage: 97.51%`
+  against 97.51% on the default branch's last run 33710255888: no drop, so
+  covr kept every worker's counters. The job started 4 test processes and
+  the trace paired all 56 files, suite span 533.1 s under covr.
+- 2026-09-03: T6, first run on the PR head: `Test coverage` step 9.23 min
+  (AC1 bar 12); `check-r-package` steps windows 17.25, ubuntu release 14.52,
+  oldrel-1 11.73, macOS 11.60, devel 9.68 min (AC2 bar 20), every leg
+  `success`. Neither landed under the plan's 8 / 15 falsifier, so the bar
+  stands. AC3's two reruns follow.
+- 2026-09-03: T6, AC3 — two `gh run rerun` of both runs, nothing pushed
+  between. Attempt 2: coverage step 11.43 min; check legs windows 16.30,
+  devel 15.48, ubuntu release 14.82, oldrel-1 14.02, macOS 13.33. Attempt 3:
+  coverage 11.87; windows 16.00, devel 14.92, oldrel-1 14.47, ubuntu release
+  13.68, macOS 11.62. Every job `success` on all three attempts, none
+  cancelled. The coverage step's three readings (9.23, 11.43, 11.87) sit
+  inside 0.13 min of the 12-minute bar at worst — headroom on that job is
+  thin, and it never gates a merge (PROFILE).
+- 2026-09-03: T7 — PROFILE test-doctrine slot text landed in the checkpoint
+  commit (divergences bullet now six, hang-trace bullet names the live mode);
+  `.github/ci-usage-baseline.md` states run counts and machine-minutes over a
+  July window, none of which this milestone changes, so it is untouched; no
+  NEWS entry.
+- 2026-09-03: completion — `devtools::document()` no diff; `devtools::check()`
+  at `TESTTHAT_CPUS=4` 0 errors, 0 warnings, 0 notes, its `testthat.Rout`
+  pairing a start and end line for all 56 test files, suite elapsed 123 s
+  under check. Status → review. The T5–T7 and completion commits are local
+  only: pushing restarts the PR matrix, and the squash carries them.
+- 2026-09-03: review, defect return 1 — AC1 failed: the pushed head c1b4cc3's `Test coverage` step ran 722 s against the 720 s bar (earlier reads 9.23, 11.43, 11.87 min on 02d254a); AC2, AC4, AC5, AC6 verified; AC3 unverified and its "final head" wording unmeasurable as written (see Review); [O] lens never reported (API overload ×3). Status → in-progress.
+- 2026-09-03: implement resumed for the amendment review's return 1 left open. Criteria audit ran in reduced mode on fresh readers — on Sonnet, logged deviation: Opus answered 529 overload on three spawns. Reader 1 passed AC1 and AC2 and found AC3's "final head" circular (unknown when checked); reader 2 on the reworded AC3 found its "every commit" clause wider than the net-diff command checks (fixed to the net diff) and two notes rejected: the provenance clause binds merged code to measured code, a deliverable property; headroom is AC1/AC2's promise. Gate chose amending all three over amending AC3 alone; nothing widened.
+- 2026-09-03: amendment return: AC1 — "On the measured head AC3 names, the `test-coverage` workflow's `Test coverage` step concludes `success` on each of AC3's three attempts, and the median of its three durations, each read as `completedAt - startedAt` from `gh run view <run-id> --attempt <k> --json jobs`, is 12 minutes or less."
+- 2026-09-03: amendment return: AC2 — "On the same head, every leg the `R-CMD-check` workflow's `gh run view <run-id> --attempt <k> --json jobs` lists concludes its `Run r-lib/actions/check-r-package@v2` step `success` on each of the three attempts, and the median of each leg's three durations, read the same way, is 20 minutes or less."
+- 2026-09-03: amendment return: AC3 — "The `R-CMD-check` and `test-coverage` workflows are green on three attempts of the milestone's measured head — the PR's own run and two `gh run rerun` of it — with no job cancelled at a `timeout-minutes` cap. The measured head is a pushed commit on the branch from which the branch head at the moment of merge differs only under `cairn/` (`git diff --quiet <measured> HEAD -- . ':!cairn'` exits 0, run immediately before the merge)."
+- 2026-09-03: AC2's tick cleared with its wording; AC1–AC3 re-measure at re-review. No code moved since completion's `devtools::check()` (0/0/0 at `TESTTHAT_CPUS=4`); status → review.
+- 2026-09-03: step-7 approval: PR #62 approved for merge (measured head 450d351; fix-now PROFILE edits and this line are `cairn/`-only).
 
 ## Decisions
 
+- 2026-09-03: The hang trace runs in testthat's live-update mode under
+  parallel test files. testthat offers the parent-side reporter two replay
+  modes; burst replay (the plan's `parallel_updates = FALSE`) stamps a whole
+  file's lines when the file finishes and prints nothing for a file that
+  hangs, which is the case the trace exists for. Live mode re-announces the
+  file and block before every event, so the reporter prints each `start` on
+  first sight and each `end` once; the composite in `tests/testthat.R`
+  declares the mode because testthat reads it off the reporter it is handed,
+  not off the members. Falsified by a testthat release whose live loop stops
+  calling `start_file`/`start_test` before each event, which would make the
+  bookkeeping inert but not wrong.
+
 ## Review
+
+Evidence gathered 2026-09-03 on branch head c1b4cc3 (pushed; CI head) plus the
+local checkpoint 19829d4 (tracking-only). Default branch unmoved at the branch
+point b0d76a4 (`git merge-base` equals `origin/main`).
+
+- AC2: `gh run view 33761052786 --json jobs` (`R-CMD-check`, attempt 1, same
+  head c1b4cc3): every leg's `Run r-lib/actions/check-r-package@v2` step
+  concluded `success` — windows 18.60, ubuntu release 14.27, oldrel-1 14.05,
+  macOS 12.85, devel 9.65 min, all at or under 20. Verified.
+- AC1: FAILS on the PR head c1b4cc3. `gh run view 33761052991 --json jobs`
+  (`test-coverage`, attempt 1, the run the review's push fired): the `Test
+  coverage` step concluded `success`, `startedAt` 13:27:38Z to `completedAt`
+  13:39:40Z — 722 s, 12.03 min, against the criterion's 12 minutes or less
+  (720 s). The step has now been read four times across the two PR heads:
+  9.23, 11.43 and 11.87 min on 02d254a (T6's run and its two reruns), 12.03
+  on c1b4cc3, whose tree differs from 02d254a only under `cairn/`. Not
+  verified.
+- AC6: `devtools::document()` leaves `git status --porcelain` empty;
+  `devtools::test()` at `TESTTHAT_CPUS=4`: 569 rows, 4790 passed, 0 failed,
+  0 errors, 0 warnings, 0 skipped; `devtools::check()` at `TESTTHAT_CPUS=4`:
+  0 errors, 0 warnings, 0 notes (its suite 15 skips, all "not the source
+  tree" skips of files that read `cairn/`, `R/`, vignettes or workflows).
+  Verified.
+- AC4: `as.data.frame(testthat::test_local(".", reporter =
+  testthat::ListReporter$new()))` at `TESTTHAT_CPUS=4`: branch 569 rows, 0
+  failed, 0 errors, 0 rows with `skipped > 0` (wall 140 s); the same command
+  in a scratch worktree of the branch point b0d76a4 (serial, no parallel
+  config there): 567 rows, 0 failed, 0 errors, 0 skipped rows (wall 379 s).
+  The two `skipped > 0` sets, ordered by `file` and `test`, are identical
+  (both empty); the two rows the branch adds are `test-hang-trace.R`'s new
+  tests. Verified.
+- AC5: `devtools::check()` at `TESTTHAT_CPUS=4` (check dir in the session
+  scratchpad); its `tests/testthat.Rout` holds 1250 `[hang-trace]` lines, and
+  the 56 files `list.files("tests/testthat", "^test-.*\\.R$")` names each
+  have exactly one `start <file>` and one `end <file>` line — 56 of 56 paired,
+  none missing, none duplicated. Verified.
+- AC3: not verified this round. Head c1b4cc3 has one attempt of each
+  workflow (both `success`, no job cancelled); the two reruns were not fired
+  because AC1 failed on the attempt. A wording problem for the next round to
+  raise as a gated amendment: "the milestone's final head" cannot be measured
+  as written — step 7's approval line and every review evidence commit land
+  on the branch after any measured head, and each push restarts the PR
+  matrix (M50 lesson), so the last commit of the PR never has three runs
+  before it is squashed. 02d254a holds three green attempts (T6), c1b4cc3 one.
+
+Consistency gate (2026-09-03): `cairn_validate.py` exit 0 (advisories only:
+wrapped work-log lines, references staleness); no principle changed, impact
+report skipped; `devtools::document()` no diff; no generated file touched;
+README.Rmd untouched on the branch; `pkgdown::check_pkgdown()` no problems;
+no NEWS entry owed (nothing user-visible moves, T7); no new top-level file;
+`devtools::check()` 0/0/0. Observed outside the slot: `.github/ci-usage.py`
+exits 1 on `origin/main` too because `R-CMD-check-hard.yaml` and
+`pkgdown.yaml` carry no `paths-ignore`; neither file is in this diff.
+
+Independent review (fan-out, executable surface touched):
+- [O] diff-bug lens: not obtained — three spawns ended in API overload
+  (529) before reporting; to be spawned again at re-review.
+- [S] blame-history lens, two findings, ranked: F1 — `cairn/PROFILE.md`
+  test-doctrine text drops the windows-step range M48 recorded ("13.2–17.9
+  minutes on main's last three runs", "mid-suite") when it compresses the
+  cap sentence; the 30-minute cap and its reason survive. F2 — PROFILE's
+  scaffold comment drops "cairn_validate FAILs on a missing or empty slot";
+  traces to the cairn-init boilerplate, not a milestone. Disposition: triage
+  at the next round's gate; both unactioned this round.
+- [S] prior-review lens: no findings — archived reviews on the touched files
+  (M14, M16) and the LESSONS line are honoured; one real PR-thread comment
+  exists in the repo, on `pkgdown.yaml` in PR #30, outside this diff.
+
+Return (2026-09-03): AC1 failed on the PR head — defect return 1 of this
+milestone. Status → in-progress.
+
+Round 2 (2026-09-03), after the AC1–AC3 amendment. Measured head 450d351
+(pushed; the amendment commit; its tree outside `cairn/` equals c1b4cc3's).
+Default branch still at the branch point b0d76a4 (`origin/main` fetched
+before the push; 0 commits behind, 14 ahead). Runs on 450d351:
+`test-coverage` 33775958657, `R-CMD-check` 33775958786.
+
+- AC4: `as.data.frame(testthat::test_local(".", reporter =
+  testthat::ListReporter$new()))` at `TESTTHAT_CPUS=4`: branch 569 rows, 0
+  failed, 0 errors, 0 warnings, 0 rows with `skipped > 0`; the same command
+  over a `git archive` of the branch point b0d76a4 (serial; no parallel
+  config in that tree): 567 rows, 0 failed, 0 errors, 0 rows with
+  `skipped > 0`. The two `skipped > 0` sets, ordered by `file` and `test`,
+  are identical (both empty); the two extra rows are `test-hang-trace.R`'s
+  two tests. Verified.
+- AC6: `devtools::document()` leaves `git status --porcelain` empty;
+  `devtools::test()` at `TESTTHAT_CPUS=4`: 569 rows, 4790 passed, 0 failed,
+  0 errors, 0 warnings, 0 skipped; `devtools::check()` at `TESTTHAT_CPUS=4`
+  (check dir kept in the session scratchpad): 0 errors, 0 warnings, 0
+  notes. Verified.
+- AC5: that check's `tests/testthat.Rout` holds 1250 `[hang-trace]` lines,
+  112 of them file-level; each of the 56 files
+  `list.files("tests/testthat", "^test-.*\\.R$")` names has exactly one
+  `start <file>` and one `end <file>` line (the `end` lines pad the verb to
+  three spaces) — 56 of 56 paired. Verified.
+- AC1, AC2, AC3 (in progress): attempt 1 on 450d351 — `Test coverage` step
+  9.87 min; check legs windows 16.68, ubuntu release 16.08, oldrel-1 15.98,
+  devel 15.17, macOS 14.90 min; every job `success`, none cancelled.
+  Attempt 2 (`gh run rerun`, nothing pushed between) — coverage 11.23;
+  windows 15.75, oldrel-1 14.73, ubuntu release 14.68, macOS 13.07, devel
+  11.97; every job `success`, none cancelled. Attempt 3 pending.
+
+Consistency gate, round 2 (2026-09-03): `cairn_validate.py` exit 0 before
+the amendment commit (advisories only); no principle changed, impact report
+skipped; `devtools::document()` no diff; no generated file touched; README.Rmd
+untouched on the branch; `pkgdown::check_pkgdown()` no problems; no NEWS
+entry owed (T7); no new top-level file; `devtools::check()` 0/0/0.
+
+Independent review, round 2:
+- [O] diff-bug lens (fresh spawn; the round-1 spawns never reported), nine
+  findings, ranked: F1 — two `test_that()` blocks sharing a description in
+  one file yield one trace pair, since `announce()`/`close()` key on
+  `file :: test` and never reset within a file (`helper-hang-trace.R:117`,
+  `:126`; verified by execution; no file has duplicates today; the comment
+  at `:78` claiming serial bookkeeping is inert is false for this case).
+  F2 — teardown `cat()` output no longer reaches any log under parallel
+  files (verified: the teardown runs per worker, its output is dropped),
+  so `teardown-fixture-cache.R`'s report (M12 AC4) is silently gone; a
+  `stop()` in teardown still surfaces. F3 — nothing validates the
+  `start-first` names: a renamed file makes its `DESCRIPTION` entry a
+  silent no-op. F4 — the fixture cache (`helper-orchestration.R:1133`) is
+  now per worker, so each fixture builds up to `TESTTHAT_CPUS` times; the
+  comment at `:1040` is stale. F5 — `getOption("Ncpus")` silently overrides
+  `TESTTHAT_CPUS` in testthat; nothing asserts the worker count on the check
+  legs; PROFILE's sentence is unconditional. F6 — `self$open` is never
+  pruned at `end_file` (`helper-hang-trace.R:106` prunes `seen` only);
+  memory-only. F7 — `benchmarks/profile-tests.R:12` is 97 characters. F8 —
+  `trace_lines_parallel()` leaves its tempdir and spawns two processes
+  inside a 4-worker run. F9 — `R-CMD-check-hard.yaml` sets no
+  `TESTTHAT_CPUS` and no `timeout-minutes` (pre-existing, outside the diff).
+  Verdict: the mechanism is right where it matters — testthat 3.3.2 reads
+  `parallel_support` and `parallel_updates` off the composite the runner
+  builds; the live loop re-announces before every event; the new tests are
+  discriminating; ports bind to `:0`; the serial pin reaches `test_dir()`.
+- [S] blame-history and [S] prior-review lenses: round-1 reports carried,
+  since the diff outside `cairn/` is unchanged (F1, F2 of the blame lens
+  stand for triage; the prior-review lens reported no findings).
+- AC1: `test-coverage` run 33775958657 on 450d351, `gh run view --attempt
+  {1,2,3} --json jobs`: the `Test coverage` step concluded `success` on all
+  three attempts; durations 9.87, 11.23 and 11.15 min, median 11.15 against
+  12. Verified.
+- AC2: `R-CMD-check` run 33775958786, the same three attempts: every leg's
+  `Run r-lib/actions/check-r-package@v2` step concluded `success` on all
+  three; medians (attempts 1/2/3 in parentheses) windows 15.90 (16.68,
+  15.75, 15.90), ubuntu release 14.68 (16.08, 14.68, 14.05), oldrel-1 14.73
+  (15.98, 14.73, 13.67), macOS 14.90 (14.90, 13.07, 15.20), devel 11.97
+  (15.17, 11.97, 11.58), all against 20. Verified.
+- AC3: both workflows green on the three attempts (attempt 1 the PR's own
+  run, attempts 2 and 3 by `gh run rerun`, nothing pushed between); every
+  job `success`, none cancelled. Measured head 450d351: `git diff --quiet
+  450d351 HEAD -- . ':!cairn'` exits 0 at the checkpoint (to be re-run
+  immediately before the merge). Verified.
+
+Triage at the gate (2026-09-03), user-accepted with the merge: fix now —
+[O] F5 (PROFILE's worker-count sentence now names testthat's `Ncpus`
+preference) and blame F2 (PROFILE's scaffold comment regains the
+cairn_validate clause), both `cairn/`-only so the measured head stands;
+follow-up — [O] F1, F2, F3, F4, F6, F8, F9 to one grouped candidate row at
+hygiene (search-first: no existing row on the hang trace, teardown output,
+the fixture cache or `start-first`); reject — [O] F7 (style only) and blame
+F1 (the M48 windows range is superseded by this milestone's figures; the
+cap and its reason survive). Return floor: no actioned finding shows a
+criterion failing or a load-bearing defect in what the package does for
+users; none returns status.
+
