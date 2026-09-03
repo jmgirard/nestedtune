@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-03 (triage pass, validate green, 18 references advisories. Merged: refuse-extra-design-columns into the element-classes row; the everywhere() preload into the mori row, both triggers kept. Routed: the stored inside call to DESIGN Known issues. Compressed 19 rows: M52, M37 and M34 findings; daemon pre-flight; PR #30; fixture-family; conventions (two items shipped in 72c3be2); mori; selecting metric; generate candidates; calling frame; pre-M14 stalls; wall-clock deadline; CI matrix; R-devel cache; published-site (three items gone in 72c3be2); CI records; recipe template; variance. No drop, no D-entry. ROADMAP.md under its 24,000 B budget; LESSONS.md still ~33,000 B over.)_
+_Last hygiene check: 2026-09-03 (status pass after the triage: validate green, 18 references advisories, inboxes empty, no outside merges, #35 confirmed closed by PR #61. ROADMAP.md at 23,831 B of its 24,000 B budget; LESSONS.md 33,003 B against 20,000 B, 49 of 50 lines. No row changed.)_
 
 ## Milestones
 
