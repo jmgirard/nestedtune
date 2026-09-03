@@ -1,12 +1,12 @@
 # M51: `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M50
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, IP4, GP1, GP2, GP3
 - **Resolves:** #35 closes
-- **Branch/PR:** —
+- **Branch/PR:** `m051-sim-anneal`
 
 ## Goal
 
