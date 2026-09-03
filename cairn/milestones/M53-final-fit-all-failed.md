@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** IP3, GP3
 - **Resolves:** —
-- **Branch/PR:** `m053-final-fit-all-failed`
+- **Branch/PR:** `m053-final-fit-all-failed` · https://github.com/tidymodels/nestedtune/pull/63
 
 ## Goal
 
@@ -31,24 +31,24 @@ final fit's other refusals → M46, D-041, unchanged.
 
 ## Acceptance criteria
 
-- [ ] AC1: `nested_final_fit(object, results)` on a `nested_results` whose `.completed` column is all `FALSE`
+- [x] AC1: `nested_final_fit(object, results)` on a `nested_results` whose `.completed` column is all `FALSE`
       aborts with condition class `nestedtune_no_completed_folds`, `conditionCall()` naming `nested_final_fit`,
       and a message stating that no outer fold completed and naming `summary()`; asserted by a test on a grid
       result built with `break_every_fold()` at each of its two stages, `"inner tuning"` and `"outer fit"`. The
       check reads `.completed`, which every tuner's worker writes through one constructor, so the grid result
       stands for the five entry points.
-- [ ] AC2: The all-failed refusal leaves the caller's RNG untouched: on such an object, `.Random.seed` is
+- [x] AC2: The all-failed refusal leaves the caller's RNG untouched: on such an object, `.Random.seed` is
       identical before and after the refused call; asserted by a test.
-- [ ] AC3: The control is not refused: `nested_final_fit()` on a result from `break_fold(final_nested(d), 1L,
+- [x] AC3: The control is not refused: `nested_final_fit()` on a result from `break_fold(final_nested(d), 1L,
       "inner tuning")` — one failed fold, one completed — returns a `nested_final_fit`; asserted by a test.
-- [ ] AC4: `collect_metrics()` (`summarize` TRUE and FALSE), `autoplot()` (each `type`) and `agreement()` on an
+- [x] AC4: `collect_metrics()` (`summarize` TRUE and FALSE), `autoplot()` (each `type`) and `agreement()` on an
       all-failed `nested_results` abort with condition class `nestedtune_no_completed_folds`, each message still
       matching `no outer fold completed`; asserted by the existing all-failed test of each door.
-- [ ] AC5: `?nested_final_fit` names the refusal and its class beside the three record refusals; the help pages
+- [x] AC5: `?nested_final_fit` names the refusal and its class beside the three record refusals; the help pages
       of `collect_metrics.nested_results`, `autoplot.nested_results` and `agreement` name the class on their
       all-failed refusal; NEWS.md carries one entry covering both, with no milestone number;
       `devtools::document()` produces no diff.
-- [ ] AC6: The profile's verify slot is clean and `devtools::check()` reports 0 errors and 0 warnings.
+- [x] AC6: The profile's verify slot is clean and `devtools::check()` reports 0 errors and 0 warnings.
 
 ## Coverage
 
@@ -96,3 +96,29 @@ final fit's other refusals → M46, D-041, unchanged.
 
 - 2026-09-03: the final fit reads `.completed` from the fold rows beside `splits`, and M46's probe that it reads nothing else now exempts that column. AC1 bound the check to `.completed` at the plan gate, and `check_any_completed()` reads the column for the same reason: the column travels with the rows in hand, where the stamped `folds_completed` count is a copy of it. The probe was an M46 oracle, recorded in no D-entry, DESIGN line or lesson. Falsified by a reader that needs the fold rows to be opaque to the final fit.
 ## Review
+
+Evidence gathered 2026-09-03 on branch `m053-final-fit-all-failed` at 6033d52, `origin/main` unmoved since the cut (0 commits behind). PR #63 opened as draft.
+
+- AC1: `test-nested-final-fit-checks.R` "a results object in which no outer fold completed is refused" passes — both `break_every_fold()` stages, class `nestedtune_no_completed_folds`, `conditionCall()[[1]]` `nested_final_fit`, message matching `no outer fold completed` and `summary()`; the file's 82 tests pass in a targeted run (summary reporter, no skips) and in the full suite (4813 pass, 0 fail). The check reads `results$.completed` (`R/checks.R:400`), written by `new_nested_results()` for every tuner.
+- AC2: "the all-failed refusal fires before anything is drawn" passes — `.Random.seed` identical across the refused call; same targeted run.
+- AC3: "a run with one failed fold and one completed is fitted" passes — `.completed` asserted `c(FALSE, TRUE)`, return classed `nested_final_fit`; same targeted run.
+- AC4: `test-nested-tune-grid-failures.R` (158 tests, `summarize` TRUE and FALSE), `test-nested-results-plot.R` (80, `type` parameters and performance), `test-nested-results-agreement.R` (77) pass in the targeted run; each all-failed test asserts the class and matches `no outer fold completed`.
+- AC5: `man/nested_final_fit.Rd`, `collect_metrics.nested_results.Rd`, `autoplot.nested_results.Rd`, `agreement.Rd` name `nestedtune_no_completed_folds` (diff read); NEWS carries one entry under 0.0.0.9000 naming the final fit and the three doors, `grep -E 'M[0-9]{2,3}'` over it finds no milestone number; `devtools::document()` at review left `git status` empty for `NAMESPACE` and `man/`.
+- AC6: `devtools::test()` 4813 pass, 0 fail, 0 warn, 0 skip; `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes.
+- Driving RR: none — no projection to juxtapose.
+
+Consistency gate 2026-09-03: `cairn_validate.py` exit 0, all checks pass, 18 references-staleness advisories (standing, not gate failures); no DESIGN principle changed, `cairn_impact` skipped. Toolchain slot: `document()` no diff; generated files untouched by hand (the no-diff check); README.Rmd unchanged on the branch; `pkgdown::check_pkgdown()` no problems; NEWS entry present with no milestone number; no new top-level file; `check()` clean as AC6 records.
+
+Independent review 2026-09-03, three fresh-context lenses, findings ranked as each reviewer ranked them:
+
+[O] diff-bug lens —
+- O1: `.completed` holding `NA` makes `check_completed_folds()` (`R/checks.R:400`) and the pre-existing `check_any_completed()` die with base R's "missing value where TRUE/FALSE needed" rather than a classed refusal; reachable because tibble's `$<-` keeps the class past `check_results_record()` (reviewer measured it with `pkgload::load_all()`).
+- O2: a classed object with `.completed` removed is diagnosed "All n outer folds failed" under `nestedtune_no_completed_folds` rather than refused as a broken record, `check_results_record()` never calling `has_results_columns()`.
+- O3: `cairn/DESIGN.md:298-301` still enumerates the final fit's entry refusals as the three `check_results_record()` shapes and one class; the fourth refusal and its class are missing.
+- O4: NEWS's "comes after the three `nestedtune_bad_results` refusals" is enforced by no test — nothing fails if the two calls at `R/nested-final-fit.R:217-218` swap.
+- O5: the M46 probe now exempts `.completed` outright, leaving its `is.logical → NA` corruption branch (`test-nested-final-fit-rng.R:467`) unreachable; `bayes_final_results()` being all-completed, no wrong-but-passing value exists to substitute.
+- O6: bare `[collect_metrics()]` links in the new roxygen resolve to the re-exports stub rather than the method page; pre-existing style on the same pages.
+- O7: `document()` no-diff could not be run by the reviewer (write-barred); each `.Rd` hunk matched its roxygen line by line.
+[S] blame-history lens —
+- S1: the M46 "reads nothing from the fold rows but splits" oracle (tagged AC4/IP2 there) is narrowed to admit `.completed`; judged a disclosed narrowing, not a silent reversal — the read precedes every draw (AC2's test), and the wording lives in no D-entry, DESIGN line or lesson. No conflict with D-041, D-044, D-031/D-036, the M05 or M42 lessons.
+[S] prior-review lens — no regressions: M46 deferred exactly this refusal to the candidate row M53 took; M44's class-comparison rejection was about that criterion as written, re-opened at M53's plan gate; GitHub probe found one human inline comment, on an unrelated PR (#30), none on the PRs that touched these files.
