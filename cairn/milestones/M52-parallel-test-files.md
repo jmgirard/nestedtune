@@ -76,7 +76,7 @@ beyond the sentences this milestone adds.
 
 ## Tasks
 
-- [ ] T1: Record the baseline in the work log: per-file seconds from
+- [x] T1: Record the baseline in the work log: per-file seconds from
       `benchmarks/profile-tests.R 1` on this machine (serial) and from the
       `[hang-trace]` lines of the last green `test-coverage` run (33710255888),
       and the check-step durations of run 33715373356 — one line each.
@@ -147,6 +147,21 @@ beyond the sentences this milestone adds.
   both off the composite. Two tests added; planting `parallel_updates = FALSE`
   on the composite redded both (one failure each), helper restored. Ran green
   serially and nested inside a two-worker run.
+- 2026-09-03: T1 baseline, local serial (`benchmarks/profile-tests.R 1` on the
+  b0d76a4 tree, R 4.6.1, 18 cores): 1396.7 s over 56 files, wall 1400.9 s;
+  bayes-oracles 160.4, parallel-identity 144.5, race-rng 120.8, bayes-rng
+  104.9, race-oracles 103.0, bayes-results 73.6, sim-anneal-rng 70.4,
+  grid-failures 68.2, sim-anneal-oracles 62.8, grid-oracles 52.7; every other
+  file under 41 s.
+- 2026-09-03: T1 baseline, covr trace (run 33710255888, `[hang-trace]` file
+  pairs): 1013.2 s over 56 files; parallel-identity 154.1, bayes-oracles
+  111.2, race-rng 60.0, final-fit-oracles 59.0, bayes-rng 57.4, race-oracles
+  48.9, sim-anneal-rng 46.9, bayes-results 41.5, grid-failures 35.3,
+  final-fit-rng 32.7, sim-anneal-oracles 31.3, eval-time 30.9; the rest under
+  26 s. `Test coverage` step 17m10s.
+- 2026-09-03: T1 baseline, check steps (run 33715373356, `completedAt -
+  startedAt`): windows 26m56s, devel 25m10s, ubuntu release 21m42s, oldrel-1
+  17m59s, macOS 15m32s.
 
 ## Decisions
 
