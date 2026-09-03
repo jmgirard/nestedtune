@@ -98,6 +98,7 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: resume: PR #63 open on 51dd582, origin/main unmoved, four checks pending; the withheld line pushed with this one, so CI restarts once on the head the squash takes; step-7 chip re-posed.
 - 2026-09-03: step-7 approval: PR #63 approved for merge on resume; CI pending on the pushed head.
 - 2026-09-03: CI wait stopped at the harness ceiling a third time, six checks pending on 2c19f27 (format-suggest, pkgdown, one ubuntu release leg green); marker written, PR #63 open, not merged; this line committed but not pushed so the running checks keep going; resume via /milestone-review M53.
+- 2026-09-03: resume: PR #63 open on 2c19f27, origin/main unmoved, all eleven checks green after a foreground watch; step-7 approval: PR #63 approved for merge at that head, the user choosing to merge without pushing the withheld docs-only line, which lands on main as a catch-up entry before archive.
 
 ## Decisions
 
