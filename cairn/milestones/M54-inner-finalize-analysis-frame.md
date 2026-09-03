@@ -1,6 +1,6 @@
 # M54: The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -117,7 +117,7 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - [x] T3: Roxygen on the three `@param param_info` sites and `?nested_final_fit`'s `@param results`;
       the DESIGN.md architecture sentence; the NEWS entry (no milestone number);
       `devtools::document()`.
-- [ ] T4: Verify slot, `devtools::check()`.
+- [x] T4: Verify slot, `devtools::check()`.
 
 ## Work log
 
@@ -128,3 +128,4 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - 2026-09-03: T1 — `tests/testthat/test-nested-tune-finalize.R` written, run before T2: AC1 red on all four tuners and the evaluated-outer design (every recorded frame 200 rows, matching no fold), AC2 red on every fold (candidates 20–100 against the fold bound [16, 80], the full frame's 100 exceeding it by 20), AC3 red on the unknown-range pair and green on the data-frame-grid pair, AC4 green on both untouched designs; 17 failures, 88 passes. The question gate was skipped: the plan fixes the helper's name, site, predicate and both test designs, and no dependency changes.
 - 2026-09-03: T2 — `analysis_framed_inner()` added beside `inner_resamples_from_split()` and called in `nested_fold_fit()` immediately before `run_tuner()`, inside the tuning seed's scope (probed: `.Random.seed` unchanged across the call; the rebuilt splits' `analysis()`/`assessment()` rows identical to the design's; a `nested_cv()` inner rset returned as is). One deviation from the task text: the analysis frame is materialized only after every inner index maps, so an outer split whose own `in_id` reaches past the data (the "raising last_fit()" test in `test-nested-tune-grid-failures.R`) still fails at the outer fit, not the inner stage — the first full-suite run failed that one test before the reorder. Full suite after it: 4922 passes, 0 failures, 0 warnings, the serial/parallel identity file included; the finalize file 105 passes.
 - 2026-09-03: T3 — `@param param_info` at the grid, Bayesian and annealing sites (the racers inherit the grid's), `?nested_final_fit`'s `@param results`, the DESIGN architecture paragraph naming the rebuild as the GP1 divergence, one NEWS entry; `devtools::document()` run, five Rd files regenerated, `air format --check R/` clean. The Bayesian text was written against a run: `nested_tune_bayes()` on an unknown-range `min_n` fails every fold with tune's "must be a <param> object without unknowns" note (executed 2026-09-03), so that site says it refuses rather than finalizes.
+- 2026-09-03: T4 — `devtools::document()` on the committed tree leaves no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes (the suite inside it green after T2's 4922-pass run). All tasks checked; status set to review.
