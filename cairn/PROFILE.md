@@ -1,7 +1,7 @@
 # Toolchain profile: r-package
 
 <!-- A cairn *toolchain profile*: the language-specific slots the operational skills read. The Validation
-     doctrine is universal, not a slot (skills/shared/validation-doctrine.md); all seven slots must be non-empty. -->
+     doctrine is universal, not a slot (skills/shared/validation-doctrine.md); all seven slots must be non-empty — cairn_validate FAILs on a missing or empty slot. -->
 
 The R-package toolchain: devtools/roxygen/testthat/pkgdown, CRAN release.
 Selected by `cairn-init` when a `DESCRIPTION` file is present.
@@ -55,7 +55,7 @@ rules in tracking-rules:
   20-minute job cap killed before cache-save; it leaves every non-check step bounded only by the job.
   **Parallel test files** (`Config/testthat/parallel: true`, M52): `Config/testthat/start-first` in
   DESCRIPTION queues the slowest files first, so the run is bounded by the largest file rather than by
-  whatever lands last; the worker count is `TESTTHAT_CPUS`, set in both gating workflows' job `env:` at one
+  whatever lands last; the worker count is `TESTTHAT_CPUS` (testthat prefers `getOption("Ncpus")` when set; no `.Rprofile` sets it), set in both gating workflows' job `env:` at one
   per runner core (4 on ubuntu and windows, 3 on macOS) and left at testthat's default of 2 locally;
   `benchmarks/profile-tests.R` pins itself serial so its per-file figures stay comparable. **A
   `workflow_dispatch`-only stress workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand, invisible

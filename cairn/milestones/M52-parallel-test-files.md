@@ -224,6 +224,7 @@ beyond the sentences this milestone adds.
 - 2026-09-03: amendment return: AC2 — "On the same head, every leg the `R-CMD-check` workflow's `gh run view <run-id> --attempt <k> --json jobs` lists concludes its `Run r-lib/actions/check-r-package@v2` step `success` on each of the three attempts, and the median of each leg's three durations, read the same way, is 20 minutes or less."
 - 2026-09-03: amendment return: AC3 — "The `R-CMD-check` and `test-coverage` workflows are green on three attempts of the milestone's measured head — the PR's own run and two `gh run rerun` of it — with no job cancelled at a `timeout-minutes` cap. The measured head is a pushed commit on the branch from which the branch head at the moment of merge differs only under `cairn/` (`git diff --quiet <measured> HEAD -- . ':!cairn'` exits 0, run immediately before the merge)."
 - 2026-09-03: AC2's tick cleared with its wording; AC1–AC3 re-measure at re-review. No code moved since completion's `devtools::check()` (0/0/0 at `TESTTHAT_CPUS=4`); status → review.
+- 2026-09-03: step-7 approval: PR #62 approved for merge (measured head 450d351; fix-now PROFILE edits and this line are `cairn/`-only).
 
 ## Decisions
 
@@ -392,4 +393,16 @@ Independent review, round 2:
   job `success`, none cancelled. Measured head 450d351: `git diff --quiet
   450d351 HEAD -- . ':!cairn'` exits 0 at the checkpoint (to be re-run
   immediately before the merge). Verified.
+
+Triage at the gate (2026-09-03), user-accepted with the merge: fix now —
+[O] F5 (PROFILE's worker-count sentence now names testthat's `Ncpus`
+preference) and blame F2 (PROFILE's scaffold comment regains the
+cairn_validate clause), both `cairn/`-only so the measured head stands;
+follow-up — [O] F1, F2, F3, F4, F6, F8, F9 to one grouped candidate row at
+hygiene (search-first: no existing row on the hang trace, teardown output,
+the fixture cache or `start-first`); reject — [O] F7 (style only) and blame
+F1 (the M48 windows range is superseded by this milestone's figures; the
+cap and its reason survive). Return floor: no actioned finding shows a
+criterion failing or a load-bearing defect in what the package does for
+users; none returns status.
 
