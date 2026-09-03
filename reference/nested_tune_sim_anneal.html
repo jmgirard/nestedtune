@@ -135,7 +135,11 @@ scored so far, and nothing about the early stop reaches <code>.notes</code>.</p>
 <dd><p>A <code><a href="https://dials.tidymodels.org/reference/parameters.html" class="external-link">dials::parameters()</a></code> object, or <code>NULL</code> to let tune
 derive one from the workflow. Passed unchanged to
 <code><a href="https://finetune.tidymodels.org/reference/tune_sim_anneal.html" class="external-link">finetune::tune_sim_anneal()</a></code> on every outer fold: the initial candidates
-are drawn from its ranges, and every perturbation stays inside them.</p></dd>
+are drawn from its ranges, and every perturbation stays inside them. A
+parameter whose range is unknown until the data is seen is finalized by
+finetune on the outer fold's analysis rows, never on the rows that fold
+holds out, as <code><a href="nested_tune_grid.html">nested_tune_grid()</a></code> describes; <code><a href="nested_final_fit.html">nested_final_fit()</a></code>
+finalizes on the full data.</p></dd>
 
 
 <dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>
@@ -236,7 +240,8 @@ initial candidates are a space-filling design drawn under the fold's tuning
 seed, and each perturbation is drawn from the stream that seed started.
 <code><a href="https://finetune.tidymodels.org/reference/control_sim_anneal.html" class="external-link">finetune::control_sim_anneal()</a></code> has no seed slot, so nothing is injected
 into the control; the fold's tuning seed alone governs the search. Fold
-<code>i</code> is exactly:</p>
+<code>i</code> is exactly (with <code>resamples$inner_resamples[[i]]</code> read as
+<code><a href="nested_tune_grid.html">nested_tune_grid()</a></code>'s reproducibility section reads it):</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(res<span class="sc">$</span>.tuning_seed[[i]], <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>control <span class="ot">&lt;-</span> <span class="fu">attr</span>(res, <span class="st">"procedure"</span>)<span class="sc">$</span>control</span>

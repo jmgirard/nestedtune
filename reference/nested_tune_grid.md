@@ -73,7 +73,21 @@ nested_tune_grid(
   unchanged to
   [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
   on every outer fold, so a restricted range restricts the grid every
-  fold searches.
+  fold searches. A parameter whose range is unknown until the data is
+  seen (`mtry()`, or a `min_n()` finalized by row count) is finalized by
+  tune on the outer fold's analysis rows – never on the rows that fold
+  holds out – so on a
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
+  design the inner call receives the fold's inner resamples re-pointed
+  at its analysis set rather than the design's own `inner_resamples`
+  element, which indexes the whole data. A design from
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  already carries the analysis set and is passed as it is, as is the
+  design's element under an outer split that repeats a row (an evaluated
+  [`rsample::manual_rset()`](https://rsample.tidymodels.org/reference/manual_rset.html)),
+  where the re-pointing is ambiguous.
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  finalizes on the full data.
 
 - grid:
 
@@ -292,7 +306,14 @@ generator kind pinned. Because a fold's seed depends on its position and
 not on the order folds are executed in, the result is the same however
 the loop is scheduled.
 
-This makes any single fold reproducible by hand. Fold `i` is exactly:
+This makes any single fold reproducible by hand. Fold `i` is exactly (on
+a
+[`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
+design, `resamples$inner_resamples[[i]]` here stands for that inner rset
+re-pointed at `analysis(resamples$splits[[i]])` – the frame each inner
+split carries is the fold's analysis set, its indices remapped – which
+changes the call only when `param_info` carries an unknown range,
+finalized on those rows as `param_info` describes):
 
     set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")

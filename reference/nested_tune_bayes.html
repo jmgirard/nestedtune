@@ -131,7 +131,13 @@ scored so far, and nothing about the early stop reaches <code>.notes</code>.</p>
 <dd><p>A <code><a href="https://dials.tidymodels.org/reference/parameters.html" class="external-link">dials::parameters()</a></code> object, or <code>NULL</code> to let tune
 derive one from the workflow. Passed unchanged to <code><a href="https://tune.tidymodels.org/reference/tune_bayes.html" class="external-link">tune::tune_bayes()</a></code> on
 every outer fold: the initial candidates are drawn from its ranges, and
-every proposal stays inside them.</p></dd>
+every proposal stays inside them. A parameter whose range is unknown
+until the data is seen is not finalized here: <code><a href="https://tune.tidymodels.org/reference/tune_bayes.html" class="external-link">tune::tune_bayes()</a></code>
+refuses it before any frame is read ("must be a <param> object without
+unknowns"), which every outer fold records as its failure. Finalize it
+first with <code><a href="https://dials.tidymodels.org/reference/finalize.html" class="external-link">dials::finalize()</a></code> on the data. Where <code><a href="nested_tune_grid.html">nested_tune_grid()</a></code>
+and the finetune procedures do finalize, it is on the outer fold's
+analysis rows.</p></dd>
 
 
 <dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>

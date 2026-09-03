@@ -89,7 +89,21 @@ nested_tune_race_win_loss(
   unchanged to
   [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
   on every outer fold, so a restricted range restricts the grid every
-  fold searches.
+  fold searches. A parameter whose range is unknown until the data is
+  seen (`mtry()`, or a `min_n()` finalized by row count) is finalized by
+  tune on the outer fold's analysis rows – never on the rows that fold
+  holds out – so on a
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
+  design the inner call receives the fold's inner resamples re-pointed
+  at its analysis set rather than the design's own `inner_resamples`
+  element, which indexes the whole data. A design from
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  already carries the analysis set and is passed as it is, as is the
+  design's element under an outer split that repeats a row (an evaluated
+  [`rsample::manual_rset()`](https://rsample.tidymodels.org/reference/manual_rset.html)),
+  where the re-pointing is ambiguous.
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  finalizes on the full data.
 
 - grid:
 
@@ -201,7 +215,9 @@ A race draws from the generator even with a deterministic engine: with
 `randomize = TRUE` (finetune's default) the inner resamples are shuffled
 before the burn-in, so which resamples the burn-in uses, and with it
 which candidates are eliminated when, comes from the fold's tuning seed.
-Fold `i` is exactly:
+Fold `i` is exactly (with `resamples$inner_resamples[[i]]` read as
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)'s
+reproducibility section reads it):
 
     set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")

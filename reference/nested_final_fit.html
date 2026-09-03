@@ -92,7 +92,12 @@ resampling specification, recorded on the result as the design stored it;
 the data, which every split references; and the procedure – the tuner
 and its own arguments (<code>grid</code>; <code>iter</code>, <code>initial</code> and <code>objective</code>; or
 <code>iter</code> and <code>initial</code>) with
-<code>param_info</code>, <code>event_level</code> and <code>eval_time</code>, and the metric set. A results
+<code>param_info</code>, <code>event_level</code> and <code>eval_time</code>, and the metric set. A
+<code>param_info</code> parameter whose range is unknown until the data is seen is
+finalized here on the full data – every row is this model's training
+data – where each outer fold of the nested run finalized it on that
+fold's analysis rows alone, so the final model's candidate range can
+exceed any fold's. A results
 object that carries no such record (one built by an earlier version of
 nestedtune, or from a design assembled by hand rather than by
 <code><a href="nested_resamples.html">nested_resamples()</a></code> or <code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>), one that is no longer a

@@ -94,7 +94,13 @@ nested_tune_sim_anneal(
   unchanged to
   [`finetune::tune_sim_anneal()`](https://finetune.tidymodels.org/reference/tune_sim_anneal.html)
   on every outer fold: the initial candidates are drawn from its ranges,
-  and every perturbation stays inside them.
+  and every perturbation stays inside them. A parameter whose range is
+  unknown until the data is seen is finalized by finetune on the outer
+  fold's analysis rows, never on the rows that fold holds out, as
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  describes;
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  finalizes on the full data.
 
 - metrics:
 
@@ -211,7 +217,10 @@ tuning seed, and each perturbation is drawn from the stream that seed
 started.
 [`finetune::control_sim_anneal()`](https://finetune.tidymodels.org/reference/control_sim_anneal.html)
 has no seed slot, so nothing is injected into the control; the fold's
-tuning seed alone governs the search. Fold `i` is exactly:
+tuning seed alone governs the search. Fold `i` is exactly (with
+`resamples$inner_resamples[[i]]` read as
+[`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)'s
+reproducibility section reads it):
 
     set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
              normal.kind = "Inversion", sample.kind = "Rejection")

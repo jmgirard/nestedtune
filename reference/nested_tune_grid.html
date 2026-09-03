@@ -107,7 +107,16 @@ unsupported argument is an error rather than a silent positional match.</p></dd>
 <dd><p>A <code><a href="https://dials.tidymodels.org/reference/parameters.html" class="external-link">dials::parameters()</a></code> object, or <code>NULL</code> to let tune
 derive one from the workflow. Passed unchanged to <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune::tune_grid()</a></code> on
 every outer fold, so a restricted range restricts the grid every fold
-searches.</p></dd>
+searches. A parameter whose range is unknown until the data is seen
+(<code>mtry()</code>, or a <code>min_n()</code> finalized by row count) is finalized by tune
+on the outer fold's analysis rows – never on the rows that fold holds
+out – so on a <code><a href="nested_resamples.html">nested_resamples()</a></code> design the inner call receives the
+fold's inner resamples re-pointed at its analysis set rather than the
+design's own <code>inner_resamples</code> element, which indexes the whole data.
+A design from <code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code> already carries the analysis set
+and is passed as it is, as is the design's element under an outer split
+that repeats a row (an evaluated <code><a href="https://rsample.tidymodels.org/reference/manual_rset.html" class="external-link">rsample::manual_rset()</a></code>), where the
+re-pointing is ambiguous. <code><a href="nested_final_fit.html">nested_final_fit()</a></code> finalizes on the full data.</p></dd>
 
 
 <dt id="arg-grid">grid<a class="anchor" aria-label="anchor" href="#arg-grid"></a></dt>
@@ -284,7 +293,12 @@ outer folds. Fold <code>i</code> uses element <code>2 * i - 1</code> for its tun
 element <code>2 * i</code> for its outer fit, each applied with the generator kind
 pinned. Because a fold's seed depends on its position and not on the order
 folds are executed in, the result is the same however the loop is scheduled.</p>
-<p>This makes any single fold reproducible by hand. Fold <code>i</code> is exactly:</p>
+<p>This makes any single fold reproducible by hand. Fold <code>i</code> is exactly
+(on a <code><a href="nested_resamples.html">nested_resamples()</a></code> design, <code>resamples$inner_resamples[[i]]</code> here
+stands for that inner rset re-pointed at <code>analysis(resamples$splits[[i]])</code>
+– the frame each inner split carries is the fold's analysis set, its
+indices remapped – which changes the call only when <code>param_info</code> carries
+an unknown range, finalized on those rows as <code>param_info</code> describes):</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(res<span class="sc">$</span>.tuning_seed[[i]], <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>tuned <span class="ot">&lt;-</span> <span class="fu">tune_grid</span>(object, resamples<span class="sc">$</span>inner_resamples[[i]], <span class="at">grid =</span> grid,</span>

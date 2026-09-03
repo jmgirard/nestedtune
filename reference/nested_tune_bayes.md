@@ -97,7 +97,17 @@ nested_tune_bayes(
   unchanged to
   [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
   on every outer fold: the initial candidates are drawn from its ranges,
-  and every proposal stays inside them.
+  and every proposal stays inside them. A parameter whose range is
+  unknown until the data is seen is not finalized here:
+  [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
+  refuses it before any frame is read ("must be a object without
+  unknowns"), which every outer fold records as its failure. Finalize it
+  first with
+  [`dials::finalize()`](https://dials.tidymodels.org/reference/finalize.html)
+  on the data. Where
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  and the finetune procedures do finalize, it is on the outer fold's
+  analysis rows.
 
 - metrics:
 

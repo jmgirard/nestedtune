@@ -2,6 +2,35 @@
 
 ## nestedtune 0.0.0.9000
 
+- On a
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
+  design, every inner tuning call now sees only its outer fold’s
+  analysis rows, so a `param_info` parameter whose range tune finalizes
+  from the data – `mtry()`, or a `min_n()` finalized by row count – is
+  finalized without the rows that fold holds out, as it already was on
+  an
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  design. Before, tune read the whole data frame the design’s inner
+  splits index: on a 200-row frame with five outer folds, a `min_n`
+  finalized at half the row count searched candidates up to 100 where
+  the fold’s 160 analysis rows give 80. The candidates such a run
+  searches, and so its selections and estimate, change; a `param_info`
+  with no unknown range, a data-frame `grid`, a
+  [`nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  design, and an outer split that repeats a row are unaffected, and
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  on the two designs built under one seed now returns identical
+  `.inner_metrics` and `.metrics`. This applies to
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
+  both racing functions and
+  [`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md);
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+  refuses an unknown range before any frame is read, as before.
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  still finalizes on the full data, which is the final model’s own
+  training data. The design object does not change; a running fold holds
+  one copy of its analysis set for the tuning call.
+
 - [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
   refuses a results object in which no outer fold completed, with
   condition class `nestedtune_no_completed_folds`: such a run has no
