@@ -1,12 +1,12 @@
 # M54: The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, GP1, GP2, GP4
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** m054-inner-finalize-analysis-frame
 
 ## Goal
 
@@ -96,7 +96,7 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 
 ## Tasks
 
-- [ ] T1: Tests first in `tests/testthat/test-nested-tune-finalize.R`, opening with the oracle
+- [x] T1: Tests first in `tests/testthat/test-nested-tune-finalize.R`, opening with the oracle
       records header DESIGN's convention mandates (AC2 closed-form, AC3 live reference via
       `rsample::nested_cv()`): a helper building the recording `min_n` parameter
       (`dials::new_quant_param()` with an unknown upper bound, its finalizer appending `nrow(x)` and
@@ -125,3 +125,4 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - 2026-09-03: criteria audit ran in full mode ([O] fresh reader): 16 findings — `tune_bayes()` shown by execution to refuse an unknown range before any frame is read, so AC1 and Scope cover four tuners; a repeated outer `in_id` defeats the `match()` inverse, so the rebuild skips it and AC4 tests it; T2's predicate respelled (a `nested_cv()` design passes `is_fold_payload()`); the column-count Out claim corrected for recipes whose width differs across frames; AC2's seed pinned and its redness moved to T1; oracle-records header, racers' burn-in floor (inner v ≥ 4), every-frame wording, `@param results` as AC5's site, AC4's orchestrator and mock delegation, the fingerprint recompute, the GP4 copy cost and AC3's inline identity precondition all added; the GP1 divergence stated; test placement kept in a new file.
 - 2026-09-03: plan gate chose rebuilding the inner rset over the analysis frame in the worker over pre-finalizing `param_info` per fold because the former leaves tune's finalization, messages and recipe refusal to tune (GP1) where the latter duplicates the preprocessor-molding step and must mirror the refusal; falsified by a tune release that finalizes on something other than the first split's frame, or reads the frame elsewhere in the run.
 - 2026-09-03: plan gate declined the /milestone-brief escalation offered on the ip-touching tripwire, the mechanism read from tune's code and measured by execution; the user waived the pre-1.0 deprecation cycle for the changed candidates, NEWS naming the change, over an argument keeping the full-frame finalization for a cycle; the recipe-width and kernlab test cases the audit raised were declined, AC1's row-identity assertion covering the frame every finalizer reads.
+- 2026-09-03: T1 — `tests/testthat/test-nested-tune-finalize.R` written, run before T2: AC1 red on all four tuners and the evaluated-outer design (every recorded frame 200 rows, matching no fold), AC2 red on every fold (candidates 20–100 against the fold bound [16, 80], the full frame's 100 exceeding it by 20), AC3 red on the unknown-range pair and green on the data-frame-grid pair, AC4 green on both untouched designs; 17 failures, 88 passes. The question gate was skipped: the plan fixes the helper's name, site, predicate and both test designs, and no dependency changes.
