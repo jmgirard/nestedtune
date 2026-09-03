@@ -91,6 +91,7 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: T4 `@param results` names the fourth refusal, its class and `summary()`; NEWS carries one entry covering the final fit and the three doors; `document()` rewrote `nested_final_fit.Rd` only.
 - 2026-09-03: T5 first full run: 4810 pass, 1 error — M46's read-nothing-but-splits probe (`test-nested-final-fit-rng.R`) corrupts `.completed` to `NA`, which the new check reads; `check()` failed on the same test. The probe now exempts `.completed` (minor amendment under T2, decision below); the file's 52 tests pass; full suite and `check()` re-run.
 - 2026-09-03: T5 second run: `devtools::test()` 4813 pass, 0 fail; `devtools::check()` Status OK (0 errors, 0 warnings, 0 notes). Status → review.
+- 2026-09-03: step-7 approval: PR #63 approved for merge; triage accepted as proposed (O3, O4, O5 fixed on the branch; O1, O2 to the malformed-object candidate row; O6, S1 rejected).
 
 ## Decisions
 
@@ -122,3 +123,11 @@ Independent review 2026-09-03, three fresh-context lenses, findings ranked as ea
 [S] blame-history lens —
 - S1: the M46 "reads nothing from the fold rows but splits" oracle (tagged AC4/IP2 there) is narrowed to admit `.completed`; judged a disclosed narrowing, not a silent reversal — the read precedes every draw (AC2's test), and the wording lives in no D-entry, DESIGN line or lesson. No conflict with D-041, D-044, D-031/D-036, the M05 or M42 lessons.
 [S] prior-review lens — no regressions: M46 deferred exactly this refusal to the candidate row M53 took; M44's class-comparison rejection was about that criterion as written, re-opened at M53's plan gate; GitHub probe found one human inline comment, on an unrelated PR (#30), none on the PRs that touched these files.
+
+Triage at the gate 2026-09-03, the maintainer accepting the proposed dispositions:
+- O3 fix now: `cairn/DESIGN.md` final-fit paragraph names `check_completed_folds()` and its class after the record refusals.
+- O4 fix now: "the record refusals fire before the all-failed one" added to `test-nested-final-fit-checks.R` — a classed zero-row prototype of an all-failed run is refused `nestedtune_bad_results`, not `nestedtune_no_completed_folds`. Swapping the two calls in `nested_final_fit()` turned that test red (3 failures) and, refuting the finding's "nothing fails" clause, the existing no-rows and not-a-results tests too (3 and 7); the new test stays as the explicit pin of the NEWS sentence.
+- O5 fix now: the unreachable `is.logical → NA` branch removed from the M46 probe.
+- O1, O2 follow-up: absorbed at hygiene into the standing malformed-object candidate row (M38 O1, M39 R3 — the `.completed` `NA` and missing-column cases are hand surgery of the same kind); that row's second extension, so its disposition chip is posed there.
+- O6 rejected: pre-existing link style on the same pages, `check()` clean. O7 not a finding: `document()` run at review, no diff. S1 rejected: the probe narrowing is the change the plan and the milestone decision called for.
+- After the fixes: `test-nested-final-fit-checks.R` 86 and `test-nested-final-fit-rng.R` 52 tests pass.

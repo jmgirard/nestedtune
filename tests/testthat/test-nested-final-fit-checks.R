@@ -258,6 +258,30 @@ test_that("the all-failed refusal fires before anything is drawn", {
   expect_identical(.Random.seed, before)
 })
 
+test_that("the record refusals fire before the all-failed one", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- all_failed_results(d, wf, "inner tuning")
+
+  # A classed zero-row prototype of an all-failed run, built as the no-rows
+  # test above builds one: `.completed` is `logical(0)`, which the all-failed
+  # check would read as "no fold completed", so the record refusal has to
+  # answer first (the order NEWS states).
+  empty <- res[0L, ]
+  for (nm in results_attributes()) {
+    attr(empty, nm) <- attr(res, nm)
+  }
+  class(empty) <- c("nested_results", class(empty))
+  expect_identical(nrow(empty), 0L)
+
+  cnd <- rlang::catch_cnd(nested_final_fit(wf, empty), "error")
+  expect_s3_class(cnd, "nestedtune_bad_results")
+  expect_false(inherits(cnd, "nestedtune_no_completed_folds"))
+  expect_match(conditionMessage(cnd), "has no rows", fixed = TRUE)
+})
+
 test_that("a run with one failed fold and one completed is fitted", {
   skip_if_no_engines()
 

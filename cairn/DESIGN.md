@@ -298,8 +298,10 @@ along, and both would rank outer folds, which is the reading IP3 forbids
 `nested_final_fit()` (`R/nested-final-fit.R`) is the deployment path. It
 takes the workflow and the `nested_results`, refuses a results object that is
 not one, carries no `inside`/`procedure` record or has no rows
-(`check_results_record()`, one class `nestedtune_bad_results`), rebuilds the
-tuner description from the `procedure` attribute (`procedure_tuner()`,
+(`check_results_record()`, one class `nestedtune_bad_results`), then refuses
+one in which no outer fold completed (`check_completed_folds()`, class
+`nestedtune_no_completed_folds`, the class `check_any_completed()` raises for
+the summary doors), rebuilds the tuner description from the `procedure` attribute (`procedure_tuner()`,
 `R/tuner.R`), then draws two seeds and hands everything to
 `final_fit_worker()`, which sets the tuning seed, re-evaluates the recorded
 `inside` call against the full data, runs the recorded tuner through the same

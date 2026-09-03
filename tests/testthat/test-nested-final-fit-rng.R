@@ -465,8 +465,6 @@ test_that("AC4: the final fit reads nothing from the fold rows but splits and .c
   for (nm in wrong) {
     corrupt[[nm]] <- if (is.list(corrupt[[nm]])) {
       rep(list("corrupted"), n)
-    } else if (is.logical(corrupt[[nm]])) {
-      rep(NA, n)
     } else if (is.integer(corrupt[[nm]])) {
       rep(-1L, n)
     } else {
