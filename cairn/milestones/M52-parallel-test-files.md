@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** `m052-parallel-test-files`
+- **Branch/PR:** `m052-parallel-test-files` · https://github.com/tidymodels/nestedtune/pull/62
 
 ## Goal
 
