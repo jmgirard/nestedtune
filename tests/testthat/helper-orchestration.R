@@ -1926,3 +1926,92 @@ reference_anneal_final_fit <- function(
 
   list(seeds = seeds, selected = best, workflow = fitted, tuned = tuned)
 }
+
+# Every design shape check_nested() refuses beyond its two element-class rules
+# (M55), each planted into det_nested(data)'s three outer rows. One record per
+# planting: the design, the rows the refusal must name (`rows`, for a
+# row-wise defect) or the columns it must name (`columns`), so a test can
+# hold the message to the planted positions rather than to whichever one the
+# check happened to find first.
+#
+# Row-wise defects are planted at the first and the last position in turn,
+# and at all three, because a check that reports only the first offender
+# passes a first-position test and fails an all-positions one. Column defects
+# are planted once before `id` and once after it in column order, because a
+# check that reads only the columns after `id` would miss the first.
+malformed_designs <- function(data) {
+  base <- det_nested(data)
+  n <- nrow(base)
+  stopifnot(n == 3L, identical(names(base), c("splits", "id", "inner_resamples")))
+  empty <- rsample::manual_rset(list(), character(0))
+
+  plant_element <- function(column, at, value) {
+    x <- base
+    for (i in at) {
+      x[[column]][[i]] <- value
+    }
+    list(design = x, rows = at, columns = character(0))
+  }
+  plant_na <- function(at) {
+    x <- base
+    x$id[at] <- NA
+    list(design = x, rows = at, columns = character(0))
+  }
+  plant_repeat <- function(at) {
+    x <- base
+    x$id[at] <- x$id[[1L]]
+    list(design = x, rows = sort(unique(c(1L, at))), columns = character(0))
+  }
+  # A column placed before or after `id`; `id` itself is replaced in place.
+  plant_column <- function(name, value, where = c("before", "after")) {
+    x <- base
+    x[[name]] <- value
+    if (name != "id") {
+      order <- if (match.arg(where) == "before") {
+        c("splits", name, "id", "inner_resamples")
+      } else {
+        c("splits", "id", name, "inner_resamples")
+      }
+      x <- x[order]
+    }
+    list(design = x, rows = integer(0), columns = name)
+  }
+  both <- function(name, value) {
+    stats::setNames(
+      list(plant_column(name, value, "before"), plant_column(name, value, "after")),
+      paste(name, c("before", "after"), sep = "_")
+    )
+  }
+  positions <- list(first = 1L, last = n, all = seq_len(n))
+  by_position <- function(prefix, plant) {
+    stats::setNames(lapply(positions, plant), paste(prefix, names(positions), sep = "_"))
+  }
+
+  c(
+    by_position("splits_class", function(at) {
+      plant_element("splits", at, "not an rsplit")
+    }),
+    by_position("inner_class", function(at) {
+      plant_element("inner_resamples", at, "not an rset")
+    }),
+    by_position("inner_empty", function(at) {
+      plant_element("inner_resamples", at, empty)
+    }),
+    by_position("label_na", plant_na),
+    list(
+      label_repeat_last = plant_repeat(n),
+      label_repeat_all = plant_repeat(seq_len(n)),
+      id_integer = plant_column("id", seq_len(n))
+    ),
+    stats::setNames(both("id2", seq_len(n)), c("id2_integer_before", "id2_integer_after")),
+    stats::setNames(both("weights", c("a", "b", "c")), c("weights_character_before", "weights_character_after")),
+    stats::setNames(both("weights", c(1, 2, 3)), c("weights_numeric_before", "weights_numeric_after")),
+    stats::setNames(both("extra", list(1, 2, 3)), c("extra_list_before", "extra_list_after")),
+    list(two_columns = {
+      x <- base
+      x$weights <- c(1, 2, 3)
+      x$extra <- list(1, 2, 3)
+      list(design = x, rows = integer(0), columns = c("weights", "extra"))
+    })
+  )
+}
