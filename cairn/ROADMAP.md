@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-03 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 55 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M53 archive summary 11. Both byte budgets stay over: ROADMAP.md ~40,500 B against 24,000, LESSONS.md ~32,600 B against 20,000. This pass pruned M48's terminal row, removed the candidate row M53 took, and trimmed the design-refusal row to its head after its absorbed malformed-object findings (M38, M39, M53) went to DESIGN Known issues at the disposition chip. LESSONS extended the M50 push-restarts-CI line with M53's resume and approval pushes; nothing retired. Closing the byte gap still means graduating or dropping candidates — a user call, now nineteen passes overdue. Since the last check: M53 shipped the all-failed refusal, archived after no defect return; no issue slotted.)_
+_Last hygiene check: 2026-09-03 (all checks green; advisories only — the same 18 references pages record no verification claim, no release window is open. Line caps hold: ROADMAP.md 54 against 60, LESSONS.md 49 against 50, PROFILE.md 119, the M54 archive summary 11. Both byte budgets stay over: ROADMAP.md ~39,300 B against 24,000, LESSONS.md ~33,000 B against 20,000. This pass pruned M49's terminal row and touched no candidate row. LESSONS extended the M05 oracle line with M54's deferred finding on live-oracle references; nothing retired. Closing the byte gap still means graduating or dropping candidates — a user call, now twenty passes overdue. Since the last check: M54 shipped the analysis-frame rebuild before the inner tune call, archived after no defect return; no issue slotted.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | review | — | normal | milestones/M54-inner-finalize-analysis-frame.md |
+| M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | done | — | normal | milestones/archive/M54-inner-finalize-analysis-frame.md |
 | M53 | `nested_final_fit()` refuses a results object whose every outer fold failed | done | — | normal | milestones/archive/M53-final-fit-all-failed.md |
 | M52 | The test suite runs its files in parallel and fits its CI caps with headroom | done | — | high | milestones/archive/M52-parallel-test-files.md |
 | M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | done | — | normal | milestones/archive/M50-finetune-racing.md |
 | M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | done | M50 | normal | milestones/archive/M51-sim-anneal.md |
-| M49 | Each outer fold keeps its inner search's metrics in place of `.grid` | done | — | normal | milestones/archive/M49-inner-metrics-column.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
