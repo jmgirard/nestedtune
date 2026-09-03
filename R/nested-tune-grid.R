@@ -43,7 +43,16 @@
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
 #'   derive one from the workflow. Passed unchanged to [tune::tune_grid()] on
 #'   every outer fold, so a restricted range restricts the grid every fold
-#'   searches.
+#'   searches. A parameter whose range is unknown until the data is seen
+#'   (`mtry()`, or a `min_n()` finalized by row count) is finalized by tune
+#'   on the outer fold's analysis rows -- never on the rows that fold holds
+#'   out -- so on a [nested_resamples()] design the inner call receives the
+#'   fold's inner resamples re-pointed at its analysis set rather than the
+#'   design's own `inner_resamples` element, which indexes the whole data.
+#'   A design from [rsample::nested_cv()] already carries the analysis set
+#'   and is passed as it is, as is the design's element under an outer split
+#'   that repeats a row (an evaluated [rsample::manual_rset()]), where the
+#'   re-pointing is ambiguous. [nested_final_fit()] finalizes on the full data.
 #' @param grid A data frame of candidate parameter values, or a positive whole
 #'   number giving the size of a grid to generate. Passed to
 #'   [tune::tune_grid()]. A data frame is checked against the workflow before
@@ -203,7 +212,12 @@
 #' pinned. Because a fold's seed depends on its position and not on the order
 #' folds are executed in, the result is the same however the loop is scheduled.
 #'
-#' This makes any single fold reproducible by hand. Fold `i` is exactly:
+#' This makes any single fold reproducible by hand. Fold `i` is exactly
+#' (on a [nested_resamples()] design, `resamples$inner_resamples[[i]]` here
+#' stands for that inner rset re-pointed at `analysis(resamples$splits[[i]])`
+#' -- the frame each inner split carries is the fold's analysis set, its
+#' indices remapped -- which changes the call only when `param_info` carries
+#' an unknown range, finalized on those rows as `param_info` describes):
 #'
 #' ```
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
@@ -626,6 +640,12 @@ nested_fold_fit <- function(
   tuned <- NULL
   selected <- tryCatch(
     {
+      # The inner rset tune reads is framed on this fold's analysis rows
+      # (M54): tune finalizes an unknown parameter range on the frame the
+      # first inner split carries, and a `nested_resamples()` design's
+      # splits carry the whole data. Inside the seed's scope so the fold
+      # stays reproducible from its seeds alone; it draws nothing.
+      framed <- analysis_framed_inner(inner, split)
       # The tuner's own call -- `tune_grid()` or `tune_bayes()` -- assembled
       # from the description the orchestrator built (R/tuner.R). The fold's
       # tuning seed goes in with it, because `control_bayes()` is seeded from
@@ -633,7 +653,7 @@ nested_fold_fit <- function(
       tuned <- run_tuner(
         tuner,
         object = object,
-        resamples = inner,
+        resamples = framed,
         param_info = param_info,
         metrics = metrics,
         eval_time = eval_time,

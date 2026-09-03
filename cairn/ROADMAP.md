@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-03 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | planned | — | normal | milestones/M54-inner-finalize-analysis-frame.md |
+| M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | review | — | normal | milestones/M54-inner-finalize-analysis-frame.md |
 | M53 | `nested_final_fit()` refuses a results object whose every outer fold failed | done | — | normal | milestones/archive/M53-final-fit-all-failed.md |
 | M52 | The test suite runs its files in parallel and fits its CI caps with headroom | done | — | high | milestones/archive/M52-parallel-test-files.md |
 | M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | done | — | normal | milestones/archive/M50-finetune-racing.md |

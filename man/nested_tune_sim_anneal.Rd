@@ -50,7 +50,11 @@ scored so far, and nothing about the early stop reaches \code{.notes}.}
 \item{param_info}{A \code{\link[dials:parameters]{dials::parameters()}} object, or \code{NULL} to let tune
 derive one from the workflow. Passed unchanged to
 \code{\link[finetune:tune_sim_anneal]{finetune::tune_sim_anneal()}} on every outer fold: the initial candidates
-are drawn from its ranges, and every perturbation stays inside them.}
+are drawn from its ranges, and every perturbation stays inside them. A
+parameter whose range is unknown until the data is seen is finalized by
+finetune on the outer fold's analysis rows, never on the rows that fold
+holds out, as \code{\link[=nested_tune_grid]{nested_tune_grid()}} describes; \code{\link[=nested_final_fit]{nested_final_fit()}}
+finalizes on the full data.}
 
 \item{metrics}{A \code{\link[yardstick:metric_set]{yardstick::metric_set()}}, or \code{NULL} to use tune's defaults
 for the model's mode. The first metric in the set selects the best inner
@@ -157,7 +161,8 @@ initial candidates are a space-filling design drawn under the fold's tuning
 seed, and each perturbation is drawn from the stream that seed started.
 \code{\link[finetune:control_sim_anneal]{finetune::control_sim_anneal()}} has no seed slot, so nothing is injected
 into the control; the fold's tuning seed alone governs the search. Fold
-\code{i} is exactly:
+\code{i} is exactly (with \code{resamples$inner_resamples[[i]]} read as
+\code{\link[=nested_tune_grid]{nested_tune_grid()}}'s reproducibility section reads it):
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
          normal.kind = "Inversion", sample.kind = "Rejection")

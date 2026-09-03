@@ -717,6 +717,25 @@ test_that("an error raised by last_fit() is recorded against the outer fit", {
   expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
   expect_identical(res$.notes[[2L]]$location[[1L]], "outer fit")
   expect_true(any(grepl("past the end", res$.notes[[2L]]$note)))
+
+  # The same stage when the bad index is appended rather than substituted:
+  # every inner index still maps, so only the outer split reaches past the
+  # data, and the analysis-frame rebuild before tuning leaves the split for
+  # last_fit() rather than raising there.
+  appended <- det_nested(d)
+  appended$splits[[2L]]$in_id <- c(appended$splits[[2L]]$in_id, 999999L)
+  set.seed(2)
+  res <- suppressWarnings(
+    nested_tune_grid(
+      det_workflow(d),
+      appended,
+      grid = det_grid(),
+      metrics = reg_metrics()
+    )
+  )
+  expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
+  expect_identical(res$.notes[[2L]]$location[[1L]], "outer fit")
+  expect_true(any(grepl("past the end", res$.notes[[2L]]$note)))
 })
 
 test_that("an error while finalizing is this fold's failure, not the run's", {

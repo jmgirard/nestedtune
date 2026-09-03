@@ -32,7 +32,11 @@
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
 #'   derive one from the workflow. Passed unchanged to
 #'   [finetune::tune_sim_anneal()] on every outer fold: the initial candidates
-#'   are drawn from its ranges, and every perturbation stays inside them.
+#'   are drawn from its ranges, and every perturbation stays inside them. A
+#'   parameter whose range is unknown until the data is seen is finalized by
+#'   finetune on the outer fold's analysis rows, never on the rows that fold
+#'   holds out, as [nested_tune_grid()] describes; [nested_final_fit()]
+#'   finalizes on the full data.
 #' @param iter The number of search iterations, passed to
 #'   [finetune::tune_sim_anneal()]. A single whole number of at least 1. Each
 #'   iteration perturbs the current candidate and scores the result on the
@@ -87,7 +91,8 @@
 #' seed, and each perturbation is drawn from the stream that seed started.
 #' [finetune::control_sim_anneal()] has no seed slot, so nothing is injected
 #' into the control; the fold's tuning seed alone governs the search. Fold
-#' `i` is exactly:
+#' `i` is exactly (with `resamples$inner_resamples[[i]]` read as
+#' [nested_tune_grid()]'s reproducibility section reads it):
 #'
 #' ```
 #' set.seed(res$.tuning_seed[[i]], kind = "Mersenne-Twister",
