@@ -417,3 +417,12 @@ execution in RR01, and tune 1.x seeded differently (D-012).
   `R/nested-results.R` rather than fixed: intercepting `$<-` and `[[<-` is a
   fifth and sixth door the invariants D-031 fixed do not name. Revisit if a
   user reaches it.
+
+- A design's stored `inside` call does not survive leaving its construction
+  scope: `nested_resamples()` records the call as written, so a wrapper
+  parameterizing an argument (the repo's own `det_nested()` helper hit this at
+  M05) yields a design `nested_final_fit()` refuses, loudly, asking for
+  literals. Accepted at M05 (AC11): substituting the arguments' values at
+  construction is the unbuilt remedy, and capturing the frame instead would
+  retain it, which GP4 argues against; `rsample::nested_cv()` designs are not
+  affected. Routed from candidates 2026-09-03; added 2026-07-26 — RR02 B1.
