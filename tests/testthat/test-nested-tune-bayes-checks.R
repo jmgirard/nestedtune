@@ -199,6 +199,27 @@ test_that("each shared check fires through nested_tune_bayes()", {
   }
 })
 
+# M55: every design shape check_nested() refuses, refused here too -- with
+# the one class and this export's name on the condition. What each message
+# names is held to the planted positions by the grid driver's tests; this
+# asks only that the refusal reaches the caller through this door.
+
+test_that("every malformed design is refused at entry (M55)", {
+  skip_if_no_bayes_fixture()
+
+  d <- make_reg_data()
+  wf <- bayes_workflow(d)
+  planted <- malformed_designs(d)
+  expect_gt(length(planted), 20L)
+
+  for (nm in names(planted)) {
+    cnd <- refusal(nested_tune_bayes(wf, planted[[nm]]$design))
+    expect_s3_class(cnd, "nestedtune_bad_design")
+    expect_false(inherits(cnd, "nestedtune_sentinel"), info = nm)
+    expect_identical(conditionCall(cnd)[[1L]], as.name("nested_tune_bayes"))
+  }
+})
+
 # M48: what `...` accepts, and what a control may carry.
 
 test_that("`...` accepts `control` and nothing else (M48, AC5)", {
