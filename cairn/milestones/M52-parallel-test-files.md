@@ -1,6 +1,6 @@
 # M52: The test suite runs its files in parallel and fits its CI caps with headroom
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -47,7 +47,7 @@ beyond the sentences this milestone adds.
       `Test coverage` step completes with conclusion `success` in 12 minutes or
       less, read as `completedAt - startedAt` from
       `gh run view <run-id> --json jobs`.
-- [ ] AC2: On the same PR head, every leg the `R-CMD-check` workflow's
+- [x] AC2: On the same PR head, every leg the `R-CMD-check` workflow's
       `gh run view <run-id> --json jobs` lists completes its
       `Run r-lib/actions/check-r-package@v2` step with conclusion `success` in
       20 minutes or less, read the same way.
@@ -212,6 +212,7 @@ beyond the sentences this milestone adds.
   pairing a start and end line for all 56 test files, suite elapsed 123 s
   under check. Status → review. The T5–T7 and completion commits are local
   only: pushing restarts the PR matrix, and the squash carries them.
+- 2026-09-03: review, defect return 1 — AC1 failed: the pushed head c1b4cc3's `Test coverage` step ran 722 s against the 720 s bar (earlier reads 9.23, 11.43, 11.87 min on 02d254a); AC2, AC4, AC5, AC6 verified; AC3 unverified and its "final head" wording unmeasurable as written (see Review); [O] lens never reported (API overload ×3). Status → in-progress.
 
 ## Decisions
 
@@ -233,6 +234,10 @@ Evidence gathered 2026-09-03 on branch head c1b4cc3 (pushed; CI head) plus the
 local checkpoint 19829d4 (tracking-only). Default branch unmoved at the branch
 point b0d76a4 (`git merge-base` equals `origin/main`).
 
+- AC2: `gh run view 33761052786 --json jobs` (`R-CMD-check`, attempt 1, same
+  head c1b4cc3): every leg's `Run r-lib/actions/check-r-package@v2` step
+  concluded `success` — windows 18.60, ubuntu release 14.27, oldrel-1 14.05,
+  macOS 12.85, devel 9.65 min, all at or under 20. Verified.
 - AC1: FAILS on the PR head c1b4cc3. `gh run view 33761052991 --json jobs`
   (`test-coverage`, attempt 1, the run the review's push fired): the `Test
   coverage` step concluded `success`, `startedAt` 13:27:38Z to `completedAt`
@@ -260,3 +265,37 @@ point b0d76a4 (`git merge-base` equals `origin/main`).
   the 56 files `list.files("tests/testthat", "^test-.*\\.R$")` names each
   have exactly one `start <file>` and one `end <file>` line — 56 of 56 paired,
   none missing, none duplicated. Verified.
+- AC3: not verified this round. Head c1b4cc3 has one attempt of each
+  workflow (both `success`, no job cancelled); the two reruns were not fired
+  because AC1 failed on the attempt. A wording problem for the next round to
+  raise as a gated amendment: "the milestone's final head" cannot be measured
+  as written — step 7's approval line and every review evidence commit land
+  on the branch after any measured head, and each push restarts the PR
+  matrix (M50 lesson), so the last commit of the PR never has three runs
+  before it is squashed. 02d254a holds three green attempts (T6), c1b4cc3 one.
+
+Consistency gate (2026-09-03): `cairn_validate.py` exit 0 (advisories only:
+wrapped work-log lines, references staleness); no principle changed, impact
+report skipped; `devtools::document()` no diff; no generated file touched;
+README.Rmd untouched on the branch; `pkgdown::check_pkgdown()` no problems;
+no NEWS entry owed (nothing user-visible moves, T7); no new top-level file;
+`devtools::check()` 0/0/0. Observed outside the slot: `.github/ci-usage.py`
+exits 1 on `origin/main` too because `R-CMD-check-hard.yaml` and
+`pkgdown.yaml` carry no `paths-ignore`; neither file is in this diff.
+
+Independent review (fan-out, executable surface touched):
+- [O] diff-bug lens: not obtained — three spawns ended in API overload
+  (529) before reporting; to be spawned again at re-review.
+- [S] blame-history lens, two findings, ranked: F1 — `cairn/PROFILE.md`
+  test-doctrine text drops the windows-step range M48 recorded ("13.2–17.9
+  minutes on main's last three runs", "mid-suite") when it compresses the
+  cap sentence; the 30-minute cap and its reason survive. F2 — PROFILE's
+  scaffold comment drops "cairn_validate FAILs on a missing or empty slot";
+  traces to the cairn-init boilerplate, not a milestone. Disposition: triage
+  at the next round's gate; both unactioned this round.
+- [S] prior-review lens: no findings — archived reviews on the touched files
+  (M14, M16) and the LESSONS line are honoured; one real PR-thread comment
+  exists in the repo, on `pkgdown.yaml` in PR #30, outside this diff.
+
+Return (2026-09-03): AC1 failed on the PR head — defect return 1 of this
+milestone. Status → in-progress.
