@@ -1,5 +1,15 @@
 # nestedtune 0.0.0.9000
 
+* `nested_final_fit()` refuses a results object in which no outer fold
+  completed, with condition class `nestedtune_no_completed_folds`: such a run
+  has no estimate to report a model with, and the message points at
+  `summary()` on the object, which lists the stage each fold failed at. The
+  refusal comes after the three `nestedtune_bad_results` refusals and before
+  anything is fitted or drawn. `collect_metrics()`, `autoplot()` and
+  `agreement()` already refused the same object; their error now carries the
+  same class, so the fact is catchable one way at every door. A run in which
+  some folds failed is fitted as before.
+
 * `nested_tune_sim_anneal()` runs the outer loop of nested cross-validation
   with finetune's simulated annealing inside: each outer fold scores
   `initial` space-filling candidates on its inner resamples, then for `iter`

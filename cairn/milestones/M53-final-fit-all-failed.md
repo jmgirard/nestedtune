@@ -73,7 +73,7 @@ final fit's other refusals → M46, D-041, unchanged.
       existing all-failed tests assert the class — `collect_metrics()` (`test-nested-tune-grid-failures.R:173`),
       `autoplot()` (`test-nested-results-plot.R:515-526`), `agreement()` (`test-nested-results-agreement.R:294`);
       the three doors' roxygen name the class.
-- [ ] T4: Roxygen on `@param results` (`R/nested-final-fit.R:37-47`), the NEWS entry, `devtools::document()`.
+- [x] T4: Roxygen on `@param results` (`R/nested-final-fit.R:37-47`), the NEWS entry, `devtools::document()`.
 - [ ] T5: Verify slot, `devtools::check()`.
 
 ## Work log
@@ -88,6 +88,7 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: T1 three tests added to `test-nested-final-fit-checks.R`; before T2 the refusal test showed the final fit raising no condition and returning a model on an all-failed result, the control passing.
 - 2026-09-03: T2 `check_completed_folds()` added after `check_results_record()` in `R/checks.R`, called from `nested_final_fit()` right after it; the file's 82 tests pass, both `break_every_fold()` stages built.
 - 2026-09-03: T3 `check_any_completed()` carries the class; the three doors' all-failed tests assert it (each `summarize`, each `type`) and their roxygen names it; 315 tests across the three files pass.
+- 2026-09-03: T4 `@param results` names the fourth refusal, its class and `summary()`; NEWS carries one entry covering the final fit and the three doors; `document()` rewrote `nested_final_fit.Rd` only.
 
 ## Decisions
 
