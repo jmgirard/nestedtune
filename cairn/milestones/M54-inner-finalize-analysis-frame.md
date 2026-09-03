@@ -150,3 +150,4 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - 2026-09-03 step 6: pre-gate checkpoint; PR #64 CI at this head: pkgdown and format-suggest pass, R-CMD-check legs and test-coverage pending.
 - 2026-09-03: step-7 approval: PR #64 approved for merge (recommended option; no D-entry requested).
 - 2026-09-03: step 8: CI watch on PR #64 hit the 590 s ceiling with the seven check legs still pending (format-suggest and pkgdown pass); watcher stopped, session stopped at the merge; resume via /milestone-review M54 (route c).
+- 2026-09-03: step 8, second wait: marker written, PR #64 ready; CI watch on head `db82a87` hit the 590 s ceiling with ubuntu devel, ubuntu release and windows release pending (macOS, oldrel-1, the standalone ubuntu leg, pkgdown, test-coverage, format-suggest and both codecov checks pass, none red); session stopped at the merge, commit held local; resume via /milestone-review M54 (route c).
