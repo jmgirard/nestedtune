@@ -47,17 +47,18 @@ print(x, ...)
 
 [`summary()`](https://rdrr.io/r/base/summary.html) returns an object of
 class `summary.nested_final_fit`: a list holding the full-data tuning
-run's resampling label (`tuning_label`), the tuner that ran (`tuner`,
-`"tune_grid"` or `"tune_bayes"`), the number of candidates that run
-scored (`candidates`), the Bayesian counts (`initial` and
-`initial_requested`, `iterations_completed` and `iterations_requested`,
-each `NULL` on a grid fit; the scored figures are read from the
-candidate record, the requested ones from the procedure, and a run whose
-candidate record cannot be derived reports its scored figures as zero
-rather than failing to print), the parameter values selection chose
-(`selection`), and an `estimate` component that is always `NULL`.
-Printing it is what most callers want; the components are there for a
-caller that needs a value rather than a line of text.
+run's resampling label (`tuning_label`), the tuner that ran (`tuner`:
+`"tune_grid"`, `"tune_bayes"`, `"tune_race_anova"` or
+`"tune_race_win_loss"`), the number of candidates that run scored
+(`candidates`), the Bayesian counts (`initial` and `initial_requested`,
+`iterations_completed` and `iterations_requested`, each `NULL` on a grid
+fit; the scored figures are read from the candidate record, the
+requested ones from the procedure, and a run whose candidate record
+cannot be derived reports its scored figures as zero rather than failing
+to print), the parameter values selection chose (`selection`), and an
+`estimate` component that is always `NULL`. Printing it is what most
+callers want; the components are there for a caller that needs a value
+rather than a line of text.
 
 [`print()`](https://rdrr.io/r/base/print.html) returns `x`, invisibly.
 

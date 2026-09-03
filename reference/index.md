@@ -19,6 +19,9 @@ the outer split — and keep what each fold chose.
 - [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
   : Run the nested cross-validation loop with Bayesian optimization
   inside
+- [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  : Run the nested cross-validation loop with racing inside
 - [`collect_metrics(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/collect_metrics.nested_results.md)
   : Collect the metrics from a nested resampling run
 - [`print(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_results.md)

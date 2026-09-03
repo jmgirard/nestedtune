@@ -21,6 +21,7 @@
 <url><loc>https://nestedtune.tidymodels.org/reference/nested_resamples.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/nested_tune_bayes.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/nested_tune_grid.html</loc></url>
+<url><loc>https://nestedtune.tidymodels.org/reference/nested_tune_race.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/nestedtune-package.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/predict.nested_final_fit.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/print.nested_final_fit.html</loc></url>

@@ -73,12 +73,10 @@ Augmenting the rows this model was fit on gives in-sample residuals.
 They describe how the model fits the data it has already seen, and are
 not this model's performance on data it has not. The number to report is
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
-on the results object the fit was built from – the
+on the results object the fit was built from – the result of
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-or
-[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
-result – which estimates the error of the whole tune-and-fit procedure
-on rows no part of it touched. See
+or one of its siblings – which estimates the error of the whole
+tune-and-fit procedure on rows no part of it touched. See
 [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
 for why the model has no honest number of its own.
 

@@ -3,13 +3,12 @@
 `nested_final_fit()` runs the tuning procedure a nested run recorded
 once more, with the whole dataset in hand: it re-evaluates the design's
 inner resampling specification against every row, tunes with
-[`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
-or
+[`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html),
 [`tune::tune_bayes()`](https://tune.tidymodels.org/reference/tune_bayes.html)
-under the arguments the results object carries, selects the best
-candidate, finalizes the workflow, and fits it on all the data. The
-result is the model to deploy, built by the same search the estimate you
-report describes.
+or one of finetune's racers under the arguments the results object
+carries, selects the best candidate, finalizes the workflow, and fits it
+on all the data. The result is the model to deploy, built by the same
+search the estimate you report describes.
 
 ## Usage
 
@@ -25,8 +24,8 @@ nested_final_fit(object, results, ...)
   [`workflows::workflow()`](https://workflows.tidymodels.org/reference/workflow.html)
   with at least one parameter marked for tuning with
   [`tune::tune()`](https://hardhat.tidymodels.org/reference/tune.html):
-  the workflow the nested run was built around. For a grid procedure it
-  is checked against the recorded grid the way
+  the workflow the nested run was built around. For a grid or a racing
+  procedure it is checked against the recorded grid the way
   [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
   checked it, so a different workflow is refused here rather than by
   tune one tuning run later.
@@ -34,9 +33,11 @@ nested_final_fit(object, results, ...)
 - results:
 
   The `nested_results` object from
-  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
+  [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
   or
-  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
+  [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
   whose estimate you will report for this model. Everything the re-run
   needs is read from it: the design's inner resampling specification,
   recorded on the result as the design stored it; the data, which every
@@ -90,20 +91,19 @@ the instability those selections reveal, and not to this model.
 
 Report the estimate from
 [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)
-on the results object you handed over – the
+on the results object you handed over – the result of
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)
-or
-[`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md)
-result – as this model's performance. The model and the estimate come
-from one search by construction: the procedure is read from that object
-and cannot be restated here. That number estimates the k-fold test error
-of the whole tune-and-fit procedure that produced this model, measured
-on data no part of the procedure ever touched. Expect it to run slightly
-pessimistic: each outer fold trains on its analysis rows alone, so every
-model it scores is built on less data than this one. Varma and Simon
-(2006) measured a 4.2-point overshoot from that effect at n = 40, and
-Wilimitis and Walsh (2023) about 1-2% of AUROC on 41,121 records. The
-offset shrinks with fold size and is not a correction to apply.
+or one of its siblings – as this model's performance. The model and the
+estimate come from one search by construction: the procedure is read
+from that object and cannot be restated here. That number estimates the
+k-fold test error of the whole tune-and-fit procedure that produced this
+model, measured on data no part of the procedure ever touched. Expect it
+to run slightly pessimistic: each outer fold trains on its analysis rows
+alone, so every model it scores is built on less data than this one.
+Varma and Simon (2006) measured a 4.2-point overshoot from that effect
+at n = 40, and Wilimitis and Walsh (2023) about 1-2% of AUROC on 41,121
+records. The offset shrinks with fold size and is not a correction to
+apply.
 
 The model in hand has no honest number of its own. Everything computable
 from its training data was consumed by selection or by fitting,

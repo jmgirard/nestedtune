@@ -2,6 +2,37 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  and
+  [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  run the outer loop of nested cross-validation with finetune’s two
+  racing tuners inside: each outer fold scores every candidate in `grid`
+  on `burn_in` inner resamples (shuffled first under `control_race()`’s
+  default `randomize = TRUE`), drops the candidates already clearly
+  worse than the best, and scores the survivors on the rest. They take
+  [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md)’s
+  arguments, and a
+  [`finetune::control_race()`](https://finetune.tidymodels.org/reference/control_race.html)
+  through `...` as `control`. Each fold’s `.inner_metrics` holds every
+  candidate its race scored, eliminated candidates included
+  (`tune::collect_metrics(<race>, all_configs = TRUE)`), with `n` the
+  number of inner resamples each was scored on; `attr(x, "grid")` and
+  the `procedure` record hold the grid as offered. Refused at entry,
+  before any fold runs: finetune not installed, lme4 (for the ANOVA
+  race) or BradleyTerry2 (for the win/loss race) not installed
+  (`nestedtune_pkg_not_installed`); a control that is not a
+  `control_race()` (`nestedtune_bad_control`); and an inner design in
+  any outer fold with no more resamples than the control’s `burn_in`
+  (`nestedtune_bad_burn_in`) – `control_race()` defaults `burn_in` to 3,
+  so a design with three inner resamples needs
+  `control = control_race(burn_in = 2)`.
+  [`nested_final_fit()`](https://nestedtune.tidymodels.org/reference/nested_final_fit.md)
+  on a racing result races the recorded grid again on the full data, and
+  [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)
+  on that fit lists every candidate the race scored. finetune, lme4 and
+  BradleyTerry2 join Suggests
+  ([\#35](https://github.com/tidymodels/nestedtune/issues/35)).
+
 - Breaking: each outer fold of a `nested_results` now carries its inner
   tuning run’s metrics as `.inner_metrics` –
   [`tune::collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html)

@@ -5,10 +5,11 @@ that reach what selection saw.
 No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically biased as
 a claim about this model; the nested estimate on the results object the fit
-was built from – the nested_tune_grid() or nested_tune_bayes() result
-– is the one to report (IP3).
+was built from – the result of nested_tune_grid() or one of its
+siblings – is the one to report (IP3).
 The procedure line says what the full-data search was, as what ran beside
-what was asked for: for a grid procedure the candidates scored; for a
+what was asked for: for a grid or a racing procedure the candidates
+scored, the search named; for a
 Bayesian one the initial candidates scored and requested, and the
 iterations completed and requested, since tune::tune_bayes() may score
 fewer initial candidates than initial names and stop short of iter."><meta property="og:description" content="Reports which parameters the full-data tuning run selected, says where this
@@ -17,10 +18,11 @@ that reach what selection saw.
 No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically biased as
 a claim about this model; the nested estimate on the results object the fit
-was built from – the nested_tune_grid() or nested_tune_bayes() result
-– is the one to report (IP3).
+was built from – the result of nested_tune_grid() or one of its
+siblings – is the one to report (IP3).
 The procedure line says what the full-data search was, as what ran beside
-what was asked for: for a grid procedure the candidates scored; for a
+what was asked for: for a grid or a racing procedure the candidates
+scored, the search named; for a
 Bayesian one the initial candidates scored and requested, and the
 iterations completed and requested, since tune::tune_bayes() may score
 fewer initial candidates than initial names and stop short of iter."><script src="https://cdn.jsdelivr.net/gh/posit-dev/supported-by-posit/js/badge.min.js" data-max-height="43" data-hide-below="1200" data-light-bg="#666f76" data-light-fg="#f9f9f9"></script><script defer data-domain="nestedtune.tidymodels.org,all.tidymodels.org" src="https://plausible.io/js/plausible.js"></script></head><body>
@@ -68,10 +70,11 @@ that reach what selection saw.</p>
 <p>No performance number is shown. The tuning run stored on the object has
 metrics, but they were consumed by selection and are optimistically biased as
 a claim about this model; the nested estimate on the results object the fit
-was built from – the <code><a href="nested_tune_grid.html">nested_tune_grid()</a></code> or <code><a href="nested_tune_bayes.html">nested_tune_bayes()</a></code> result
-– is the one to report (IP3).</p>
+was built from – the result of <code><a href="nested_tune_grid.html">nested_tune_grid()</a></code> or one of its
+siblings – is the one to report (IP3).</p>
 <p>The procedure line says what the full-data search was, as what ran beside
-what was asked for: for a grid procedure the candidates scored; for a
+what was asked for: for a grid or a racing procedure the candidates
+scored, the search named; for a
 Bayesian one the initial candidates scored and requested, and the
 iterations completed and requested, since <code><a href="https://tune.tidymodels.org/reference/tune_bayes.html" class="external-link">tune::tune_bayes()</a></code> may score
 fewer initial candidates than <code>initial</code> names and stop short of <code>iter</code>.</p>
