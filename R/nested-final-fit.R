@@ -208,6 +208,7 @@ nested_final_fit <- function(object, results, ...) {
   rlang::check_dots_empty()
   check_workflow(object)
   check_results_record(results)
+  check_completed_folds(results)
 
   procedure <- attr(results, "procedure")
   # The packages the recorded tuner needs are asked for here as the racing

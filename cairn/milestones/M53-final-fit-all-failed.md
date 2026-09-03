@@ -61,11 +61,11 @@ final fit's other refusals → M46, D-041, unchanged.
 
 ## Tasks
 
-- [ ] T1: Tests first, in `tests/testthat/test-nested-final-fit-checks.R`: the all-failed refusal at both
+- [x] T1: Tests first, in `tests/testthat/test-nested-final-fit-checks.R`: the all-failed refusal at both
       `break_every_fold()` stages (class, call, message), the RNG identity across the refused call, and the
       control built inline on `break_fold(final_nested(d), 1L, "inner tuning")` — `final_results()` hardcodes
       its design and `det_nested()`'s inner spec cannot be re-evaluated (the M05 lesson).
-- [ ] T2: `check_completed_folds()` in `R/checks.R` beside `check_results_record()` (`:338`), reading
+- [x] T2: `check_completed_folds()` in `R/checks.R` beside `check_results_record()` (`:338`), reading
       `results$.completed`, aborting with `nestedtune_no_completed_folds`, `call` threaded as its neighbours do;
       called from `nested_final_fit()` immediately after `check_results_record(results)`
       (`R/nested-final-fit.R:210`).
@@ -84,6 +84,9 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: plan gate chose leaving a partial run's final fit silent over a warning mirroring `collect_metrics()`'s because the final fit is not the estimate and the warning already sits where the estimate is; falsified by a user shipping a partial-run model unaware of the failed folds.
 - 2026-09-03: plan chose a new class over reusing `nestedtune_bad_results` because that class means the object is the wrong shape and this refusal means the run is; falsified by handlers that need the two under one class.
 - 2026-09-03: on the user's instruction, a comment asking topepo whether the inner-search `autoplot()` view is wanted was posted to #57; the plot stays a candidate row.
+- 2026-09-03: implement started; question gate skipped, the plan pinning name, class, insertion point and message content.
+- 2026-09-03: T1 three tests added to `test-nested-final-fit-checks.R`; before T2 the refusal test showed the final fit raising no condition and returning a model on an all-failed result, the control passing.
+- 2026-09-03: T2 `check_completed_folds()` added after `check_results_record()` in `R/checks.R`, called from `nested_final_fit()` right after it; the file's 82 tests pass, both `break_every_fold()` stages built.
 
 ## Decisions
 
