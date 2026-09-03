@@ -43,17 +43,17 @@ beyond the sentences this milestone adds.
 
 ## Acceptance criteria
 
-- [ ] AC1: On the measured head AC3 names, the `test-coverage` workflow's
+- [x] AC1: On the measured head AC3 names, the `test-coverage` workflow's
       `Test coverage` step concludes `success` on each of AC3's three
       attempts, and the median of its three durations, each read as
       `completedAt - startedAt` from `gh run view <run-id> --attempt <k>
       --json jobs`, is 12 minutes or less.
-- [ ] AC2: On the same head, every leg the `R-CMD-check` workflow's
+- [x] AC2: On the same head, every leg the `R-CMD-check` workflow's
       `gh run view <run-id> --attempt <k> --json jobs` lists concludes its
       `Run r-lib/actions/check-r-package@v2` step `success` on each of the
       three attempts, and the median of each leg's three durations, read the
       same way, is 20 minutes or less.
-- [ ] AC3: The `R-CMD-check` and `test-coverage` workflows are green on three
+- [x] AC3: The `R-CMD-check` and `test-coverage` workflows are green on three
       attempts of the milestone's measured head — the PR's own run and two
       `gh run rerun` of it — with no job cancelled at a `timeout-minutes`
       cap. The measured head is a pushed commit on the branch from which the
@@ -377,4 +377,19 @@ Independent review, round 2:
 - [S] blame-history and [S] prior-review lenses: round-1 reports carried,
   since the diff outside `cairn/` is unchanged (F1, F2 of the blame lens
   stand for triage; the prior-review lens reported no findings).
+- AC1: `test-coverage` run 33775958657 on 450d351, `gh run view --attempt
+  {1,2,3} --json jobs`: the `Test coverage` step concluded `success` on all
+  three attempts; durations 9.87, 11.23 and 11.15 min, median 11.15 against
+  12. Verified.
+- AC2: `R-CMD-check` run 33775958786, the same three attempts: every leg's
+  `Run r-lib/actions/check-r-package@v2` step concluded `success` on all
+  three; medians (attempts 1/2/3 in parentheses) windows 15.90 (16.68,
+  15.75, 15.90), ubuntu release 14.68 (16.08, 14.68, 14.05), oldrel-1 14.73
+  (15.98, 14.73, 13.67), macOS 14.90 (14.90, 13.07, 15.20), devel 11.97
+  (15.17, 11.97, 11.58), all against 20. Verified.
+- AC3: both workflows green on the three attempts (attempt 1 the PR's own
+  run, attempts 2 and 3 by `gh run rerun`, nothing pushed between); every
+  job `success`, none cancelled. Measured head 450d351: `git diff --quiet
+  450d351 HEAD -- . ':!cairn'` exits 0 at the checkpoint (to be re-run
+  immediately before the merge). Verified.
 
