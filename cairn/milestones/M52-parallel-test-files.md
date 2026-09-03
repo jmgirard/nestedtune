@@ -62,7 +62,7 @@ beyond the sentences this milestone adds.
       `tests/testthat.Rout` carries a `[hang-trace] … start <file>` line and a
       matching `end <file>` line for every file
       `list.files("tests/testthat", "^test-.*\\.R$")` names.
-- [ ] AC6: `devtools::document()` produces no diff; `devtools::test()` and
+- [x] AC6: `devtools::document()` produces no diff; `devtools::test()` and
       `devtools::check()` report 0 errors and 0 warnings.
 
 ## Coverage
@@ -233,6 +233,20 @@ Evidence gathered 2026-09-03 on branch head c1b4cc3 (pushed; CI head) plus the
 local checkpoint 19829d4 (tracking-only). Default branch unmoved at the branch
 point b0d76a4 (`git merge-base` equals `origin/main`).
 
+- AC1: FAILS on the PR head c1b4cc3. `gh run view 33761052991 --json jobs`
+  (`test-coverage`, attempt 1, the run the review's push fired): the `Test
+  coverage` step concluded `success`, `startedAt` 13:27:38Z to `completedAt`
+  13:39:40Z — 722 s, 12.03 min, against the criterion's 12 minutes or less
+  (720 s). The step has now been read four times across the two PR heads:
+  9.23, 11.43 and 11.87 min on 02d254a (T6's run and its two reruns), 12.03
+  on c1b4cc3, whose tree differs from 02d254a only under `cairn/`. Not
+  verified.
+- AC6: `devtools::document()` leaves `git status --porcelain` empty;
+  `devtools::test()` at `TESTTHAT_CPUS=4`: 569 rows, 4790 passed, 0 failed,
+  0 errors, 0 warnings, 0 skipped; `devtools::check()` at `TESTTHAT_CPUS=4`:
+  0 errors, 0 warnings, 0 notes (its suite 15 skips, all "not the source
+  tree" skips of files that read `cairn/`, `R/`, vignettes or workflows).
+  Verified.
 - AC4: `as.data.frame(testthat::test_local(".", reporter =
   testthat::ListReporter$new()))` at `TESTTHAT_CPUS=4`: branch 569 rows, 0
   failed, 0 errors, 0 rows with `skipped > 0` (wall 140 s); the same command
