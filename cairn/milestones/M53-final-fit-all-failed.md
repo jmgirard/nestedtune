@@ -1,12 +1,12 @@
 # M53: `nested_final_fit()` refuses a results object whose every outer fold failed
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP3, GP3
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m053-final-fit-all-failed`
 
 ## Goal
 
