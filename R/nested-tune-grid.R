@@ -34,12 +34,20 @@
 #'   value: everything after `...` is matched by name, so a mistyped or
 #'   unsupported argument is an error rather than a silent positional match.
 #' @param resamples A nested resampling design, from [nested_resamples()] or
-#'   [rsample::nested_cv()]. Its `splits` column must hold `rsplit` objects and
-#'   its `inner_resamples` column an `rset` per outer fold. Both are checked
-#'   before anything is fitted, because [rsample::nested_cv()] builds a design
-#'   whatever its `inside` argument returned — so a specification that produces
-#'   no `rset` gives a design that cannot be run, where [nested_resamples()]
-#'   refuses one at construction.
+#'   [rsample::nested_cv()]: a data frame whose `splits` column holds one
+#'   `rsplit` per outer fold, whose `inner_resamples` column holds one `rset`
+#'   with at least one row per outer fold, and whose every other column
+#'   labels the outer folds. A label column must be named `id`, or `id`
+#'   followed by a digit from 1 to 9 (the names rsample and tune read id
+#'   columns by), and hold character or factor values; taken together, the
+#'   label columns must give every outer fold a distinct label with no `NA`.
+#'   A design breaking any of this, or using a bootstrap for the outer loop,
+#'   is refused at the call, before anything is fitted, with condition class
+#'   `nestedtune_bad_design` and every offending row or column named. The
+#'   checks exist because [rsample::nested_cv()] builds a design whatever its
+#'   `inside` argument returned — a specification that produces no `rset`, or
+#'   an empty one, gives a design that cannot be run, where
+#'   [nested_resamples()] refuses one at construction.
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
 #'   derive one from the workflow. Passed unchanged to [tune::tune_grid()] on
 #'   every outer fold, so a restricted range restricts the grid every fold

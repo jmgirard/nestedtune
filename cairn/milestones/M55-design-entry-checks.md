@@ -1,6 +1,6 @@
 # M55: Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -43,7 +43,7 @@ User-facing tier: the refusals fire from the five exported drivers, and the `res
 - [x] T1: Tests first. Add `malformed_designs(d)` to `tests/testthat/helper-orchestration.R`, returning the named planted designs of AC1–AC4 built from `det_nested(d)` (each defect form at first and last position, and at all three positions for the every-position assertions), and extend `tests/testthat/test-nested-tune-grid-checks.R` with the grid driver's refusals, message-position and `conditionCall()` assertions, and the AC5 controls. Run `devtools::test()`; the new tests are red, the two existing element-class tests (`:283`, `:340`) are extended and red on the missing class.
 - [x] T2: `R/checks.R`: extend `check_nested()` with `check_inner_rows()`, `check_label_columns()` and `check_label_values()`; give `check_column_class()` and the three new helpers one message shape naming every offending position or column, class `nestedtune_bad_design`, and `call = call`; confirm the race drivers' `call` reaches the condition (`R/nested-tune-race.R:275`). `devtools::test()` clean.
 - [x] T3: One test block per driver in `test-nested-tune-bayes-checks.R`, `test-nested-tune-race-checks.R` (both race exports) and `test-nested-tune-sim-anneal-checks.R` over `malformed_designs(d)`, asserting class and `conditionCall()` per driver. `devtools::test()` clean.
-- [ ] T4: `@param resamples` at `R/nested-tune-grid.R:36` states the contract; `NEWS.md` entry; the comment at `R/parallel.R:112` re-read against the new `check_nested()`. `devtools::document()`, `devtools::test()`, `devtools::check()` clean.
+- [x] T4: `@param resamples` at `R/nested-tune-grid.R:36` states the contract; `NEWS.md` entry; the comment at `R/parallel.R:112` re-read against the new `check_nested()`. `devtools::document()`, `devtools::test()`, `devtools::check()` clean.
 
 ## Work log
 
@@ -57,6 +57,7 @@ User-facing tier: the refusals fire from the five exported drivers, and the `res
 - 2026-09-03: catch-up: the full suite at T2 was red in `test-drift-manifest.R` alone, on the 2026-09-03 triage commit (089ff94) having compressed the mori candidate row past two figures its drift-check declaration still declares; fixed on `main` as two docs-only commits (6f189ff, 44ec8ac; the row carries the two figures and the phrase the perturbation test anchors on), merged into the branch.
 - 2026-09-03: T2 done: `check_nested()` gains `is_id_name()` (the readers' pattern, cited to rsample 1.3.2 and tune 2.1.0), `check_inner_rows()`, `check_label_columns()` and `check_label_values()` (NA rows reported as such, not also as repeats; `vctrs::vec_duplicate_detect()` over the label frame); `check_column_class()` names every offending element; all ten `cli_abort()` calls carry `class = "nestedtune_bad_design"`. The race pair reaches it with `call = call` from the export's frame (`R/nested-tune-race.R:275`), unchanged. Grid checks file green; full suite green apart from the drift file above.
 - 2026-09-03: T3 done: one block per driver file over `malformed_designs(d)` (the race block loops both exports through `race_call()`), asserting the class, that fitting never began, and `conditionCall()` naming the export; the three files green.
+- 2026-09-03: T4 done: `@param resamples` states the contract (inherited by the four sibling pages); `NEWS.md` entry names the three new shapes, the six existing refusals now carrying the class, and every-position naming; the `R/parallel.R` fat-path comment re-read and reworded (the class-and-a-row check still passes a `manual_rset()` over another frame). `devtools::document()` no diff; `devtools::test()` 0 failures; `devtools::check()` 0 errors, 0 warnings, 0 notes (10m 14s). Status → review.
 
 ## Decisions
 

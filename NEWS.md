@@ -1,5 +1,20 @@
 # nestedtune 0.0.0.9000
 
+* `nested_tune_grid()`, `nested_tune_bayes()`, `nested_tune_race_anova()`,
+  `nested_tune_race_win_loss()` and `nested_tune_sim_anneal()` refuse a
+  `resamples` design at the call, before any fold runs, in three new shapes:
+  an inner `rset` with no rows; an `NA` label, or two outer folds carrying the
+  same label; and a label column -- any column beside `splits` and
+  `inner_resamples` -- that is not character or factor, or whose name is not
+  `id` or `id` followed by a digit from 1 to 9, the names rsample's and
+  tune's own readers find id columns by. Every design refusal, the six that
+  existed included (not a nested design, no outer folds, no `id` column, an
+  outer bootstrap, a `splits` element that is not an `rsplit`, an
+  `inner_resamples` element that is not an `rset`), now carries the condition
+  class `nestedtune_bad_design`, and a refusal names every offending row or
+  column rather than the first it found. Designs from `nested_resamples()`
+  and `rsample::nested_cv()` pass unchanged.
+
 * On a `nested_resamples()` design, every inner tuning call now sees only its
   outer fold's analysis rows, so a `param_info` parameter whose range tune
   finalizes from the data -- `mtry()`, or a `min_n()` finalized by row
