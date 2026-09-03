@@ -579,20 +579,31 @@ check_event_level <- function(event_level, call = rlang::caller_env()) {
   )
 }
 
-# The Bayesian orchestrator's own three arguments (D-040). All three are
-# tune's, and each is refused here only where tune's own check is looser than
-# a whole outer loop can afford: tune's `check_iter()` accepts `2.5`, and its
-# `check_initial()` accepts a `tune_results` in place of a count. The classes
-# are this package's, so a caller can catch the refusal as a refusal of that
-# argument rather than by matching its message.
+# The iterating orchestrators' own arguments (D-040, D-046). All are tune's
+# or finetune's, and each is refused here only where the upstream check is
+# looser than a whole outer loop can afford: tune's `check_iter()` accepts
+# `2.5`, and its `check_initial()` accepts a `tune_results` in place of a
+# count. The classes are this package's, so a caller can catch the refusal as
+# a refusal of that argument rather than by matching its message.
+#
+# `floor` is the smallest value the calling sibling accepts. `iter` is 0 for
+# `nested_tune_bayes()` -- the initial candidates alone -- and 1 for
+# `nested_tune_sim_anneal()`, because finetune 1.3.0 loops `(existing_iter +
+# 1):iter`, which at `iter = 0` is `1:0`: two iterations, not none (measured
+# 2026-09-02, M51). `initial` is 2 for Bayes, `tune_bayes()`'s own
+# requirement, and 1 for annealing, finetune's default.
 
-check_iter <- function(iter, call = rlang::caller_env()) {
-  if (is_whole_number(iter) && iter >= 0) {
+check_iter <- function(iter, floor = 0, call = rlang::caller_env()) {
+  if (is_whole_number(iter) && iter >= floor) {
     return(invisible(iter))
   }
   cli::cli_abort(
     c(
-      "{.arg iter} must be a single non-negative whole number.",
+      if (floor > 0) {
+        "{.arg iter} must be a single whole number of at least {floor}."
+      } else {
+        "{.arg iter} must be a single non-negative whole number."
+      },
       x = if (is_single_number(iter)) {
         "Got {.val {iter}}."
       } else {
@@ -608,7 +619,7 @@ check_iter <- function(iter, call = rlang::caller_env()) {
 # here, and that is refused rather than passed on: one tuning run cannot serve
 # every outer fold, and its candidates were scored on resamples of data that
 # may hold a fold's assessment rows -- the leak IP1 exists to forbid (D-040).
-check_initial <- function(initial, call = rlang::caller_env()) {
+check_initial <- function(initial, floor = 2, call = rlang::caller_env()) {
   if (inherits(initial, "tune_results")) {
     cli::cli_abort(
       c(
@@ -623,12 +634,12 @@ check_initial <- function(initial, call = rlang::caller_env()) {
       call = call
     )
   }
-  if (is_whole_number(initial) && initial >= 2) {
+  if (is_whole_number(initial) && initial >= floor) {
     return(invisible(initial))
   }
   cli::cli_abort(
     c(
-      "{.arg initial} must be a single whole number of at least 2.",
+      "{.arg initial} must be a single whole number of at least {floor}.",
       x = if (is_single_number(initial)) {
         "Got {.val {initial}}."
       } else {

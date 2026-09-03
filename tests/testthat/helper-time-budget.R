@@ -651,6 +651,15 @@ time_budget_ledger <- function() {
       times = 4L,
       note = "inside for (n in c(2L, 3L)) for each of two racers (M50)"
     ),
+    tb_row(
+      "test-parallel-identity.R",
+      761L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the annealing path matches serial at two above-threshold daemon counts",
+      times = 2L,
+      note = "inside for (n in c(2L, 3L)) (M51)"
+    ),
 
     # --- test-parallel-metrics.R --------------------------------------------
     # One pool start, and that is the whole file's declared waiting. The two

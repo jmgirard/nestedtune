@@ -1706,3 +1706,223 @@ race_call_by_name <- function(fn, ...) {
   )
   eval(rlang::call2(name, !!!rlang::enexprs(...)), parent.frame())
 }
+
+# The annealing fixtures (M51).
+#
+# `tune_sim_anneal()` takes the Bayesian sibling's two counts and no
+# acquisition function, so the suite's deterministic fixtures serve it as
+# they serve the grid path: `num_comp` alone is enough for a perturbation to
+# move. `control_sim_anneal()` defaults `verbose_iter` to TRUE, which prints
+# the annealing log from every fold, so every annealing fixture passes
+# `verbose_iter = FALSE` -- the one slot the fixtures set -- and the refusal
+# tests are the one place finetune's default control reaches a call.
+anneal_control <- function() finetune::control_sim_anneal(verbose_iter = FALSE)
+
+# The suite's annealing run on the deterministic fixture, served from the
+# cache: the same data, workflow, design, counts, metrics and control under
+# entry seed 20, so a reference loop started from `seed = 20` reproduces it,
+# and `nested_tune_grid(grid = 3)` under the same seed scores the same
+# initial design (AC2).
+anneal_results <- function() {
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d)
+  ms <- reg_metrics()
+  ctrl <- anneal_control()
+  set.seed(20)
+  memoised(nested_tune_sim_anneal(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    metrics = ms,
+    control = ctrl
+  ))
+}
+
+# The annealing results objects a final fit is built from (M51, AC5), on
+# `final_nested()`, whose inner specification is literal and so survives the
+# re-run. Seeded before the workflow is built as well as before the run, for
+# the reason `race_final_results()` gives. The stochastic sibling runs ranger
+# over `bayes_stoch_param_info()`'s narrowed `min_n`, for the reason that
+# helper gives.
+anneal_final_results <- function(data, seed = 29) {
+  set.seed(seed)
+  wf <- det_workflow(data)
+  folds <- final_nested(data)
+  ms <- reg_metrics()
+  ctrl <- anneal_control()
+  set.seed(seed)
+  memoised(nested_tune_sim_anneal(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    metrics = ms,
+    control = ctrl
+  ))
+}
+
+anneal_stoch_final_results <- function(data, seed = 30) {
+  set.seed(seed)
+  wf <- stoch_workflow(data)
+  folds <- final_nested(data)
+  p <- bayes_stoch_param_info(wf)
+  ms <- reg_metrics()
+  ctrl <- anneal_control()
+  set.seed(seed)
+  memoised(nested_tune_sim_anneal(
+    wf,
+    folds,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms,
+    control = ctrl
+  ))
+}
+
+# What annealing needs beyond the engines: finetune, read off the package's
+# own registry so the gate and the refusal cannot name different packages.
+skip_if_no_anneal_fixture <- function(stochastic = FALSE) {
+  skip_if_no_engines(stochastic = stochastic)
+  for (pkg in tuner_registry[["tune_sim_anneal"]]$requires) {
+    testthat::skip_if_not_installed(pkg)
+  }
+}
+
+# The control a fold's annealing runs under, written from the documented
+# contract (D-042): the caller's control -- or finetune's default when none
+# was passed -- with `allow_par` forced off and `event_level` set from the
+# argument. `control_sim_anneal()` has no seed slot, so nothing else is
+# touched. `save_workflow` is the reference's own addition where a strand
+# needs `fit_best()`.
+forced_anneal_control <- function(
+  control,
+  save_workflow = FALSE,
+  event_level = "first"
+) {
+  if (is.null(control)) {
+    control <- finetune::control_sim_anneal()
+  }
+  control$allow_par <- FALSE
+  control$event_level <- event_level
+  if (save_workflow) {
+    control$save_workflow <- TRUE
+  }
+  control
+}
+
+# The hand-rolled reference loop for the annealing path (M51 AC1), written
+# from the same seed contract as the grid reference and never from the
+# driver's output: `set.seed(s)`, one `sample.int(.Machine$integer.max, 2 *
+# n)`, fold i annealing under element 2i-1 with the kind pinned -- the
+# initial design and every perturbation draw inside that scope -- and
+# fitting under element 2i.
+reference_nested_anneal_loop <- function(
+  wf,
+  nested,
+  iter,
+  initial,
+  metrics,
+  seed,
+  metric_name,
+  control = NULL,
+  param_info = NULL
+) {
+  set.seed(seed)
+  n <- nrow(nested)
+  seeds <- sample.int(.Machine$integer.max, 2L * n)
+
+  lapply(seq_len(n), function(i) {
+    tuning_seed <- seeds[[2L * i - 1L]]
+    outer_seed <- seeds[[2L * i]]
+
+    set.seed(
+      tuning_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    tuned <- finetune::tune_sim_anneal(
+      wf,
+      resamples = nested$inner_resamples[[i]],
+      iter = iter,
+      initial = initial,
+      param_info = param_info,
+      metrics = metrics,
+      control = forced_anneal_control(control)
+    )
+    best <- tune::select_best(tuned, metric = metric_name)
+    final_wf <- tune::finalize_workflow(wf, best)
+
+    set.seed(
+      outer_seed,
+      kind = "Mersenne-Twister",
+      normal.kind = "Inversion",
+      sample.kind = "Rejection"
+    )
+    fitted <- tune::last_fit(
+      final_wf,
+      split = nested$splits[[i]],
+      metrics = metrics
+    )
+
+    list(
+      metrics = tune::collect_metrics(fitted),
+      selected = best,
+      tuning_seed = tuning_seed,
+      outer_fit_seed = outer_seed,
+      tuned = tuned
+    )
+  })
+}
+
+# The hand-rolled reference final fit for the annealing path (M51 AC5): the
+# grid reference with `tune_sim_anneal()` in place of `tune_grid()`, under
+# the same two seeds and D-016's ordering (the rset built after the tuning
+# seed is set). `save_workflow = TRUE` on the test's own run alone.
+reference_anneal_final_fit <- function(
+  wf,
+  data,
+  iter,
+  initial,
+  metrics,
+  seed,
+  metric_name,
+  v = 3,
+  control = NULL,
+  param_info = NULL
+) {
+  set.seed(seed)
+  seeds <- sample.int(.Machine$integer.max, 2L)
+
+  set.seed(
+    seeds[[1L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  inner <- rsample::vfold_cv(data, v = v)
+  tuned <- finetune::tune_sim_anneal(
+    wf,
+    resamples = inner,
+    iter = iter,
+    initial = initial,
+    param_info = param_info,
+    metrics = metrics,
+    control = forced_anneal_control(control, save_workflow = TRUE)
+  )
+  best <- tune::select_best(tuned, metric = metric_name)
+  final_wf <- tune::finalize_workflow(wf, best)
+
+  set.seed(
+    seeds[[2L]],
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+  fitted <- parsnip::fit(final_wf, data = data)
+
+  list(seeds = seeds, selected = best, workflow = fitted, tuned = tuned)
+}

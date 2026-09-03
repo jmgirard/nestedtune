@@ -129,9 +129,11 @@ travels with the fold it describes.
 \code{attr(x, "procedure")} records what ran, on the result of every
 orchestrator: a named list giving the tuner (\code{"tune_grid"} here,
 \code{"tune_bayes"} from \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{"tune_race_anova"} or
-\code{"tune_race_win_loss"} from \code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} and its sibling),
+\code{"tune_race_win_loss"} from \code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} and its sibling,
+\code{"tune_sim_anneal"} from \code{\link[=nested_tune_sim_anneal]{nested_tune_sim_anneal()}}),
 that tuner's own arguments (\code{grid} here and for the racers; \code{iter},
-\code{initial} and \code{objective} for the Bayesian tuner), and \code{param_info},
+\code{initial} and \code{objective} for the Bayesian tuner, \code{iter} and \code{initial}
+for annealing), and \code{param_info},
 \code{event_level} and \code{eval_time} on all. A Bayesian result carries the
 \code{procedure} attribute and no \code{grid} attribute, and its \code{.inner_metrics}
 tables carry an \code{.iter} column; \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} documents both.
@@ -210,10 +212,12 @@ whole dataset in hand. The estimate from this function is what you report
 for it.
 
 For a Bayesian inner loop -- \code{\link[tune:tune_bayes]{tune::tune_bayes()}} proposing candidates one
-at a time -- see \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, and for a raced grid -- finetune
+at a time -- see \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}; for a raced grid -- finetune
 eliminating candidates as the inner resamples come in -- see
-\code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} and \code{\link[=nested_tune_race_win_loss]{nested_tune_race_win_loss()}}; each runs
-this same outer loop with the inner tuner swapped.
+\code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} and \code{\link[=nested_tune_race_win_loss]{nested_tune_race_win_loss()}}; and for
+simulated annealing -- finetune perturbing the current candidate one
+iteration at a time -- see \code{\link[=nested_tune_sim_anneal]{nested_tune_sim_anneal()}}. Each runs this same
+outer loop with the inner tuner swapped.
 }
 \section{Reproducibility}{
 

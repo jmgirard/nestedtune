@@ -32,6 +32,13 @@ tuner_race <- function(fn, grid) {
   new_tuner(fn, list(grid = grid))
 }
 
+# finetune's simulated annealing takes the Bayesian tuner's two counts and no
+# acquisition function: `iter` perturbations from the best candidate so far,
+# after `initial` space-filling candidates are scored (M51).
+tuner_anneal <- function(iter, initial) {
+  new_tuner("tune_sim_anneal", list(iter = iter, initial = initial))
+}
+
 new_tuner <- function(tuner, args) {
   list(tuner = tuner, args = args)
 }
@@ -54,8 +61,9 @@ new_tuner <- function(tuner, args) {
 # complaint. `takes_grid` says the tuner's own argument is a candidate grid
 # (against the iterative tuners' `iter` and `initial`), which is what the
 # grid-column checks and the zero-row prototype's typing key on; `iterates`
-# says its metrics tables carry `.iter`. `label` is the search's name in a
-# final fit's print.
+# says its metrics tables carry `.iter`, and that its final fit's print
+# reports initial candidates and iterations, scored beside requested
+# (`procedure_counts()`). `label` is the search's name in that print.
 tuner_registry <- list(
   tune_grid = list(
     package = "tune",
@@ -97,6 +105,17 @@ tuner_registry <- list(
     takes_grid = TRUE,
     iterates = FALSE,
     label = "win/loss racing"
+  ),
+  # `control_sim_anneal()` has no seed slot: the perturbations draw from the
+  # stream the fold's tuning seed set, so nothing is injected (M51).
+  tune_sim_anneal = list(
+    package = "finetune",
+    requires = "finetune",
+    control = function() finetune::control_sim_anneal(),
+    control_class = "control_sim_anneal",
+    takes_grid = FALSE,
+    iterates = TRUE,
+    label = "simulated annealing"
   )
 )
 
@@ -115,6 +134,17 @@ tuner_entry <- function(tuner) {
 
 tuner_takes_grid <- function(tuner) {
   isTRUE(tuner_entry(tuner)$takes_grid)
+}
+
+# Whether the tuner's metrics tables carry `.iter` and its final fit's print
+# reports the two counts. Total over the tuner's name where `tuner_entry()`
+# is not: an object built by hand with no tuner, or one the registry does not
+# know, does not iterate, and the print keeps its count alone rather than
+# aborting on a name.
+tuner_iterates <- function(tuner) {
+  rlang::is_string(tuner) &&
+    tuner %in% names(tuner_registry) &&
+    isTRUE(tuner_registry[[tuner]]$iterates)
 }
 
 # The inner tuning call, assembled and evaluated.

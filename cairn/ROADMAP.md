@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-02 (all checks green; advisories only — the same 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | done | — | normal | milestones/archive/M50-finetune-racing.md |
-| M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | planned | M50 | normal | milestones/M51-sim-anneal.md |
+| M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | review | M50 | normal | milestones/M51-sim-anneal.md |
 | M48 | `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert | done | — | normal | milestones/archive/M48-dots-control-passthrough.md |
 | M49 | Each outer fold keeps its inner search's metrics in place of `.grid` | done | — | normal | milestones/archive/M49-inner-metrics-column.md |
 | M47 | `predict()` and `augment()` on a `nested_final_fit` | done | — | normal | milestones/archive/M47-final-fit-predict-augment.md |

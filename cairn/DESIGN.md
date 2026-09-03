@@ -63,8 +63,9 @@ naming convention.
   resampling design and returns an object carrying rsample's `nested_cv`
   classes, so it is a drop-in for `rsample::nested_cv()`'s output (D-008).
 - **Orchestration — `nested_tune_*`** — `nested_tune_grid()`,
-  `nested_tune_bayes()`, `nested_tune_race_anova()` and
-  `nested_tune_race_win_loss()`: one outer loop, told which inner tuner to
+  `nested_tune_bayes()`, `nested_tune_race_anova()`,
+  `nested_tune_race_win_loss()` and `nested_tune_sim_anneal()`: one outer
+  loop, told which inner tuner to
   call by an internal *tuner description* — the tune or finetune function's
   name and its static arguments (`R/tuner.R`, D-040), resolved against the
   tuner registry there (M50) — plus the `collect_metrics()` method on the
@@ -242,20 +243,21 @@ only the row indices and remaps them onto the original data, so the inner
 splits reference the one copy the caller already holds.
 
 `nested_tune_grid()` (`R/nested-tune-grid.R`), `nested_tune_bayes()`
-(`R/nested-tune-bayes.R`) and the two racing exports over one
+(`R/nested-tune-bayes.R`), `nested_tune_sim_anneal()`
+(`R/nested-tune-sim-anneal.R`) and the two racing exports over one
 `nested_tune_race()` (`R/nested-tune-race.R`) each validate their arguments
 (`R/checks.R`), build a tuner description — `tuner_grid(grid)`,
-`tuner_bayes(iter, initial, objective)` or `tuner_race(fn, grid)`
-(`R/tuner.R`) — and hand it to `nested_loop()`, the one outer loop. The
+`tuner_bayes(iter, initial, objective)`, `tuner_anneal(iter, initial)` or
+`tuner_race(fn, grid)` (`R/tuner.R`) — and hand it to `nested_loop()`, the
+one outer loop. The
 description names the tuner; `tuner_registry` (`R/tuner.R`, M50) holds what
 the package knows about each name — its package, the packages it requires,
 its default control and control class, whether it takes a grid, whether its
 tables carry `.iter`, its print label — and the sites that once switched on
-the name for a package, control, grid or label read the registry; the
-Bayesian tuner's seed injection, its iteration counts and its print line
-still key on its name (`tuner_control()`, `procedure_counts()`,
-`procedure_label()`), so a new tuner that does not iterate is one entry and
-its export. The
+the name for a package, control, grid, iteration counts or label read the
+registry (`procedure_counts()` and `procedure_label()` since M51); the
+Bayesian tuner's seed injection alone still keys on its name
+(`tuner_control()`), so a new tuner is one entry and its export. The
 racers add two entry refusals (`check_tuner_installed()`,
 `check_race_burn_in()`) and attach their package in every daemon beside the
 workflow's (`attach_daemon_pkgs()`). It draws every fold's seeds up front and hands each fold to
@@ -368,8 +370,9 @@ execution in RR01, and tune 1.x seeded differently (D-012).
   section of `?nested_tune_grid` states it, and `test-vctrs-compat.R` asserts
   it.
 
-- `time_limit` on a `control_bayes()` passed through `...` reaches
-  `tune_bayes()` as given, and a wall-clock stop makes the candidate set depend
+- `time_limit` on a `control_bayes()` or a `control_sim_anneal()` passed
+  through `...` reaches `tune_bayes()` or `tune_sim_anneal()` as given, and a
+  wall-clock stop makes the candidate set depend
   on the machine: two runs under the same seed can stop at different
   iterations. IP2 promises identity across worker counts and across serial and
   parallel execution, and this is the one user-reachable setting that can

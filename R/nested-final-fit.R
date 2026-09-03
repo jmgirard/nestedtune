@@ -17,8 +17,9 @@
 #' `nested_final_fit()` runs the tuning procedure a nested run recorded once
 #' more, with the whole dataset in hand: it re-evaluates the design's inner
 #' resampling specification against every row, tunes with [tune::tune_grid()],
-#' [tune::tune_bayes()] or one of finetune's racers under the arguments the
-#' results object carries,
+#' [tune::tune_bayes()], one of finetune's racers or
+#' [finetune::tune_sim_anneal()] under the arguments the results object
+#' carries,
 #' selects the best candidate, finalizes the workflow, and fits it on all the
 #' data. The result is the model to deploy, built by the same search the
 #' estimate you report describes.
@@ -29,13 +30,14 @@
 #'   recorded grid the way [nested_tune_grid()] checked it, so a different
 #'   workflow is refused here rather than by tune one tuning run later.
 #' @param results The `nested_results` object from [nested_tune_grid()],
-#'   [nested_tune_bayes()], [nested_tune_race_anova()] or
-#'   [nested_tune_race_win_loss()] whose estimate you will report for this
-#'   model.
+#'   [nested_tune_bayes()], [nested_tune_race_anova()],
+#'   [nested_tune_race_win_loss()] or [nested_tune_sim_anneal()] whose
+#'   estimate you will report for this model.
 #'   Everything the re-run needs is read from it: the design's inner
 #'   resampling specification, recorded on the result as the design stored it;
 #'   the data, which every split references; and the procedure -- the tuner
-#'   and its own arguments (`grid`, or `iter`, `initial` and `objective`) with
+#'   and its own arguments (`grid`; `iter`, `initial` and `objective`; or
+#'   `iter` and `initial`) with
 #'   `param_info`, `event_level` and `eval_time`, and the metric set. A results
 #'   object that carries no such record (one built by an earlier version of
 #'   nestedtune, or from a design assembled by hand rather than by

@@ -155,6 +155,46 @@ test_that("every control_race() slot sits under one heading on the racing page (
   expect_identical(buckets[["Inert"]], "backend_options")
 })
 
+test_that("every control_sim_anneal() slot sits under one heading on nested_tune_sim_anneal()'s page (M51, AC6)", {
+  skip_if_not_installed("finetune")
+  buckets <- expect_classified(
+    "nested_tune_sim_anneal",
+    finetune::control_sim_anneal
+  )
+  expect_identical(buckets[["Forced"]], "allow_par")
+  expect_identical(buckets[["Settable as its own argument"]], "event_level")
+  expect_identical(buckets[["Refused"]], character(0))
+  # The annealing slots pass through, `time_limit` and `verbose_iter` among
+  # them as the criterion names.
+  expect_true(all(
+    c(
+      "no_improve",
+      "restart",
+      "radius",
+      "flip",
+      "cooling_coef",
+      "time_limit",
+      "verbose_iter"
+    ) %in%
+      buckets[["Passed through"]]
+  ))
+  expect_setequal(
+    buckets[["Not returned"]],
+    c("extract", "save_pred", "save_workflow", "save_history")
+  )
+  expect_identical(buckets[["Inert"]], "backend_options")
+
+  # The two caveats the criterion asks the page to carry: the wall-clock
+  # stop's IP2 caveat, and the log `verbose_iter` prints from every fold.
+  txt <- gsub("\\s+", " ", rd_text(help_rd("nested_tune_sim_anneal")))
+  expect_match(
+    txt,
+    "wall-clock stop makes the candidate set depend on the machine",
+    fixed = TRUE
+  )
+  expect_match(txt, "from every fold of a serial run", fixed = TRUE)
+})
+
 test_that("the racing page says what the recorded grid is, and what `n` is (AC7)", {
   # Whitespace collapsed: the Rd wraps its lines, and the installed database
   # under `R CMD check` wraps them where the source file did not.
