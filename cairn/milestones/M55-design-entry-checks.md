@@ -1,12 +1,12 @@
 # M55: Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP3
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m055-design-entry-checks`
 
 ## Goal
 
@@ -52,6 +52,7 @@ User-facing tier: the refusals fire from the five exported drivers, and the `res
 - 2026-09-03: plan gate chose the reader pattern `(^id$)|(^id[1-9]$)` over rsample's constructor prefix `^id` and over no name rule because tune's and rsample's readers ignore a column outside it, so a design carrying one would be misread downstream either way; falsified by an rsample or tune release whose readers find id columns by another rule.
 - 2026-09-03: plan gate chose refusing `NA` and repeated label tuples alongside the type rule over the type rule alone because repeated labels make `autoplot()` abort and `NA` labels make fold rows unattributable; falsified by a design rsample itself builds whose label tuples legitimately repeat.
 - 2026-09-03: plan gate chose bringing the two existing element-class refusals to the new shape (every position, one class) over leaving them because one class lets callers catch every design refusal alike; falsified by a caller shown to depend on the old first-position message text.
+- 2026-09-03: /milestone-implement started; branch `m055-design-entry-checks` cut from `main` at bd3e105 (synced with origin); question gate skipped, the plan gate having settled the three open choices.
 
 ## Decisions
 

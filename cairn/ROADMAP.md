@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-03 (status pass after the triage: validate green, 1
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | planned | — | normal | milestones/M55-design-entry-checks.md |
+| M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | in-progress | — | normal | milestones/M55-design-entry-checks.md |
 | M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | done | — | normal | milestones/archive/M54-inner-finalize-analysis-frame.md |
 | M53 | `nested_final_fit()` refuses a results object whose every outer fold failed | done | — | normal | milestones/archive/M53-final-fit-all-failed.md |
 | M52 | The test suite runs its files in parallel and fits its CI caps with headroom | done | — | high | milestones/archive/M52-parallel-test-files.md |
