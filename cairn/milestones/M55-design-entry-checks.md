@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** GP3
 - **Resolves:** —
-- **Branch/PR:** `m055-design-entry-checks`
+- **Branch/PR:** `m055-design-entry-checks` · https://github.com/tidymodels/nestedtune/pull/65
 
 ## Goal
 
