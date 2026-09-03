@@ -106,10 +106,10 @@ beyond the sentences this milestone adds.
       default branch's last figure (work-log line); a drop past one percentage
       point means covr lost a worker's counters and is a defect to fix, not to
       note.
-- [ ] T6: Measure on the PR head: read AC1 and AC2 from `gh run view --json
+- [x] T6: Measure on the PR head: read AC1 and AC2 from `gh run view --json
       jobs`, then `gh run rerun` twice for AC3 — pushing nothing in between,
       since every push restarts the matrix (M50 lesson).
-- [ ] T7: Records: the PROFILE test-doctrine slot states the parallel setting,
+- [x] T7: Records: the PROFILE test-doctrine slot states the parallel setting,
       the `start-first` list's purpose and where `TESTTHAT_CPUS` is set, beside
       the cap numbers it already carries; `.github/ci-usage-baseline.md` only
       if a number it states changed. No NEWS entry: nothing user-facing moves.
@@ -194,6 +194,19 @@ beyond the sentences this milestone adds.
   oldrel-1 11.73, macOS 11.60, devel 9.68 min (AC2 bar 20), every leg
   `success`. Neither landed under the plan's 8 / 15 falsifier, so the bar
   stands. AC3's two reruns follow.
+- 2026-09-03: T6, AC3 — two `gh run rerun` of both runs, nothing pushed
+  between. Attempt 2: coverage step 11.43 min; check legs windows 16.30,
+  devel 15.48, ubuntu release 14.82, oldrel-1 14.02, macOS 13.33. Attempt 3:
+  coverage 11.87; windows 16.00, devel 14.92, oldrel-1 14.47, ubuntu release
+  13.68, macOS 11.62. Every job `success` on all three attempts, none
+  cancelled. The coverage step's three readings (9.23, 11.43, 11.87) sit
+  inside 0.13 min of the 12-minute bar at worst — headroom on that job is
+  thin, and it never gates a merge (PROFILE).
+- 2026-09-03: T7 — PROFILE test-doctrine slot text landed in the checkpoint
+  commit (divergences bullet now six, hang-trace bullet names the live mode);
+  `.github/ci-usage-baseline.md` states run counts and machine-minutes over a
+  July window, none of which this milestone changes, so it is untouched; no
+  NEWS entry.
 
 ## Decisions
 
