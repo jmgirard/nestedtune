@@ -14,13 +14,14 @@ recorded grid the way \code{\link[=nested_tune_grid]{nested_tune_grid()}} checke
 workflow is refused here rather than by tune one tuning run later.}
 
 \item{results}{The \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}},
-\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} or
-\code{\link[=nested_tune_race_win_loss]{nested_tune_race_win_loss()}} whose estimate you will report for this
-model.
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}},
+\code{\link[=nested_tune_race_win_loss]{nested_tune_race_win_loss()}} or \code{\link[=nested_tune_sim_anneal]{nested_tune_sim_anneal()}} whose
+estimate you will report for this model.
 Everything the re-run needs is read from it: the design's inner
 resampling specification, recorded on the result as the design stored it;
 the data, which every split references; and the procedure -- the tuner
-and its own arguments (\code{grid}, or \code{iter}, \code{initial} and \code{objective}) with
+and its own arguments (\code{grid}; \code{iter}, \code{initial} and \code{objective}; or
+\code{iter} and \code{initial}) with
 \code{param_info}, \code{event_level} and \code{eval_time}, and the metric set. A results
 object that carries no such record (one built by an earlier version of
 nestedtune, or from a design assembled by hand rather than by
@@ -47,8 +48,9 @@ itself), \code{selected}
 \code{nested_final_fit()} runs the tuning procedure a nested run recorded once
 more, with the whole dataset in hand: it re-evaluates the design's inner
 resampling specification against every row, tunes with \code{\link[tune:tune_grid]{tune::tune_grid()}},
-\code{\link[tune:tune_bayes]{tune::tune_bayes()}} or one of finetune's racers under the arguments the
-results object carries,
+\code{\link[tune:tune_bayes]{tune::tune_bayes()}}, one of finetune's racers or
+\code{\link[finetune:tune_sim_anneal]{finetune::tune_sim_anneal()}} under the arguments the results object
+carries,
 selects the best candidate, finalizes the workflow, and fits it on all the
 data. The result is the model to deploy, built by the same search the
 estimate you report describes.

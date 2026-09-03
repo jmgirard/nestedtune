@@ -724,3 +724,62 @@ test_that("BC12: both racing paths match serial at two above-threshold daemon co
     }
   }
 })
+
+test_that("BC13: the annealing path matches serial at two above-threshold daemon counts (M51, AC4)", {
+  skip_if_no_daemons()
+  skip_if_no_anneal_fixture(stochastic = TRUE)
+
+  # The stochastic fixture, so the search's initial design and perturbations
+  # and the ranger fits all draw; and the daemons' library holds finetune,
+  # which the loop attaches in every daemon before the first fold is sent.
+  # `time_limit` is left unset (`NA`), as AC4 requires: a wall-clock stop is
+  # the one slot that could make the two sides differ.
+  data <- make_reg_data()
+  nested <- det_nested(data)
+  wf <- stoch_workflow(data)
+  p <- bayes_stoch_param_info(wf)
+  ms <- reg_metrics()
+  ctrl <- anneal_control()
+  expect_true(is.na(ctrl$time_limit))
+  on.exit(mirai::daemons(0), add = TRUE)
+
+  mirai::daemons(0)
+  set.seed(2026L)
+  serial <- nested_tune_sim_anneal(
+    wf,
+    nested,
+    iter = 2,
+    initial = 3,
+    param_info = p,
+    metrics = ms,
+    control = ctrl
+  )
+  expect_identical(last_dispatch(), "serial")
+  expect_true(all(serial$.completed))
+
+  for (n in c(2L, 3L)) {
+    start_daemons(n)
+    set.seed(2026L)
+    parallel <- without_pkgload_warning(nested_tune_sim_anneal(
+      wf,
+      nested,
+      iter = 2,
+      initial = 3,
+      param_info = p,
+      metrics = ms,
+      control = ctrl
+    ))
+
+    expect_identical(last_dispatch(), "parallel")
+    for (col in c(
+      ".metrics",
+      ".selected",
+      ".inner_metrics",
+      ".tuning_seed",
+      ".outer_fit_seed"
+    )) {
+      expect_identical(parallel[[col]], serial[[col]], info = col)
+    }
+    expect_identical(parallel, serial)
+  }
+})

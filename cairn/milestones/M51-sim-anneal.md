@@ -17,9 +17,10 @@ of `nested_tune_bayes()`, and each outer fold's `.inner_metrics` carries the sea
 
 User-facing tier: a new export and its help page. **In:** the registry entry for `tune_sim_anneal` and
 `tuner_anneal(iter, initial)`; the export taking `control = finetune::control_sim_anneal()` through `...`; `initial`
-as a count only, floor 1 (finetune's default), and `iter` a whole number from 0, both extending D-040's clauses to this
-sibling by a D-entry; `.iter` on the fold record and its zero-row prototype; the final fit re-running an annealing run
-and its print; the help page's six-heading classification of `control_sim_anneal()`.
+as a count only, floor 1 (finetune's default), and `iter` a whole number from 1, by a D-entry extending D-040's
+`initial` clauses to this sibling and departing from its `iter` floor (finetune's `1:0` loop at `iter = 0`); `.iter`
+on the fold record and its zero-row prototype; the final fit re-running an annealing run and its print; the help page's
+six-heading classification of `control_sim_anneal()`.
 **Out:** racing → M50. An `autoplot()` view of a fold's annealing trajectory joins the standing `autoplot()` candidate
 row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `tune_sim_anneal()` takes none.
 
@@ -37,7 +38,7 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
       same seed.
 - [ ] AC3: Each refusal fires at entry, before any fold runs, with its condition class asserted: a `tune_results`
       passed as `initial`; `iter` or `initial` non-numeric, of length other than 1, fractional or `NA`; `initial`
-      below 1; `iter` below 0; a control that is not a `control_sim_anneal()` (`nestedtune_bad_control`); finetune
+      below 1; `iter` below 1; a control that is not a `control_sim_anneal()` (`nestedtune_bad_control`); finetune
       not installed, under a mocked absence.
 - [ ] AC4: With `time_limit` unset, the same seed gives `identical()` results serially and at 2 and 3 daemons whose
       library holds finetune; two seeds give different `.inner_metrics`; the caller's `.Random.seed` and `RNGkind()`
@@ -70,9 +71,12 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
       (`R/nested-tune-grid.R:893-934`) documented for both iterating tuners; `procedure_label()` and
       `procedure_counts()` (`R/nested-final-fit-print.R:195-227`) read the registry.
 - [ ] T2: `nested_tune_sim_anneal()` on `nested_tune_bayes()`'s shape (`R/nested-tune-bayes.R:199-235`), `check_iter()`
-      shared, `check_initial()` taking its floor as an argument (2 for Bayes, 1 here), `check_control()` accepting
-      `control_sim_anneal`; the D-entry extending D-040's `initial` clauses to this sibling;
-      `reference_nested_anneal_loop()` in `helper-orchestration.R`; the AC1, AC2 and AC3 tests.
+      and `check_initial()` each taking its floor as an argument (`iter` 0 for Bayes and 1 here; `initial` 2 for Bayes
+      and 1 here), `check_control()` accepting `control_sim_anneal`; the D-entry extending D-040's `initial` clauses to
+      this sibling and departing from its `iter` floor; `reference_nested_anneal_loop()` in `helper-orchestration.R`;
+      the AC1, AC2 and AC3 tests — AC3's probes name their exemplars (character, list, `NULL`, length 0 and 2, `2.5`,
+      `NA`, `NA_real_`; a `tune_results` as `initial`; `initial = 0`; `iter = 0`), and where two refusals share a class
+      (`nestedtune_bad_initial`, `nestedtune_bad_control`) the message pattern is asserted beside it.
 - [ ] T3: The AC4 RNG battery and daemon identities on the M50 patterns, gated on finetune and mirai.
 - [ ] T4: The final fit on an annealing result and `reference_anneal_final_fit()` for the AC5 identity.
 - [ ] T5: The help page with the control classification and by-hand recipe (its test in AC4), its
@@ -85,6 +89,14 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
 - 2026-09-02: criteria audit ran in full mode ([O] fresh reader over the drafted criteria, with M50's): findings on this file fixed before the gate — `initial` floor 1 and `iter` floor 0 stated with a D-entry task, the refusal modes named per argument, the final-fit identity on seeds/selection/split ids/predictions, `time_limit` unset for the identity battery, the `.iter == 0` comparison pinned to `mean` and parameter values, parser and registration files moved to tasks.
 - 2026-09-02: plan chose `initial`'s floor of 1 (finetune's default) over D-040's 2 because the 2 came from `tune_bayes()`'s own requirement, which annealing does not share; falsified by a fold whose single initial candidate makes the search degenerate in a way finetune does not refuse.
 - 2026-09-02: plan chose accepting `iter = 0` (the initial candidates alone, as the Bayesian sibling does) over a floor of 1; falsified by finetune refusing it in a later version.
+- 2026-09-02: amendment (substantive, user's choice at the implement question gate): AC3 "`iter` below 0" → "`iter` below 1", and the Scope's `iter` floor 0 → 1 — finetune 1.3.0's `tune_sim_anneal()` loops `for (i in (existing_iter + 1):iter)`, so `iter = 0` runs `1:0`, two iterations labelled `Iter1` and `Iter0`, where `tune_bayes()` at 0 proposes nothing (measured 2026-09-02; the loop header is unchanged on finetune's GitHub main). The plan's `iter = 0` choice above is superseded; this export refuses 0 and the Bayesian sibling keeps accepting it.
+- 2026-09-02: amendment audit ran in full mode ([O] fresh reader over the amended AC3 and Scope text): five findings, all disposed here — `check_iter()` gains a floor argument (T2 reworded; the hardcoded `>= 0` made the criterion unreachable as tasked); shared classes get a message pattern beside the class, and the refusal probes name their exemplars (both in T2's text, the criterion unchanged); the Scope says the D-entry departs from D-040's `iter` floor rather than extends it; and the superseded plan choice is marked by the line above.
+- 2026-09-02: T1 done — `tune_sim_anneal` registry entry (finetune, `control_sim_anneal`, `takes_grid = FALSE`, `iterates = TRUE`, label "simulated annealing"), `tuner_anneal(iter, initial)`, `tuner_iterates()` total over any name; `procedure_counts()` and `procedure_label()` read `iterates` and the label so the Bayesian print line is unchanged (its snapshots hold) and the annealing line takes the same shape; `empty_inner_metrics()` already read `iterates` since M50, its comment and `candidate_set()`'s now name both iterating tuners and finetune's `Iter<i>` labels; registry tests extended.
+- 2026-09-02: T2 done — `nested_tune_sim_anneal()` (`R/nested-tune-sim-anneal.R`) on the Bayesian shape with finetune checked first; `check_iter(floor = 0)` and `check_initial(floor = 2)` take the calling sibling's floor (1 and 1 here); D-046 written; `anneal_control()` (`verbose_iter = FALSE`, the one slot the fixtures set), `anneal_results()`, `reference_nested_anneal_loop()` and `forced_anneal_control()` in the helper; AC1 (deterministic and metric-separating, formals, `.iter` on the record and its zero-row table), AC2 (`.iter == 0` rows against `nested_tune_grid(grid = 3)` under seed 20: same `num_comp` values and means in every fold) and AC3 tests, the by-hand recipe test beside them.
+- 2026-09-02: T3 done — the eight RNG properties on `nested_tune_sim_anneal()` (`test-nested-tune-sim-anneal-rng.R`, ranger where a deterministic engine would pass vacuously) and BC13 in `test-parallel-identity.R`: serial `identical()` to 2 and 3 daemons under one seed, `time_limit` asserted unset.
+- 2026-09-02: T4 done — `nested_final_fit()` on an annealing result needed no code: `procedure_tuner()` rebuilds `tuner_anneal()`'s description and `run_tuner()` calls finetune from the registry; `reference_anneal_final_fit()` and `test-nested-final-fit-sim-anneal.R` pin seeds, selection, split ids, predictions, `iteration_results`, the recorded counts, the print line "simulated annealing, N initial candidates (3 requested), N iterations completed (2 requested)" and the finetune refusal on the final fit.
+- 2026-09-02: T5 done — help page with the six-heading classification (11 slots Passed through, `save_history` Not returned beside the three, `verbose_iter`'s per-fold log named) and the by-hand recipe; `test-control-slots.R` block reads it off the Rd; cross-references on the grid, final-fit and summary pages; `_pkgdown.yml` row, NEWS entry, DESIGN.md (function families, architecture, dependency surface, the `time_limit` known issue); `pkgdown::check_pkgdown()` clean.
+- 2026-09-02: checkpoint — T1–T5 code, tests and records written; their targeted test files, `document()` and `check_pkgdown()` clean; the full `devtools::test()` and `devtools::check()` runs were still in flight, so no task is ticked yet — ticks follow their results.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->

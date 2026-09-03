@@ -368,8 +368,9 @@ execution in RR01, and tune 1.x seeded differently (D-012).
   section of `?nested_tune_grid` states it, and `test-vctrs-compat.R` asserts
   it.
 
-- `time_limit` on a `control_bayes()` passed through `...` reaches
-  `tune_bayes()` as given, and a wall-clock stop makes the candidate set depend
+- `time_limit` on a `control_bayes()` or a `control_sim_anneal()` passed
+  through `...` reaches `tune_bayes()` or `tune_sim_anneal()` as given, and a
+  wall-clock stop makes the candidate set depend
   on the machine: two runs under the same seed can stop at different
   iterations. IP2 promises identity across worker counts and across serial and
   parallel execution, and this is the one user-reachable setting that can

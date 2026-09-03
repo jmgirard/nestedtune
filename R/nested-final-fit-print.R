@@ -87,11 +87,11 @@ print.nested_final_fit <- function(x, ...) {
 #' @return
 #' `summary()` returns an object of class `summary.nested_final_fit`: a list
 #' holding the full-data tuning run's resampling label (`tuning_label`), the
-#' tuner that ran (`tuner`: `"tune_grid"`, `"tune_bayes"`, `"tune_race_anova"`
-#' or `"tune_race_win_loss"`), the number of
-#' candidates that run scored (`candidates`), the Bayesian counts (`initial`
-#' and `initial_requested`, `iterations_completed` and
-#' `iterations_requested`, each `NULL` on a grid fit; the scored figures are
+#' tuner that ran (`tuner`: `"tune_grid"`, `"tune_bayes"`, `"tune_race_anova"`,
+#' `"tune_race_win_loss"` or `"tune_sim_anneal"`), the number of
+#' candidates that run scored (`candidates`), the iterating tuners' counts
+#' (`initial` and `initial_requested`, `iterations_completed` and
+#' `iterations_requested`, each `NULL` on a grid or a racing fit; the scored figures are
 #' read from the candidate record, the requested ones from the procedure, and
 #' a run whose candidate record cannot be derived reports its scored figures
 #' as zero rather than failing to print), the
@@ -178,15 +178,16 @@ new_summary_nested_final_fit <- function(x) {
   )
 }
 
-# What the search was, in counts: for a Bayesian run, the initial candidates
-# and the iterations, each as what ran beside what was asked for (IP4, RR05
-# Q2). `tune_bayes()` can score fewer initial candidates than `initial` names
-# -- a space-filling design on a small integer space deduplicates -- and can
-# stop short of `iter`, so the scored figures are read off the candidate
-# record: the `.iter == 0` rows, and the largest `.iter`. A grid run has none
-# of these, and carries the four as NULL rather than leaving them out, in the
-# habit `estimate = NULL` set. `procedure` is NULL on an object built by hand
-# without one, and then every count is too.
+# What the search was, in counts: for an iterating run -- Bayesian
+# optimization or simulated annealing, the registry's `iterates` -- the
+# initial candidates and the iterations, each as what ran beside what was
+# asked for (IP4, RR05 Q2). Either tuner can score fewer initial candidates
+# than `initial` names -- a space-filling design on a small integer space
+# deduplicates -- and can stop short of `iter`, so the scored figures are
+# read off the candidate record: the `.iter == 0` rows, and the largest
+# `.iter`. A grid run has none of these, and carries the four as NULL rather
+# than leaving them out, in the habit `estimate = NULL` set. `procedure` is
+# NULL on an object built by hand without one, and then every count is too.
 procedure_counts <- function(candidates, procedure) {
   none <- list(
     initial = NULL,
@@ -194,7 +195,7 @@ procedure_counts <- function(candidates, procedure) {
     iterations_completed = NULL,
     iterations_requested = NULL
   )
-  if (!identical(procedure$tuner, "tune_bayes")) {
+  if (!tuner_iterates(procedure$tuner)) {
     return(none)
   }
   iters <- candidates[[".iter"]]
@@ -209,9 +210,18 @@ procedure_counts <- function(candidates, procedure) {
 # The procedure on one line, rendered from the summary's components so the
 # print method and the summary cannot describe one search differently.
 procedure_label <- function(s) {
-  if (identical(s$tuner, "tune_bayes")) {
+  # Every tuner names its search from the registry -- "grid search",
+  # "Bayesian optimization", "simulated annealing", "ANOVA racing", "win/loss
+  # racing" -- ahead of its counts; an object built by hand with no tuner, or
+  # one the registry does not know, keeps the count alone rather than
+  # inventing a name.
+  label <- if (is.character(s$tuner) && s$tuner %in% names(tuner_registry)) {
+    tuner_registry[[s$tuner]]$label
+  }
+  if (tuner_iterates(s$tuner)) {
     return(sprintf(
-      "Bayesian optimization, %d initial candidate%s (%d requested), %d iteration%s completed (%d requested)",
+      "%s, %d initial candidate%s (%d requested), %d iteration%s completed (%d requested)",
+      label,
       s$initial,
       if (s$initial == 1L) "" else "s",
       s$initial_requested,
@@ -219,13 +229,6 @@ procedure_label <- function(s) {
       if (s$iterations_completed == 1L) "" else "s",
       s$iterations_requested
     ))
-  }
-  # Every other tuner names its search from the registry -- "grid search",
-  # "ANOVA racing", "win/loss racing" -- ahead of the count; an object built
-  # by hand with no tuner, or one the registry does not know, keeps the count
-  # alone rather than inventing a name.
-  label <- if (is.character(s$tuner) && s$tuner %in% names(tuner_registry)) {
-    tuner_registry[[s$tuner]]$label
   }
   count <- sprintf(
     "%d candidate%s scored",

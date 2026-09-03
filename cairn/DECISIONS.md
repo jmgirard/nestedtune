@@ -1375,6 +1375,36 @@ would reopen whether the win/loss and ANOVA tests can be required.
 
 **Consequences:** `R CMD check` and `install.packages()` refuse a finetune older than 1.0.1 for this package's racing tests and users; the CI matrix installs the current release. Falsified by finetune renaming or removing `all_configs`, which would make a ceiling rather than a floor the question.
 
+### D-046 (2026-09-02): `nested_tune_sim_anneal()` takes `iter` and `initial` as its own arguments, `initial` a count of at least 1 and `iter` of at least 1 — extends D-040's `initial` clauses to finetune's annealing sibling and departs from its `iter` floor
+
+**Context:** issue #35's remainder asks for finetune's simulated annealing
+inside the outer loop. `tune_sim_anneal()` takes the Bayesian tuner's two
+counts and no acquisition function, defaults `initial` to 1 where
+`tune_bayes()` requires 2, and its control has no seed slot. Probed at M51's
+implement gate: finetune 1.3.0 iterates over `(existing_iter + 1):iter`,
+which at `iter = 0` is `1:0` — two iterations, labelled `Iter1` and `Iter0`,
+where `tune_bayes()` at `iter = 0` proposes nothing; the loop header is the
+same on finetune's GitHub main.
+
+**Decision:** `iter` and `initial` are the export's own arguments, as D-040
+made them on the Bayesian sibling, and `initial` is a count only — a
+`tune_results` is refused for D-040's reason. `initial`'s floor is 1,
+finetune's default: the 2 came from `tune_bayes()`'s own requirement, which
+annealing does not share. `iter`'s floor is 1, refusing the 0 the Bayesian
+sibling accepts: a user asking for no iterations would get two. Both floors
+are arguments of the shared checks, so each sibling states its own. No seed
+is injected into the control; the fold's tuning seed alone governs the
+initial design and every perturbation. Considered and rejected: accepting
+`iter = 0` and documenting finetune's behaviour there (documenting a defect
+in place of refusing it); a floor of 2 on `initial` for parity (a
+requirement finetune does not make).
+
+**Consequences:** the control slots classify as on the racing page, with
+`save_history` Not returned beside the three D-030 named, and `verbose_iter`
+Passed through though finetune defaults it on, so a default run prints from
+every fold. Falsified for `iter` by a finetune release whose loop runs no
+iteration at 0, which would reopen accepting it.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

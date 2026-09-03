@@ -16,10 +16,12 @@
 #' for it.
 #'
 #' For a Bayesian inner loop -- [tune::tune_bayes()] proposing candidates one
-#' at a time -- see [nested_tune_bayes()], and for a raced grid -- finetune
+#' at a time -- see [nested_tune_bayes()]; for a raced grid -- finetune
 #' eliminating candidates as the inner resamples come in -- see
-#' [nested_tune_race_anova()] and [nested_tune_race_win_loss()]; each runs
-#' this same outer loop with the inner tuner swapped.
+#' [nested_tune_race_anova()] and [nested_tune_race_win_loss()]; and for
+#' simulated annealing -- finetune perturbing the current candidate one
+#' iteration at a time -- see [nested_tune_sim_anneal()]. Each runs this same
+#' outer loop with the inner tuner swapped.
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()].
@@ -127,9 +129,11 @@
 #'   `attr(x, "procedure")` records what ran, on the result of every
 #'   orchestrator: a named list giving the tuner (`"tune_grid"` here,
 #'   `"tune_bayes"` from [nested_tune_bayes()], `"tune_race_anova"` or
-#'   `"tune_race_win_loss"` from [nested_tune_race_anova()] and its sibling),
+#'   `"tune_race_win_loss"` from [nested_tune_race_anova()] and its sibling,
+#'   `"tune_sim_anneal"` from [nested_tune_sim_anneal()]),
 #'   that tuner's own arguments (`grid` here and for the racers; `iter`,
-#'   `initial` and `objective` for the Bayesian tuner), and `param_info`,
+#'   `initial` and `objective` for the Bayesian tuner, `iter` and `initial`
+#'   for annealing), and `param_info`,
 #'   `event_level` and `eval_time` on all. A Bayesian result carries the
 #'   `procedure` attribute and no `grid` attribute, and its `.inner_metrics`
 #'   tables carry an `.iter` column; [nested_tune_bayes()] documents both.
@@ -791,7 +795,8 @@ scored_anything <- function(tuned) {
 # columns are the ones `collect_metrics()` writes; `.eval_time` is among them
 # for a dynamic survival metric only -- an `eval_time` given beside a static
 # or an integrated metric draws tune's warning and no column -- and `.iter`
-# only on the Bayesian path (each measured 2026-09-02, tune 2.1.0).
+# only on the iterating tuners, the registry's `iterates` (each measured
+# 2026-09-02, tune 2.1.0; finetune 1.3.0 for `tune_sim_anneal()`).
 empty_inner_metrics <- function(
   object,
   tuner,
@@ -915,13 +920,14 @@ scored_candidates <- function(tuned) {
 # per metric goes, and the rows are made distinct on `.config`, one label per
 # candidate.
 #
-# Ordered by `.iter` first, so a Bayesian run's initial candidates come before
-# the proposals and the proposals follow in the order they were made -- tune
-# labels those `iter1`, `iter2`, ... without padding, and the iteration number
-# is what puts the tenth after the ninth -- then by the label, which tune
-# zero-pads past nine candidates, so ordering it lexically is ordering it
-# numerically. A grid table carries no `.iter`, and its order is the label's
-# alone. The ordering never touches a parameter column: `order()` raises on a
+# Ordered by `.iter` first, so an iterating run's initial candidates come
+# before the proposals and the proposals follow in the order they were made
+# -- tune labels a Bayesian run's `iter1`, `iter2`, ... and finetune an
+# annealing run's `Iter1`, `Iter2`, ..., neither padded, and the iteration
+# number is what puts the tenth after the ninth -- then by the label, which
+# tune zero-pads past nine candidates, so ordering it lexically is ordering
+# it numerically. A grid table carries no `.iter`, and its order is the
+# label's alone. The ordering never touches a parameter column: `order()` raises on a
 # list-valued one, which is why `candidate_key()` in nested-results-print.R
 # renders rows before ordering them (M21 review F1).
 candidate_set <- function(metrics) {
