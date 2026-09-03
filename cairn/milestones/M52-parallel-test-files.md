@@ -1,6 +1,6 @@
 # M52: The test suite runs its files in parallel and fits its CI caps with headroom
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -207,6 +207,11 @@ beyond the sentences this milestone adds.
   `.github/ci-usage-baseline.md` states run counts and machine-minutes over a
   July window, none of which this milestone changes, so it is untouched; no
   NEWS entry.
+- 2026-09-03: completion — `devtools::document()` no diff; `devtools::check()`
+  at `TESTTHAT_CPUS=4` 0 errors, 0 warnings, 0 notes, its `testthat.Rout`
+  pairing a start and end line for all 56 test files, suite elapsed 123 s
+  under check. Status → review. The T5–T7 and completion commits are local
+  only: pushing restarts the PR matrix, and the squash carries them.
 
 ## Decisions
 

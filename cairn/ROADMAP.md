@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-03 (all checks green; advisories only — the same 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M52 | The test suite runs its files in parallel and fits its CI caps with headroom | in-progress | — | high | milestones/M52-parallel-test-files.md |
+| M52 | The test suite runs its files in parallel and fits its CI caps with headroom | review | — | high | milestones/M52-parallel-test-files.md |
 | M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | done | — | normal | milestones/archive/M50-finetune-racing.md |
 | M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | done | M50 | normal | milestones/archive/M51-sim-anneal.md |
 | M48 | `...` reaches the inner tuning call, and every inner control slot is documented as forced, refused, passed through, not returned, or inert | done | — | normal | milestones/archive/M48-dots-control-passthrough.md |
