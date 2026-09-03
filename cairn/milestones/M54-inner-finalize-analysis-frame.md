@@ -82,7 +82,7 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
       `@param results` states that the final fit finalizes on the full data; `cairn/DESIGN.md`'s
       architecture prose names the rebuild as the GP1 divergence; `devtools::document()` produces no
       diff.
-- [ ] AC6: The profile's verify slot is clean, the serial/parallel identity suite included, and
+- [x] AC6: The profile's verify slot is clean, the serial/parallel identity suite included, and
       `devtools::check()` reports 0 errors and 0 warnings.
 
 ## Coverage
@@ -143,3 +143,4 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - Gate, toolchain (2026-09-03): `devtools::document()` no diff; `NAMESPACE`/`man/` regenerated, not hand-edited; README.md and README.Rmd last changed in the same commit (`bbf51da`), in sync; `pkgdown::check_pkgdown()` "No problems found"; NEWS.md carries the entry, no milestone number in it; no new top-level file. `devtools::check()` result under AC6 below.
 - Review lens [S] blame-history (2026-09-03): zero findings — the rebuild runs inside `fold_task()` on both dispatch paths, mutates no shared object, sits inside the fold seed's scope and the fold's `tryCatch`, and the `nested_cv()` / repeated-`in_id` bail-outs match M15's payload design and M03's fold isolation; no commit or D-entry undone.
 - Review lens [S] prior-review record (2026-09-03): zero findings — the nearest archived finding (M23 F1, the unenforced inner-frame invariant) is the check `analysis_framed_inner()`'s shared-frame predicate enforces, not a regression; the M05/M45 call-over-values lesson stands since `run_tuner()` is unchanged; the GitHub probe found one real inline comment repo-wide (PR #30, a workflow file), none on the PRs that touched these files.
+- AC6 evidence (2026-09-03): `devtools::test()` at branch head `af50ce8`: 57 files, 4922 expectations, no Failed/Skipped/Warnings section, `parallel-identity` and `nested-resamples-identity` files included, exit 0; `devtools::check()` at the same head: `Status: OK` (0 errors, 0 warnings, 0 notes), tests 404 s, total 5 m 2 s.
