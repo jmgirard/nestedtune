@@ -1,10 +1,7 @@
 # Toolchain profile: r-package
 
-<!-- A cairn *toolchain profile*: the language/toolchain-specific slots the
-     operational skills read. The oracle / Validation doctrine is universal and
-     deliberately not a slot here; it lives in
-     skills/shared/validation-doctrine.md. All seven `## <slot>` sections are
-     defined; cairn_validate FAILs on a missing or empty slot. -->
+<!-- A cairn *toolchain profile*: the language-specific slots the operational skills read. The Validation
+     doctrine is universal, not a slot (skills/shared/validation-doctrine.md); all seven slots must be non-empty. -->
 
 The R-package toolchain: devtools/roxygen/testthat/pkgdown, CRAN release.
 Selected by `cairn-init` when a `DESCRIPTION` file is present.
@@ -43,30 +40,33 @@ rules in tracking-rules:
 - CI starts from the usethis pair: `check-standard` runs `R CMD check` across
   platforms (a normal CI check — see the merge clause below), `test-coverage` runs
   `covr` to Codecov, annotating a PR but never gating it; `.github/` is `.Rbuildignore`d.
-- Five divergences from that stock shape (M11 ×2, M12 rev. M31, M14, M33). **A `concurrency` block**
-  cancels a superseded run on every ref but the default branch, a distribution channel that keeps
-  a completed check instead. **A `paths-ignore` filter** on both triggers of both gating workflows
-  skips `cairn/**`, `CLAUDE.md`, `.claude/**`, which cannot change what `R CMD check` sees — that
-  is the test a fourth path must meet; it bites on `push` only, GitHub evaluating it on a
-  `pull_request` against the whole PR diff. **Hang caps at two scopes** turn a hang into a failed
-  job with a timestamp: `R-CMD-check` bounds its job at 60 minutes and its `check-r-package` step
-  at 30, `test-coverage` its job at 20; re-read them with `grep -n timeout-minutes
-  .github/workflows/*.yaml` (six hits, four workflows; those three are the audited ones). The step
-  bound is the guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 minutes
-  under `R CMD check` and 40 under `covr`, hence the two scopes). It was 20 until M48 (2026-09-02):
-  the windows step ran 13.2–17.9 minutes on main's last three runs, then was killed at 20 three runs
-  in a row mid-suite. 30 is not free headroom; a leg nearing it is a suite to make faster. 60 is the devel leg's
-  from-source build of 129 dependencies, which a 20-minute job cap killed before cache-save; it
-  leaves every non-check step bounded only by the job. **A `workflow_dispatch`-only stress
-  workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand, invisible to `ci-usage.py` for
-  carrying neither trigger. **Three organization workflows** ride unedited at tidymodels' shared
-  blobs (`lock.yaml`, `pr-commands.yaml`, `format-suggest.yaml`, M33): no `push`/`pull_request`
-  trigger, so neither the filter nor `ci-usage.py` sees them; `format-suggest.yaml` runs `air
-  format .` (see DESIGN).
-- Locating a hang, since the cap only ends one: `HangTraceReporter`
-  (`tests/testthat/helper-hang-trace.R`) writes a timestamped start/end line per
-  test file and per `test_that()` block to unbuffered `stderr()`, so a killed
-  job's last unmatched `start` names the block it died in (M14, per-test M16).
+- Six divergences from that stock shape (M11 ×2, M12 rev. M31, M14, M33, M52). **A `concurrency` block**
+  cancels a superseded run on every ref but the default branch, a distribution channel that keeps a completed
+  check instead. **A `paths-ignore` filter** on both triggers of both gating workflows skips `cairn/**`,
+  `CLAUDE.md`, `.claude/**`, which cannot change what `R CMD check` sees — that is the test a fourth path must
+  meet; it bites on `push` only, GitHub evaluating it on a `pull_request` against the whole PR diff. **Hang
+  caps at two scopes** turn a hang into a failed job with a timestamp: `R-CMD-check` bounds its job at 60
+  minutes and its `check-r-package` step at 30, `test-coverage` its job at 20; re-read them with `grep -n
+  timeout-minutes .github/workflows/*.yaml` (six hits, four workflows; those three are the audited ones). The
+  step bound is the guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 minutes under
+  `R CMD check` and 40 under `covr`, hence the two scopes). It was 20 until M48 (2026-09-02) saw the windows
+  step killed at 20 three runs in a row; 30 is not free headroom, and a leg nearing it is a suite to make
+  faster, which is what M52 did. 60 is the devel leg's from-source build of 129 dependencies, which a
+  20-minute job cap killed before cache-save; it leaves every non-check step bounded only by the job.
+  **Parallel test files** (`Config/testthat/parallel: true`, M52): `Config/testthat/start-first` in
+  DESCRIPTION queues the slowest files first, so the run is bounded by the largest file rather than by
+  whatever lands last; the worker count is `TESTTHAT_CPUS`, set in both gating workflows' job `env:` at one
+  per runner core (4 on ubuntu and windows, 3 on macOS) and left at testthat's default of 2 locally;
+  `benchmarks/profile-tests.R` pins itself serial so its per-file figures stay comparable. **A
+  `workflow_dispatch`-only stress workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand, invisible
+  to `ci-usage.py` for carrying neither trigger. **Three organization workflows** ride unedited at
+  tidymodels' shared blobs (`lock.yaml`, `pr-commands.yaml`, `format-suggest.yaml`, M33): no
+  `push`/`pull_request` trigger, so neither the filter nor `ci-usage.py` sees them; `format-suggest.yaml`
+  runs `air format .` (see DESIGN).
+- Locating a hang, since the cap only ends one: `HangTraceReporter` (`tests/testthat/helper-hang-trace.R`)
+  writes a timestamped start/end line per test file and per `test_that()` block to unbuffered `stderr()`, so
+  a killed job's last unmatched `start` names the block it died in (M14, per-test M16). Under parallel files
+  it runs in the parent in testthat's live-update mode, one pair per file and block (M52).
 - `.github/ci-usage.py` measures the first two over any window in GitHub's
   90-day retention (baseline: `.github/ci-usage-baseline.md`), counting commits
   from `git log` and never crediting a cancelled run its whole would-be duration.

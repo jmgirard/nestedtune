@@ -88,6 +88,12 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Test files run in parallel (`Config/testthat/parallel: true`), one
+      # worker per runner core: GitHub's standard runners give a public
+      # repository 4 vCPUs on ubuntu and windows and 3 on the arm64 macOS
+      # image (read 2026-09-03 from the hosted-runner sizes page). testthat
+      # defaults to 2 when this is unset, which leaves half the cores idle.
+      TESTTHAT_CPUS: ${{ matrix.config.os == 'macos-latest' && 3 || 4 }}
 
     steps:
       - uses: actions/checkout@v6

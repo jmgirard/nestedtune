@@ -171,6 +171,12 @@ beyond the sentences this milestone adds.
   the machine; default branch (scratch worktree of origin/main, serial) 567
   rows, 0 failed, 0 skipped; skip rows equal (both empty), the two extra rows
   the T2 tests. The parallel run revealed nothing to fix.
+- 2026-09-03: checkpoint while T4's three runs execute — T5's workflow edits
+  (`TESTTHAT_CPUS` 4/4/3 via the os ternary, 4 on the covr job; runner core
+  counts read from GitHub's hosted-runner sizes page) and T7's PROFILE
+  test-doctrine text (folded into the divergences bullet, header comment
+  compressed, 119 lines) landed early; neither task ticks until its remaining
+  half (T5's Codecov comparison, T7's ci-usage-baseline decision) is done.
 
 ## Decisions
 

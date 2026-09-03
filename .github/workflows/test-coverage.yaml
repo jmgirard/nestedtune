@@ -37,6 +37,10 @@ jobs:
     timeout-minutes: 20
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # See R-CMD-check.yaml: one test worker per core, and this job runs on
+      # ubuntu alone. covr runs tests/testthat.R in a subprocess that inherits
+      # the job's environment, so the setting reaches testthat unchanged.
+      TESTTHAT_CPUS: 4
 
     steps:
       - uses: actions/checkout@v6
