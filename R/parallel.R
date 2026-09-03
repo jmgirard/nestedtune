@@ -599,13 +599,16 @@ attach_daemon_pkgs <- function(
   pkgs <- tryCatch(tune::required_pkgs(object), error = function(cnd) {
     character()
   })
-  # The tuner's own package beside the workflow's (M50): finetune's racers
+  # The packages the tuner requires beside the workflow's (M50, D-044): the
+  # registry's `requires`, the same list the entry refusal reads, so the
+  # refusal and this attach cannot name different packages. finetune's racers
   # register `collect_metrics()`'s `tune_race` method and read their control
-  # inside the fold, so a daemon needs finetune loaded as the host has it.
+  # inside the fold, and each race fits its model through lme4 or
+  # BradleyTerry2 there.
   # tune is left off the list, as it always was: this package imports it, so
   # the pre-flight's namespace load has already brought it into every daemon.
   if (!is.null(tuner)) {
-    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$package)
+    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$requires)
   }
   pkgs <- setdiff(unique(pkgs), c("base", "stats", "utils", "methods", "tune"))
   if (length(pkgs) == 0L) {

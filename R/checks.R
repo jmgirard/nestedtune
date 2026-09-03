@@ -340,7 +340,7 @@ check_results_record <- function(results, call = rlang::caller_env()) {
     cli::cli_abort(
       c(
         "{.arg results} must be a {.cls nested_results} from \\
-         {.fn nested_tune_grid} or {.fn nested_tune_bayes}.",
+         {.fn nested_tune_grid} or one of its siblings.",
         x = "Got {.obj_type_friendly {results}}.",
         i = "An operation that adds or removes rows returns a plain tibble \\
              without the run's record; hand over the object the \\
@@ -364,7 +364,7 @@ check_results_record <- function(results, call = rlang::caller_env()) {
              design assembled by hand rather than by {.fn nested_resamples} \\
              or {.fn rsample::nested_cv}, which store the specification as \\
              a call.",
-        i = "Re-run {.fn nested_tune_grid} or {.fn nested_tune_bayes} on \\
+        i = "Re-run {.fn nested_tune_grid} or the sibling that built it on \\
              this version, on a design from one of those constructors; a \\
              results object is not migrated."
       ),
@@ -790,10 +790,13 @@ check_tuner_installed <- function(tuner, call = rlang::caller_env()) {
   pkgs <- tuner_entry(tuner)$requires
   missing <- pkgs[!vapply(pkgs, rlang::is_installed, logical(1))]
   if (length(missing) > 0L) {
+    # One call the user can paste: `deparse()` gives `"pkg"` for one package
+    # and `c("a", "b")` for several, where cli's collapse would give `"a" and "b"`.
+    hint <- paste0("install.packages(", deparse(missing), ")")
     cli::cli_abort(
       c(
         "{.fn {tuner}} needs {.pkg {missing}}, which {?is/are} not installed.",
-        i = "Install {?it/them} with {.code install.packages({.val {missing}})}."
+        i = "Install {?it/them} with {.code {hint}}."
       ),
       class = "nestedtune_pkg_not_installed",
       call = call

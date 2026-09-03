@@ -126,11 +126,13 @@ fold's columns, never \code{NULL}.
 than \code{NULL} when none was supplied. \code{.inner_metrics} is a column, so it
 travels with the fold it describes.
 
-\code{attr(x, "procedure")} records what ran, on the result of either
+\code{attr(x, "procedure")} records what ran, on the result of every
 orchestrator: a named list giving the tuner (\code{"tune_grid"} here,
-\code{"tune_bayes"} from \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}), that tuner's own arguments
-(\code{grid} here; \code{iter}, \code{initial} and \code{objective} there), and \code{param_info},
-\code{event_level} and \code{eval_time} on both. A Bayesian result carries the
+\code{"tune_bayes"} from \code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{"tune_race_anova"} or
+\code{"tune_race_win_loss"} from \code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} and its sibling),
+that tuner's own arguments (\code{grid} here and for the racers; \code{iter},
+\code{initial} and \code{objective} for the Bayesian tuner), and \code{param_info},
+\code{event_level} and \code{eval_time} on all. A Bayesian result carries the
 \code{procedure} attribute and no \code{grid} attribute, and its \code{.inner_metrics}
 tables carry an \code{.iter} column; \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} documents both.
 

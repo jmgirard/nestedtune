@@ -53,7 +53,7 @@ local_absent <- function(pkg, env = parent.frame()) {
   real <- rlang::is_installed
   testthat::local_mocked_bindings(
     is_installed = function(pkg_, ...) {
-      if (identical(pkg_, pkg)) FALSE else real(pkg_, ...)
+      if (pkg_ %in% pkg) FALSE else real(pkg_, ...)
     },
     .package = "rlang",
     .env = env
@@ -135,6 +135,63 @@ test_that("each race's own model-fitting package must be installed", {
     ))
     expect_s3_class(cnd, "nestedtune_sentinel")
   })
+})
+
+test_that("the install hint is one pasteable call, for one package or several", {
+  skip_if_no_race_fixture()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- race_folds(d)
+
+  local({
+    local_absent("lme4")
+    cnd <- refusal(nested_tune_race_anova(wf, folds, grid = det_grid()))
+    expect_match(
+      conditionMessage(cnd),
+      'install.packages("lme4")',
+      fixed = TRUE
+    )
+  })
+  local({
+    local_absent(c("finetune", "lme4"))
+    cnd <- refusal(nested_tune_race_anova(wf, folds, grid = det_grid()))
+    expect_refused(
+      cnd,
+      "nestedtune_pkg_not_installed",
+      "finetune and lme4",
+      "nested_tune_race_anova"
+    )
+    expect_match(
+      conditionMessage(cnd),
+      'install.packages(c("finetune", "lme4"))',
+      fixed = TRUE
+    )
+  })
+})
+
+test_that("the final fit on a racing result asks for the race's packages first", {
+  skip_if_no_race_fixture()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  # `race_final_results()` builds the result while every package is present;
+  # the absence is then seen only by the final fit, as it is where a saved
+  # result is loaded on another machine.
+  for (fn in RACERS) {
+    res <- race_final_results(fn, d)
+    pkg <- setdiff(tuner_registry[[fn]]$requires, "finetune")
+    for (absent in c("finetune", pkg)) {
+      local({
+        local_absent(absent)
+        cnd <- tryCatch(nested_final_fit(wf, res), error = function(cnd) cnd)
+        expect_s3_class(cnd, "nestedtune_pkg_not_installed")
+        expect_match(conditionMessage(cnd), absent, fixed = TRUE)
+        expect_identical(conditionCall(cnd)[[1L]], as.name("nested_final_fit"))
+      })
+    }
+  }
 })
 
 test_that("`control` must be what finetune::control_race() returns", {

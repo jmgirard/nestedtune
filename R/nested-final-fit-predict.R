@@ -54,7 +54,7 @@
 #' describe how the model fits the data it has already seen, and are not
 #' this model's performance on data it has not. The number to report is
 #' [collect_metrics()] on the results object the fit was built from -- the
-#' [nested_tune_grid()] or [nested_tune_bayes()] result -- which estimates
+#' result of [nested_tune_grid()] or one of its siblings -- which estimates
 #' the error of the whole tune-and-fit procedure on rows no part of it
 #' touched. See [nested_final_fit()] for why the model has no honest number
 #' of its own.

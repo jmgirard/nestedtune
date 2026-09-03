@@ -124,11 +124,13 @@
 #'   than `NULL` when none was supplied. `.inner_metrics` is a column, so it
 #'   travels with the fold it describes.
 #'
-#'   `attr(x, "procedure")` records what ran, on the result of either
+#'   `attr(x, "procedure")` records what ran, on the result of every
 #'   orchestrator: a named list giving the tuner (`"tune_grid"` here,
-#'   `"tune_bayes"` from [nested_tune_bayes()]), that tuner's own arguments
-#'   (`grid` here; `iter`, `initial` and `objective` there), and `param_info`,
-#'   `event_level` and `eval_time` on both. A Bayesian result carries the
+#'   `"tune_bayes"` from [nested_tune_bayes()], `"tune_race_anova"` or
+#'   `"tune_race_win_loss"` from [nested_tune_race_anova()] and its sibling),
+#'   that tuner's own arguments (`grid` here and for the racers; `iter`,
+#'   `initial` and `objective` for the Bayesian tuner), and `param_info`,
+#'   `event_level` and `eval_time` on all. A Bayesian result carries the
 #'   `procedure` attribute and no `grid` attribute, and its `.inner_metrics`
 #'   tables carry an `.iter` column; [nested_tune_bayes()] documents both.
 #'

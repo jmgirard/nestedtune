@@ -2,9 +2,10 @@
 
 * `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run the outer
   loop of nested cross-validation with finetune's two racing tuners inside:
-  each outer fold scores every candidate in `grid` on the first `burn_in`
-  inner resamples, drops the candidates already clearly worse than the best,
-  and scores the survivors on the rest. They take `nested_tune_grid()`'s
+  each outer fold scores every candidate in `grid` on `burn_in` inner
+  resamples (shuffled first under `control_race()`'s default `randomize =
+  TRUE`), drops the candidates already clearly worse than the best, and
+  scores the survivors on the rest. They take `nested_tune_grid()`'s
   arguments, and a `finetune::control_race()` through `...` as `control`.
   Each fold's `.inner_metrics` holds every candidate its race scored,
   eliminated candidates included (`tune::collect_metrics(<race>, all_configs

@@ -27,6 +27,8 @@ test_that("every registry entry names a function in its package and a control of
 
 test_that("a name the registry does not hold is an internal error", {
   expect_error(tuner_entry("tune_nonesuch"), "Unknown tuner")
+  expect_error(tuner_entry(NULL), "Unknown tuner")
+  expect_error(tuner_entry(c("tune_grid", "tune_bayes")), "Unknown tuner")
   expect_error(default_control("tune_nonesuch"), "Unknown tuner")
   expect_error(control_class("tune_nonesuch"), "Unknown tuner")
 })

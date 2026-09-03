@@ -51,7 +51,7 @@ Augmenting the rows this model was fit on gives in-sample residuals. They
 describe how the model fits the data it has already seen, and are not
 this model's performance on data it has not. The number to report is
 \code{\link[=collect_metrics]{collect_metrics()}} on the results object the fit was built from -- the
-\code{\link[=nested_tune_grid]{nested_tune_grid()}} or \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result -- which estimates
+result of \code{\link[=nested_tune_grid]{nested_tune_grid()}} or one of its siblings -- which estimates
 the error of the whole tune-and-fit procedure on rows no part of it
 touched. See \code{\link[=nested_final_fit]{nested_final_fit()}} for why the model has no honest number
 of its own.

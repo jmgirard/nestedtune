@@ -701,14 +701,14 @@ time_budget_ledger <- function() {
       89L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
-      "a racing run attaches finetune in every daemon"
+      "a racing run attaches finetune and the race's model package in every daemon"
     ),
     tb_row(
       "test-parallel-required-pkgs.R",
       92L,
       "collect_bounded",
       30,
-      "a racing run attaches finetune in every daemon",
+      "a racing run attaches finetune and the race's model package in every daemon",
       note = "explicit seconds = 30; one site, called twice (M50)"
     ),
 

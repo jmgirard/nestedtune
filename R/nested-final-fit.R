@@ -70,7 +70,7 @@
 #' @section What to report:
 #'
 #' Report the estimate from [collect_metrics()] on the results object you
-#' handed over -- the [nested_tune_grid()] or [nested_tune_bayes()] result --
+#' handed over -- the result of [nested_tune_grid()] or one of its siblings --
 #' as this model's performance. The model and the estimate come from one
 #' search by construction: the procedure is read from that object and cannot
 #' be restated here. That number estimates the k-fold test
@@ -208,6 +208,11 @@ nested_final_fit <- function(object, results, ...) {
   check_results_record(results)
 
   procedure <- attr(results, "procedure")
+  # The packages the recorded tuner needs are asked for here as the racing
+  # exports ask at entry (D-044), so a racing result loaded where finetune or
+  # its model-fitting package is absent is refused before the inner rset is
+  # built rather than inside the race.
+  check_tuner_installed(procedure$tuner)
   # The grid is judged against the workflow as the orchestrator judged it,
   # so a workflow other than the one the estimate was built around is refused
   # here rather than by tune, one full tuning run later (GP3).

@@ -68,7 +68,7 @@ instability those selections reveal, and not to this model.
 
 
 Report the estimate from \code{\link[=collect_metrics]{collect_metrics()}} on the results object you
-handed over -- the \code{\link[=nested_tune_grid]{nested_tune_grid()}} or \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result --
+handed over -- the result of \code{\link[=nested_tune_grid]{nested_tune_grid()}} or one of its siblings --
 as this model's performance. The model and the estimate come from one
 search by construction: the procedure is read from that object and cannot
 be restated here. That number estimates the k-fold test

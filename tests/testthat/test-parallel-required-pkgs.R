@@ -77,7 +77,7 @@ test_that("a recipe selector the caller left unqualified resolves on a daemon", 
 # mechanism, and the two search-path probes pin that it was this package's
 # doing.
 
-test_that("a racing run attaches finetune in every daemon", {
+test_that("a racing run attaches finetune and the race's model package in every daemon", {
   skip_if_no_daemons()
   skip_if_no_race_fixture("tune_race_anova")
 
@@ -90,7 +90,9 @@ test_that("a racing run attaches finetune in every daemon", {
 
   attached <- function() {
     answers <- collect_bounded(
-      mirai::everywhere("package:finetune" %in% search()),
+      mirai::everywhere(all(
+        c("package:finetune", "package:lme4") %in% search()
+      )),
       seconds = 30
     )
     vapply(answers, isTRUE, logical(1))

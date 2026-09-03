@@ -103,7 +103,7 @@ tuner_registry <- list(
 # One registry entry, by the tuner's name; a name the registry does not hold
 # is a defect in this package, never a user's error.
 tuner_entry <- function(tuner) {
-  entry <- tuner_registry[[tuner]]
+  entry <- if (rlang::is_string(tuner)) tuner_registry[[tuner]]
   if (is.null(entry)) {
     cli::cli_abort(
       "Unknown tuner {.val {tuner}}.",

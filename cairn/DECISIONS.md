@@ -1367,6 +1367,14 @@ takes finetune from the same registry entry shape and adds no package.
 Falsified by a CI leg on which lme4 or BradleyTerry2 cannot install, which
 would reopen whether the win/loss and ANOVA tests can be required.
 
+### D-045 (2026-09-02): `finetune` carries a `>= 1.0.1` floor in Suggests — annotates the dependency set D-044 added, on M50's review
+
+**Decision:** `finetune (>= 1.0.1)`. The racing record rests on one finetune argument, `collect_metrics(<tune_race>, all_configs = TRUE)`, which finetune's 1.0.1 release introduced (its `git log -S` places the argument in the commit before that release; the NEWS entry for 1.0.1 names the companion `complete` argument). An older finetune accepts the argument through `...` and returns the survivors alone, so the fold record would silently hold less than the help page and D-043 promise. A floor turns that into an install-time refusal. lme4 and BradleyTerry2 take no floor: each is reached through finetune's own `check_installed()` calls, and this package reads nothing of theirs directly.
+
+**Alternatives considered:** a run-time probe of the returned table (a row with `n` below the resample count where an elimination is known to have happened) — there is no such row to look for on a race that eliminated nothing, so the probe cannot tell an old finetune from a clean race. No floor, on the precedent of the other Suggests — rejected because D-012 set the floor precedent where a load-bearing upstream behavior arrived at a known version, and this is that case.
+
+**Consequences:** `R CMD check` and `install.packages()` refuse a finetune older than 1.0.1 for this package's racing tests and users; the CI matrix installs the current release. Falsified by finetune renaming or removing `all_configs`, which would make a ceiling rather than a floor the question.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
