@@ -813,7 +813,7 @@ empty_inner_metrics <- function(
   cols[["n"]] <- integer(0)
   cols[["std_err"]] <- numeric(0)
   cols[[".config"]] <- character(0)
-  if (!is.null(tuner) && isTRUE(tuner_entry(tuner$tuner)$iterates)) {
+  if (!is.null(tuner) && tuner_iterates(tuner$tuner)) {
     cols[[".iter"]] <- integer(0)
   }
   new_tbl(cols)

@@ -224,8 +224,11 @@ nested_tune_sim_anneal <- function(
   eval_time = NULL
 ) {
   # finetune first, before anything is judged that could not run anyway
-  # (D-044, GP3); then the Bayesian sibling's checks in its order, with the
-  # two floors that are this sibling's own (D-046).
+  # (D-044, GP3) -- ahead of the dots, so a `control = finetune::...()` in
+  # the call is refused for the missing package rather than erroring while
+  # the dots are forced, where the racers force theirs first; then the
+  # Bayesian sibling's checks in its order, with the two floors that are
+  # this sibling's own (D-046).
   check_tuner_installed("tune_sim_anneal")
   control <- check_dots_control(capture_dots(...))
   check_workflow(object)

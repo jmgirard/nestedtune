@@ -179,6 +179,12 @@ test_that("the annealing reference loop also matches on the metric-separating fi
   for (i in seq_len(nrow(res))) {
     expect_iter_column(res$.inner_metrics[[i]], initial = 2L)
   }
+  # As on the deterministic fixture: some fold scored an iteration.
+  expect_true(any(vapply(
+    res$.inner_metrics,
+    function(m) any(m$.iter > 0L),
+    logical(1)
+  )))
 })
 
 test_that("the initial candidates are the grid path's under the same seed (AC2)", {

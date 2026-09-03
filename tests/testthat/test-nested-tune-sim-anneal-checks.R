@@ -372,3 +372,30 @@ test_that("a refusal leaves the RNG where it found it", {
   ))
   expect_identical(.Random.seed, before)
 })
+
+# D-046's falsifier, pinned: `iter`'s floor of 1 rests on finetune running
+# iterations at `iter = 0` (its loop is `(existing_iter + 1):iter`, which at
+# 0 is `1:0`). A finetune whose loop runs none at 0 turns this red, which is
+# the signal to reopen accepting 0 as the Bayesian sibling does.
+test_that("finetune still iterates at iter = 0, the fact iter's floor of 1 rests on", {
+  skip_if_no_anneal_fixture()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  inner <- anneal_folds(d)$inner_resamples[[1L]]
+  ctrl <- anneal_control()
+  ctrl$allow_par <- FALSE
+
+  set.seed(1)
+  fit <- finetune::tune_sim_anneal(
+    wf,
+    inner,
+    iter = 0,
+    initial = 1,
+    metrics = reg_metrics(),
+    control = ctrl
+  )
+  m <- tune::collect_metrics(fit)
+  iterated <- !startsWith(m$.config, "initial_")
+  expect_gt(sum(iterated), 0L)
+})

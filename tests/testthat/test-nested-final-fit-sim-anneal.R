@@ -75,7 +75,12 @@ test_that("the final fit's candidates carry the iteration each came from (AC5, D
   cand <- extract_scored_candidates(final)
   expect_identical(cand, candidate_set(tune::collect_metrics(final$tuning)))
   expect_setequal(names(cand), c("min_n", ".config", ".iter"))
-  expect_identical(sum(cand$.iter == 0L), 3L)
+  # The initial rows are the design that ran: at most the 3 requested, and
+  # possibly fewer, since a space-filling design on a small integer space
+  # deduplicates (the print test below reads the count that ran).
+  initial <- sum(cand$.iter == 0L)
+  expect_gte(initial, 1L)
+  expect_lte(initial, 3L)
 })
 
 test_that("print() and summary() name simulated annealing with the counts that ran (AC5)", {

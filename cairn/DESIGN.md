@@ -63,8 +63,9 @@ naming convention.
   resampling design and returns an object carrying rsample's `nested_cv`
   classes, so it is a drop-in for `rsample::nested_cv()`'s output (D-008).
 - **Orchestration — `nested_tune_*`** — `nested_tune_grid()`,
-  `nested_tune_bayes()`, `nested_tune_race_anova()` and
-  `nested_tune_race_win_loss()`: one outer loop, told which inner tuner to
+  `nested_tune_bayes()`, `nested_tune_race_anova()`,
+  `nested_tune_race_win_loss()` and `nested_tune_sim_anneal()`: one outer
+  loop, told which inner tuner to
   call by an internal *tuner description* — the tune or finetune function's
   name and its static arguments (`R/tuner.R`, D-040), resolved against the
   tuner registry there (M50) — plus the `collect_metrics()` method on the
@@ -242,11 +243,13 @@ only the row indices and remaps them onto the original data, so the inner
 splits reference the one copy the caller already holds.
 
 `nested_tune_grid()` (`R/nested-tune-grid.R`), `nested_tune_bayes()`
-(`R/nested-tune-bayes.R`) and the two racing exports over one
+(`R/nested-tune-bayes.R`), `nested_tune_sim_anneal()`
+(`R/nested-tune-sim-anneal.R`) and the two racing exports over one
 `nested_tune_race()` (`R/nested-tune-race.R`) each validate their arguments
 (`R/checks.R`), build a tuner description — `tuner_grid(grid)`,
-`tuner_bayes(iter, initial, objective)` or `tuner_race(fn, grid)`
-(`R/tuner.R`) — and hand it to `nested_loop()`, the one outer loop. The
+`tuner_bayes(iter, initial, objective)`, `tuner_anneal(iter, initial)` or
+`tuner_race(fn, grid)` (`R/tuner.R`) — and hand it to `nested_loop()`, the
+one outer loop. The
 description names the tuner; `tuner_registry` (`R/tuner.R`, M50) holds what
 the package knows about each name — its package, the packages it requires,
 its default control and control class, whether it takes a grid, whether its
