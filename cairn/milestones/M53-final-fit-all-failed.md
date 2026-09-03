@@ -96,6 +96,7 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: resume: PR #63 open, origin/main unmoved, branch pushed; step-7 approval re-posed at the gate: PR #63 approved for merge, CI pending on the current head.
 - 2026-09-03: CI wait stopped at the harness ceiling a second time, six checks pending on 51dd582 (pkgdown, format-suggest green); the runs had restarted at 19:49Z when the approval line was pushed, the pull_request trigger seeing the whole PR diff; this line committed but not pushed so the running checks are not cancelled again; marker written; resume via /milestone-review M53.
 - 2026-09-03: resume: PR #63 open on 51dd582, origin/main unmoved, four checks pending; the withheld line pushed with this one, so CI restarts once on the head the squash takes; step-7 chip re-posed.
+- 2026-09-03: step-7 approval: PR #63 approved for merge on resume; CI pending on the pushed head.
 
 ## Decisions
 
