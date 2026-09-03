@@ -92,6 +92,7 @@ final fit's other refusals → M46, D-041, unchanged.
 - 2026-09-03: T5 first full run: 4810 pass, 1 error — M46's read-nothing-but-splits probe (`test-nested-final-fit-rng.R`) corrupts `.completed` to `NA`, which the new check reads; `check()` failed on the same test. The probe now exempts `.completed` (minor amendment under T2, decision below); the file's 52 tests pass; full suite and `check()` re-run.
 - 2026-09-03: T5 second run: `devtools::test()` 4813 pass, 0 fail; `devtools::check()` Status OK (0 errors, 0 warnings, 0 notes). Status → review.
 - 2026-09-03: step-7 approval: PR #63 approved for merge; triage accepted as proposed (O3, O4, O5 fixed on the branch; O1, O2 to the malformed-object candidate row; O6, S1 rejected).
+- 2026-09-03: CI wait stopped at the harness ceiling with six checks pending (macOS, windows, ubuntu devel/oldrel-1/release, test-coverage; format-suggest, pkgdown and the first ubuntu release leg passed); PR #63 open and mergeable, not merged; resume via /milestone-review M53.
 
 ## Decisions
 
