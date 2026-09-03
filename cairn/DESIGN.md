@@ -337,6 +337,20 @@ execution in RR01, and tune 1.x seeded differently (D-012).
 
 ## Known issues
 
+- A `nested_results` altered by hand, or one saved before M38's label record,
+  is not refused at entry, and its readers may fail with an unclassed error.
+  `check_results_record()` (`R/checks.R`) tests the class, the `inside` and
+  `procedure` record and the row count, never the columns: a `.completed`
+  holding `NA` makes `check_completed_folds()` and `check_any_completed()`
+  die with base R's "missing value where TRUE/FALSE needed"; a `.completed`
+  removed is diagnosed as an all-failed run rather than a broken record; an
+  empty label record makes `collect_metrics(summarize = FALSE)` return a
+  table with mismatched column lengths; and a `.notes$location` that is not
+  character aborts `summary()` (each measured at the review that found it:
+  M38, M39, M53). Accepted at M53's hygiene: every case needs hand surgery on
+  the object or a pre-M38 file, which the package's own writers never
+  produce, and three milestones found only that one shape.
+
 - The two vendored community pages carry defects inherited verbatim from the
   organization's shared texts, accepted at M32's review because repairing them
   locally would fork the texts this repo adopted for being byte-identical
