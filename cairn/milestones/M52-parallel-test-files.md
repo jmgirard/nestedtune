@@ -1,12 +1,12 @@
 # M52: The test suite runs its files in parallel and fits its CI caps with headroom
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m052-parallel-test-files`
 
 ## Goal
 
@@ -80,12 +80,14 @@ beyond the sentences this milestone adds.
       `benchmarks/profile-tests.R 1` on this machine (serial) and from the
       `[hang-trace]` lines of the last green `test-coverage` run (33710255888),
       and the check-step durations of run 33715373356 — one line each.
-- [ ] T2: `HangTraceReporter` (`tests/testthat/helper-hang-trace.R`) declares
-      `capabilities = list(parallel_support = TRUE, parallel_updates = FALSE)`;
-      `test-hang-trace.R` asserts it and that the `MultiReporter` composed as
-      `tests/testthat.R` composes it reports parallel support. In parallel mode
-      the reporter runs in the parent, so its lines still reach the parent's
-      stderr; verify by execution before writing the assertion.
+- [x] T2: `HangTraceReporter` (`tests/testthat/helper-hang-trace.R`) declares
+      `capabilities = list(parallel_support = TRUE, parallel_updates = TRUE)`
+      and prints each `start` on first sight and each `end` once, since live
+      mode re-announces the file and block before every forwarded event;
+      `tests/testthat.R` composes its reporter through a helper function that
+      sets `parallel_updates` on the composite, and `test-hang-trace.R` asserts
+      both declarations and one live start/end pair per file and block under a
+      two-worker run.
 - [ ] T3: `DESCRIPTION` gains `Config/testthat/parallel: true` and
       `Config/testthat/start-first:` naming the slowest files from T1;
       `benchmarks/profile-tests.R` sets `TESTTHAT_PARALLEL=FALSE` so it keeps
@@ -130,7 +132,34 @@ beyond the sentences this milestone adds.
   8 / 15 because runner core counts and contention are unmeasured; falsified
   by the PR's first run landing under 8 and 15, which would say the bar was
   slack.
+- 2026-09-03: implement started; branch `m052-parallel-test-files` cut from
+  the pushed default branch. Gate (one question): the hang trace takes
+  testthat's live-update mode, not the burst replay T2 named — measured on a
+  three-file fixture at two workers, burst replay stamped a finished file's
+  lines within 1 ms of each other and would print nothing for a file that
+  never finishes, while live mode kept a 1.0 s sleeping block's start and end
+  1.08 s apart. T2's wording refined to match (minor amendment).
+- 2026-09-03: T2 — reporter rewritten with first-sight bookkeeping (live mode
+  had printed four to five `start` lines per block and a fresh `start` for a
+  block already ended, measured); `check_reporter_with_hang_trace()` builds
+  the runner's composite because `MultiReporter` sets `parallel_support` on
+  itself and leaves `parallel_updates` at the base default, and testthat reads
+  both off the composite. Two tests added; planting `parallel_updates = FALSE`
+  on the composite redded both (one failure each), helper restored. Ran green
+  serially and nested inside a two-worker run.
 
 ## Decisions
+
+- 2026-09-03: The hang trace runs in testthat's live-update mode under
+  parallel test files. testthat offers the parent-side reporter two replay
+  modes; burst replay (the plan's `parallel_updates = FALSE`) stamps a whole
+  file's lines when the file finishes and prints nothing for a file that
+  hangs, which is the case the trace exists for. Live mode re-announces the
+  file and block before every event, so the reporter prints each `start` on
+  first sight and each `end` once; the composite in `tests/testthat.R`
+  declares the mode because testthat reads it off the reporter it is handed,
+  not off the members. Falsified by a testthat release whose live loop stops
+  calling `start_file`/`start_test` before each event, which would make the
+  bookkeeping inert but not wrong.
 
 ## Review
