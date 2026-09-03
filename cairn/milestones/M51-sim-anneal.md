@@ -1,6 +1,6 @@
 # M51: `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M50
 - **Driving RR:** —
@@ -65,21 +65,21 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
 
 ## Tasks
 
-- [ ] T1: The registry entry (`R/tuner.R`, M50's table) for `tune_sim_anneal` — package finetune,
+- [x] T1: The registry entry (`R/tuner.R`, M50's table) for `tune_sim_anneal` — package finetune,
       `control_sim_anneal()`, takes `iter` and `initial`; `tuner_anneal(iter, initial)`; `empty_inner_metrics()`
       adds `.iter` from the registry rather than the `tune_bayes` name; `candidate_set()`'s `.iter` ordering
       (`R/nested-tune-grid.R:893-934`) documented for both iterating tuners; `procedure_label()` and
       `procedure_counts()` (`R/nested-final-fit-print.R:195-227`) read the registry.
-- [ ] T2: `nested_tune_sim_anneal()` on `nested_tune_bayes()`'s shape (`R/nested-tune-bayes.R:199-235`), `check_iter()`
+- [x] T2: `nested_tune_sim_anneal()` on `nested_tune_bayes()`'s shape (`R/nested-tune-bayes.R:199-235`), `check_iter()`
       and `check_initial()` each taking its floor as an argument (`iter` 0 for Bayes and 1 here; `initial` 2 for Bayes
       and 1 here), `check_control()` accepting `control_sim_anneal`; the D-entry extending D-040's `initial` clauses to
       this sibling and departing from its `iter` floor; `reference_nested_anneal_loop()` in `helper-orchestration.R`;
       the AC1, AC2 and AC3 tests — AC3's probes name their exemplars (character, list, `NULL`, length 0 and 2, `2.5`,
       `NA`, `NA_real_`; a `tune_results` as `initial`; `initial = 0`; `iter = 0`), and where two refusals share a class
       (`nestedtune_bad_initial`, `nestedtune_bad_control`) the message pattern is asserted beside it.
-- [ ] T3: The AC4 RNG battery and daemon identities on the M50 patterns, gated on finetune and mirai.
-- [ ] T4: The final fit on an annealing result and `reference_anneal_final_fit()` for the AC5 identity.
-- [ ] T5: The help page with the control classification and by-hand recipe (its test in AC4), its
+- [x] T3: The AC4 RNG battery and daemon identities on the M50 patterns, gated on finetune and mirai.
+- [x] T4: The final fit on an annealing result and `reference_anneal_final_fit()` for the AC5 identity.
+- [x] T5: The help page with the control classification and by-hand recipe (its test in AC4), its
       `test-control-slots.R` block; `_pkgdown.yml`, `NEWS.md`, DESIGN.md; `devtools::check()`.
 
 ## Work log
@@ -98,6 +98,7 @@ row (M49 Out). The Gaussian-process fitter's options stay on the M48 Out row; `t
 - 2026-09-02: T5 done — help page with the six-heading classification (11 slots Passed through, `save_history` Not returned beside the three, `verbose_iter`'s per-fold log named) and the by-hand recipe; `test-control-slots.R` block reads it off the Rd; cross-references on the grid, final-fit and summary pages; `_pkgdown.yml` row, NEWS entry, DESIGN.md (function families, architecture, dependency surface, the `time_limit` known issue); `pkgdown::check_pkgdown()` clean.
 - 2026-09-02: checkpoint — T1–T5 code, tests and records written; their targeted test files, `document()` and `check_pkgdown()` clean; the full `devtools::test()` and `devtools::check()` runs were still in flight, so no task is ticked yet — ticks follow their results.
 - 2026-09-03: `devtools::check()` on the checkpoint: 0 warnings, 0 notes, 1 test failure — `test-suite-hygiene.R` found BC13's `start_daemons(n)` (`test-parallel-identity.R:761`) with no row in `helper-time-budget.R`; row added (2 × the daemon-start bound, M50's shape); the hygiene and identity files pass; a second full check runs on the fixed tree before the ticks.
+- 2026-09-03: second `devtools::check()` on the fixed tree: Status OK, 0 errors, 0 warnings, 0 notes, 4705 tests passing and 15 skips that are the built-package skips; T1–T5 ticked on it; status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. EXEMPT from the 150-line cap. -->
