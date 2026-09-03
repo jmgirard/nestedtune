@@ -757,7 +757,10 @@ test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
   )
   # The two repeated designs carry `id` and `id2`, `id` repeating across
   # repeats while the pair is unique -- the shape the tuple rule must admit.
-  expect_identical(names(from_rsample), c("splits", "id", "id2", "inner_resamples"))
+  expect_identical(
+    names(from_rsample),
+    c("splits", "id", "id2", "inner_resamples")
+  )
   expect_true(anyDuplicated(from_rsample$id) > 0L)
 
   well_formed <- list(

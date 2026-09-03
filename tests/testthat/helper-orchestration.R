@@ -1942,7 +1942,10 @@ reference_anneal_final_fit <- function(
 malformed_designs <- function(data) {
   base <- det_nested(data)
   n <- nrow(base)
-  stopifnot(n == 3L, identical(names(base), c("splits", "id", "inner_resamples")))
+  stopifnot(
+    n == 3L,
+    identical(names(base), c("splits", "id", "inner_resamples"))
+  )
   empty <- rsample::manual_rset(list(), character(0))
 
   plant_element <- function(column, at, value) {
@@ -1978,13 +1981,19 @@ malformed_designs <- function(data) {
   }
   both <- function(name, value) {
     stats::setNames(
-      list(plant_column(name, value, "before"), plant_column(name, value, "after")),
+      list(
+        plant_column(name, value, "before"),
+        plant_column(name, value, "after")
+      ),
       paste(name, c("before", "after"), sep = "_")
     )
   }
   positions <- list(first = 1L, last = n, all = seq_len(n))
   by_position <- function(prefix, plant) {
-    stats::setNames(lapply(positions, plant), paste(prefix, names(positions), sep = "_"))
+    stats::setNames(
+      lapply(positions, plant),
+      paste(prefix, names(positions), sep = "_")
+    )
   }
 
   c(
@@ -2003,10 +2012,22 @@ malformed_designs <- function(data) {
       label_repeat_all = plant_repeat(seq_len(n)),
       id_integer = plant_column("id", seq_len(n))
     ),
-    stats::setNames(both("id2", seq_len(n)), c("id2_integer_before", "id2_integer_after")),
-    stats::setNames(both("weights", c("a", "b", "c")), c("weights_character_before", "weights_character_after")),
-    stats::setNames(both("weights", c(1, 2, 3)), c("weights_numeric_before", "weights_numeric_after")),
-    stats::setNames(both("extra", list(1, 2, 3)), c("extra_list_before", "extra_list_after")),
+    stats::setNames(
+      both("id2", seq_len(n)),
+      c("id2_integer_before", "id2_integer_after")
+    ),
+    stats::setNames(
+      both("weights", c("a", "b", "c")),
+      c("weights_character_before", "weights_character_after")
+    ),
+    stats::setNames(
+      both("weights", c(1, 2, 3)),
+      c("weights_numeric_before", "weights_numeric_after")
+    ),
+    stats::setNames(
+      both("extra", list(1, 2, 3)),
+      c("extra_list_before", "extra_list_after")
+    ),
     list(two_columns = {
       x <- base
       x$weights <- c(1, 2, 3)
