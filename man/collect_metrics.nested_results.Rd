@@ -38,7 +38,9 @@ Only the outer folds that completed are summarized, and \code{n} counts the fold
 contributing to each row, so a run with failures never reports its estimate
 as though the whole design had run. Those folds are dropped with a warning
 naming them; when no fold completed at all, this errors instead of returning
-\code{NA}.
+\code{NA}, with condition class \code{nestedtune_no_completed_folds} -- the class
+\link[=autoplot.nested_results]{autoplot()}, \code{\link[=agreement]{agreement()}} and
+\code{\link[=nested_final_fit]{nested_final_fit()}} refuse such an object with.
 
 A metric measured at several evaluation times (\code{eval_time} on
 \code{\link[=nested_tune_grid]{nested_tune_grid()}}) is summarized per time, never averaged across them:

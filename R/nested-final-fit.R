@@ -44,7 +44,14 @@
 #'   [nested_resamples()] or [rsample::nested_cv()]), one that is no longer a
 #'   `nested_results` (an operation that added or removed rows returns a plain
 #'   tibble), and one with no rows are each refused before any fitting, with
-#'   condition class `nestedtune_bad_results`.
+#'   condition class `nestedtune_bad_results`. A results object in which no
+#'   outer fold completed is refused next, with condition class
+#'   `nestedtune_no_completed_folds`: there is no estimate to report a model
+#'   with, and `summary()` on the object lists the stage each fold failed at.
+#'   That is the class [collect_metrics()],
+#'   [autoplot()][autoplot.nested_results] and [agreement()] refuse the same
+#'   object with. A run in which some folds failed is fitted; its estimate is
+#'   [collect_metrics()]'s, with that function's partial-run warning.
 #' @param ... Not used; must be empty. An argument passed here is an error
 #'   rather than silently ignored -- in particular the former `grid`,
 #'   `param_info`, `metrics`, `event_level` and `eval_time` arguments, which
@@ -208,6 +215,7 @@ nested_final_fit <- function(object, results, ...) {
   rlang::check_dots_empty()
   check_workflow(object)
   check_results_record(results)
+  check_completed_folds(results)
 
   procedure <- attr(results, "procedure")
   # The packages the recorded tuner needs are asked for here as the racing

@@ -34,7 +34,9 @@ because its column would collide with the counts, and is an error.
 
 A run in which some outer folds failed is tabulated over the folds that
 completed, with a warning saying so; a run in which no fold completed is an
-error, as it is for \code{\link[=collect_metrics]{collect_metrics()}}.
+error with condition class \code{nestedtune_no_completed_folds}, as it is for
+\code{\link[=collect_metrics]{collect_metrics()}}, \link[=autoplot.nested_results]{autoplot()} and
+\code{\link[=nested_final_fit]{nested_final_fit()}}.
 }
 \description{
 Each outer fold of a nested resampling run tunes on its own inner resamples

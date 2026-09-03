@@ -205,6 +205,106 @@ test_that("the record refusals fire before anything is drawn", {
   expect_identical(.Random.seed, before)
 })
 
+# The all-failed refusal: a run in which no outer fold completed has no
+# estimate, so a model fitted from it would be reported with a number that
+# does not exist (IP3). It is refused after the three record refusals and
+# before the tuner, grid and seed steps, with its own class -- the one
+# collect_metrics(), autoplot() and agreement() raise on the same object.
+
+all_failed_results <- function(d, wf, stage) {
+  set.seed(22)
+  suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    break_every_fold(final_nested(d), stage),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+}
+
+test_that("a results object in which no outer fold completed is refused", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  # Both stages a fold can fail at. `.completed` is written by one
+  # constructor whichever tuner ran, so the grid result stands for the five.
+  for (stage in c("inner tuning", "outer fit")) {
+    res <- all_failed_results(d, wf, stage)
+    expect_s3_class(res, "nested_results")
+    expect_false(any(res$.completed))
+
+    cnd <- rlang::catch_cnd(nested_final_fit(wf, res), "error")
+    expect_s3_class(cnd, "nestedtune_no_completed_folds")
+    expect_match(conditionMessage(cnd), "no outer fold completed", fixed = TRUE)
+    expect_match(conditionMessage(cnd), "summary()", fixed = TRUE)
+    expect_identical(conditionCall(cnd)[[1]], as.name("nested_final_fit"))
+  }
+})
+
+test_that("the all-failed refusal fires before anything is drawn", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- all_failed_results(d, wf, "inner tuning")
+
+  set.seed(1)
+  before <- .Random.seed
+  expect_error(
+    nested_final_fit(wf, res),
+    class = "nestedtune_no_completed_folds"
+  )
+  expect_identical(.Random.seed, before)
+})
+
+test_that("the record refusals fire before the all-failed one", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  res <- all_failed_results(d, wf, "inner tuning")
+
+  # A classed zero-row prototype of an all-failed run, built as the no-rows
+  # test above builds one: `.completed` is `logical(0)`, which the all-failed
+  # check would read as "no fold completed", so the record refusal has to
+  # answer first (the order NEWS states).
+  empty <- res[0L, ]
+  for (nm in results_attributes()) {
+    attr(empty, nm) <- attr(res, nm)
+  }
+  class(empty) <- c("nested_results", class(empty))
+  expect_identical(nrow(empty), 0L)
+
+  cnd <- rlang::catch_cnd(nested_final_fit(wf, empty), "error")
+  expect_s3_class(cnd, "nestedtune_bad_results")
+  expect_false(inherits(cnd, "nestedtune_no_completed_folds"))
+  expect_match(conditionMessage(cnd), "has no rows", fixed = TRUE)
+})
+
+test_that("a run with one failed fold and one completed is fitted", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  # Built inline rather than from `final_results()`, which hardcodes its
+  # design; on `final_nested()` because `det_nested()`'s inner specification
+  # cannot be re-evaluated by the final fit (M05).
+  set.seed(22)
+  res <- suppressWarnings(memoised(nested_tune_grid(
+    wf,
+    break_fold(final_nested(d), 1L, "inner tuning"),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  )))
+  expect_identical(res$.completed, c(FALSE, TRUE))
+
+  set.seed(5)
+  final <- memoised(nested_final_fit(wf, res))
+  expect_s3_class(final, "nested_final_fit")
+})
+
 # The specification is re-run in the caller's frame, so a design built with a
 # variable that is gone by now fails there -- two frames below the user's call
 # -- and the abort still names that call (M05, RR02 B1).

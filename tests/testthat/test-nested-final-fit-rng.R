@@ -431,22 +431,25 @@ test_that("a session with no RNG state is left with a valid one by a Bayesian fi
   expect_no_error(runif(1))
 })
 
-test_that("AC4: the final fit reads nothing from the fold rows but splits", {
+test_that("AC4: the final fit reads nothing from the fold rows but splits and .completed", {
   skip_if_no_bayes_fixture()
 
   d <- make_reg_data()
   wf <- bayes_workflow(d)
   res <- bayes_final_results(d)
 
-  # Every fold-row column but `splits` overwritten -- the label columns, the
-  # per-fold records, the seeds -- by assignment on the unclassed columns,
-  # the class and attributes then re-stamped. A verb would strip the class
-  # (the invariant rule), which is why the corruption is surgery.
+  # Every fold-row column but `splits` and `.completed` overwritten -- the
+  # label columns, the per-fold records, the seeds -- by assignment on the
+  # unclassed columns, the class and attributes then re-stamped. A verb would
+  # strip the class (the invariant rule), which is why the corruption is
+  # surgery. `.completed` is the one other column the fit reads: the
+  # all-failed refusal (test-nested-final-fit-checks.R) reads it at entry, so
+  # it is left as the run wrote it.
   corrupt <- res
   attrs <- attributes(res)
   class(corrupt) <- setdiff(class(corrupt), "nested_results")
   n <- nrow(corrupt)
-  wrong <- setdiff(names(corrupt), "splits")
+  wrong <- setdiff(names(corrupt), c("splits", ".completed"))
   expect_setequal(
     wrong,
     c(
@@ -455,7 +458,6 @@ test_that("AC4: the final fit reads nothing from the fold rows but splits", {
       ".selected",
       ".inner_metrics",
       ".notes",
-      ".completed",
       ".tuning_seed",
       ".outer_fit_seed"
     )
@@ -463,8 +465,6 @@ test_that("AC4: the final fit reads nothing from the fold rows but splits", {
   for (nm in wrong) {
     corrupt[[nm]] <- if (is.list(corrupt[[nm]])) {
       rep(list("corrupted"), n)
-    } else if (is.logical(corrupt[[nm]])) {
-      rep(NA, n)
     } else if (is.integer(corrupt[[nm]])) {
       rep(-1L, n)
     } else {

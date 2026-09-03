@@ -189,11 +189,20 @@ test_that("collect_metrics() aborts when no fold completed", {
   )
 
   expect_identical(attr(res, "folds_completed"), 0L)
-  expect_error(collect_metrics(res), "no outer fold completed")
-  expect_error(
-    collect_metrics(res, summarize = FALSE),
-    "no outer fold completed"
-  )
+  # One class for the fact, whichever door asks: the one nested_final_fit()
+  # refuses the same object with.
+  for (summarize in c(TRUE, FALSE)) {
+    cnd <- rlang::catch_cnd(
+      collect_metrics(res, summarize = summarize),
+      "error"
+    )
+    expect_s3_class(cnd, "nestedtune_no_completed_folds")
+    expect_match(
+      conditionMessage(cnd),
+      "no outer fold completed",
+      fixed = TRUE
+    )
+  }
 })
 
 test_that("failure capture leaves a clean run exactly as M02 left it", {

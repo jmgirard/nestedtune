@@ -28,7 +28,14 @@ nestedtune, or from a design assembled by hand rather than by
 \code{\link[=nested_resamples]{nested_resamples()}} or \code{\link[rsample:nested_cv]{rsample::nested_cv()}}), one that is no longer a
 \code{nested_results} (an operation that added or removed rows returns a plain
 tibble), and one with no rows are each refused before any fitting, with
-condition class \code{nestedtune_bad_results}.}
+condition class \code{nestedtune_bad_results}. A results object in which no
+outer fold completed is refused next, with condition class
+\code{nestedtune_no_completed_folds}: there is no estimate to report a model
+with, and \code{summary()} on the object lists the stage each fold failed at.
+That is the class \code{\link[=collect_metrics]{collect_metrics()}},
+\link[=autoplot.nested_results]{autoplot()} and \code{\link[=agreement]{agreement()}} refuse the same
+object with. A run in which some folds failed is fitted; its estimate is
+\code{\link[=collect_metrics]{collect_metrics()}}'s, with that function's partial-run warning.}
 
 \item{...}{Not used; must be empty. An argument passed here is an error
 rather than silently ignored -- in particular the former \code{grid},

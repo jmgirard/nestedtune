@@ -524,6 +524,16 @@ test_that("a run where no fold completed is refused, in plotting's own words", {
   expect_error(autoplot(res), "nothing to plot")
   expect_error(autoplot(res, type = "performance"), "nothing to plot")
   expect_error(collect_metrics(res), "nothing to summarize")
+  # Under one class, each view, as nested_final_fit() refuses the object.
+  for (type in c("parameters", "performance")) {
+    cnd <- rlang::catch_cnd(autoplot(res, type = type), "error")
+    expect_s3_class(cnd, "nestedtune_no_completed_folds")
+    expect_match(
+      conditionMessage(cnd),
+      "no outer fold completed",
+      fixed = TRUE
+    )
+  }
 })
 
 test_that("a design with no tuned parameters points at the other view", {

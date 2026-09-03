@@ -386,6 +386,35 @@ check_results_record <- function(results, call = rlang::caller_env()) {
   invisible(results)
 }
 
+# A run in which no outer fold completed has no estimate, and the estimate is
+# the number a final model is reported with (IP3): fitting one from such a
+# record would hand back a model with no companion figure, so the request is
+# refused (GP3). Read from `.completed`, the column every tuner's worker writes
+# through one constructor, as `check_any_completed()` (R/nested-results.R)
+# reads it for the summary doors -- and under the same class, so one fact is
+# catchable one way whichever door asked. A partial run is not refused: the
+# final fit is not the estimate, and `collect_metrics()`'s warning already
+# sits where the estimate is. This is a refusal of the run, not of the
+# object's shape, so it is not `nestedtune_bad_results`.
+check_completed_folds <- function(results, call = rlang::caller_env()) {
+  if (any(results$.completed)) {
+    return(invisible(results))
+  }
+  n <- nrow(results)
+  cli::cli_abort(
+    c(
+      "{.arg results} carries no estimate to report a model with: no outer \\
+       fold completed.",
+      x = "All {n} outer fold{?s} failed.",
+      i = "Call {.fn summary} on {.arg results} for the stage each fold \\
+           failed at, and re-run {.fn nested_tune_grid} or the sibling that \\
+           built it once the cause is fixed."
+    ),
+    class = "nestedtune_no_completed_folds",
+    call = call
+  )
+}
+
 # Re-evaluate that specification against the whole data.
 #
 # The stored call travels without its environment, so it is evaluated wherever
