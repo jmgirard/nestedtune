@@ -32,7 +32,7 @@ their M48 Out row.
 
 ## Acceptance criteria
 
-- [ ] AC1: `nested_tune_race_anova()` and `nested_tune_race_win_loss()` are exported with `nested_tune_grid()`'s
+- [x] AC1: `nested_tune_race_anova()` and `nested_tune_race_win_loss()` are exported with `nested_tune_grid()`'s
       formals, defaults and order (`object, resamples, ..., param_info = NULL, grid = 10, metrics = NULL, event_level
       = "first", eval_time = NULL`), and for each racer on each of the deterministic and the metric-separating
       fixtures, under `control_race(burn_in = 2)`, every fold's `.metrics`, `.selected` and `.inner_metrics` are
@@ -40,30 +40,30 @@ their M48 Out row.
       `finetune::tune_race_anova()` (or `tune_race_win_loss()`) on the inner `rset` under the same control with
       `allow_par = FALSE`, selects with `tune::select_best()`, finalizes, pins the fold's outer seed and scores with
       `tune::last_fit()`.
-- [ ] AC2: On the deterministic fixture, under one seed and one explicit grid data frame passed to both, every
+- [x] AC2: On the deterministic fixture, under one seed and one explicit grid data frame passed to both, every
       candidate a race scored on all 3 inner resamples (`n == 3` in `.inner_metrics`) carries exactly the `mean`
       `nested_tune_grid()` records for the same candidate, and the test asserts at least one such candidate exists in
       every fold.
-- [ ] AC3: A racing fold's `.inner_metrics` equals `tune::collect_metrics(<the fold's race result>, all_configs =
+- [x] AC3: A racing fold's `.inner_metrics` equals `tune::collect_metrics(<the fold's race result>, all_configs =
       TRUE)` and its `.selected` equals `tune::select_best()` on that result; on a fixture whose engine draws from the
       RNG, a test asserts at least one candidate's `n` is below the inner resample count and that `.selected` is a
       candidate whose `n` equals it. (RB tripwire: ip-touching)
-- [ ] AC4: For both racers: the same seed gives `identical()` results serially and at 2 and 3 daemons whose library
+- [x] AC4: For both racers: the same seed gives `identical()` results serially and at 2 and 3 daemons whose library
       holds finetune; on a fixture whose engine draws from the RNG, two seeds give different `.inner_metrics`; the
       caller's `.Random.seed` and `RNGkind()` triple are restored on exit, including when the call errors; and the
       help page's by-hand recipe reproduces one fold's `.inner_metrics` and `.selected`.
-- [ ] AC5: For both racers, each refusal fires at entry, before any fold runs, with its condition class asserted:
+- [x] AC5: For both racers, each refusal fires at entry, before any fold runs, with its condition class asserted:
       finetune not installed, and for `nested_tune_race_win_loss()` BradleyTerry2 not installed, each asserted under
       a mocked absence; a control that is not a `control_race()` (`nestedtune_bad_control`); an inner `rset` in any
       outer fold whose resample count is not greater than the control's `burn_in`, the message naming the count and
       the burn-in.
-- [ ] AC6: `nested_final_fit()` on a racing result re-runs the recorded race on the full data: `$tuning` inherits
+- [x] AC6: `nested_final_fit()` on a racing result re-runs the recorded race on the full data: `$tuning` inherits
       `tune_race`, `attr(x, "procedure")` records the tuner's name and the `grid` as given, `extract_scored_candidates()`
       reads the race through the same `all_configs = TRUE` derivation the fold reader uses (D-043), `print()` names the
       racing method, and the fit's two seeds, `selected`, tuning split ids and `predict()` output are `identical()` to a
       reference final fit that pins the two seeds and calls finetune, `select_best()`, `finalize_workflow()` and `fit()`
       by hand.
-- [ ] AC7: The help page the two exports share places every `control_race()` slot under exactly one of the six
+- [x] AC7: The help page the two exports share places every `control_race()` slot under exactly one of the six
       headings (`Forced`, `Settable as its own argument`, `Refused`, `Passed through`, `Not returned`, `Inert`), with
       `allow_par` Forced and `burn_in`, `alpha`, `num_ties`, `randomize` and `verbose_elim` Passed through, and states
       that the recorded `grid` is the design offered while `n` in `.inner_metrics` is the resamples each candidate was
@@ -139,3 +139,15 @@ their M48 Out row.
 
 ## Review
 <!-- owner: review · exclusive; evidence per criterion. EXEMPT from the 150-line cap. -->
+
+Review 2026-09-02, PR #60, branch head e8f2757 on an unmoved `main`. Full suite `devtools::test()`: 0 failures, 0 warnings, 0 skips, 4279 passes, 1025 s; every racing file ran its expectations (`nested-tune-race-oracles` 196, `nested-tune-race-rng` 70, `nested-tune-race-checks` 198, `nested-final-fit-race` 47, `parallel-identity` 114, `parallel-required-pkgs` 8, `tuner-registry` 28, `control-slots` 75).
+
+- AC1 — verified. `formals()` of both exports `identical()` to `nested_tune_grid()`'s, run directly at review (names `object, resamples, ..., param_info, grid, metrics, event_level, eval_time`); both in `NAMESPACE`. The reference-loop identity tests in `test-nested-tune-race-oracles.R` (both racers × deterministic and metric-separating fixtures, `control_race(burn_in = 2)`, `.metrics`/`.selected`/`.inner_metrics` and both seed columns `expect_identical()` per fold) passed in the full run.
+- AC2 — verified. The AC2 test passed: one seed, one explicit grid to both paths, every candidate with `n == 3` matched by `.config` to the grid path's row with `expect_identical()` on `mean`, and `expect_gt(nrow(full), 0L)` per fold.
+- AC3 — verified. The AC3 test passed on the ranger fixture: `.inner_metrics` `identical()` to `collect_metrics(<race>, all_configs = TRUE)`, `.selected` identical to `select_best()`, at least one eliminated candidate (`n < n_max`) observed, and every selected candidate's `n` equal to `n_max`.
+- AC4 — verified. `test-nested-tune-race-rng.R` passed for both racers (same seed identical; two seeds differ in `.inner_metrics` on the ranger fixture; `.Random.seed` and `RNGkind()` restored on completion, on failed folds and on error). BC12 in `test-parallel-identity.R` passed: serial `identical()` to 2 and 3 daemons, both racers. The by-hand recipe test passed (`.inner_metrics` and `.selected` of one fold reproduced).
+- AC5 — verified. `test-nested-tune-race-checks.R` passed with `dispatch_folds` replaced by a sentinel, so each refusal is shown to fire before any fold: finetune absent, lme4 absent (ANOVA), BradleyTerry2 absent (win/loss), each under a one-package `rlang::is_installed` mock, class `nestedtune_pkg_not_installed`; `tune::control_grid()` refused as `nestedtune_bad_control`; a 3-resample inner design under `burn_in = 3` refused as `nestedtune_bad_burn_in` naming the count and the burn-in, for both exports.
+- AC6 — verified. `test-nested-final-fit-race.R` passed for both racers: `$tuning` a `tune_race`, `procedure$tuner` and `procedure$grid` as given, `extract_scored_candidates()` listing every candidate with the eliminated present, `print()` naming the racing method, and seeds, `selected`, tuning split ids and `predict()` output `identical()` to `reference_race_final_fit()`.
+- AC7 — verified. The `test-control-slots.R` classification test passed: all 15 `control_race()` slots under exactly one heading, `allow_par` Forced, `burn_in`/`alpha`/`num_ties`/`randomize`/`verbose_elim` Passed through; the wording test matched both the recorded-grid and the `n` clauses. Verify slot clean: `devtools::document()` no diff, `devtools::test()` clean as above.
+
+Consistency gate: `cairn_validate` all checks pass (18 references-staleness advisories, no gate failure); no DESIGN principle changed, `cairn_impact` skipped; `document()` no diff; `pkgdown::check_pkgdown()` no problems; NEWS entry present; no new top-level file; `devtools::check()` pending at this checkpoint.
