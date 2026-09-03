@@ -148,3 +148,4 @@ up front → the standing M21 candidate row; a repeated-index outer split keeps 
 - AC6 re-evidence after the review fixes (2026-09-03): `devtools::test()` at `2517861`: 57 files, 4925 expectations (the appended-index case adds 3), no Failed/Skipped/Warnings section, the identity files included, exit 0; `devtools::check()` `Status: OK` (0/0/0), 5 m 5 s; `devtools::document()` no diff; `air format --check` clean.
 - 2026-09-03 step 6: pre-gate checkpoint; PR #64 CI at this head: pkgdown and format-suggest pass, R-CMD-check legs and test-coverage pending.
 - 2026-09-03: step-7 approval: PR #64 approved for merge (recommended option; no D-entry requested).
+- 2026-09-03: step 8: CI watch on PR #64 hit the 590 s ceiling with the seven check legs still pending (format-suggest and pkgdown pass); watcher stopped, session stopped at the merge; resume via /milestone-review M54 (route c).
