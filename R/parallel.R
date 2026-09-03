@@ -218,7 +218,7 @@ dispatch_folds <- function(
   }
 
   check_daemons_can_load(call = call)
-  attach_daemon_pkgs(object, call = call)
+  attach_daemon_pkgs(object, tuner, call = call)
   warn_if_not_cancellable(call = call)
 
   record_dispatch("parallel")
@@ -577,7 +577,8 @@ daemon_attach_expr <- function() {
   ))
 }
 
-# The workflow's packages, attached in every daemon before any fold is sent.
+# The workflow's packages, and the tuner's, attached in every daemon before
+# any fold is sent.
 #
 # Bounded exactly as the pre-flight is, and for the same reason: everywhere()
 # carries no `.timeout`, so the bound is a poll to a deadline followed by
@@ -590,6 +591,7 @@ daemon_attach_expr <- function() {
 # the reason, at the moment it is still actionable.
 attach_daemon_pkgs <- function(
   object,
+  tuner,
   timeout = preflight_timeout(call = call),
   call = rlang::caller_env()
 ) {
@@ -597,7 +599,18 @@ attach_daemon_pkgs <- function(
   pkgs <- tryCatch(tune::required_pkgs(object), error = function(cnd) {
     character()
   })
-  pkgs <- setdiff(unique(pkgs), c("base", "stats", "utils", "methods"))
+  # The packages the tuner requires beside the workflow's (M50, D-044): the
+  # registry's `requires`, the same list the entry refusal reads, so the
+  # refusal and this attach cannot name different packages. finetune's racers
+  # register `collect_metrics()`'s `tune_race` method and read their control
+  # inside the fold, and each race fits its model through lme4 or
+  # BradleyTerry2 there.
+  # tune is left off the list, as it always was: this package imports it, so
+  # the pre-flight's namespace load has already brought it into every daemon.
+  if (!is.null(tuner)) {
+    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$requires)
+  }
+  pkgs <- setdiff(unique(pkgs), c("base", "stats", "utils", "methods", "tune"))
   if (length(pkgs) == 0L) {
     return(invisible(character()))
   }
@@ -627,7 +640,7 @@ attach_daemon_pkgs <- function(
   if (length(failed) > 0L) {
     cli::cli_warn(
       c(
-        "{length(failed)} package{?s} the workflow needs could not be attached
+        "{length(failed)} package{?s} the workflow or the tuner needs could not be attached
          in the mirai daemons: {.pkg {failed}}.",
         i = "A fold whose recipe or engine calls into {?it/them} will fail and
              be recorded in {.code x$.notes}.",

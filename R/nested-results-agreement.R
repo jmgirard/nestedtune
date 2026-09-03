@@ -146,7 +146,7 @@ abort_no_agreement_method <- function(x, call = rlang::caller_env()) {
     c(
       "{.fn agreement} has no method for {.obj_type_friendly {x}}.",
       i = "It answers for a {.cls nested_results} object, from \\
-           {.fn nested_tune_grid} or {.fn nested_tune_bayes}."
+           {.fn nested_tune_grid} or one of its siblings."
     ),
     class = "nestedtune_no_agreement_method",
     call = call

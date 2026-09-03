@@ -16,19 +16,22 @@
 #'
 #' `nested_final_fit()` runs the tuning procedure a nested run recorded once
 #' more, with the whole dataset in hand: it re-evaluates the design's inner
-#' resampling specification against every row, tunes with [tune::tune_grid()]
-#' or [tune::tune_bayes()] under the arguments the results object carries,
+#' resampling specification against every row, tunes with [tune::tune_grid()],
+#' [tune::tune_bayes()] or one of finetune's racers under the arguments the
+#' results object carries,
 #' selects the best candidate, finalizes the workflow, and fits it on all the
 #' data. The result is the model to deploy, built by the same search the
 #' estimate you report describes.
 #'
 #' @param object A [workflows::workflow()] with at least one parameter marked
 #'   for tuning with [tune::tune()]: the workflow the nested run was built
-#'   around. For a grid procedure it is checked against the recorded grid the
-#'   way [nested_tune_grid()] checked it, so a different workflow is refused
-#'   here rather than by tune one tuning run later.
-#' @param results The `nested_results` object from [nested_tune_grid()] or
-#'   [nested_tune_bayes()] whose estimate you will report for this model.
+#'   around. For a grid or a racing procedure it is checked against the
+#'   recorded grid the way [nested_tune_grid()] checked it, so a different
+#'   workflow is refused here rather than by tune one tuning run later.
+#' @param results The `nested_results` object from [nested_tune_grid()],
+#'   [nested_tune_bayes()], [nested_tune_race_anova()] or
+#'   [nested_tune_race_win_loss()] whose estimate you will report for this
+#'   model.
 #'   Everything the re-run needs is read from it: the design's inner
 #'   resampling specification, recorded on the result as the design stored it;
 #'   the data, which every split references; and the procedure -- the tuner
@@ -67,7 +70,7 @@
 #' @section What to report:
 #'
 #' Report the estimate from [collect_metrics()] on the results object you
-#' handed over -- the [nested_tune_grid()] or [nested_tune_bayes()] result --
+#' handed over -- the result of [nested_tune_grid()] or one of its siblings --
 #' as this model's performance. The model and the estimate come from one
 #' search by construction: the procedure is read from that object and cannot
 #' be restated here. That number estimates the k-fold test
@@ -205,10 +208,17 @@ nested_final_fit <- function(object, results, ...) {
   check_results_record(results)
 
   procedure <- attr(results, "procedure")
+  # The packages the recorded tuner needs are asked for here as the racing
+  # exports ask at entry (D-044), so a racing result loaded where finetune or
+  # its model-fitting package is absent is refused before the inner rset is
+  # built rather than inside the race.
+  check_tuner_installed(procedure$tuner)
   # The grid is judged against the workflow as the orchestrator judged it,
   # so a workflow other than the one the estimate was built around is refused
   # here rather than by tune, one full tuning run later (GP3).
-  if (identical(procedure$tuner, "tune_grid")) {
+  # Every tuner that takes a grid -- `tune_grid()` and finetune's racers -- is
+  # held to it; the iterative tuners record none (R/tuner.R).
+  if (tuner_takes_grid(procedure$tuner)) {
     check_grid_params(object, procedure$grid, recorded = TRUE)
   }
   inside <- attr(results, "inside")

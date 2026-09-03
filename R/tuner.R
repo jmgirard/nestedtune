@@ -25,8 +25,96 @@ tuner_bayes <- function(iter, initial, objective) {
   )
 }
 
+# finetune's two racing tuners share one description shape: a `grid`, as
+# `tune_grid()` takes, raced rather than scored in full. `fn` names which
+# race -- "tune_race_anova" or "tune_race_win_loss" -- and is a registry key.
+tuner_race <- function(fn, grid) {
+  new_tuner(fn, list(grid = grid))
+}
+
 new_tuner <- function(tuner, args) {
   list(tuner = tuner, args = args)
+}
+
+# The tuner registry (M50): everything the package knows about a tuner that
+# is not the fold's own arguments, keyed by the tune or finetune function's
+# name -- the `tuner` field of a description and of a results object's
+# `procedure` record. Every site that used to switch on that name reads one
+# of these fields instead, so a new tuner is one entry here and its export.
+#
+# `package` is where the function lives, and what the inner call's `.ns` and
+# a daemon's `library()` name. `requires` is what must be installed before
+# the tuner can run at all: the package itself, and for finetune's racers the
+# package each race calls `rlang::check_installed()` on inside the fold --
+# lme4 for the ANOVA race, BradleyTerry2 for the win/loss race (finetune
+# 1.3.0, read 2026-09-02) -- refused at entry instead (GP3). `control` builds
+# tune's default for the tuner, and `control_class` is the class a caller's
+# control must carry -- the contract, since `condense_control()` reads slots
+# by name and would take a `control_bayes()` for a `control_grid()` without
+# complaint. `takes_grid` says the tuner's own argument is a candidate grid
+# (against the iterative tuners' `iter` and `initial`), which is what the
+# grid-column checks and the zero-row prototype's typing key on; `iterates`
+# says its metrics tables carry `.iter`. `label` is the search's name in a
+# final fit's print.
+tuner_registry <- list(
+  tune_grid = list(
+    package = "tune",
+    requires = "tune",
+    control = function() tune::control_grid(),
+    control_class = "control_grid",
+    takes_grid = TRUE,
+    iterates = FALSE,
+    label = "grid search"
+  ),
+  tune_bayes = list(
+    package = "tune",
+    requires = "tune",
+    # `control_bayes()` draws its `seed` slot when built, and that draw would
+    # move the caller's stream between the entry snapshot and the seed draw;
+    # a fixed value costs nothing because `effective_control()` discards it
+    # and every fold supplies its own -- the device tune itself uses in
+    # `tune_bayes()`, condensing against `control_bayes(seed = 1)`.
+    control = function() tune::control_bayes(seed = 1L),
+    control_class = "control_bayes",
+    takes_grid = FALSE,
+    iterates = TRUE,
+    label = "Bayesian optimization"
+  ),
+  tune_race_anova = list(
+    package = "finetune",
+    requires = c("finetune", "lme4"),
+    control = function() finetune::control_race(),
+    control_class = "control_race",
+    takes_grid = TRUE,
+    iterates = FALSE,
+    label = "ANOVA racing"
+  ),
+  tune_race_win_loss = list(
+    package = "finetune",
+    requires = c("finetune", "BradleyTerry2"),
+    control = function() finetune::control_race(),
+    control_class = "control_race",
+    takes_grid = TRUE,
+    iterates = FALSE,
+    label = "win/loss racing"
+  )
+)
+
+# One registry entry, by the tuner's name; a name the registry does not hold
+# is a defect in this package, never a user's error.
+tuner_entry <- function(tuner) {
+  entry <- if (rlang::is_string(tuner)) tuner_registry[[tuner]]
+  if (is.null(entry)) {
+    cli::cli_abort(
+      "Unknown tuner {.val {tuner}}.",
+      .internal = TRUE
+    )
+  }
+  entry
+}
+
+tuner_takes_grid <- function(tuner) {
+  isTRUE(tuner_entry(tuner)$takes_grid)
 }
 
 # The inner tuning call, assembled and evaluated.
@@ -79,7 +167,11 @@ run_tuner <- function(
   )
   syms <- rlang::syms(names(args))
   names(syms) <- c("", names(args)[-1L])
-  call <- rlang::call2(tuner$tuner, !!!syms, .ns = "tune")
+  call <- rlang::call2(
+    tuner$tuner,
+    !!!syms,
+    .ns = tuner_entry(tuner$tuner)$package
+  )
   rlang::eval_bare(call, rlang::new_environment(args, parent = baseenv()))
 }
 
@@ -112,38 +204,16 @@ effective_control <- function(tuner, control, event_level) {
   control
 }
 
-# tune's default for the tuner. `control_bayes()` draws its `seed` slot when
-# built, and that draw would move the caller's stream between the entry
-# snapshot and the seed draw; a fixed value costs nothing because
-# `effective_control()` discards it and every fold supplies its own -- the
-# device tune itself uses in `tune_bayes()`, condensing against
-# `control_bayes(seed = 1)`.
+# The default control for the tuner, from the registry; the Bayesian entry
+# says why its default is built under a fixed seed.
 default_control <- function(tuner) {
-  switch(
-    tuner,
-    tune_grid = tune::control_grid(),
-    tune_bayes = tune::control_bayes(seed = 1L),
-    cli::cli_abort(
-      "Unknown tuner {.val {tuner}}.",
-      .internal = TRUE
-    )
-  )
+  tuner_entry(tuner)$control()
 }
 
-# The class a tuner's control must carry, and the tune function that returns
-# it: the class is the contract, since tune's own `condense_control()` reads
-# slots by name and would take a `control_bayes()` for a `control_grid()`
-# without complaint.
+# The class a tuner's control must carry (the registry says why the class is
+# the contract).
 control_class <- function(tuner) {
-  switch(
-    tuner,
-    tune_grid = "control_grid",
-    tune_bayes = "control_bayes",
-    cli::cli_abort(
-      "Unknown tuner {.val {tuner}}.",
-      .internal = TRUE
-    )
-  )
+  tuner_entry(tuner)$control_class
 }
 
 # What a results object records about the procedure that produced it (IP4):

@@ -340,7 +340,7 @@ check_results_record <- function(results, call = rlang::caller_env()) {
     cli::cli_abort(
       c(
         "{.arg results} must be a {.cls nested_results} from \\
-         {.fn nested_tune_grid} or {.fn nested_tune_bayes}.",
+         {.fn nested_tune_grid} or one of its siblings.",
         x = "Got {.obj_type_friendly {results}}.",
         i = "An operation that adds or removes rows returns a plain tibble \\
              without the run's record; hand over the object the \\
@@ -364,7 +364,7 @@ check_results_record <- function(results, call = rlang::caller_env()) {
              design assembled by hand rather than by {.fn nested_resamples} \\
              or {.fn rsample::nested_cv}, which store the specification as \\
              a call.",
-        i = "Re-run {.fn nested_tune_grid} or {.fn nested_tune_bayes} on \\
+        i = "Re-run {.fn nested_tune_grid} or the sibling that built it on \\
              this version, on a design from one of those constructors; a \\
              results object is not migrated."
       ),
@@ -751,10 +751,11 @@ check_control <- function(
   call = rlang::caller_env()
 ) {
   expected <- control_class(tuner)
+  pkg <- tuner_entry(tuner)$package
   if (!is.null(control) && !inherits(control, expected)) {
     cli::cli_abort(
       c(
-        "{.arg control} must be what {.fn tune::{expected}} returns.",
+        "{.arg control} must be what {.fn {pkg}::{expected}} returns.",
         x = "Got {.obj_type_friendly {control}}."
       ),
       class = "nestedtune_bad_control",
@@ -777,4 +778,69 @@ check_control <- function(
     )
   }
   effective_control(tuner, control, event_level)
+}
+
+# The packages a tuner needs, required before anything else is judged (M50,
+# GP3): the registry's `requires` for the tuner -- finetune for the racers,
+# and the package each race calls `rlang::check_installed()` on inside the
+# first fold, which would otherwise prompt or fail there, one outer loop's
+# worth of checks later. Asked through `rlang::is_installed()` so a test can
+# mock the absence.
+check_tuner_installed <- function(tuner, call = rlang::caller_env()) {
+  pkgs <- tuner_entry(tuner)$requires
+  missing <- pkgs[!vapply(pkgs, rlang::is_installed, logical(1))]
+  if (length(missing) > 0L) {
+    # One call the user can paste: `deparse()` gives `"pkg"` for one package
+    # and `c("a", "b")` for several, where cli's collapse would give `"a" and "b"`.
+    hint <- paste0("install.packages(", deparse(missing), ")")
+    cli::cli_abort(
+      c(
+        "{.fn {tuner}} needs {.pkg {missing}}, which {?is/are} not installed.",
+        i = "Install {?it/them} with {.code {hint}}."
+      ),
+      class = "nestedtune_pkg_not_installed",
+      call = call
+    )
+  }
+  invisible(pkgs)
+}
+
+# A race scores every candidate on `burn_in` inner resamples before it
+# eliminates any, and finetune refuses a design whose resample count is not
+# greater than that -- per fold, inside the loop, where M03 records it as a
+# fold failure. Every outer fold's inner `rset` is judged here instead, at
+# entry, so a design no fold can race is refused before any work is spent
+# (GP3, M50 plan). `control` is the effective control, so `burn_in` is what
+# will run; the failing folds are named by position with their counts.
+check_race_burn_in <- function(resamples, control, call = rlang::caller_env()) {
+  burn_in <- control[["burn_in"]]
+  counts <- vapply(
+    resamples$inner_resamples,
+    function(inner) as.integer(NROW(inner)),
+    integer(1)
+  )
+  short <- which(counts <= burn_in)
+  if (length(short) > 0L) {
+    detail <- paste(
+      sprintf(
+        "Outer fold %d holds %d inner resample%s",
+        short,
+        counts[short],
+        ifelse(counts[short] == 1L, "", "s")
+      ),
+      collapse = "; "
+    )
+    cli::cli_abort(
+      c(
+        "A race needs more inner resamples than its {.arg burn_in} of \\
+         {burn_in}.",
+        x = "{detail}: not more than {burn_in}.",
+        i = "Pass {.code control = control_race(burn_in = <fewer>)} \\
+             or build the design with more inner resamples."
+      ),
+      class = "nestedtune_bad_burn_in",
+      call = call
+    )
+  }
+  invisible(counts)
 }

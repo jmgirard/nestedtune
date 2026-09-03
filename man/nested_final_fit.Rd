@@ -9,12 +9,14 @@ nested_final_fit(object, results, ...)
 \arguments{
 \item{object}{A \code{\link[workflows:workflow]{workflows::workflow()}} with at least one parameter marked
 for tuning with \code{\link[tune:tune]{tune::tune()}}: the workflow the nested run was built
-around. For a grid procedure it is checked against the recorded grid the
-way \code{\link[=nested_tune_grid]{nested_tune_grid()}} checked it, so a different workflow is refused
-here rather than by tune one tuning run later.}
+around. For a grid or a racing procedure it is checked against the
+recorded grid the way \code{\link[=nested_tune_grid]{nested_tune_grid()}} checked it, so a different
+workflow is refused here rather than by tune one tuning run later.}
 
-\item{results}{The \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}} or
-\code{\link[=nested_tune_bayes]{nested_tune_bayes()}} whose estimate you will report for this model.
+\item{results}{The \code{nested_results} object from \code{\link[=nested_tune_grid]{nested_tune_grid()}},
+\code{\link[=nested_tune_bayes]{nested_tune_bayes()}}, \code{\link[=nested_tune_race_anova]{nested_tune_race_anova()}} or
+\code{\link[=nested_tune_race_win_loss]{nested_tune_race_win_loss()}} whose estimate you will report for this
+model.
 Everything the re-run needs is read from it: the design's inner
 resampling specification, recorded on the result as the design stored it;
 the data, which every split references; and the procedure -- the tuner
@@ -44,8 +46,9 @@ itself), \code{selected}
 \description{
 \code{nested_final_fit()} runs the tuning procedure a nested run recorded once
 more, with the whole dataset in hand: it re-evaluates the design's inner
-resampling specification against every row, tunes with \code{\link[tune:tune_grid]{tune::tune_grid()}}
-or \code{\link[tune:tune_bayes]{tune::tune_bayes()}} under the arguments the results object carries,
+resampling specification against every row, tunes with \code{\link[tune:tune_grid]{tune::tune_grid()}},
+\code{\link[tune:tune_bayes]{tune::tune_bayes()}} or one of finetune's racers under the arguments the
+results object carries,
 selects the best candidate, finalizes the workflow, and fits it on all the
 data. The result is the model to deploy, built by the same search the
 estimate you report describes.
@@ -65,7 +68,7 @@ instability those selections reveal, and not to this model.
 
 
 Report the estimate from \code{\link[=collect_metrics]{collect_metrics()}} on the results object you
-handed over -- the \code{\link[=nested_tune_grid]{nested_tune_grid()}} or \code{\link[=nested_tune_bayes]{nested_tune_bayes()}} result --
+handed over -- the result of \code{\link[=nested_tune_grid]{nested_tune_grid()}} or one of its siblings --
 as this model's performance. The model and the estimate come from one
 search by construction: the procedure is read from that object and cannot
 be restated here. That number estimates the k-fold test
