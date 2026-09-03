@@ -6,10 +6,10 @@
 #
 #   Rscript benchmarks/profile-tests.R [runs]
 #
-# The measurement conditions are deliberately those of `devtools::test()` and
-# not of `R CMD check`: the package is loaded ONCE with pkgload::load_all(),
-# the helper files are sourced ONCE, and every test file then runs in a child
-# of that one environment. That is the condition a suite-level fixture cache
+# The measurement conditions are deliberately those of a SERIAL
+# `devtools::test()` and not of `R CMD check`: the package is loaded ONCE with
+# pkgload::load_all(), the helper files are sourced ONCE, and every test file
+# then runs in a child of that one environment. That is the condition a suite-level fixture cache
 # lives in -- run each file in its own session instead and every cache starts
 # empty, which measures a different thing.
 #
@@ -23,6 +23,13 @@ runs <- {
 stopifnot(!is.na(runs), runs >= 1L)
 
 Sys.setenv(NOT_CRAN = "true")
+
+# Serial, whatever DESCRIPTION says. The suite runs its files in parallel
+# (`Config/testthat/parallel: true`, M52), and testthat's environment override
+# beats that field; per-file seconds measured with four files sharing the
+# machine are contention figures, not the per-file cost this script exists to
+# report, and the baseline it is compared against was measured serially.
+Sys.setenv(TESTTHAT_PARALLEL = "FALSE")
 suppressMessages(pkgload::load_all(".", quiet = TRUE))
 
 # One pass over the suite. `load_package = "none"` because load_all() above

@@ -88,7 +88,7 @@ beyond the sentences this milestone adds.
       sets `parallel_updates` on the composite, and `test-hang-trace.R` asserts
       both declarations and one live start/end pair per file and block under a
       two-worker run.
-- [ ] T3: `DESCRIPTION` gains `Config/testthat/parallel: true` and
+- [x] T3: `DESCRIPTION` gains `Config/testthat/parallel: true` and
       `Config/testthat/start-first:` naming the slowest files from T1;
       `benchmarks/profile-tests.R` sets `TESTTHAT_PARALLEL=FALSE` so it keeps
       measuring serial per-file cost. Run AC4's command on both branches at
@@ -162,6 +162,15 @@ beyond the sentences this milestone adds.
 - 2026-09-03: T1 baseline, check steps (run 33715373356, `completedAt -
   startedAt`): windows 26m56s, devel 25m10s, ubuntu release 21m42s, oldrel-1
   17m59s, macOS 15m32s.
+- 2026-09-03: T3 — `Config/testthat/parallel: true` and an eleven-file
+  `start-first` list (the ten files over 50 s locally plus final-fit-oracles,
+  59 s under covr where the fixture cache is cold), order checked through
+  `find_test_scripts()`; `benchmarks/profile-tests.R` sets
+  `TESTTHAT_PARALLEL=FALSE`. AC4's command at `TESTTHAT_CPUS=4`: branch 569
+  rows, 0 failed, 0 skipped, wall 818 s while the default-branch run shared
+  the machine; default branch (scratch worktree of origin/main, serial) 567
+  rows, 0 failed, 0 skipped; skip rows equal (both empty), the two extra rows
+  the T2 tests. The parallel run revealed nothing to fix.
 
 ## Decisions
 
