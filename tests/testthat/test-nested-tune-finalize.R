@@ -195,7 +195,11 @@ test_that("AC1: every tuner finalizes on the outer fold's analysis rows", {
   # The same on a design whose outer rset the caller evaluated first.
   set.seed(54)
   outer <- rsample::vfold_cv(d, v = 5)
-  evaluated <- nested_resamples(d, outside = outer, inside = rsample::vfold_cv(v = 4))
+  evaluated <- nested_resamples(
+    d,
+    outside = outer,
+    inside = rsample::vfold_cv(v = 4)
+  )
   record <- new_frame_record()
   set.seed(1)
   res <- suppressMessages(nested_tune_grid(
@@ -339,7 +343,11 @@ test_that("AC4: an inner rset the rebuild does not apply to reaches run_tuner() 
   expect_gt(anyDuplicated(repeated$in_id), 0L)
   outer <- rsample::manual_rset(list(repeated, repeated), c("a", "b"))
   set.seed(4)
-  manual <- nested_resamples(d, outside = outer, inside = rsample::vfold_cv(v = 2))
+  manual <- nested_resamples(
+    d,
+    outside = outer,
+    inside = rsample::vfold_cv(v = 2)
+  )
   seen <- record_run_tuner_resamples(
     nested_tune_grid(wf, manual, grid = det_grid(), metrics = ms)
   )

@@ -626,6 +626,12 @@ nested_fold_fit <- function(
   tuned <- NULL
   selected <- tryCatch(
     {
+      # The inner rset tune reads is framed on this fold's analysis rows
+      # (M54): tune finalizes an unknown parameter range on the frame the
+      # first inner split carries, and a `nested_resamples()` design's
+      # splits carry the whole data. Inside the seed's scope so the fold
+      # stays reproducible from its seeds alone; it draws nothing.
+      framed <- analysis_framed_inner(inner, split)
       # The tuner's own call -- `tune_grid()` or `tune_bayes()` -- assembled
       # from the description the orchestrator built (R/tuner.R). The fold's
       # tuning seed goes in with it, because `control_bayes()` is seeded from
@@ -633,7 +639,7 @@ nested_fold_fit <- function(
       tuned <- run_tuner(
         tuner,
         object = object,
-        resamples = inner,
+        resamples = framed,
         param_info = param_info,
         metrics = metrics,
         eval_time = eval_time,

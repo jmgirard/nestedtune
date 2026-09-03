@@ -190,6 +190,86 @@ inner_resamples_from_split <- function(split, cl, env, data, call) {
   out
 }
 
+# Re-point one outer fold's inner splits at that fold's analysis frame, so the
+# frame tune reads holds only the rows the fold may see (M54).
+#
+# tune finalizes an unknown parameter range on `resamples$splits[[1]]$data`,
+# the whole frame the first inner split carries, molded through the workflow's
+# preprocessor (`tune_grid_workflow()`, tune 2.1.0; the racers through the
+# `tune_grid()` they call, `tune_sim_anneal()` through its own
+# `check_parameters()`). The inner splits `inner_resamples_from_split()` builds
+# index the caller's one frame, assessment rows included, so read that way the
+# range is finalized on rows IP1 keeps out of the inner loop -- a `min_n` bound
+# of 100 on a 200-row frame where the fold's 160 analysis rows give 80 --
+# while a `nested_cv()` design, whose inner splits carry the analysis set as
+# their own frame, gets it right by construction. This is the inverse of that
+# remap: the indices come back onto the analysis frame, so the inner call no
+# longer receives the object the design holds (the GP1 divergence DESIGN
+# records), while the design itself and the wire payload do not change -- the
+# analysis frame is materialized once per fold, in the worker, for the tune
+# call's duration (GP4). Nothing here draws from the RNG.
+#
+# Two shapes are left as they are, since the inverse does not apply: an inner
+# rset whose frame is not the outer split's (a `nested_cv()` design, whose
+# splits `is_fold_payload()`'s shared-frame check also passes, which is why the
+# test here is against the outer frame), and an outer split whose `in_id`
+# repeats a row (an evaluated `manual_rset()`), where `match()` would collapse
+# the repeats onto one position. An index the outer split does not hold is
+# left alone the same way rather than mapped to `NA`.
+analysis_framed_inner <- function(inner, split) {
+  outer_idx <- as.integer(split$in_id)
+  if (anyDuplicated(outer_idx) > 0L) {
+    return(inner)
+  }
+  shared <- vapply(
+    inner$splits,
+    function(inner_split) identical(inner_split$data, split$data),
+    logical(1)
+  )
+  if (!all(shared)) {
+    return(inner)
+  }
+
+  # An all-`NA` `out_id` is rsample's "the complement", derivable from the
+  # frame, and stays as it is; any other index is a position in `split$data`
+  # that must have a position in the analysis frame.
+  remap <- function(idx) {
+    if (all(is.na(idx))) {
+      return(idx)
+    }
+    out <- match(as.integer(idx), outer_idx)
+    if (anyNA(out)) NULL else out
+  }
+  splits <- vector("list", length(inner$splits))
+  for (i in seq_along(splits)) {
+    inner_split <- inner$splits[[i]]
+    in_id <- remap(inner_split$in_id)
+    out_id <- remap(inner_split$out_id)
+    if (is.null(in_id) || is.null(out_id)) {
+      return(inner)
+    }
+    inner_split$in_id <- in_id
+    inner_split$out_id <- out_id
+    splits[[i]] <- inner_split
+  }
+  # Materialized only once every index is known to map: an outer split whose
+  # own `in_id` reaches past the data is left for `last_fit()` to refuse, as
+  # the fold's outer-fit failure, rather than raised here as its inner one.
+  analysis_frame <- rsample::analysis(split)
+  splits <- lapply(splits, function(inner_split) {
+    inner_split$data <- analysis_frame
+    inner_split
+  })
+  # As in `inner_resamples_from_split()`: the rset's class, id columns and
+  # attributes are kept, the splits swapped, and the fingerprint recomputed
+  # because it describes the indices.
+  out <- inner
+  out[["splits"]] <- splits
+  attr(out, "fingerprint") <-
+    attr(rsample::manual_rset(splits, inner$id), "fingerprint")
+  out
+}
+
 # Evaluate a resampling specification against a data frame.
 #
 # The frame is bound to a name in a child environment rather than inlined into
