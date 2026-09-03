@@ -310,3 +310,71 @@ Independent review (fan-out, executable surface touched):
 
 Return (2026-09-03): AC1 failed on the PR head — defect return 1 of this
 milestone. Status → in-progress.
+
+Round 2 (2026-09-03), after the AC1–AC3 amendment. Measured head 450d351
+(pushed; the amendment commit; its tree outside `cairn/` equals c1b4cc3's).
+Default branch still at the branch point b0d76a4 (`origin/main` fetched
+before the push; 0 commits behind, 14 ahead). Runs on 450d351:
+`test-coverage` 33775958657, `R-CMD-check` 33775958786.
+
+- AC4: `as.data.frame(testthat::test_local(".", reporter =
+  testthat::ListReporter$new()))` at `TESTTHAT_CPUS=4`: branch 569 rows, 0
+  failed, 0 errors, 0 warnings, 0 rows with `skipped > 0`; the same command
+  over a `git archive` of the branch point b0d76a4 (serial; no parallel
+  config in that tree): 567 rows, 0 failed, 0 errors, 0 rows with
+  `skipped > 0`. The two `skipped > 0` sets, ordered by `file` and `test`,
+  are identical (both empty); the two extra rows are `test-hang-trace.R`'s
+  two tests. Verified.
+- AC6: `devtools::document()` leaves `git status --porcelain` empty;
+  `devtools::test()` at `TESTTHAT_CPUS=4`: 569 rows, 4790 passed, 0 failed,
+  0 errors, 0 warnings, 0 skipped; `devtools::check()` at `TESTTHAT_CPUS=4`
+  (check dir kept in the session scratchpad): 0 errors, 0 warnings, 0
+  notes. Verified.
+- AC5: that check's `tests/testthat.Rout` holds 1250 `[hang-trace]` lines,
+  112 of them file-level; each of the 56 files
+  `list.files("tests/testthat", "^test-.*\\.R$")` names has exactly one
+  `start <file>` and one `end <file>` line (the `end` lines pad the verb to
+  three spaces) — 56 of 56 paired. Verified.
+- AC1, AC2, AC3 (in progress): attempt 1 on 450d351 — `Test coverage` step
+  9.87 min; check legs windows 16.68, ubuntu release 16.08, oldrel-1 15.98,
+  devel 15.17, macOS 14.90 min; every job `success`, none cancelled.
+  Attempt 2 (`gh run rerun`, nothing pushed between) — coverage 11.23;
+  windows 15.75, oldrel-1 14.73, ubuntu release 14.68, macOS 13.07, devel
+  11.97; every job `success`, none cancelled. Attempt 3 pending.
+
+Consistency gate, round 2 (2026-09-03): `cairn_validate.py` exit 0 before
+the amendment commit (advisories only); no principle changed, impact report
+skipped; `devtools::document()` no diff; no generated file touched; README.Rmd
+untouched on the branch; `pkgdown::check_pkgdown()` no problems; no NEWS
+entry owed (T7); no new top-level file; `devtools::check()` 0/0/0.
+
+Independent review, round 2:
+- [O] diff-bug lens (fresh spawn; the round-1 spawns never reported), nine
+  findings, ranked: F1 — two `test_that()` blocks sharing a description in
+  one file yield one trace pair, since `announce()`/`close()` key on
+  `file :: test` and never reset within a file (`helper-hang-trace.R:117`,
+  `:126`; verified by execution; no file has duplicates today; the comment
+  at `:78` claiming serial bookkeeping is inert is false for this case).
+  F2 — teardown `cat()` output no longer reaches any log under parallel
+  files (verified: the teardown runs per worker, its output is dropped),
+  so `teardown-fixture-cache.R`'s report (M12 AC4) is silently gone; a
+  `stop()` in teardown still surfaces. F3 — nothing validates the
+  `start-first` names: a renamed file makes its `DESCRIPTION` entry a
+  silent no-op. F4 — the fixture cache (`helper-orchestration.R:1133`) is
+  now per worker, so each fixture builds up to `TESTTHAT_CPUS` times; the
+  comment at `:1040` is stale. F5 — `getOption("Ncpus")` silently overrides
+  `TESTTHAT_CPUS` in testthat; nothing asserts the worker count on the check
+  legs; PROFILE's sentence is unconditional. F6 — `self$open` is never
+  pruned at `end_file` (`helper-hang-trace.R:106` prunes `seen` only);
+  memory-only. F7 — `benchmarks/profile-tests.R:12` is 97 characters. F8 —
+  `trace_lines_parallel()` leaves its tempdir and spawns two processes
+  inside a 4-worker run. F9 — `R-CMD-check-hard.yaml` sets no
+  `TESTTHAT_CPUS` and no `timeout-minutes` (pre-existing, outside the diff).
+  Verdict: the mechanism is right where it matters — testthat 3.3.2 reads
+  `parallel_support` and `parallel_updates` off the composite the runner
+  builds; the live loop re-announces before every event; the new tests are
+  discriminating; ports bind to `:0`; the serial pin reaches `test_dir()`.
+- [S] blame-history and [S] prior-review lenses: round-1 reports carried,
+  since the diff outside `cairn/` is unchanged (F1, F2 of the blame lens
+  stand for triage; the prior-review lens reported no findings).
+
