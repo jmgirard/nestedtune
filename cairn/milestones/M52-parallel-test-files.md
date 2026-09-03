@@ -100,7 +100,7 @@ beyond the sentences this milestone adds.
       bound revisited with `helper-time-budget.R`'s row re-pointed in the same
       commit and a work-log line naming the old and new figures — never
       loosened silently.
-- [ ] T5: Both workflows set `TESTTHAT_CPUS` — 4 on ubuntu and windows, 3 on
+- [x] T5: Both workflows set `TESTTHAT_CPUS` — 4 on ubuntu and windows, 3 on
       macOS, via a `matrix.config.os` ternary in `R-CMD-check.yaml`; the covr
       job's subprocess inherits it. Compare the PR's Codecov total with the
       default branch's last figure (work-log line); a drop past one percentage
@@ -184,6 +184,16 @@ beyond the sentences this milestone adds.
   load throughout (load average 6–9 read afterwards with two R processes
   alive), so the figures are noise around an unmeasured true cost. No
   elapsed bound failed; `helper-time-budget.R` untouched.
+- 2026-09-03: T5 — PR #62 opened at head 02d254a; its
+  `test-coverage` run 33725075689 reports `nestedtune Coverage: 97.51%`
+  against 97.51% on the default branch's last run 33710255888: no drop, so
+  covr kept every worker's counters. The job started 4 test processes and
+  the trace paired all 56 files, suite span 533.1 s under covr.
+- 2026-09-03: T6, first run on the PR head: `Test coverage` step 9.23 min
+  (AC1 bar 12); `check-r-package` steps windows 17.25, ubuntu release 14.52,
+  oldrel-1 11.73, macOS 11.60, devel 9.68 min (AC2 bar 20), every leg
+  `success`. Neither landed under the plan's 8 / 15 falsifier, so the bar
+  stands. AC3's two reruns follow.
 
 ## Decisions
 
