@@ -665,7 +665,7 @@ test_that("every planted design is refused, naming every offender (M55, AC1-AC4)
   d <- make_reg_data()
   wf <- det_workflow(d)
   planted <- malformed_designs(d)
-  expect_gt(length(planted), 20L)
+  expect_gt(length(planted), 70L)
 
   for (nm in names(planted)) {
     record <- planted[[nm]]
@@ -680,6 +680,11 @@ test_that("every planted design is refused, naming every offender (M55, AC1-AC4)
     }
     for (column in record$columns) {
       expect_match(msg, paste0("\\b", column, "\\b"), info = nm)
+    }
+    # An inner-split defect names its fold and split together, as one phrase
+    # (M59); "fold 2" and "split 1" found apart could be two other bullets.
+    for (fragment in record$fragments) {
+      expect_match(msg, fragment, fixed = TRUE, info = nm)
     }
   }
 })
@@ -716,6 +721,54 @@ test_that("each refusal says which defect it found (M55, AC1-AC3)", {
   # Both columns of a design carrying two, in one message.
   expect_match(said("two_columns"), "weights")
   expect_match(said("two_columns"), "extra")
+
+  # M59: the three inner-split rules, each in its own words -- and each
+  # message names the fold as "Outer fold", never the frame it looked at.
+  expect_match(said("inner_not_rsplit_string_first_first"), "not an? <rsplit>")
+  expect_match(said("inner_not_rsplit_list_last_last"), "not an? <rsplit>")
+  expect_match(said("inner_not_rsplit_rset_all_first"), "not an? <rsplit>")
+  expect_match(said("inner_frame_foreign_first"), "frame")
+  expect_match(said("inner_frame_same_shape_last"), "frame")
+  expect_match(said("inner_frame_one_split_all_last"), "frame")
+  expect_match(said("outer_frame_foreign_first"), "frame")
+  # The slot named is the one planted; the hint names `in_id` regardless.
+  expect_match(said("index_held_out_in_id_first"), "in_id holds")
+  expect_no_match(said("index_held_out_in_id_first"), "out_id holds")
+  expect_match(said("index_past_end_out_id_last"), "out_id holds 999999")
+  expect_no_match(said("index_past_end_out_id_last"), "in_id holds")
+  expect_match(said("index_held_out_both_all"), "in_id holds")
+  expect_match(said("index_held_out_both_all"), "out_id holds")
+  # A fold whose splits agree on a wrong frame names the fold alone; one
+  # whose splits disagree names every split with what it carries, the ones
+  # on another frame first.
+  expect_no_match(said("inner_frame_foreign_first"), "inner split 1")
+  expect_match(
+    said("inner_frame_one_split_first_first"),
+    "inner split 1 carries a frame that is neither"
+  )
+  expect_match(
+    said("inner_frame_one_split_first_first"),
+    "inner splits 2 and 3 carry the outer split.s own frame"
+  )
+  expect_match(
+    said("inner_frame_mixed_last"),
+    "inner split 1 carries the outer split.s analysis set"
+  )
+  expect_match(
+    said("inner_frame_mixed_last"),
+    "inner splits 2 and 3 carry the outer split.s own frame"
+  )
+  # No message carries a frame: the widest is still a few lines, and none
+  # names a column of the data the design was built on.
+  inner_messages <- vapply(
+    grep("^inner_|^outer_|^index_", names(planted), value = TRUE),
+    said,
+    character(1)
+  )
+  expect_lt(max(nchar(inner_messages)), 2000L)
+  for (column in names(d)) {
+    expect_no_match(inner_messages, paste0("\\b", column, "\\b"))
+  }
 })
 
 test_that("the whole-object refusals carry the class too (M55, AC4)", {
@@ -776,13 +829,44 @@ test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
   factor_labels <- det_nested(d)
   factor_labels$id <- factor(factor_labels$id)
 
+  # M59's controls: rsample's own inner splits carry the outer analysis set
+  # as their frame, on a data.frame and on a tibble, and an outer split that
+  # repeats a row (an evaluated `manual_rset()`) gives an analysis set with a
+  # repeated row, which the inner splits then carry.
+  set.seed(1)
+  on_tibble <- rsample::nested_cv(
+    tibble::as_tibble(d),
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 2)
+  )
+  repeat_split <- rsample::make_splits(
+    list(analysis = c(1:60, 1L), assessment = 61:90),
+    d
+  )
+  # Built ahead of the call: `nested_cv()` treats an inline `outside` as a
+  # specification to re-evaluate with its own `data`, which `manual_rset()`
+  # has no argument for.
+  manual_outer <- rsample::manual_rset(
+    list(repeat_split, repeat_split),
+    c("Fold1", "Fold2")
+  )
+  set.seed(1)
+  manual_repeat <- rsample::nested_cv(
+    d,
+    outside = manual_outer,
+    inside = rsample::vfold_cv(v = 2)
+  )
+  expect_true(anyDuplicated(manual_repeat$splits[[1L]]$in_id) > 0L)
+
   well_formed <- list(
     det_nested = det_nested(d),
     factor_labels = factor_labels,
     valid_folds = valid_folds(d),
     repeated_design = repeated_design(),
     nested_resamples = from_constructor,
-    nested_cv = from_rsample
+    nested_cv = from_rsample,
+    nested_cv_tibble = on_tibble,
+    nested_cv_manual_repeat = manual_repeat
   )
   for (nm in names(well_formed)) {
     design <- well_formed[[nm]]
@@ -795,4 +879,54 @@ test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
   wf <- det_workflow(d)
   cnd <- refusal(nested_tune_grid(wf, det_nested(d), grid = det_grid()))
   expect_s3_class(cnd, "nestedtune_sentinel")
+})
+
+test_that("an outer in_id past the frame is left to last_fit(), not judged against an analysis set that cannot be built (M59)", {
+  skip_if_no_engines()
+
+  # A `nested_cv()` design's inner splits carry the outer analysis set. With
+  # an index past the frame appended to the outer `in_id`, that set cannot
+  # be built, and the fold is not refused at entry as a frame mismatch: the
+  # outer fit is where the index fails, as the failures file shows for the
+  # `nested_resamples()` shape.
+  d <- make_reg_data()
+  set.seed(1)
+  design <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 2)
+  )
+  design$splits[[1L]]$in_id <- c(design$splits[[1L]]$in_id, 999999L)
+  expect_invisible(check_nested(design))
+  expect_identical(check_nested(design), design)
+  wf <- det_workflow(d)
+  cnd <- refusal(nested_tune_grid(wf, design, grid = det_grid()))
+  expect_s3_class(cnd, "nestedtune_sentinel")
+})
+
+test_that("nested_tune_grid() completes every fold of an rsample::nested_cv() design (M59, AC4)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  # Serially: no daemons are set, so the loop runs in this process, and the
+  # entry check is what stands between the design and the folds.
+  frames <- list(data.frame = d, tibble = tibble::as_tibble(d))
+  for (nm in names(frames)) {
+    frame <- frames[[nm]]
+    set.seed(1)
+    design <- rsample::nested_cv(
+      frame,
+      outside = rsample::vfold_cv(v = 2),
+      inside = rsample::vfold_cv(v = 2)
+    )
+    set.seed(2)
+    res <- memoised(nested_tune_grid(
+      det_workflow(frame),
+      design,
+      grid = det_grid(),
+      metrics = reg_metrics()
+    ))
+    expect_s3_class(res, "nested_results")
+    expect_identical(res$.completed, c(TRUE, TRUE), info = nm)
+  }
 })

@@ -41,13 +41,21 @@
 #'   followed by a digit from 1 to 9 (the names rsample and tune read id
 #'   columns by), and hold character or factor values; taken together, the
 #'   label columns must give every outer fold a distinct label with no `NA`.
-#'   A design breaking any of this, or using a bootstrap for the outer loop,
-#'   is refused at the call, before anything is fitted, with condition class
-#'   `nestedtune_bad_design` and every offending row or column named. The
-#'   checks exist because [rsample::nested_cv()] builds a design whatever its
-#'   `inside` argument returned — a specification that produces no `rset`, or
-#'   an empty one, gives a design that cannot be run, where
-#'   [nested_resamples()] refuses one at construction.
+#'   Inside each inner `rset`, every element of its `splits` column is an
+#'   `rsplit`; all of a fold's inner splits carry one frame, either the outer
+#'   split's own data frame (what [nested_resamples()] builds) or that split's
+#'   analysis set (what [rsample::nested_cv()] builds); and an inner split
+#'   carrying the outer data frame indexes, in its `in_id` and any non-`NA`
+#'   `out_id`, only rows the outer split's `in_id` holds, so that no inner
+#'   analysis or assessment set reaches a row the outer fold holds out. A
+#'   design breaking any of this, or using a bootstrap for the outer loop, is
+#'   refused at the call, before anything is fitted, with condition class
+#'   `nestedtune_bad_design` and every offending row, column, inner split or
+#'   index named. The checks exist because [rsample::nested_cv()] builds a
+#'   design whatever its `inside` argument returned — a specification that
+#'   produces no `rset`, or an empty one, gives a design that cannot be run,
+#'   where [nested_resamples()] refuses one at construction — and because a
+#'   design assembled by hand can index rows its outer fold never sees.
 #' @param param_info A [dials::parameters()] object, or `NULL` to let tune
 #'   derive one from the workflow. Passed unchanged to [tune::tune_grid()] on
 #'   every outer fold, so a restricted range restricts the grid every fold

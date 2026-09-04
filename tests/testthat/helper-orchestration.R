@@ -339,34 +339,50 @@ ref_field <- function(ref, field) {
 
 # One outer fold engineered to fail, at a stage of our choosing (M03).
 #
-# The failure is injected into the *design*, not the workflow: the named fold's
-# inner rset -- or its outer split -- is rebuilt on a frame the recipe cannot
-# prep, so that fold fails at that stage while its neighbours run untouched.
-# Keyed to fold position rather than to a counter, so it stays deterministic
-# however the loop is scheduled.
+# The failure is injected into the *design*, not the workflow, and inside the
+# design's own frame: since M59 the entry check refuses an inner split built
+# on any other frame, so the vehicle is the indices. Keyed to fold position
+# rather than to a counter, so it stays deterministic however the loop is
+# scheduled.
+#
+# "inner tuning" empties every inner split's `in_id` in the named fold: the
+# recipe preps on no rows and every candidate fails, so tune raises its "All
+# models failed" note and the fold fails at that stage. "outer fit" appends
+# an index past the frame's end to the outer split's `in_id`: every inner
+# index still maps, so tuning completes and `last_fit()` refuses the split
+# (the appended case test-nested-tune-grid-failures.R also asserts). Both
+# pass the entry check: an empty `in_id` lies inside the outer split's, and
+# the outer split's own range is `last_fit()`'s to refuse (M54).
 foreign_frame <- function(n = 30, seed = 909) {
   set.seed(seed)
   data.frame(z = rnorm(n), w = rnorm(n))
 }
 
+empty_in_id <- function(split) {
+  split$in_id <- integer(0)
+  split
+}
+
 break_fold <- function(nested, fold, stage = c("inner tuning", "outer fit")) {
   stage <- match.arg(stage)
-  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
   if (stage == "inner tuning") {
-    nested$inner_resamples[[fold]] <- foreign
+    nested$inner_resamples[[fold]]$splits <- lapply(
+      nested$inner_resamples[[fold]]$splits,
+      empty_in_id
+    )
   } else {
-    nested$splits[[fold]] <- foreign$splits[[1L]]
+    nested$splits[[fold]]$in_id <- c(nested$splits[[fold]]$in_id, 999999L)
   }
   nested
 }
 
-# One inner split of one outer fold, rebuilt on a foreign frame. That inner
-# resample fails while the rest of the fold's inner design survives, so tuning
-# still yields a candidate and the fold completes -- on a truncated inner design
+# One inner split of one outer fold, its `in_id` emptied. That inner resample
+# fails while the rest of the fold's inner design survives, so tuning still
+# yields a candidate and the fold completes -- on a truncated inner design
 # that tune recorded notes about.
 break_inner_split <- function(nested, fold, split = 1L) {
-  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
-  nested$inner_resamples[[fold]]$splits[[split]] <- foreign$splits[[1L]]
+  nested$inner_resamples[[fold]]$splits[[split]] <-
+    empty_in_id(nested$inner_resamples[[fold]]$splits[[split]])
   nested
 }
 
@@ -1977,37 +1993,51 @@ reference_anneal_final_fit <- function(
 }
 
 # Every design shape check_nested() refuses beyond its two element-class rules
-# (M55), each planted into det_nested(data)'s three outer rows. One record per
-# planting: the design, the rows the refusal must name (`rows`, for a
-# row-wise defect) or the columns it must name (`columns`), so a test can
-# hold the message to the planted positions rather than to whichever one the
-# check happened to find first.
+# (M55, M59), each planted into det_nested(data)'s three outer rows. One record
+# per planting: the design, the rows the refusal must name (`rows`, for a
+# row-wise defect), the columns it must name (`columns`), or the exact phrases
+# it must carry (`fragments`, for a defect inside one fold's inner splits, where
+# a fold and a split are named together -- "Outer fold 2: inner split 1"), so
+# a test can hold the message to the planted positions rather than to whichever
+# one the check happened to find first.
 #
 # Row-wise defects are planted at the first and the last position in turn,
 # and at all three, because a check that reports only the first offender
 # passes a first-position test and fails an all-positions one. Column defects
 # are planted once before `id` and once after it in column order, because a
-# check that reads only the columns after `id` would miss the first.
+# check that reads only the columns after `id` would miss the first. Inner
+# split defects are planted at the first and the last inner split of the fold
+# for the same reason.
 malformed_designs <- function(data) {
   base <- det_nested(data)
   n <- nrow(base)
+  n_inner <- length(base$inner_resamples[[1L]]$splits)
   stopifnot(
     n == 3L,
+    n_inner == 3L,
     identical(names(base), c("splits", "id", "inner_resamples"))
   )
   empty <- rsample::manual_rset(list(), character(0))
+  record <- function(
+    design,
+    rows = integer(0),
+    columns = character(0),
+    fragments = character(0)
+  ) {
+    list(design = design, rows = rows, columns = columns, fragments = fragments)
+  }
 
   plant_element <- function(column, at, value) {
     x <- base
     for (i in at) {
       x[[column]][[i]] <- value
     }
-    list(design = x, rows = at, columns = character(0))
+    record(x, rows = at)
   }
   plant_na <- function(at) {
     x <- base
     x$id[at] <- NA
-    list(design = x, rows = at, columns = character(0))
+    record(x, rows = at)
   }
   # A factor whose NA is a level: is.na() on the factor is FALSE there, so a
   # check reading the factor rather than its labels would admit it.
@@ -2016,12 +2046,12 @@ malformed_designs <- function(data) {
     labels <- x$id
     labels[at] <- NA
     x$id <- addNA(factor(labels))
-    list(design = x, rows = at, columns = character(0))
+    record(x, rows = at)
   }
   plant_repeat <- function(at) {
     x <- base
     x$id[at] <- x$id[[1L]]
-    list(design = x, rows = sort(unique(c(1L, at))), columns = character(0))
+    record(x, rows = sort(unique(c(1L, at))))
   }
   # A column placed before or after `id`; `id` itself is replaced in place.
   plant_column <- function(name, value, where = c("before", "after")) {
@@ -2035,7 +2065,7 @@ malformed_designs <- function(data) {
       }
       x <- x[order]
     }
-    list(design = x, rows = integer(0), columns = name)
+    record(x, columns = name)
   }
   both <- function(name, value) {
     stats::setNames(
@@ -2052,6 +2082,145 @@ malformed_designs <- function(data) {
       lapply(positions, plant),
       paste(prefix, names(positions), sep = "_")
     )
+  }
+
+  # M59: the three rules over a fold's inner splits. The foreign frame is the
+  # one the M03 fixtures used to be built on; the same-shape frame is `data`
+  # with one value changed, the case a row-count-and-names check would admit
+  # and the parallel fat path exists for. Every planting names its fold and,
+  # where the rule names splits, its split, in `fragments`; the fold
+  # positions are not repeated in `rows`, since these messages name a fold
+  # per bullet rather than in one joined list.
+  foreign <- rsample::vfold_cv(foreign_frame(), v = n_inner)
+  same_shape <- data
+  same_shape[[1L]][[1L]] <- same_shape[[1L]][[1L]] + 1
+  inner_positions <- list(first = 1L, last = n_inner)
+  fold_split <- function(f, s) sprintf("Outer fold %d: inner split %d", f, s)
+  fold_every <- function(f) sprintf("Outer fold %d: every inner split", f)
+  plant_inner <- function(at, s, value, fragment) {
+    x <- base
+    for (f in at) {
+      x$inner_resamples[[f]]$splits[[s]] <- value
+    }
+    record(x, fragments = vapply(at, fragment, character(1), s = s))
+  }
+  plant_inner_rset <- function(at, mutate) {
+    x <- base
+    for (f in at) {
+      x$inner_resamples[[f]] <- mutate(x$inner_resamples[[f]])
+    }
+    record(x, fragments = vapply(at, fold_every, character(1)))
+  }
+  plant_outer <- function(at) {
+    x <- base
+    for (f in at) {
+      x$splits[[f]] <- foreign$splits[[1L]]
+    }
+    record(x, fragments = vapply(at, fold_every, character(1)))
+  }
+  # Two admissible frames in one fold: the first inner split on the outer
+  # split's analysis set, the rest on the outer frame. Each is a frame the
+  # rule admits alone; together they are not one frame, and the refusal
+  # names every split with what it carries rather than anchoring on either.
+  plant_mixed <- function(at) {
+    x <- base
+    for (f in at) {
+      s <- x$inner_resamples[[f]]$splits[[1L]]
+      s$data <- rsample::analysis(x$splits[[f]])
+      x$inner_resamples[[f]]$splits[[1L]] <- s
+    }
+    record(
+      x,
+      fragments = c(
+        vapply(at, fold_split, character(1), s = 1L),
+        vapply(
+          at,
+          function(f) {
+            sprintf("Outer fold %d: inner split 1 carries the outer", f)
+          },
+          character(1)
+        ),
+        vapply(
+          at,
+          function(f) sprintf("inner splits 2 and 3 carry the outer split"),
+          character(1)
+        )
+      )
+    )
+  }
+  # An index the outer split does not hold, appended to the last inner
+  # split's `in_id`, `out_id` or both: a row the outer fold holds out, or one
+  # past the frame's end. The fragment "holds <index>" is what the message
+  # must say beside the split it names.
+  plant_index <- function(at, slot, index_of) {
+    x <- base
+    fragments <- character(0)
+    for (f in at) {
+      i <- index_of(f)
+      s <- x$inner_resamples[[f]]$splits[[n_inner]]
+      if (slot %in% c("in_id", "both")) {
+        s$in_id <- c(s$in_id, i)
+      }
+      if (slot %in% c("out_id", "both")) {
+        s$out_id <- c(s$out_id, i)
+      }
+      x$inner_resamples[[f]]$splits[[n_inner]] <- s
+      fragments <- c(
+        fragments,
+        sprintf("Outer fold %d, inner split %d", f, n_inner),
+        sprintf("holds %d", i)
+      )
+    }
+    record(x, fragments = fragments)
+  }
+  held_out <- function(f) {
+    as.integer(rsample::complement(base$splits[[f]])[[1L]])
+  }
+  past_end <- function(f) 999999L
+  not_rsplit <- list(
+    string = "not an rsplit",
+    list = list(1, 2),
+    rset = rsample::vfold_cv(data, v = 2)
+  )
+
+  inner_rules <- list()
+  for (form in names(not_rsplit)) {
+    for (fp in names(positions)) {
+      for (sp in names(inner_positions)) {
+        inner_rules[[paste("inner_not_rsplit", form, fp, sp, sep = "_")]] <-
+          plant_inner(
+            positions[[fp]],
+            inner_positions[[sp]],
+            not_rsplit[[form]],
+            fold_split
+          )
+      }
+    }
+  }
+  for (fp in names(positions)) {
+    at <- positions[[fp]]
+    inner_rules[[paste0("inner_frame_foreign_", fp)]] <-
+      plant_inner_rset(at, function(inner) foreign)
+    inner_rules[[paste0("inner_frame_same_shape_", fp)]] <-
+      plant_inner_rset(at, function(inner) {
+        inner$splits <- lapply(inner$splits, function(s) {
+          s$data <- same_shape
+          s
+        })
+        inner
+      })
+    for (sp in names(inner_positions)) {
+      inner_rules[[paste("inner_frame_one_split", fp, sp, sep = "_")]] <-
+        plant_inner(at, inner_positions[[sp]], foreign$splits[[1L]], fold_split)
+    }
+    inner_rules[[paste0("outer_frame_foreign_", fp)]] <- plant_outer(at)
+    inner_rules[[paste0("inner_frame_mixed_", fp)]] <- plant_mixed(at)
+    for (slot in c("in_id", "out_id", "both")) {
+      inner_rules[[paste("index_held_out", slot, fp, sep = "_")]] <-
+        plant_index(at, slot, held_out)
+      inner_rules[[paste("index_past_end", slot, fp, sep = "_")]] <-
+        plant_index(at, slot, past_end)
+    }
   }
 
   c(
@@ -2097,7 +2266,8 @@ malformed_designs <- function(data) {
       x <- base
       x$weights <- c(1, 2, 3)
       x$extra <- list(1, 2, 3)
-      list(design = x, rows = integer(0), columns = c("weights", "extra"))
-    })
+      record(x, columns = c("weights", "extra"))
+    }),
+    inner_rules
   )
 }

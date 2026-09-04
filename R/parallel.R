@@ -105,17 +105,17 @@ reset_dispatch_record <- function() {
 # carrying `inner_resamples`. is_fold_record() uses `%in% names(x)` for the same
 # reason, and this is the discipline it claims parity with.
 #
-# The last clause is load-bearing rather than defensive. lean_payload() takes ONE
-# frame for the fold's inner splits and rehydrate_payload() writes it back onto
-# all of them, which is only sound if they shared it to begin with.
-# `nested_resamples()` guarantees that and validates it at construction
-# (R/nested-resamples.R:86), but check_nested() asks each `inner_resamples`
-# element only for the `rset` class and a row (M55) -- so a `manual_rset()` of
-# splits over different frames passes it. Such a design would otherwise be
-# tuned on the wrong rows in parallel and the right ones serially: a silent
-# IP2 breach, and an IP1 exposure wherever the substituted frame holds outer
-# assessment rows. Failing the predicate sends the run down the fat path,
-# which is slower and correct.
+# The last clause is defence in depth. lean_payload() takes ONE frame for the
+# fold's inner splits and rehydrate_payload() writes it back onto all of them,
+# which is only sound if they shared it to begin with. Since M59 check_nested()
+# refuses, at the driver's call, a design whose inner splits do not all carry
+# the outer split's frame or its analysis set (check_inner_splits(), D-049),
+# so no real design reaches here failing the clause. The stand-in payloads the
+# dispatch tests drive dispatch_folds() with carry neither `split` nor `inner`
+# and fail the first clause above, never this one. Were a payload to fail it,
+# it would be tuned on the wrong rows in parallel and the right ones serially
+# (an IP2 breach, an IP1 exposure where the substituted frame holds outer
+# assessment rows), and the fat path is slower and correct.
 is_fold_payload <- function(x) {
   if (!is.list(x) || !all(c("split", "inner") %in% names(x))) {
     return(FALSE)

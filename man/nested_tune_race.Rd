@@ -40,13 +40,21 @@ labels the outer folds. A label column must be named \code{id}, or \code{id}
 followed by a digit from 1 to 9 (the names rsample and tune read id
 columns by), and hold character or factor values; taken together, the
 label columns must give every outer fold a distinct label with no \code{NA}.
-A design breaking any of this, or using a bootstrap for the outer loop,
-is refused at the call, before anything is fitted, with condition class
-\code{nestedtune_bad_design} and every offending row or column named. The
-checks exist because \code{\link[rsample:nested_cv]{rsample::nested_cv()}} builds a design whatever its
-\code{inside} argument returned — a specification that produces no \code{rset}, or
-an empty one, gives a design that cannot be run, where
-\code{\link[=nested_resamples]{nested_resamples()}} refuses one at construction.}
+Inside each inner \code{rset}, every element of its \code{splits} column is an
+\code{rsplit}; all of a fold's inner splits carry one frame, either the outer
+split's own data frame (what \code{\link[=nested_resamples]{nested_resamples()}} builds) or that split's
+analysis set (what \code{\link[rsample:nested_cv]{rsample::nested_cv()}} builds); and an inner split
+carrying the outer data frame indexes, in its \code{in_id} and any non-\code{NA}
+\code{out_id}, only rows the outer split's \code{in_id} holds, so that no inner
+analysis or assessment set reaches a row the outer fold holds out. A
+design breaking any of this, or using a bootstrap for the outer loop, is
+refused at the call, before anything is fitted, with condition class
+\code{nestedtune_bad_design} and every offending row, column, inner split or
+index named. The checks exist because \code{\link[rsample:nested_cv]{rsample::nested_cv()}} builds a
+design whatever its \code{inside} argument returned — a specification that
+produces no \code{rset}, or an empty one, gives a design that cannot be run,
+where \code{\link[=nested_resamples]{nested_resamples()}} refuses one at construction — and because a
+design assembled by hand can index rows its outer fold never sees.}
 
 \item{...}{A control object as \code{control} -- what \code{\link[finetune:control_race]{finetune::control_race()}}
 returns -- and nothing else. It reaches the inner race in every fold, and
