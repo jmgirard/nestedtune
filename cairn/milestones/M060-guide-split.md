@@ -7,7 +7,7 @@
 - **Principles touched:** IP3
 - **Resolves:** —
 - **Surface tier:** user-facing — two vignettes shipped in the package and on the site
-- **Branch/PR:** —
+- **Branch/PR:** m060-guide-split
 
 ## Goal
 
@@ -41,7 +41,7 @@ Split `vignettes/nested-cv.Rmd` into a short getting-started guide that walks th
 
 ## Tasks
 
-- [ ] T1: In `tests/testthat/test-vignette-citations.R`, replace `vignette_file()` with the recursive page list, gated on `skip_if_not(dir.exists(test_path("..", "..", "vignettes")))` so `R CMD check`'s out-of-tree run skips rather than fails; run the References tests per page, allowing a page with neither citations nor References and failing one with either alone; move the fixed-path assertions to fixture-driven tests that plant AC3's five fixtures in `withr::local_tempdir()` and assert red by test name; assert the enumerated page count is greater than one.
+- [x] T1: In `tests/testthat/test-vignette-citations.R`, replace `vignette_file()` with the recursive page list, gated on `skip_if_not(dir.exists(test_path("..", "..", "vignettes")))` so `R CMD check`'s out-of-tree run skips rather than fails; run the References tests per page, allowing a page with neither citations nor References and failing one with either alone; move the fixed-path assertions to fixture-driven tests that plant AC3's five fixtures in `withr::local_tempdir()` and assert red by test name; assert the enumerated page count is greater than one.
 - [ ] T2: Strip every backtick span before the numeral rule; add the numeral rule; plant AC4's four fixtures and assert red or green by test name.
 - [ ] T3: Write `vignettes/estimate.Rmd`: move the estimand, pessimism, `std_err`, no-comparison, disagreement-mechanism, "When this is worth the cost", feature-selection and References material out of the guide, rewriting each inline-R number as prose or a cited figure, with a `setup` chunk only; cite each source as the guide did so every entry's shelf page still backs it; every prose digit inside a backtick span or a paragraph carrying a citation.
 - [ ] T4: Trim `vignettes/nested-cv.Rmd` to the path in Goal, replacing each moved passage with one sentence and a link to the concept page; keep the `deps`/`deps-notice` guard, the `error = TRUE` refusal chunks, the `autoplot()` figures, a shortened Reproducibility section and the write-up block; every prose digit inside a backtick span or inline R, and a References section kept only if a citation stays; render both `autoplot()` figures to PNG and look at them before committing (the M08 lesson).
@@ -55,3 +55,5 @@ Split `vignettes/nested-cv.Rmd` into a short getting-started guide that walks th
 - 2026-09-04: plan gate chose a code-free concept page over keeping the estimand material beside the worked example because the M25 material is literature, not output, and a page with no run costs the check nothing; falsified by a reader needing the guide's own numbers to follow the concept page.
 - 2026-09-04: criteria audit ran in full mode over M60–M64 in one fresh [O] reader; M60 returned twelve findings, ten clear fixes applied (test_path enumeration, subdirectory and no-References fixtures, backtick-span stripping, list-item fixture, purl plus `r`-span check, merge-base pin, logging moved to T5, Reproducibility section kept in the guide, AC1 coverage to T5, the reserved empty directory dropped) and two decided here: the subset relation in AC2 over set equality, and the page-count assertion moved from AC4 to T1.
 - 2026-09-04: second audit pass (full mode, a fresh [O] reader) over the reworded criteria returned three M60 findings, all applied: AC3 and AC4 now map to the authoring tasks as well as the guard tasks, the enumerating tests skip out of tree so `R CMD check` stays clean, and the guard task split into T1 and T2.
+- 2026-09-04: T1 done: the guard enumerates `vignettes/` recursively, each rule is one `expect_<rule>()` over the page list, and six fixtures in a temp tree with their own one-page shelf show each rule red by `expect_failure()`; the page-count test reads red until T3 adds the second page.
+- 2026-09-04: user direction for every vignette on this branch and the ones M61–M64 add: plain sentences, no em dashes, no mannered prose, technical detail stated simply.

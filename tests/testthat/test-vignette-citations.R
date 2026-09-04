@@ -1,28 +1,42 @@
 # The documentation's citations and the reference shelf cannot drift apart.
 #
-# M25 put author-year citations into `vignettes/nested-cv.Rmd` and into the
-# roxygen on `collect_metrics.nested_results()` and `nested_final_fit()`, for
-# claims whose evidence lives in `cairn/references/`. Those surfaces are edited
-# by different hands at different times: prose when the guide is rewritten, the
-# shelf when a source is ingested. Nothing but this file connects them, so a
-# citation can lose its page, or a page can be renamed or emptied, with every
-# other check green.
+# M25 put author-year citations into the vignette prose and into the roxygen
+# on `collect_metrics.nested_results()` and `nested_final_fit()`, for claims
+# whose evidence lives in `cairn/references/`. Those surfaces are edited by
+# different hands at different times: prose when a page is rewritten, the shelf
+# when a source is ingested. Nothing but this file connects them, so a citation
+# can lose its page, or a page can be renamed or emptied, with every other
+# check green.
 #
-# What is pinned, stated at the level the code actually reaches:
+# What is pinned, for EVERY `.Rmd` under `vignettes/`, subdirectories included
+# (so a site-only article under `vignettes/articles/` is held to the same
+# rules as a CRAN vignette), stated at the level the code actually reaches:
 #
-#   1. every author-year citation in the vignette prose -- narrative
+#   1. a page has at most one `## References` heading
+#   2. every author-year citation in the page's prose -- narrative
 #      (`Varma and Simon (2006)`) or parenthetical (`(Bayle et al., 2026)`) --
-#      has an entry in the vignette's `## References` section
-#   2. every `## References` entry parses into a surname and a year
-#   3. every `## References` entry has a shelf page that is non-empty and whose
+#      has an entry in that page's `## References` section
+#   3. every `## References` entry parses into a surname and a year
+#   4. every `## References` entry has a shelf page that is non-empty and whose
 #      own `**Citation.**` line names that surname and year
-#   4. every `## References` entry is cited somewhere in the prose
-#   5. every author-year citation in `R/` roxygen resolves to a shelf page the
+#   5. every `## References` entry is cited somewhere in that page's prose
+#   6. every author-year citation in `R/` roxygen resolves to a shelf page the
 #      same way
+#
+# A page with no citation and no References section passes rules 1-5: it makes
+# no cited claim and lists nothing. A page with one but not the other fails --
+# a citation with no section fails rule 2, a section with no citation rule 5.
+#
+# Each rule is one expectation function, `expect_<rule>()`, applied to a list
+# of pages. The real tree is checked with it, and the same function is shown
+# to go RED on a planted fixture in a temporary directory (`expect_failure()`),
+# so a rule that stopped seeing its defect class cannot pass green here. The
+# fixtures carry their own one-page shelf, so they run under `R CMD check`
+# too, where the real-tree tests skip (below).
 #
 # Three deliberate limits, disclosed rather than papered over:
 #
-# * Direction 5 reads roxygen *citations*, not the `@references` entries
+# * Rule 6 reads roxygen *citations*, not the `@references` entries
 #   themselves -- a reference-list line (`Bengio, Y., & Grandvalet, Y. (2004).
 #   ...`) does not match the citation matcher, by design, since initials are not
 #   surnames. So an orphaned `@references` entry whose source is never cited in
@@ -35,22 +49,21 @@
 #   the opposite error is a citation that quietly loses its evidence. Widening
 #   the matcher to exclude non-names would mean enumerating what a name is not,
 #   which is the failure mode guard doctrine section 3 describes.
-# * Direction 4 is not applied to roxygen. An `@references` block conventionally
+# * Rule 5 is not applied to roxygen. An `@references` block conventionally
 #   lists background a topic rests on, whether or not each entry is named in the
 #   prose above it, so requiring a mention there would fight the format.
 #
-# Where this actually runs: `devtools::test()` in the source tree, and nowhere
-# else. Under `R CMD check` the suite executes from `<pkg>.Rcheck/tests/testthat`,
-# so every `test_path("..", "..", ...)` here resolves outside the source tree and
-# all of these tests skip -- `vignettes/`, `R/` and `cairn/` alike, whatever
-# `.Rbuildignore` says about any of them. Verified by probing both layouts, not
-# assumed. That means CI does not exercise this guard; the source tree is where
-# the vignette and the shelf are edited, which is where it needs to fire. The
-# separate `dir.exists(shelf_dir())` guards are kept only so a failure reads as
-# "no shelf" rather than as an empty result.
+# Where the real-tree tests actually run: `devtools::test()` in the source
+# tree, and nowhere else. Under `R CMD check` the suite executes from
+# `<pkg>.Rcheck/tests/testthat`, so every `test_path("..", "..", ...)` here
+# resolves outside the source tree and those tests skip -- `vignettes/`, `R/`
+# and `cairn/` alike, whatever `.Rbuildignore` says about any of them.
+# Verified by probing both layouts, not assumed. The source tree is where the
+# pages and the shelf are edited, which is where the guard needs to fire; the
+# fixture tests are what CI exercises.
 
-vignette_file <- function() {
-  test_path("..", "..", "vignettes", "nested-cv.Rmd")
+vignettes_dir <- function() {
+  test_path("..", "..", "vignettes")
 }
 
 shelf_dir <- function() {
@@ -59,6 +72,13 @@ shelf_dir <- function() {
 
 r_dir <- function() {
   test_path("..", "..", "R")
+}
+
+# Every page under a vignettes directory, one level or many deep. The call is
+# the one the milestone fixed, so a later page under `vignettes/articles/` is
+# enumerated by the same line a CRAN vignette is.
+vignette_pages <- function(dir) {
+  list.files(dir, pattern = "\\.Rmd$", recursive = TRUE)
 }
 
 # A surname token: optional lowercase particles, then the capitalized part.
@@ -75,25 +95,47 @@ citekey <- function(surname, year) {
   paste0(tolower(gsub("[^A-Za-z]", "", surname)), year)
 }
 
-# Prose with the R removed. Fenced chunks go first, then inline `r ...` spans:
-# both are code, and a year inside either is not a citation. The header used to
-# claim only the first, which was the gap this line closes.
-strip_code <- function(lines) {
+# The YAML header blanked: the lines from a leading `---` to the next `---`.
+# A title or an index entry is not prose.
+strip_yaml <- function(lines) {
+  if (length(lines) == 0L || !identical(lines[1], "---")) {
+    return(lines)
+  }
+  close <- which(lines == "---")
+  if (length(close) < 2L) {
+    return(lines)
+  }
+  lines[seq_len(close[2])] <- ""
+  lines
+}
+
+# Fenced chunks blanked. A chunk header's `fig.alt` text and a chunk's output
+# are code, not prose; a year inside either is not a citation.
+strip_fences <- function(lines) {
   fence <- grepl("^```", lines)
   inside <- cumsum(fence) %% 2L == 1L
   lines[inside | fence] <- ""
+  lines
+}
+
+# Prose with the R removed: fenced chunks, then inline `r ...` spans.
+strip_code <- function(lines) {
+  lines <- strip_fences(strip_yaml(lines))
   gsub("`r[^`]*`", "", lines, perl = TRUE)
 }
 
-# The vignette split at its `## References` heading. A heading that is renamed,
-# absent, or duplicated makes this return `heading = FALSE`, which the first
-# test asserts on directly -- otherwise every later test would skip itself into
-# silence and the rename would ship green.
-vignette_halves <- function(path) {
+# A page split at its `## References` heading. No heading: the whole page is
+# prose and there are no entries. More than one heading: `heading = NA`, which
+# rule 1 asserts on directly -- otherwise every later rule would read only the
+# first section and a duplicated heading would ship green.
+page_halves <- function(path) {
   lines <- readLines(path, warn = FALSE)
   at <- grep("^##\\s+References\\s*$", lines)
-  if (length(at) != 1L) {
-    return(list(prose = character(), entries = character(), heading = FALSE))
+  if (length(at) > 1L) {
+    return(list(prose = character(), entries = character(), heading = NA))
+  }
+  if (length(at) == 0L) {
+    return(list(prose = strip_code(lines), entries = character(), heading = FALSE))
   }
   list(
     prose = strip_code(lines[seq_len(at - 1L)]),
@@ -238,76 +280,150 @@ roxygen_text <- function(dir) {
   out
 }
 
-test_that("the vignette has exactly one References section, with entries", {
-  skip_if_not(file.exists(vignette_file()), "vignette absent")
+# ---- The rules, one expectation each, over a set of pages -------------------
+#
+# `pages` is a character vector of paths relative to `dir`, as
+# `vignette_pages()` returns them, so a failure names the page the way the
+# tree does (`articles/parallel.Rmd`, not a temp path).
 
-  halves <- vignette_halves(vignette_file())
+# Rule 1: at most one `## References` heading per page.
+expect_one_references_heading <- function(pages, dir) {
+  doubled <- pages[vapply(
+    pages,
+    function(p) is.na(page_halves(file.path(dir, p))$heading),
+    logical(1)
+  )]
+  expect_equal(doubled, character(0))
+}
 
-  expect_true(halves$heading)
-  expect_gt(length(halves$entries), 0L)
+# Rule 2: every citation in a page's prose is listed in that page's References.
+expect_citations_listed <- function(pages, dir) {
+  unlisted <- character()
+  for (p in pages) {
+    halves <- page_halves(file.path(dir, p))
+    if (is.na(halves$heading)) {
+      next # rule 1's failure, not misattributed here
+    }
+    cited <- citekeys_in(halves$prose)
+    listed <- unlist(lapply(halves$entries, entry_citekey))
+    missing <- setdiff(cited, listed)
+    if (length(missing)) {
+      unlisted <- c(unlisted, paste0(p, ": ", missing))
+    }
+  }
+  expect_equal(unlisted, character(0))
+}
+
+# Rule 3: every References entry parses into a surname and a year.
+expect_entries_parse <- function(pages, dir) {
+  unparsed <- character()
+  for (p in pages) {
+    halves <- page_halves(file.path(dir, p))
+    bad <- halves$entries[vapply(
+      halves$entries,
+      function(e) is.null(entry_citekey(e)),
+      logical(1)
+    )]
+    if (length(bad)) {
+      unparsed <- c(unparsed, paste0(p, ": ", bad))
+    }
+  }
+  expect_equal(unparsed, character(0))
+}
+
+# Rule 4: every References entry is backed by a shelf page naming it.
+expect_entries_backed <- function(pages, dir, shelf) {
+  unbacked <- character()
+  for (p in pages) {
+    halves <- page_halves(file.path(dir, p))
+    for (entry in halves$entries) {
+      key <- entry_citekey(entry)
+      if (is.null(key)) {
+        next # rule 3's failure, not misattributed here
+      }
+      parts <- entry_surname_year(entry)
+      if (!shelf_backs(key, parts$surname, parts$year, shelf)) {
+        unbacked <- c(unbacked, paste0(p, ": ", key))
+      }
+    }
+  }
+  expect_equal(unbacked, character(0))
+}
+
+# Rule 5: every References entry is cited somewhere in that page's prose.
+expect_entries_cited <- function(pages, dir) {
+  uncited <- character()
+  for (p in pages) {
+    halves <- page_halves(file.path(dir, p))
+    if (is.na(halves$heading)) {
+      next
+    }
+    cited <- citekeys_in(halves$prose)
+    listed <- unlist(lapply(halves$entries, entry_citekey))
+    orphan <- setdiff(listed, cited)
+    if (length(orphan)) {
+      uncited <- c(uncited, paste0(p, ": ", orphan))
+    }
+  }
+  expect_equal(uncited, character(0))
+}
+
+# ---- The real tree ----------------------------------------------------------
+
+test_that("the guard enumerates more than one page under vignettes/", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
+
+  pages <- vignette_pages(vignettes_dir())
+
+  expect_gt(length(pages), 1L)
+})
+
+test_that("some page under vignettes/ makes a cited claim", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
+
+  # Not a skip: the documentation makes cited claims, so an empty result means
+  # the matcher stopped seeing them, which is the failure this guard exists for.
+  pages <- vignette_pages(vignettes_dir())
+  cited <- unlist(lapply(pages, function(p) {
+    citekeys_in(page_halves(file.path(vignettes_dir(), p))$prose)
+  }))
+
+  expect_gt(length(cited), 0L)
+})
+
+test_that("every page has at most one References heading", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
+
+  expect_one_references_heading(vignette_pages(vignettes_dir()), vignettes_dir())
+})
+
+test_that("every source cited in a page's prose is listed in its References", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
+
+  expect_citations_listed(vignette_pages(vignettes_dir()), vignettes_dir())
 })
 
 test_that("every References entry parses into a surname and a year", {
-  skip_if_not(file.exists(vignette_file()), "vignette absent")
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
 
-  halves <- vignette_halves(vignette_file())
-  skip_if(length(halves$entries) == 0L, "no References entries")
-
-  unparsed <- halves$entries[vapply(
-    halves$entries,
-    function(e) is.null(entry_citekey(e)),
-    logical(1)
-  )]
-
-  expect_equal(unparsed, character(0))
-})
-
-test_that("every source cited in the vignette prose is listed in References", {
-  skip_if_not(file.exists(vignette_file()), "vignette absent")
-
-  halves <- vignette_halves(vignette_file())
-  cited <- citekeys_in(halves$prose)
-
-  # Not a skip: the vignette makes cited claims, so an empty result means the
-  # matcher stopped seeing them, which is the failure this guard exists for.
-  expect_gt(length(cited), 0L)
-
-  listed <- unlist(lapply(halves$entries, entry_citekey))
-  expect_equal(setdiff(cited, listed), character(0))
+  expect_entries_parse(vignette_pages(vignettes_dir()), vignettes_dir())
 })
 
 test_that("every References entry is backed by a shelf page naming it", {
   skip_if_not(dir.exists(shelf_dir()), "cairn/ absent (built package)")
-  skip_if_not(file.exists(vignette_file()), "vignette absent")
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
 
-  halves <- vignette_halves(vignette_file())
-  skip_if(length(halves$entries) == 0L, "no References entries")
-
-  unbacked <- character()
-  for (entry in halves$entries) {
-    key <- entry_citekey(entry)
-    if (is.null(key)) {
-      next # reported by the parse test above, not misattributed here
-    }
-    parts <- entry_surname_year(entry)
-    if (!shelf_backs(key, parts$surname, parts$year, shelf_dir())) {
-      unbacked <- c(unbacked, key)
-    }
-  }
-
-  expect_equal(unbacked, character(0))
+  expect_entries_backed(
+    vignette_pages(vignettes_dir()),
+    vignettes_dir(),
+    shelf_dir()
+  )
 })
 
-test_that("every References entry is cited somewhere in the vignette prose", {
-  skip_if_not(file.exists(vignette_file()), "vignette absent")
+test_that("every References entry is cited somewhere in its page's prose", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
 
-  halves <- vignette_halves(vignette_file())
-  skip_if(length(halves$entries) == 0L, "no References entries")
-
-  cited <- citekeys_in(halves$prose)
-  listed <- unlist(lapply(halves$entries, entry_citekey))
-
-  expect_equal(setdiff(listed, cited), character(0))
+  expect_entries_cited(vignette_pages(vignettes_dir()), vignettes_dir())
 })
 
 test_that("every source cited in R/ roxygen is backed by a shelf page", {
@@ -328,4 +444,150 @@ test_that("every source cited in R/ roxygen is backed by a shelf page", {
   }
 
   expect_equal(unbacked, character(0))
+})
+
+# ---- Planted fixtures: each rule shown red on the defect it claims to catch --
+#
+# A temporary `vignettes/` with a one-page shelf beside it. `Somebody (2020)`
+# is on that shelf; `Nobody (2021)` is not. Pages are written with the YAML
+# header and a setup chunk a real page carries, so the stripping runs over the
+# same shape it meets in the tree.
+
+fixture_tree <- function() {
+  root <- withr::local_tempdir(.local_envir = parent.frame())
+  dir.create(file.path(root, "vignettes", "deeper"), recursive = TRUE)
+  dir.create(file.path(root, "shelf"))
+  writeLines(
+    c(
+      "# somebody2020 -- a planted shelf page",
+      "",
+      "**Citation.** Somebody, A. (2020). A planted source. *Journal*, 1, 1.",
+      "",
+      "**Provenance.** Planted by the test."
+    ),
+    file.path(root, "shelf", "somebody2020.md")
+  )
+  root
+}
+
+plant_page <- function(root, name, body, references = NULL) {
+  lines <- c(
+    "---",
+    "title: \"A planted page\"",
+    "---",
+    "",
+    "```{r setup, include = FALSE}",
+    "knitr::opts_chunk$set(collapse = TRUE)",
+    "```",
+    "",
+    body
+  )
+  if (!is.null(references)) {
+    lines <- c(lines, "", "## References", "", references)
+  }
+  writeLines(lines, file.path(root, "vignettes", name))
+  invisible(name)
+}
+
+SOMEBODY <- "Somebody, A. (2020). A planted source. *Journal*, 1, 1."
+NOBODY <- "Nobody, B. (2021). A source with no shelf page. *Journal*, 2, 2."
+
+test_that("a page citing and listing a backed source, and a page with neither, pass every rule", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "cited.Rmd", "As Somebody (2020) showed.", SOMEBODY)
+  plant_page(root, "plain.Rmd", "A page with no cited claim.")
+  pages <- vignette_pages(dir)
+
+  expect_setequal(pages, c("cited.Rmd", "plain.Rmd"))
+  expect_success(expect_one_references_heading(pages, dir))
+  expect_success(expect_citations_listed(pages, dir))
+  expect_success(expect_entries_parse(pages, dir))
+  expect_success(expect_entries_backed(pages, dir, file.path(root, "shelf")))
+  expect_success(expect_entries_cited(pages, dir))
+})
+
+test_that("a citation with no shelf page turns the shelf rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "unbacked.Rmd", "As Nobody (2021) showed.", NOBODY)
+  pages <- vignette_pages(dir)
+
+  expect_failure(
+    expect_entries_backed(pages, dir, file.path(root, "shelf")),
+    "unbacked.Rmd: nobody2021"
+  )
+  # The other rules stay silent: the entry is listed, parses, and is cited.
+  expect_success(expect_citations_listed(pages, dir))
+  expect_success(expect_entries_parse(pages, dir))
+  expect_success(expect_entries_cited(pages, dir))
+})
+
+test_that("a References entry no prose cites turns the cited rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(
+    root,
+    "orphan.Rmd",
+    "As Somebody (2020) showed.",
+    c(SOMEBODY, "", NOBODY)
+  )
+  pages <- vignette_pages(dir)
+
+  expect_failure(expect_entries_cited(pages, dir), "orphan.Rmd: nobody2021")
+  expect_success(expect_citations_listed(pages, dir))
+})
+
+test_that("a References section with no citation turns the cited rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "listed-only.Rmd", "A page that cites nothing.", SOMEBODY)
+  pages <- vignette_pages(dir)
+
+  expect_failure(
+    expect_entries_cited(pages, dir),
+    "listed-only.Rmd: somebody2020"
+  )
+  expect_success(expect_citations_listed(pages, dir))
+})
+
+test_that("a citation with no References section turns the listed rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "cited-only.Rmd", "As Somebody (2020) showed.")
+  pages <- vignette_pages(dir)
+
+  expect_failure(
+    expect_citations_listed(pages, dir),
+    "cited-only.Rmd: somebody2020"
+  )
+  expect_success(expect_entries_cited(pages, dir))
+})
+
+test_that("a duplicated References heading turns the heading rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(
+    root,
+    "doubled.Rmd",
+    "As Somebody (2020) showed.",
+    c(SOMEBODY, "", "## References", "", SOMEBODY)
+  )
+  pages <- vignette_pages(dir)
+
+  expect_failure(expect_one_references_heading(pages, dir), "doubled.Rmd")
+})
+
+test_that("a defect one directory deep is found by the same rule", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "cited.Rmd", "As Somebody (2020) showed.", SOMEBODY)
+  plant_page(root, file.path("deeper", "cited-only.Rmd"), "As Somebody (2020) showed.")
+  pages <- vignette_pages(dir)
+
+  expect_setequal(pages, c("cited.Rmd", "deeper/cited-only.Rmd"))
+  expect_failure(
+    expect_citations_listed(pages, dir),
+    "deeper/cited-only.Rmd: somebody2020"
+  )
 })
