@@ -1,13 +1,13 @@
 # M62: A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
 - **Principles touched:** IP4
 - **Resolves:** —
 - **Surface tier:** user-facing — a vignette shipped in the package and on the site
-- **Branch/PR:** —
+- **Branch/PR:** `m062-results-vignette`
 
 ## Goal
 

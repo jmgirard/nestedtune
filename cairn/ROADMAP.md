@@ -9,7 +9,7 @@ _Last hygiene check: 2026-09-04 (M61 done via PR #71, merged on green after two 
 |---|---|---|---|---|---|
 | M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | done | — | normal | milestones/archive/M60-guide-split.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | done | M60 | normal | milestones/archive/M61-tuner-vignette.md |
-| M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | planned | M60 | normal | milestones/M062-results-vignette.md |
+| M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | in-progress | M60 | normal | milestones/M062-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | planned | M60 | normal | milestones/M063-parallel-article.md |
 | M64 | A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it, with nnet in Suggests | planned | M60 | normal | milestones/M064-why-nest-article.md |
 | M59 | Every driver refuses a design whose inner splits are not rsplits, do not share the outer fold's frame or its analysis set, or index rows the outer fold holds out | done | — | normal | milestones/archive/M59-inner-split-frame-checks.md |
