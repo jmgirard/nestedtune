@@ -61,6 +61,7 @@ A run whose daemons or host lack a package the workflow or the tuner needs is re
 - 2026-09-04: all tasks checked, verify slot clean; status set to review by /milestone-implement. Two judgments not in the plan, recorded here: `workflow_pkgs()` falls back to the engine's list when `tune::required_pkgs()` raises, so the pre-M58 engine check never weakens; and the incompatible branch carries no missing-package bullet because the package rung outranks it, so the pair is named by the package abort.
 
 - 2026-09-04: step-7 approval: PR #68 approved for merge (the maintainer chose apply-the-six-fixes-then-merge at the gate; re-verification green).
+- 2026-09-04: CI wait on PR #68 hit the session's foreground ceiling; fresh state: pkgdown, format-suggest and one ubuntu release leg pass, six checks pending, none red. Watcher stopped; resume via /milestone-review M58, which re-derives the merge state.
 
 ## Decisions
 
