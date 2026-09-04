@@ -65,6 +65,7 @@ Split `vignettes/nested-cv.Rmd` into a short getting-started guide that walks th
 - 2026-09-04: T6 done: the second `devtools::check()` is clean (0 errors, 0 warnings, 0 notes, 4m57s); all tasks checked, status to review.
 - 2026-09-04: review checkpoint: PR #70 opened as draft, AC1–AC5 verified and ticked; AC6, AC7, the reviewer fan-out and the gate still pending.
 - 2026-09-04: review: AC6 and AC7 verified at head, consistency gate clean, three-lens review returned nine findings, five fixed on the branch (numeral YAML fixture, empty References rule and `seq_len()` fix, "linear" dropped, `res` introduced, guide section retitled), one resolved by the evidence, two rejected, one (the dropped `args()` chunk) put to the gate.
+- 2026-09-04: step-7 approval: PR #70 approved for merge; S1 rejected with reason at the gate.
 
 ## Review
 
@@ -88,3 +89,5 @@ Split `vignettes/nested-cv.Rmd` into a short getting-started guide that walks th
 - O8 (`numeral_units()` merges a paragraph that follows a list item with no blank line): rejected. Markdown reads such a line as a lazy continuation of the item, so the merge matches how the page renders.
 - S1 (the "neither function takes a seed of its own" sentence lost its executed `args()` chunk, dropped by the planned Reproducibility trim): decided at the gate, proposed reject with reason: the trim was T4's plan, the sentence carries no number, and the seed contract is documented and tested on both functions' help pages.
 - Post-fix re-verification at the fix commit: the guard file 22 tests, 37 expectations, 0 failures; `air format --check` clean; `tools::buildVignettes()` on a temp copy rebuilds both pages in 6 s.
+- S1 disposition at the gate: rejected with reason (the planned T4 trim, a sentence with no number, the seed contract documented and tested on both help pages).
+- conversation: PR #70 — empty (no reviews, no comments, no unresolved threads at the gate read).
