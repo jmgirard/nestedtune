@@ -200,3 +200,98 @@ fold, with a dashed line at the mean that `collect_metrics()` reports.
 ```{r autoplot-performance, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per metric, rmse and rsq, with one point per outer fold's score on its assessment rows and a dashed line at the mean across folds."}
 autoplot(res, type = "performance")
 ```
+
+## When a fold fails
+
+A fold that fails does not end the run. The other folds keep their results,
+and the fold that failed is recorded rather than dropped. To show that on the
+guide's run, the workflow below adds one preprocessing step a careful reader
+might write anyway: a range check on horsepower, which refuses to predict for
+a car whose horsepower lies outside the range the model was trained on. One
+car, the Maserati Bora, has far more horsepower than any other in `mtcars`,
+`r max(mtcars$hp)` against `r sort(mtcars$hp, decreasing = TRUE)[2]` for the
+next. The fold that holds it out cannot score it, and that fold fails.
+
+```{r failed-recipe, message = FALSE}
+library(recipes)
+
+rec <- recipe(mpg ~ ., data = mtcars) |>
+  check_range(hp)
+
+wf_checked <- workflow(rec, rf)
+```
+
+```{r failed-run, message = FALSE}
+set.seed(2)
+
+failed <- nested_tune_grid(wf_checked, folds, grid = grid)
+
+stopifnot(sum(!failed$.completed) == 1L)
+
+failed
+```
+
+The run warns twice as it finishes: tune's own warning from the outer fit
+that produced nothing, then this package's, naming the fold. The chunk mutes
+tune's progress messages and keeps its warnings. The print counts the
+failure, `.completed` is `FALSE` for the fold that failed, and its `.notes`
+say where.
+
+```{r failed-notes}
+which_failed <- which(!failed$.completed)
+
+failed$.notes[[which_failed]][, c("location", "type", "note")]
+```
+
+The first row is this package's own note, and its `location` names the stage:
+`r failed$id[which_failed]` failed at the `r failed$.notes[[which_failed]]$location[1]`,
+the fit and score on the outer split, after its inner tuning had finished.
+The rows after it are tune's notes about the cause, relabelled with the stage
+they came from. A fold that fails during inner tuning reads the same way with
+`inner tuning` as the stage.
+
+A fold can also complete and carry notes. The Maserati sits in the analysis
+set of every other fold, so each of those folds had one inner resample that
+held it out, and the range check refused that one resample for every
+candidate. Tuning still returned a candidate, from the inner resamples that
+ran, and the fold finished. Its notes say so.
+
+```{r completed-notes}
+vapply(failed$.notes, nrow, integer(1))
+
+noted <- which(failed$.completed & vapply(failed$.notes, nrow, integer(1)) > 0)
+
+failed$.notes[[noted[1]]][, c("location", "type", "note")]
+```
+
+So `.completed` being `TRUE` beside a non-empty `.notes` means exactly this:
+the fold worked, on less than the whole inner design it was given.
+
+`summary()` on a run with a failed fold still answers, and warns first. The
+chunk below catches the warning to show its class and its message, then
+prints the summary it returned.
+
+```{r failed-summary}
+partial <- withCallingHandlers(
+  summary(failed),
+  warning = function(w) {
+    cat("class:", class(w)[1], "\n")
+    cat(conditionMessage(w), "\n")
+    invokeRestart("muffleWarning")
+  }
+)
+
+partial
+```
+
+The warning's class lets a script catch it and decide what a partial run is
+worth. The message names how many folds the summary covers and how many the
+design asked for, and the summary itself describes the folds that ran: the
+selections are those `r sum(failed$.completed)` folds' selections, and the
+estimate is the mean over their `r sum(failed$.completed)` scores, with the
+failed fold absent rather than filled in. `collect_metrics()` and
+`agreement()` warn the same way, and `autoplot()` leaves the failed fold's
+place on its axis empty. A run in which no fold completed is different:
+`summary()` still describes it, but `collect_metrics()`, `agreement()`,
+`autoplot()` and `nested_final_fit()` refuse it, because there is no estimate
+to report for a design that did not execute.
