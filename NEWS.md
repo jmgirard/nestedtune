@@ -1,5 +1,18 @@
 # nestedtune 0.0.0.9000
 
+* Before any fold is dispatched to mirai daemons, the startup check now asks
+  every daemon for each package the workflow and the tuner need, and stops
+  when one cannot load one of them, naming how many daemons are affected and
+  which packages: the `nestedtune_daemons_missing_pkgs` refusal, or the
+  existing `nestedtune_daemons_cannot_load` one when a daemon also cannot
+  load nestedtune itself, both under `nestedtune_daemons_unusable`. Before,
+  such a pool was warned about and then failed every fold sent to that
+  daemon. The host's own entry check widens the same way: a package the
+  workflow needs that is not installed here -- a recipe step's as well as the
+  engine's -- is refused at entry by every tuning driver and by
+  `nested_final_fit()`, under the `nestedtune_pkg_not_installed` class the
+  tuner refusals already carry, with an `install.packages()` call to paste.
+
 * `extract_tune_results()` and `extract_scored_candidates()` on an object
   they have no method for -- a `nested_results`, a list, a number -- now
   signal the `nestedtune_no_extract_method` refusal naming that object

@@ -66,7 +66,7 @@ check_workflow <- function(object, call = rlang::caller_env()) {
       call = call
     )
   }
-  check_model_spec(workflows::extract_spec_parsnip(object), call = call)
+  check_workflow_pkgs(object, call = call)
   invisible(object)
 }
 
@@ -83,26 +83,31 @@ has_preprocessor <- function(object) {
   any(c("formula", "recipe", "variables") %in% names(object$pre$actions))
 }
 
-# A missing engine package would surface anyway, but only once the first fold
-# starts fitting. Asking up front turns a wait-then-fail into an immediate
-# answer, which matters when the fold that fails is the tenth. The mode is not
-# checked here: workflows::workflow() already refuses a spec without one, so
-# there is no path that reaches us with an unknown mode.
-check_model_spec <- function(spec, call = rlang::caller_env()) {
-  needed <- parsnip::required_pkgs(spec)
+# A missing package would surface anyway, but only once the first fold starts
+# fitting. Asking up front turns a wait-then-fail into an immediate answer,
+# which matters when the fold that fails is the tenth. Asked of the whole
+# workflow since M58 -- `workflow_pkgs()` (R/parallel.R), the list the daemon
+# pre-flight and the attach step read -- so a recipe step's package is refused
+# here as an engine's always was, under the class the tuner refusal carries
+# (`check_tuner_installed()`): both state the same fact about this library.
+# The mode is not checked here: workflows::workflow() already refuses a spec
+# without one, so there is no path that reaches us with an unknown mode.
+check_workflow_pkgs <- function(object, call = rlang::caller_env()) {
+  needed <- workflow_pkgs(object)
   missing <- needed[!vapply(needed, rlang::is_installed, logical(1))]
   if (length(missing) > 0L) {
+    hint <- paste0("install.packages(", deparse1(missing), ")")
     cli::cli_abort(
       c(
-        "{.pkg {missing}} {?is/are} needed by the workflow's engine but \\
-         not installed.",
-        i = "Install {cli::qty(missing)}{?it/them} before running the loop."
+        "{.pkg {missing}} {?is/are} needed by the workflow but not installed.",
+        i = "Install {cli::qty(missing)}{?it/them} with {.code {hint}}."
       ),
+      class = "nestedtune_pkg_not_installed",
       call = call
     )
   }
 
-  invisible(spec)
+  invisible(needed)
 }
 
 check_nested <- function(resamples, call = rlang::caller_env()) {
@@ -989,7 +994,7 @@ check_tuner_installed <- function(tuner, call = rlang::caller_env()) {
   if (length(missing) > 0L) {
     # One call the user can paste: `deparse()` gives `"pkg"` for one package
     # and `c("a", "b")` for several, where cli's collapse would give `"a" and "b"`.
-    hint <- paste0("install.packages(", deparse(missing), ")")
+    hint <- paste0("install.packages(", deparse1(missing), ")")
     cli::cli_abort(
       c(
         "{.fn {tuner}} needs {.pkg {missing}}, which {?is/are} not installed.",

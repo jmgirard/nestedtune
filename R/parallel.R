@@ -218,8 +218,14 @@ dispatch_folds <- function(
     ))
   }
 
-  check_daemons_can_load(call = call)
-  attach_daemon_pkgs(object, tuner, call = call)
+  # One list, read by the probe, the attach step and the host's entry check
+  # (M58), so no two of them can name different packages.
+  pkgs <- needed_pkgs(object, tuner)
+  check_daemons_can_load(
+    status = daemons_load_status(pkgs = pkgs, call = call),
+    call = call
+  )
+  attach_daemon_pkgs(object, tuner, pkgs = pkgs, call = call)
   warn_if_not_cancellable(call = call)
 
   record_dispatch("parallel")
@@ -492,20 +498,36 @@ daemon_symbol_manifest <- function(package = "nestedtune") {
 # miraiError -- a length-1 CHARACTER vector, which daemon_report() rejects,
 # turning a clean "cannot load" into a silent daemon and losing the actionable
 # message.
+#
+# The package question (M58) is asked ahead of the load branch, so a daemon
+# that cannot load the probed package still reports which of the workflow's
+# and the tuner's packages it lacks, and the abort can name both facts from
+# one round trip. `requireNamespace()` and not `library()`: what is asked is
+# whether the package is installed where the daemon can reach it, the half of
+# the attach step's question that has an install as its fix.
 daemon_probe_expr <- function() {
   str2lang(paste(
-    "if (requireNamespace(package, quietly = TRUE)) {",
-    "  list(loaded = TRUE,",
-    "       missing = setdiff(symbols, ls(asNamespace(package))))",
-    "} else {",
-    "  list(loaded = FALSE, missing = character())",
-    "}",
+    "local({",
+    "  absent <- pkgs[!vapply(pkgs, requireNamespace, logical(1),",
+    "                         quietly = TRUE)]",
+    "  if (requireNamespace(package, quietly = TRUE)) {",
+    "    list(loaded = TRUE,",
+    "         missing = setdiff(symbols, ls(asNamespace(package))),",
+    "         missing_pkgs = absent)",
+    "  } else {",
+    "    list(loaded = FALSE, missing = character(), missing_pkgs = absent)",
+    "  }",
+    "})",
     sep = "\n"
   ))
 }
 
+# `pkgs` is what the workflow and the tuner need on each daemon beside the
+# package itself -- `needed_pkgs()`'s list, the one the attach step reads --
+# and each daemon answers which of them it cannot load (M58).
 daemons_load_status <- function(
   package = "nestedtune",
+  pkgs = character(),
   timeout = preflight_timeout(call = call),
   symbols = daemon_symbol_manifest(package),
   call = rlang::caller_env()
@@ -521,7 +543,7 @@ daemons_load_status <- function(
   probe_expr <- daemon_probe_expr()
   probe <- mirai::everywhere(
     probe_expr,
-    .args = list(package = package, symbols = symbols)
+    .args = list(package = package, symbols = symbols, pkgs = pkgs)
   )
   deadline <- Sys.time() + timeout / 1000
   while (mirai::unresolved(probe) && Sys.time() < deadline) {
@@ -578,6 +600,50 @@ daemon_attach_expr <- function() {
   ))
 }
 
+# What the workflow needs installed, as `tune::required_pkgs()` names it: the
+# engine's packages, a recipe step's, a tailor's (workflows 1.2.0, read
+# 2026-09-04). Asked of the workflow rather than of the engine alone (M58), so
+# a step's package is refused at entry as an engine's always was.
+#
+# A workflow `required_pkgs()` cannot answer for -- the method raises when a
+# recipe's package is not installed, say -- falls back to the engine's own
+# list, the check as it stood before M58, rather than to nothing; and an
+# object that is not a workflow answers with nothing, because
+# `dispatch_folds()` is also driven with stand-in payloads and no workflow at
+# all (test-parallel-detection.R).
+workflow_pkgs <- function(object) {
+  if (!inherits(object, "workflow")) {
+    return(character())
+  }
+  tryCatch(
+    tune::required_pkgs(object),
+    error = function(cnd) {
+      tryCatch(
+        parsnip::required_pkgs(workflows::extract_spec_parsnip(object)),
+        error = function(cnd) character()
+      )
+    }
+  )
+}
+
+# The one list of packages a run needs beside this package (M58): the
+# workflow's, and the tuner's from the registry's `requires` (M50, D-044) --
+# the list the entry refusal reads, so the refusal, the daemon probe and the
+# attach step cannot name different packages. finetune's racers register
+# `collect_metrics()`'s `tune_race` method and read their control inside the
+# fold, and each race fits its model through lme4 or BradleyTerry2 there.
+#
+# tune is left off, as it always was: this package imports it, so the
+# pre-flight's namespace load has already brought it into every daemon; base
+# R's own packages likewise.
+needed_pkgs <- function(object, tuner = NULL) {
+  pkgs <- workflow_pkgs(object)
+  if (!is.null(tuner)) {
+    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$requires)
+  }
+  setdiff(unique(pkgs), c("base", "stats", "utils", "methods", "tune"))
+}
+
 # The workflow's packages, and the tuner's, attached in every daemon before
 # any fold is sent.
 #
@@ -586,32 +652,20 @@ daemon_attach_expr <- function() {
 # stop_mirai(). A daemon that never answers is not fatal here -- it is already
 # the pre-flight's business, and this call runs after it.
 #
-# A package that will not attach is reported rather than raised on. The fold
-# that needs it fails with tune's own message naming the function it could not
-# find, which says more than a package name would; what a warning here adds is
-# the reason, at the moment it is still actionable.
+# A package that will not attach is reported rather than raised on. Since M58
+# the pre-flight refuses a daemon that cannot load one of these at all, so
+# what remains here is a package that loads but will not attach; the fold
+# that needs it fails with tune's own message naming the function it could
+# not find, which says more than a package name would, and what a warning
+# here adds is the reason, at the moment it is still actionable.
 attach_daemon_pkgs <- function(
   object,
   tuner,
+  pkgs = needed_pkgs(object, tuner),
   timeout = preflight_timeout(call = call),
   call = rlang::caller_env()
 ) {
   force(timeout)
-  pkgs <- tryCatch(tune::required_pkgs(object), error = function(cnd) {
-    character()
-  })
-  # The packages the tuner requires beside the workflow's (M50, D-044): the
-  # registry's `requires`, the same list the entry refusal reads, so the
-  # refusal and this attach cannot name different packages. finetune's racers
-  # register `collect_metrics()`'s `tune_race` method and read their control
-  # inside the fold, and each race fits its model through lme4 or
-  # BradleyTerry2 there.
-  # tune is left off the list, as it always was: this package imports it, so
-  # the pre-flight's namespace load has already brought it into every daemon.
-  if (!is.null(tuner)) {
-    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$requires)
-  }
-  pkgs <- setdiff(unique(pkgs), c("base", "stats", "utils", "methods", "tune"))
   if (length(pkgs) == 0L) {
     return(invisible(character()))
   }
@@ -675,29 +729,33 @@ attach_daemon_pkgs <- function(
 # Returns NULL for a non-answer rather than NA, so the caller distinguishes
 # "this daemon said nothing" from any value a daemon could legitimately report.
 daemon_report <- function(x) {
-  if (!is.list(x) || !all(c("loaded", "missing") %in% names(x))) {
+  fields <- c("loaded", "missing", "missing_pkgs")
+  if (!is.list(x) || !all(fields %in% names(x))) {
     return(NULL)
   }
   loaded <- x[["loaded"]]
   missing <- x[["missing"]]
+  missing_pkgs <- x[["missing_pkgs"]]
   if (
     !is.logical(loaded) ||
       length(loaded) != 1L ||
       is.na(loaded) ||
       !is.character(missing) ||
-      anyNA(missing)
+      anyNA(missing) ||
+      !is.character(missing_pkgs) ||
+      anyNA(missing_pkgs)
   ) {
     return(NULL)
   }
-  list(loaded = loaded, missing = missing)
+  list(loaded = loaded, missing = missing, missing_pkgs = missing_pkgs)
 }
 
-# The three-way outcome, kept separate from both the probing and the message so
-# every branch is reachable in a test without a daemon pool.
+# The outcome, kept separate from both the probing and the message so every
+# branch is reachable in a test without a daemon pool.
 #
-# A pool can fail both ways at once, so the record carries counts rather than a
-# bare verdict: the load failure takes the class, because installing is the
-# actionable fix, and the message still names the non-answers (M10-D1).
+# A pool can fail several ways at once, so the record carries counts rather
+# than a bare verdict: the load failure takes the class, because installing is
+# the actionable fix, and the message still names the non-answers (M10-D1).
 preflight_outcome <- function(
   answers,
   timeout = NA_real_,
@@ -711,19 +769,27 @@ preflight_outcome <- function(
     logical(1)
   )
   absent <- lapply(reports[loaded], function(r) r[["missing"]])
+  # Every daemon that answered, whether or not it loaded the package: the
+  # probe asks the package question ahead of the load branch (M58).
+  lacking <- lapply(reports[answered], function(r) r[["missing_pkgs"]])
 
   total <- length(reports)
   cannot_load <- sum(answered & !loaded)
+  missing_pkgs <- sum(lengths(lacking) > 0L)
   incompatible <- sum(lengths(absent) > 0L)
   no_answer <- sum(!answered)
   missing_symbols <- sort(unique(unlist(absent, use.names = FALSE)))
+  missing_packages <- sort(unique(unlist(lacking, use.names = FALSE)))
 
-  # `incompatible` sits below `cannot_load` and above `no_response`, extending
-  # rather than reordering M10-D1's ladder: the class goes to whichever failure
-  # names the most actionable fix. Installing beats reinstalling, and both beat
-  # "some daemon said nothing", which names no fix at all.
+  # The ladder extends M10-D1's rather than reordering it: the class goes to
+  # whichever failure names the most actionable fix. Installing the package
+  # beats installing what the workflow needs beside it (M58), which beats
+  # reinstalling a build, and all three beat "some daemon said nothing",
+  # which names no fix at all.
   outcome <- if (cannot_load > 0L) {
     "cannot_load"
+  } else if (missing_pkgs > 0L) {
+    "missing_pkgs"
   } else if (incompatible > 0L) {
     "incompatible"
   } else if (no_answer > 0L || total == 0L) {
@@ -735,6 +801,12 @@ preflight_outcome <- function(
     outcome = outcome,
     total = total,
     cannot_load = cannot_load,
+    missing_pkgs = missing_pkgs,
+    missing_packages = if (is.null(missing_packages)) {
+      character()
+    } else {
+      missing_packages
+    },
     incompatible = incompatible,
     missing_symbols = if (is.null(missing_symbols)) {
       character()
@@ -763,9 +835,20 @@ check_daemons_can_load <- function(
 
   n_total <- status$total
   n_cannot <- status$cannot_load
+  n_lacking <- status$missing_pkgs
   n_incompatible <- status$incompatible
   n_silent <- status$no_answer
   package <- status$package
+  # The packages the workflow or the tuner needs that some daemon cannot load
+  # (M58): one bullet, rendered on every branch it is true on, since the
+  # daemon that lacks them may also be the one that cannot load the package or
+  # holds an old build. `qty()` on the daemon count, because cli takes a
+  # plural's quantity from the last interpolation, and the package vector
+  # would otherwise set it (M24 review F2).
+  lacking_pkgs <- status$missing_packages
+  lacking_bullet <- "{cli::qty(n_lacking)}{n_lacking} daemon{?s} {?lacks/lack}
+                     {cli::qty(length(lacking_pkgs))}{?a package/packages} the
+                     workflow or the tuner needs: {.pkg {lacking_pkgs}}."
   # Spelled out rather than interpolated raw: cli renders a numeric through
   # as.character(), which gives "3e+05" for a 300000 ms bound -- scientific
   # notation in the very bullet telling the user to raise that number.
@@ -814,6 +897,9 @@ check_daemons_can_load <- function(
     # the next pre-flight, which is the rediscovery M10-D1 refuses for the
     # non-answer case immediately below. The two need DIFFERENT fixes, so both
     # are stated here.
+    if (n_lacking > 0L) {
+      bullets <- c(bullets, i = lacking_bullet)
+    }
     if (n_incompatible > 0L) {
       bullets <- c(
         bullets,
@@ -841,6 +927,56 @@ check_daemons_can_load <- function(
       ),
       class = c(
         "nestedtune_daemons_cannot_load",
+        "nestedtune_daemons_unusable"
+      ),
+      call = call
+    )
+  }
+
+  if (identical(status$outcome, "missing_pkgs")) {
+    # Every daemon loaded the package, and at least one cannot load something
+    # the workflow or the tuner needs beside it (M58). Refused rather than
+    # warned about, the line the attach step's warning did not take: a fold
+    # sent to that daemon fails once its recipe, engine or tuner calls into
+    # the package, so the pool is provably unable to run the design (GP3).
+    # The remedy is the attach warning's: install, then restart, because a
+    # daemon's library is read when it starts.
+    bullets <- c(
+      "{cli::qty(n_lacking)}{n_lacking} of {n_total} mirai daemon{?s}
+       {cli::qty(n_lacking)}{?lacks/lack}
+       {cli::qty(length(lacking_pkgs))}{?a package/packages} the workflow or
+       the tuner needs: {.pkg {lacking_pkgs}}.",
+      i = "Every fold sent to {cli::qty(n_lacking)}{?that daemon/those daemons}
+           would fail once its recipe, engine or tuner called into
+           {cli::qty(length(lacking_pkgs))}{?it/them}.",
+      i = "Install {cli::qty(length(lacking_pkgs))}{?it/them} into the daemons'
+           library, then restart the pool with {.code mirai::daemons(0)}
+           followed by {.code mirai::daemons(n)}."
+    )
+    if (n_incompatible > 0L) {
+      bullets <- c(
+        bullets,
+        i = "{n_incompatible} daemon{?s} loaded {.pkg {package}} but
+             {cli::qty(n_incompatible)}{?is/are} running a different build,
+             missing {.code {shown}}{more}; reinstall {.pkg {package}} before
+             the restart."
+      )
+    }
+    if (n_silent > 0L) {
+      bullets <- c(
+        bullets,
+        i = "A further {n_silent} daemon{?s} did not answer
+                                 within {timeout} ms."
+      )
+    }
+    cli::cli_abort(
+      c(
+        bullets,
+        i = "Alternatively call {.code mirai::daemons(0)} to run
+                      serially -- results are identical either way."
+      ),
+      class = c(
+        "nestedtune_daemons_missing_pkgs",
         "nestedtune_daemons_unusable"
       ),
       call = call

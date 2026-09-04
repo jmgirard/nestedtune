@@ -41,7 +41,7 @@
 # because an unstated exemption is how the first version of this comment came to
 # overclaim. Three kinds escape it: a bound read from a named constant, which
 # cannot drift and needs no re-read; a bound set through the OPTION at one line
-# and spent at another (classify:745 sets it, :751 spends it); and a wait that is
+# and spent at another (classify:760 sets it, :766 spends it); and a wait that is
 # no function call at all (the deadline poll in interrupt). None carries an
 # explicit bound argument in the call itself, which is exactly how the
 # cross-check recognises them.
@@ -246,7 +246,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      605L,
+      612L,
       "check_daemons_can_load",
       0,
       "the incompatible abort names the symbols, the count, and the restart",
@@ -254,7 +254,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      635L,
+      642L,
       "check_daemons_can_load",
       0,
       "the incompatible abort renders at one, two, five, and a mixed pool",
@@ -262,7 +262,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      643L,
+      650L,
       "check_daemons_can_load",
       0,
       "the incompatible abort renders at one, two, five, and a mixed pool",
@@ -270,7 +270,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      652L,
+      659L,
       "check_daemons_can_load",
       0,
       "the incompatible abort renders at one, two, five, and a mixed pool",
@@ -278,7 +278,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      660L,
+      667L,
       "check_daemons_can_load",
       0,
       "the incompatible abort renders at one, two, five, and a mixed pool",
@@ -286,7 +286,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      674L,
+      681L,
       "check_daemons_can_load",
       0,
       "an incompatible pool answers to the shared unusable class",
@@ -294,7 +294,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      688L,
+      695L,
       "check_daemons_can_load",
       0,
       "an incompatible pool still reports daemons that said nothing",
@@ -302,14 +302,14 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      751L,
+      758L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the probe reads its bound from the option, not from the constant"
     ),
     tb_row(
       "test-parallel-classify.R",
-      756L,
+      763L,
       "setTimeLimit",
       0,
       "the probe reads its bound from the option, not from the constant",
@@ -317,7 +317,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      757L,
+      764L,
       "setTimeLimit",
       0,
       "the probe reads its bound from the option, not from the constant",
@@ -325,15 +325,15 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      759L,
+      766L,
       "daemons_load_status",
       45.678,
       "the probe reads its bound from the option, not from the constant",
-      note = "the test sets the option to 45678 ms at :745"
+      note = "the test sets the option to 45678 ms at :760"
     ),
     tb_row(
       "test-parallel-classify.R",
-      776L,
+      783L,
       "daemons_load_status",
       0,
       "a bad bound is refused before any daemon is asked",
@@ -341,7 +341,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      790L,
+      797L,
       "check_daemons_can_load",
       0,
       "a probe that reached no daemon at all is not a pass",
@@ -349,7 +349,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      800L,
+      807L,
       "check_daemons_can_load",
       0,
       "the abort names the package actually probed",
@@ -357,14 +357,14 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      885L,
+      936L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "dispatch accepts daemons primed with the package"
     ),
     tb_row(
       "test-parallel-classify.R",
-      892L,
+      943L,
       "daemons_load_status",
       60,
       "dispatch accepts daemons primed with the package",
@@ -372,13 +372,138 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-classify.R",
-      893L,
+      944L,
       "check_daemons_can_load",
       0,
       "dispatch accepts daemons primed with the package",
       note = "status already in hand"
     ),
 
+    # --- test-parallel-classify.R, the package rung (M58) --------------------
+    #
+    # Every check_daemons_can_load() below classifies a fabricated
+    # preflight_outcome() already in hand and dispatches nothing; the two
+    # daemons_load_status() calls carry an explicit bound.
+    tb_row(
+      "test-parallel-classify.R",
+      1032L,
+      "check_daemons_can_load",
+      0,
+      "the missing-package abort names the count, the packages, and the install-then-restart remedy",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      1057L,
+      "check_daemons_can_load",
+      0,
+      "a missing package beside a daemon that cannot load is named by the load abort",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      1067L,
+      "check_daemons_can_load",
+      0,
+      "a missing package beside a daemon that cannot load is named by the load abort",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      1086L,
+      "check_daemons_can_load",
+      0,
+      "a missing package beside an incompatible build is named by the package abort",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      1102L,
+      "check_daemons_can_load",
+      0,
+      "a missing package beside a silent daemon is named by the package abort",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      1115L,
+      "check_daemons_can_load",
+      0,
+      "the package abort pluralises on the daemon count and the package count separately",
+      note = "status already in hand"
+    ),
+    tb_row(
+      "test-parallel-classify.R",
+      1125L,
+      "check_daemons_can_load",
+      0,
+      "the package abort pluralises on the daemon count and the package count separately",
+      note = "status already in hand"
+    ),
+    # --- test-parallel-detection.R, the package rung (M58) ------------------
+    tb_row(
+      "test-parallel-detection.R",
+      402L,
+      "start_daemons",
+      START_DAEMONS_BOUND_S(),
+      "the probe sends the package list, and a daemon that has them all reports none"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      404L,
+      "daemons_load_status",
+      30,
+      "the probe sends the package list, and a daemon that has them all reports none",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      410L,
+      "daemons_load_status",
+      30,
+      "the probe sends the package list, and a daemon that has them all reports none",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      433L,
+      "setTimeLimit",
+      0,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      434L,
+      "setTimeLimit",
+      0,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      437L,
+      "start_mixed_daemons",
+      60,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "its own `timeout` default"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      440L,
+      "daemons_load_status",
+      30,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      456L,
+      "check_daemons_can_load",
+      0,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "status already in hand"
+    ),
     # --- test-parallel-detection.R ------------------------------------------
     tb_row(
       "test-parallel-detection.R",
