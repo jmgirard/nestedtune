@@ -510,6 +510,7 @@ test_that("the probe expression asks the daemon for nothing but base R", {
       "character",
       "if",
       "list",
+      "local",
       "logical",
       "ls",
       "requireNamespace",
@@ -1266,4 +1267,57 @@ test_that("the list the probe is sent is the workflow's packages and the tuner's
     c("finetune", "lme4") %in%
       needed_pkgs(wf, tuner_race("tune_race_anova", det_grid()))
   ))
+})
+
+test_that("the dispatch hands the probe the list the helper builds", {
+  # F1 of the M58 review: the wiring in dispatch_folds() is the feature, and
+  # the refusal test above discards the probe's arguments. The mock captures
+  # them and the abort it returns keeps any fold from being sent.
+  skip_if_no_engines()
+  skip_if_not_installed("finetune")
+  skip_if_not_installed("lme4")
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  nested <- det_nested(d, v = 3)
+
+  seen <- NULL
+  local_mocked_bindings(mirai_workers = function() 2L)
+  local_mocked_bindings(daemons_load_status = function(
+    pkgs = character(),
+    ...
+  ) {
+    seen <<- pkgs
+    preflight_outcome(
+      reports(TRUE, TRUE, missing_pkgs = list(NULL, "ranger")),
+      timeout = 30000
+    )
+  })
+
+  reset_dispatch_record()
+  expect_error(
+    nested_tune_grid(wf, nested, grid = det_grid(), metrics = reg_metrics()),
+    class = "nestedtune_daemons_missing_pkgs"
+  )
+  expect_null(last_dispatch())
+  expect_identical(seen, needed_pkgs(wf, tuner_grid(det_grid())))
+  expect_true(length(seen) > 0L)
+
+  seen <- NULL
+  reset_dispatch_record()
+  expect_error(
+    nested_tune_race_anova(
+      wf,
+      nested,
+      grid = det_grid(),
+      control = race_control()
+    ),
+    class = "nestedtune_daemons_missing_pkgs"
+  )
+  expect_null(last_dispatch())
+  expect_identical(
+    seen,
+    needed_pkgs(wf, tuner_race("tune_race_anova", det_grid()))
+  )
+  expect_true(all(c("finetune", "lme4") %in% seen))
 })

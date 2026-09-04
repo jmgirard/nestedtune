@@ -261,10 +261,12 @@ Bayesian tuner's seed injection alone still keys on its name
 racers add two entry refusals (`check_tuner_installed()`,
 `check_race_burn_in()`) and attach their package in every daemon beside the
 workflow's (`attach_daemon_pkgs()`). One list, `needed_pkgs()` (M58) —
-`tune::required_pkgs()` of the workflow plus the registry's `requires` — is
-what the host's entry check (`check_workflow_pkgs()`), the daemon pre-flight
-(`daemons_load_status(pkgs =)`) and the attach step read, so the three
-cannot name different packages; the pre-flight refuses a daemon that cannot
+`workflow_pkgs()`, which is `tune::required_pkgs()` of the workflow, plus the
+registry's `requires` — is what the daemon pre-flight
+(`daemons_load_status(pkgs =)`) and the attach step read; the host's entry
+check reads its workflow half (`check_workflow_pkgs()`) and
+`check_tuner_installed()` its tuner half, so no reader can name a package
+another does not; the pre-flight refuses a daemon that cannot
 load one of them (`nestedtune_daemons_missing_pkgs`), and the attach step's
 warning covers only a package that loads but will not attach. It draws every fold's seeds up front and hands each fold to
 `nested_fold_fit()` — a worker whose inputs are the outer split, the inner

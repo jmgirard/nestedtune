@@ -507,7 +507,7 @@ daemon_symbol_manifest <- function(package = "nestedtune") {
 # the attach step's question that has an install as its fix.
 daemon_probe_expr <- function() {
   str2lang(paste(
-    "{",
+    "local({",
     "  absent <- pkgs[!vapply(pkgs, requireNamespace, logical(1),",
     "                         quietly = TRUE)]",
     "  if (requireNamespace(package, quietly = TRUE)) {",
@@ -517,7 +517,7 @@ daemon_probe_expr <- function() {
     "  } else {",
     "    list(loaded = FALSE, missing = character(), missing_pkgs = absent)",
     "  }",
-    "}",
+    "})",
     sep = "\n"
   ))
 }

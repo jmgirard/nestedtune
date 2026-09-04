@@ -2,8 +2,10 @@
 
 * Before any fold is dispatched to mirai daemons, the startup check now asks
   every daemon for each package the workflow and the tuner need, and stops
-  with the `nestedtune_daemons_missing_pkgs` refusal when one cannot load one
-  of them, naming how many daemons are affected and which packages. Before,
+  when one cannot load one of them, naming how many daemons are affected and
+  which packages: the `nestedtune_daemons_missing_pkgs` refusal, or the
+  existing `nestedtune_daemons_cannot_load` one when a daemon also cannot
+  load nestedtune itself, both under `nestedtune_daemons_unusable`. Before,
   such a pool was warned about and then failed every fold sent to that
   daemon. The host's own entry check widens the same way: a package the
   workflow needs that is not installed here -- a recipe step's as well as the

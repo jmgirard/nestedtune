@@ -96,7 +96,7 @@ check_workflow_pkgs <- function(object, call = rlang::caller_env()) {
   needed <- workflow_pkgs(object)
   missing <- needed[!vapply(needed, rlang::is_installed, logical(1))]
   if (length(missing) > 0L) {
-    hint <- paste0("install.packages(", deparse(missing), ")")
+    hint <- paste0("install.packages(", deparse1(missing), ")")
     cli::cli_abort(
       c(
         "{.pkg {missing}} {?is/are} needed by the workflow but not installed.",
@@ -994,7 +994,7 @@ check_tuner_installed <- function(tuner, call = rlang::caller_env()) {
   if (length(missing) > 0L) {
     # One call the user can paste: `deparse()` gives `"pkg"` for one package
     # and `c("a", "b")` for several, where cli's collapse would give `"a" and "b"`.
-    hint <- paste0("install.packages(", deparse(missing), ")")
+    hint <- paste0("install.packages(", deparse1(missing), ")")
     cli::cli_abort(
       c(
         "{.fn {tuner}} needs {.pkg {missing}}, which {?is/are} not installed.",
