@@ -183,6 +183,25 @@ test_that("both accessors refuse an object they cannot answer for", {
   )
 })
 
+# The refusal names the object before anything in the dots. Before M56 the
+# defaults checked their dots first, so `extract_tune_results(1, foo = 1)`
+# complained of `foo` and said nothing of `1` (an `rlib_error_dots_nonempty`,
+# measured 2026-09-03).
+test_that("an object with no method is refused as such whatever rides in the dots", {
+  for (fn in list(extract_tune_results, extract_scored_candidates)) {
+    cnd <- rlang::catch_cnd(fn(1, foo = 1))
+    expect_s3_class(cnd, "nestedtune_no_extract_method")
+    expect_false(inherits(cnd, "rlib_error_dots_nonempty"))
+  }
+
+  # The passing control: the methods still refuse a stray argument, so the
+  # dots check moved rather than went.
+  skip_if_no_engines()
+  final <- final_for_extract()
+  expect_error(extract_tune_results(final, foo = 1), class = "rlib_error_dots_nonempty")
+  expect_error(extract_scored_candidates(final, foo = 1), class = "rlib_error_dots_nonempty")
+})
+
 test_that("the refusals read the same for both accessors", {
   skip_if_no_engines()
 
