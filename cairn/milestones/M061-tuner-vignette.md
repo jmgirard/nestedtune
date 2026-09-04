@@ -1,6 +1,6 @@
 # M61: A vignette runs the four alternative inner tuners on one design and shows what each records
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
@@ -45,7 +45,7 @@ Ship `vignettes/tuners.Rmd` ("Choosing the inner tuner"), which runs `nested_tun
 - [x] T2: The `.inner_metrics` section: print `res$.inner_metrics[[1]]` for the Bayesian and annealing runs and the smallest-`n` fold for the ANOVA race; compute the `.iter` range and the eliminated-candidate count inline; keep `initial = 4, iter = 3` for the Bayesian run and `initial = 3, iter = 3` for annealing (the plan probe: 5.7 s and 6.2 s) so AC6 holds.
 - [x] T3: The control section: a `control_bayes(verbose = FALSE, no_improve = 3)` pass through `...`, `attr(res, "procedure")` printed, `allow_par` read from it inline, the `event_level` and `seed` sentences as text.
 - [x] T4: Guarding: the guide's `deps`/`deps-notice` chunks on `ranger`; `has_finetune <- requireNamespace("finetune", quietly = TRUE)` and `has_race <- has_finetune && all(vapply(c("lme4", "BradleyTerry2"), requireNamespace, logical(1), quietly = TRUE))`, every racing chunk `eval = has_race` and every annealing chunk `eval = has_finetune`, every inline R for those sections reading variables assigned only inside guarded chunks (the M06 lesson on inline expressions), notice chunks `eval = !has_race` and `eval = !has_finetune`.
-- [ ] T5: `_pkgdown.yml` entry under Guides; measure AC6 with `skip =` and log it with the combined CRAN-vignette figure, date and commit; run the guard, the verify slot and `devtools::check()`; one build each with `finetune`, with `lme4` and with `ranger` masked for AC4.
+- [x] T5: `_pkgdown.yml` entry under Guides; measure AC6 with `skip =` and log it with the combined CRAN-vignette figure, date and commit; run the guard, the verify slot and `devtools::check()`; one build each with `finetune`, with `lme4` and with `ranger` masked for AC4.
 
 ## Work log
 
@@ -59,3 +59,4 @@ Ship `vignettes/tuners.Rmd` ("Choosing the inner tuner"), which runs `nested_tun
 - 2026-09-04: T4 guards: `knit_exit()` on `ranger` and `dials`, `has_finetune` and `has_race` as planned, and one notice chunk (`eval = !has_race`) whose text names the missing packages and says whether annealing is skipped too, one chunk covering both AC4 cases in place of T4's two (minor amendment); the annealing call passes `control_sim_anneal(verbose_iter = FALSE)` through `...` to keep finetune's per-move log off the page. Single in-session knit 25.7 s; the citation guard flagged `lme4` and `BradleyTerry2` as uncited digits in prose until backticked, then green (37 passing).
 - 2026-09-04: amendment (substantive, mini gate, user chose the recommended option): AC4 loses its `dials` clause and the Scope's guard clause names `ranger` alone, because the dials-masked build failed at `library(nestedtune)` before the guard chunk ran (tune imports dials, D-029), which under `R CMD check` is a failed build rather than a notice; the page's guard now checks `ranger` alone, and the T4 and T5 task texts are edited to match (a minor edit each).
 - 2026-09-04: re-audit: AC4 (full) — three findings: the masked builds leave `BradleyTerry2` alone unprobed and the reader read the notice's plural branch as unexercised (the lme4-masked build exercises it, since BradleyTerry2 imports lme4 and the notice named both), disposed by one extra BradleyTerry2-masked build logged at T5 rather than a wider criterion; T4's text still named the dials guard and T5's text the dials build, both edited above.
+- 2026-09-04: T5 `tuners` under Guides in `_pkgdown.yml` (`check_pkgdown()` clean); AC6 at commit 5907f06: `tools::buildVignettes(skip = <the other two>)` on a temporary copy, three runs 33.3, 31.6, 31.6 s, median 31.6 s, and one run of all three vignettes 31.6 s; four masked renders of the final page through `rmarkdown::render()` (finetune: Bayesian sections only, one notice naming finetune and annealing; lme4: Bayesian and annealing, one notice naming lme4 and BradleyTerry2; BradleyTerry2 alone: the same with one name, the extra build the re-audit asked for; ranger: notice then exit, 0 tables); citation guard green (37); `devtools::test()` 7042 passing, 0 failures; `devtools::check()` 0 errors, 0 warnings, 0 notes; NEWS entry added. Status to review.

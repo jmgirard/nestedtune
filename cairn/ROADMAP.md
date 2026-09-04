@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-04 (M60 done via PR #70, merged as pushed after one
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | done | — | normal | milestones/archive/M60-guide-split.md |
-| M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | in-progress | M60 | normal | milestones/M061-tuner-vignette.md |
+| M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | review | M60 | normal | milestones/M061-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | planned | M60 | normal | milestones/M062-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | planned | M60 | normal | milestones/M063-parallel-article.md |
 | M64 | A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it, with nnet in Suggests | planned | M60 | normal | milestones/M064-why-nest-article.md |
