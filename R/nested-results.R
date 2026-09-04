@@ -619,7 +619,20 @@ rbind.nested_results <- function(..., deparse.level = 1) {
   if (!is.data.frame(out)) {
     return(out)
   }
-  reconstruct_results(out, x)
+  # Renaming moves no column and changes no value, so the record is intact
+  # exactly when each record column still answers to its name and no other
+  # column has taken one: the names alone decide, and the full value
+  # comparison `reconstruct_results()` runs is not needed to know it. The
+  # object comes back as `NextMethod()` left it, class and attributes
+  # untouched; only a record name that moved or was duplicated sheds them.
+  record <- record_columns(x)
+  if (
+    identical(names(out)[record], names(x)[record]) &&
+      anyDuplicated(names(out)) == 0L
+  ) {
+    return(out)
+  }
+  bare_results(out)
 }
 
 # The columns every `nested_results` method reads: the per-fold record, plus at

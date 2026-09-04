@@ -102,6 +102,41 @@ test_that("rename() moving a record column keeps neither the class nor the recor
   expect_no_record(out, "rename(x, fold = id)")
 })
 
+# Every record column in turn, through `names<-` directly -- the door
+# `rename()` uses -- and a column outside the record, which the record does
+# not depend on and whose rename keeps the object whole.
+test_that("names<- sheds the record for every record column and keeps it for a column outside it", {
+  skip_if_no_engines()
+  res <- compat_results()
+  record <- which(record_columns(res))
+  expect_true(length(record) >= 8L)
+
+  for (i in record) {
+    nm <- names(res)[[i]]
+    out <- res
+    names(out)[[i]] <- "renamed"
+    expect_no_record(out, paste0("names<- on ", nm))
+    # The passing control: the column really was renamed.
+    expect_false(nm %in% names(out), label = paste0(nm, " still present"))
+  }
+
+  with_extra <- dplyr::mutate(res, extra = seq_len(dplyr::n()))
+  expect_record_kept(with_extra, res)
+  out <- with_extra
+  names(out)[names(out) == "extra"] <- "renamed"
+  expect_record_kept(out, res)
+  expect_identical(attributes(out)[setdiff(names(attributes(out)), "names")],
+    attributes(with_extra)[setdiff(names(attributes(with_extra)), "names")])
+  expect_true("renamed" %in% names(out))
+  expect_false("extra" %in% names(out))
+
+  # A column outside the record taking a record column's name is a duplicate,
+  # and sheds the record like a moved one.
+  clash <- with_extra
+  names(clash)[names(clash) == "extra"] <- "splits"
+  expect_no_record(clash, "names<- duplicating splits")
+})
+
 # AC2. Reordering rows is inside the invariants: the folds are a set, and an
 # object holding all of them still answers for the run whatever order they sit
 # in.
