@@ -1490,6 +1490,27 @@ frame, stay `rsample::analysis()`'s and `last_fit()`'s to refuse (M54).
 Falsified by an rsample-built design the rules refuse, or by the fat path
 taking a real design after the check ships.
 
+### D-050 (2026-09-04): `nnet` joins Suggests for the simulation script behind the site-only article — extends the dependency set D-044 last added to, and is the first addition serving a script the package build excludes
+
+**Context:** M64 ships a site-only article whose numbers come from a stored
+result that `vignettes/articles/why-nest-sim.R` produces by hand. The plan
+gate's probes found a random forest shows no tuning optimism on null wide
+data, and a small neural net does; the script therefore fits
+`parsnip::mlp()` on the `nnet` engine. The script is under
+`^vignettes/articles$`, which M60 adds to `.Rbuildignore`, and the article
+reads the store, so nothing in the tarball or the pkgdown build calls `nnet`.
+
+**Decision:** `nnet` joins Suggests. Considered and rejected at the gate:
+no declaration (the script would check for the package itself, but the
+package producing a shipped page's figures then rests on an undeclared
+dependency); `Config/Needs/website` (the pkgdown job never runs the script,
+so the slot would install a package it does not use).
+
+**Consequences:** The Suggests set gains one recommended package that
+`R CMD check` never exercises; the script's `requireNamespace()` names it.
+Falsified by a CRAN check flagging an unused Suggests entry, or by the
+article's store being regenerated without the package.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
