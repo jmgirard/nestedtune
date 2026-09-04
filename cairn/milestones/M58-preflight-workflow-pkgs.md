@@ -60,6 +60,8 @@ A run whose daemons or host lack a package the workflow or the tuner needs is re
 - 2026-09-04: T5 done. Roxygen daemons bullet, NEWS entry and the DESIGN architecture sentence added; `air format --check` clean on R/ and tests/; `devtools::document()` rewrote only `man/nested_tune_grid.Rd` and is stable on a second run; `devtools::check()` 0 errors, 0 warnings, 0 notes.
 - 2026-09-04: all tasks checked, verify slot clean; status set to review by /milestone-implement. Two judgments not in the plan, recorded here: `workflow_pkgs()` falls back to the engine's list when `tune::required_pkgs()` raises, so the pre-M58 engine check never weakens; and the incompatible branch carries no missing-package bullet because the package rung outranks it, so the pair is named by the package abort.
 
+- 2026-09-04: step-7 approval: PR #68 approved for merge (the maintainer chose apply-the-six-fixes-then-merge at the gate; re-verification green).
+
 ## Decisions
 
 ## Review
@@ -88,4 +90,5 @@ A run whose daemons or host lack a package the workflow or the tuner needs is re
 - F14 (reject): `pkgs` was added as the second positional parameter of `daemons_load_status()`. Every caller is named; internal function.
 - F15 (reject): `cairn/references/code-inventory.md` still names `check_model_spec()`. Pre-existing drift since M33, not introduced here.
 - Gate triage 2026-09-04: the maintainer accepted the proposed dispositions (six fix-now, nine rejected as logged). Fix-now landed on the branch: F1 a test whose mock captures the probe's `pkgs` and asserts it equals `needed_pkgs()` for the grid and race drivers; F4 the DESIGN sentence now says the host reads the workflow half and the tuner refusal the tuner half; F5 NEWS names both refusal classes under the shared one; F6 `deparse1()` in both install hints; F11 the probe expression wrapped in `local()`, with `local` added to the probe-names allowlist test; F12 the ledger comment re-pointed to :759/:765. Follow-up rows: none.
+- Re-verification after the fixes 2026-09-04: `devtools::test()` 5985 pass, 0 fail, 0 skip; `devtools::check()` 0 errors, 0 warnings, 0 notes (22 min). An intermediate `check()` run failed one pre-existing time-bounded classify test ("a pool with no daemon at all is a non-response") at its 30 s limit while an unrelated `R CMD check` was saturating the machine; the file passed alone and the clean run above followed once that process exited. The one extra edit the fixes needed: the classify ledger rows shifted by one for the allowlist line.
 - conversation: PR #68 — empty read (no reviews, no comments, no unresolved threads) before the merge chip.
