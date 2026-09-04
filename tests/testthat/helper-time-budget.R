@@ -710,49 +710,49 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      272L,
+      278L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "a failed fold does not disturb the others"
     ),
     tb_row(
       "test-parallel-identity.R",
-      283L,
+      289L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "notes survive the trip back from a worker"
     ),
     tb_row(
       "test-parallel-identity.R",
-      346L,
+      352L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the parallel branch really ran"
     ),
     tb_row(
       "test-parallel-identity.R",
-      443L,
+      449L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with param_info supplied"
     ),
     tb_row(
       "test-parallel-identity.R",
-      496L,
+      502L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with a two-class fixture at event_level second"
     ),
     tb_row(
       "test-parallel-identity.R",
-      543L,
+      549L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the identity holds with a censored fixture at a named eval_time"
     ),
     tb_row(
       "test-parallel-identity.R",
-      597L,
+      603L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the Bayesian path matches serial at two above-threshold daemon counts",
@@ -761,7 +761,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      645L,
+      651L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the control reaches every fold on the parallel path as on the serial one",
@@ -769,7 +769,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      702L,
+      708L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "both racing paths match serial at two above-threshold daemon counts",
@@ -778,7 +778,7 @@ time_budget_ledger <- function() {
     ),
     tb_row(
       "test-parallel-identity.R",
-      761L,
+      767L,
       "start_daemons",
       START_DAEMONS_BOUND_S(),
       "the annealing path matches serial at two above-threshold daemon counts",
