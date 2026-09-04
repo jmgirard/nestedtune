@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-03 (M56 done and archived; M51's row pruned under t
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | in-progress | — | normal | milestones/M057-test-suite-and-ci-findings.md |
+| M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | review | — | normal | milestones/M057-test-suite-and-ci-findings.md |
 | M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | done | — | normal | milestones/archive/M56-results-class-and-help-page-findings.md |
 | M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | done | — | normal | milestones/archive/M55-design-entry-checks.md |
 | M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | done | — | normal | milestones/archive/M54-inner-finalize-analysis-frame.md |

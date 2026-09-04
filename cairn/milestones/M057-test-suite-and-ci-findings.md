@@ -1,6 +1,6 @@
 # M57: The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -50,7 +50,7 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 - [x] T5: Add `timeout-minutes: 30` beside `runs-on` and `TESTTHAT_CPUS: 4` to the `env:` block in `.github/workflows/R-CMD-check-hard.yaml:19-33`; sum the suite's declared bounds under the cap per the M16/M48 lesson; rewrite `cairn/PROFILE.md:48-50` to name the capped workflows.
 - [x] T6: Add `skip_if_not_installed("tibble")` as the first line of every block in `tests/testthat/test-vctrs-compat.R` whose body calls `tibble::` (eleven at 161, 233, 243, 257, 283, 318, 348, 371, 401, 430, 478 on the branch base; the plan's nine line numbers predated M56); verify with a parse over the file's `test_that()` calls.
 - [x] T7: At `tests/testthat/test-dots-barrier.R:144-153` assert the named method list is in `probed`; delete `collect_metrics_call_args()` (`:199-241`), the corpus walk (`:250-272`), both positional filters (`:279-282`, `:307-310`) and the scan's discrimination test (`:289-312`), keeping the runtime positional-argument test.
-- [ ] T8: `devtools::test()`, `devtools::check()`.
+- [x] T8: `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -65,6 +65,7 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 - 2026-09-03: T5 done; `R-CMD-check-hard.yaml` caps its job at 30 minutes (last green main run 12m09s, check step 9m10s, job 100897115868) and sets `TESTTHAT_CPUS: 4`; the PROFILE sentence names the four cap-bearing workflows and the unaudited stress one, no hit count, PROFILE at 120 lines. The declared wait bounds (`time_budget_totals()`) sum to 4623.7 s over seven daemon files, 2640 of it `test-parallel-identity.R`, above any 30-minute cap on a leg that runs them; the hard leg installs no mirai so every one skips there, and the two legs that run them keep the caps M48 set.
 - 2026-09-03: T6 done; minor amendment: the plan's nine block lines were stale after M56, a parse found eleven `tibble::`-calling blocks and the skips were inserted from their parse positions; the check walks each block's code for a `tibble::` call (a text search caught its own description) and went red naming the block when one skip was removed.
 - 2026-09-03: T7 done; `DOTS_PROBED_METHODS` names the seven methods and the probe went red naming `summary.nested_results` with its `S3method()` line removed from NAMESPACE; `collect_metrics_call_args()`, the corpus walk, both positional filters and the scan's discrimination test are gone. Minor amendment: no test in the suite exercised a positional argument past `collect_metrics()`'s `...` (the plan assumed one), so one was added beside the AC6 formals test — `collect_metrics(res, FALSE)` refused with `rlib_error_dots_nonempty`, `summarize = FALSE` reaching the unsummarised shape.
+- 2026-09-03: T8 done; `devtools::test()` 5756 passing, 0 failures, 0 skips; `devtools::check()` status OK, 0 errors, 0 warnings, 0 notes; status set to review.
 
 ## Decisions
 
