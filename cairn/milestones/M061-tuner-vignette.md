@@ -66,6 +66,8 @@ Ship `vignettes/tuners.Rmd` ("Choosing the inner tuner"), which runs `nested_tun
 - 2026-09-04: CI wait hit the 10-minute ceiling once with seven check legs still pending and none red (format-suggest and pkgdown green); stopped per the wait rule, resume re-derives the state.
 - 2026-09-04: resume: PR #71 open, default branch unmoved, every box evidenced and the approval recorded; re-entered at step 7 (route c), the branch pushed, the conversation read empty again, the merge chip re-posed and approved.
 - 2026-09-04: second CI wait hit the 10-minute ceiling with seven check legs still pending and none red (format-suggest and pkgdown green on head 24a6579); stopped per the wait rule, the marker removed, resume re-derives the state.
+- 2026-09-04: resume: PR #71 open, default branch unmoved, every box evidenced and the approval recorded; re-entered at step 7 (route c), the conversation read empty a third time; the two earlier CI ceilings were cancellations, not slow runs — each pushed ceiling commit re-triggered the workflows (`paths-ignore: cairn/**` is judged against the whole PR diff on `pull_request`) and `cancel-in-progress` killed the run in flight; the chip re-posed with that sequencing stated.
+- 2026-09-04: step-7 approval: PR #71 approved for merge (third posing; the user chose merging on green for head 4d4b14c, the approval line pushed after that green and the restarted docs-only run not waited on).
 
 ## Review
 
