@@ -522,7 +522,17 @@ test_that("every source cited in R/ roxygen is backed by a shelf page", {
 # same shape it meets in the tree.
 
 fixture_tree <- function() {
-  root <- withr::local_tempdir(.local_envir = parent.frame())
+  # A base tempdir removed at the calling block's exit: withr is deliberately
+  # not a dependency of this package (`helper-orchestration.R` says why), and
+  # `test_that()` evaluates its block as a function body, so `on.exit()`
+  # registered in the caller's frame fires at the end of that block.
+  root <- tempfile("citation-fixtures-")
+  dir.create(root)
+  do.call(
+    on.exit,
+    list(bquote(unlink(.(root), recursive = TRUE)), add = TRUE),
+    envir = parent.frame()
+  )
   dir.create(file.path(root, "vignettes", "deeper"), recursive = TRUE)
   dir.create(file.path(root, "shelf"))
   writeLines(
