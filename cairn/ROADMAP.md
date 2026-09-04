@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-04 (M58 done via PR #68, merged as pushed after two
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M59 | Every driver refuses a design whose inner splits are not rsplits, do not share the outer fold's frame or its analysis set, or index rows the outer fold holds out | planned | — | normal | milestones/M59-inner-split-frame-checks.md |
+| M59 | Every driver refuses a design whose inner splits are not rsplits, do not share the outer fold's frame or its analysis set, or index rows the outer fold holds out | in-progress | — | normal | milestones/M59-inner-split-frame-checks.md |
 | M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | done | — | normal | milestones/archive/M58-preflight-workflow-pkgs.md |
 | M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | done | — | normal | milestones/archive/M57-test-suite-and-ci-findings.md |
 | M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | done | — | normal | milestones/archive/M56-results-class-and-help-page-findings.md |
