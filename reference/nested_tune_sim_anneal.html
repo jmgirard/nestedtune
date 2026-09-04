@@ -100,12 +100,20 @@ for tuning with <code><a href="https://hardhat.tidymodels.org/reference/tune.htm
 
 <dt id="arg-resamples">resamples<a class="anchor" aria-label="anchor" href="#arg-resamples"></a></dt>
 <dd><p>A nested resampling design, from <code><a href="nested_resamples.html">nested_resamples()</a></code> or
-<code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>. Its <code>splits</code> column must hold <code>rsplit</code> objects and
-its <code>inner_resamples</code> column an <code>rset</code> per outer fold. Both are checked
-before anything is fitted, because <code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code> builds a design
-whatever its <code>inside</code> argument returned — so a specification that produces
-no <code>rset</code> gives a design that cannot be run, where <code><a href="nested_resamples.html">nested_resamples()</a></code>
-refuses one at construction.</p></dd>
+<code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code>: a data frame whose <code>splits</code> column holds one
+<code>rsplit</code> per outer fold, whose <code>inner_resamples</code> column holds one <code>rset</code>
+with at least one row per outer fold, and whose every other column
+labels the outer folds. A label column must be named <code>id</code>, or <code>id</code>
+followed by a digit from 1 to 9 (the names rsample and tune read id
+columns by), and hold character or factor values; taken together, the
+label columns must give every outer fold a distinct label with no <code>NA</code>.
+A design breaking any of this, or using a bootstrap for the outer loop,
+is refused at the call, before anything is fitted, with condition class
+<code>nestedtune_bad_design</code> and every offending row or column named. The
+checks exist because <code><a href="https://rsample.tidymodels.org/reference/nested_cv.html" class="external-link">rsample::nested_cv()</a></code> builds a design whatever its
+<code>inside</code> argument returned — a specification that produces no <code>rset</code>, or
+an empty one, gives a design that cannot be run, where
+<code><a href="nested_resamples.html">nested_resamples()</a></code> refuses one at construction.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

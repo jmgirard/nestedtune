@@ -61,14 +61,22 @@ nested_tune_race_win_loss(
   A nested resampling design, from
   [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   or
-  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html).
-  Its `splits` column must hold `rsplit` objects and its
-  `inner_resamples` column an `rset` per outer fold. Both are checked
-  before anything is fitted, because
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html):
+  a data frame whose `splits` column holds one `rsplit` per outer fold,
+  whose `inner_resamples` column holds one `rset` with at least one row
+  per outer fold, and whose every other column labels the outer folds. A
+  label column must be named `id`, or `id` followed by a digit from 1 to
+  9 (the names rsample and tune read id columns by), and hold character
+  or factor values; taken together, the label columns must give every
+  outer fold a distinct label with no `NA`. A design breaking any of
+  this, or using a bootstrap for the outer loop, is refused at the call,
+  before anything is fitted, with condition class
+  `nestedtune_bad_design` and every offending row or column named. The
+  checks exist because
   [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
-  builds a design whatever its `inside` argument returned — so a
-  specification that produces no `rset` gives a design that cannot be
-  run, where
+  builds a design whatever its `inside` argument returned — a
+  specification that produces no `rset`, or an empty one, gives a design
+  that cannot be run, where
   [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
   refuses one at construction.
 
