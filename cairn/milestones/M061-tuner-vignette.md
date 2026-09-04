@@ -63,6 +63,7 @@ Ship `vignettes/tuners.Rmd` ("Choosing the inner tuner"), which runs `nested_tun
 - 2026-09-04: review: PR #71 opened (draft); AC2-AC6 verified and ticked; AC1 and AC7 await devtools::check(), the verify slot and the three reviewers; checkpoint.
 - 2026-09-04: review: three reviewers reported (findings and dispositions in the Review section); fix-now edits F1, F3, F5-F10 applied to the page and NEWS, page rebuilt, guard and masked builds re-run; devtools::check() on the final page pending; checkpoint.
 - 2026-09-04: step-7 approval: PR #71 approved for merge (the eight fix-now edits accepted as applied).
+- 2026-09-04: CI wait hit the 10-minute ceiling once with seven check legs still pending and none red (format-suggest and pkgdown green); stopped per the wait rule, resume re-derives the state.
 
 ## Review
 
