@@ -75,7 +75,11 @@ hang_trace_target <- function(file, test) {
 # prints a `start` only on first sight of a file or of a block, and an `end`
 # only for one currently open; a block once ended stays remembered until its
 # file ends, so the re-announcement that precedes `end_file` cannot reopen it.
-# In serial mode every event arrives exactly once and the bookkeeping is inert.
+# When the file ends both records drop the file's targets -- `seen` so a
+# same-named block in a later file starts afresh, and `open` so a block that
+# never ended (the killed-job case, or a reporter that never saw its `end`)
+# does not stay open into the files that follow (M57). In serial mode every
+# event arrives exactly once and the bookkeeping is inert.
 HangTraceReporter <- R6::R6Class(
   "HangTraceReporter",
   inherit = Reporter,
@@ -98,12 +102,10 @@ HangTraceReporter <- R6::R6Class(
     },
     end_file = function() {
       private$close(hang_trace_target(self$current_file, NULL))
-      # Forget the file's blocks so a same-named block in a later file starts
-      # afresh; the file name itself is keyed with them.
-      targets <- ls(self$seen, all.names = TRUE)
-      own <- targets == self$current_file |
-        startsWith(targets, paste0(self$current_file, " :: "))
-      rm(list = targets[own], envir = self$seen)
+      # Forget the file's blocks, in both records; the file name itself is
+      # keyed with them.
+      private$forget(self$seen)
+      private$forget(self$open)
       self$current_file <- NULL
     },
     start_test = function(context, test) {
@@ -114,6 +116,13 @@ HangTraceReporter <- R6::R6Class(
     }
   ),
   private = list(
+    # Drop the current file's targets from one record.
+    forget = function(record) {
+      targets <- ls(record, all.names = TRUE)
+      own <- targets == self$current_file |
+        startsWith(targets, paste0(self$current_file, " :: "))
+      rm(list = targets[own], envir = record)
+    },
     announce = function(target) {
       if (exists(target, envir = self$seen, inherits = FALSE)) {
         return(invisible(FALSE))

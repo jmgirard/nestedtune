@@ -1037,8 +1037,12 @@ skip_if_no_censored <- function() {
 # Most of this suite's runtime went on building the same tuning run over and
 # over -- one file alone asked for a byte-identical `nested_tune_grid()` result
 # seventeen times. `memoised()` wraps such a call so the run is built once per
-# suite run and every later request for the same run is served from the cache.
-# Nothing about what a test asserts changes; only how many times the fit happens.
+# worker process and every later request for the same run in that process is
+# served from the cache. The cache is an environment in the process that built
+# it: under parallel test files (M52) each worker holds its own, so a fixture
+# two files share is built once in each worker that runs one of them, and a
+# serial run builds it once. Nothing about what a test asserts changes; only
+# how many times the fit happens.
 #
 # "The same run" means the whole of it. The key is a hash of the canonical form
 # (below) of every argument the call passes, plus the RNG state in force once
@@ -1391,6 +1395,51 @@ fixture_cache_report <- function() {
   out <- out[order(-out$requests, out$signature), ]
   row.names(out) <- NULL
   out
+}
+
+# The report as teardown-fixture-cache.R prints it: a header, one row per
+# signature, and a warning line when any signature was built more than once.
+# Nothing is written for an empty report. `stderr()` because it is unbuffered
+# and is the stream the hang trace uses; the teardown passes it explicitly.
+print_fixture_cache_report <- function(
+  report = fixture_cache_report(),
+  file = stderr()
+) {
+  if (nrow(report) == 0L) {
+    return(invisible(report))
+  }
+  cat(
+    sprintf(
+      "\nfixture cache: %d signatures, %d builds, %d requests\n",
+      nrow(report),
+      sum(report$builds),
+      sum(report$requests)
+    ),
+    file = file
+  )
+  cat(sprintf("%7s %9s  %s\n", "builds", "requests", "signature"), file = file)
+  for (i in seq_len(nrow(report))) {
+    cat(
+      sprintf(
+        "%7d %9d  %s\n",
+        report$builds[[i]],
+        report$requests[[i]],
+        substr(report$signature[[i]], 1L, 96L)
+      ),
+      file = file
+    )
+  }
+  rebuilt <- report[report$builds > 1L, , drop = FALSE]
+  if (nrow(rebuilt) > 0L) {
+    cat(
+      sprintf(
+        "WARNING: %d fixture(s) built more than once -- the same fit was paid for twice\n",
+        nrow(rebuilt)
+      ),
+      file = file
+    )
+  }
+  invisible(report)
 }
 
 # A stand-in for a tuning run whose `collect_metrics()` is a table given by

@@ -6,9 +6,20 @@
 # assertion that matters is not that lines appear -- it is that a per-TEST start
 # and end appear, carrying the block's own description.
 
-fixture_two_blocks <- function() {
+# The directory is removed when the CALLER's frame exits (M57): the fixture
+# hands its path back, so it cannot clean up on its own exit, and every caller
+# is a `test_that()` block whose frame is the right lifetime.
+fixture_two_blocks <- function(frame = parent.frame()) {
   dir <- tempfile("hang-trace-fixture-")
   dir.create(dir)
+  do.call(
+    on.exit,
+    list(
+      substitute(unlink(dir, recursive = TRUE), list(dir = dir)),
+      add = TRUE
+    ),
+    envir = frame
+  )
   path <- file.path(dir, "test-trace-fixture.R")
   writeLines(
     c(
@@ -84,6 +95,42 @@ test_that("a block that never ends leaves an unmatched start", {
   expect_true(all(grepl("start", per_test)))
 })
 
+test_that("a file's end forgets its unended blocks as well as its ended ones", {
+  # M52's review: `end_file()` cleared `seen` and left `open` alone, so a
+  # block whose `end` never came stayed open after its file was over. The
+  # same wedged reporter as above, inspected rather than read off its lines.
+  WedgedReporter <- R6::R6Class(
+    "WedgedReporter",
+    inherit = HangTraceReporter,
+    public = list(end_test = function(context, test) invisible(NULL))
+  )
+  reporter <- WedgedReporter$new()
+  path <- fixture_two_blocks()
+  out <- grep(" :: ", trace_lines(path, reporter = reporter), value = TRUE)
+
+  # Both blocks were opened and neither was closed, on this reporter, which
+  # is the precondition: without it an empty `open` would prove nothing.
+  expect_length(out, 2L)
+  expect_true(all(grepl("start", out)))
+
+  own <- function(record) {
+    targets <- ls(record, all.names = TRUE)
+    targets[startsWith(targets, basename(path))]
+  }
+  expect_identical(own(reporter$open), character())
+  expect_identical(own(reporter$seen), character())
+})
+
+test_that("the two-block fixture's directory is gone once its caller returns", {
+  caller <- function() {
+    path <- fixture_two_blocks()
+    expect_true(file.exists(path))
+    dirname(path)
+  }
+  dir <- caller()
+  expect_false(dir.exists(dir))
+})
+
 # --- Parallel test files (M52) ----------------------------------------------
 #
 # With `Config/testthat/parallel: true` the reporter runs in the parent and
@@ -98,9 +145,12 @@ test_that("a block that never ends leaves an unmatched start", {
 # the runner's own composite reporter with two workers. `package = "testthat"`
 # because a worker must `library()` something and the fixture is not a
 # package; nothing else about the run depends on which package that is.
-trace_lines_parallel <- function(reporter = check_reporter_with_hang_trace()) {
-  dir <- tempfile("hang-trace-parallel-")
+trace_lines_parallel <- function(
+  reporter = check_reporter_with_hang_trace(),
+  dir = tempfile("hang-trace-parallel-")
+) {
   dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
   writeLines(
     c(
       'test_that("sleeping block", { Sys.sleep(0.5); expect_true(TRUE) })',
@@ -177,7 +227,15 @@ test_that("the reporter and the runner's composite both declare live updates", {
 })
 
 test_that("under parallel files every file and block gets exactly one live pair", {
-  out <- grep("^\\[hang-trace\\]", trace_lines_parallel(), value = TRUE)
+  dir <- tempfile("hang-trace-parallel-")
+  out <- grep(
+    "^\\[hang-trace\\]",
+    trace_lines_parallel(dir = dir),
+    value = TRUE
+  )
+  # The fixture directory is the helper's to remove (M57), asserted on this
+  # run rather than on a second one.
+  expect_false(dir.exists(dir))
 
   # One start and one end per file and per block: live mode re-announces the
   # file and the block before every forwarded event, and without the
@@ -204,4 +262,63 @@ test_that("under parallel files every file and block gets exactly one live pair"
     as.numeric(trace_stamp(end) - trace_stamp(start), units = "secs"),
     0.4
   )
+})
+
+# --- Duplicate descriptions (M57) --------------------------------------------
+#
+# The trace keys a block by `<file> :: <description>`, so two blocks in one file
+# sharing a description share one key: the second never prints a `start`, and
+# the first `end` closes both. A hang in the second block would then be read
+# as a hang in the first. M52's review weighed an occurrence counter in the
+# reporter and chose this instead: the suite simply has no such pair, and the
+# scan below is what keeps it so.
+
+# Every `<file> :: <description>` that a second block in the same file repeats.
+duplicated_descriptions <- function(dir) {
+  files <- list.files(dir, pattern = "^test-.*[.]R$")
+  unlist(lapply(files, function(file) {
+    desc <- test_that_descriptions(file.path(dir, file))
+    dup <- unique(desc[!is.na(desc) & duplicated(desc)])
+    # `paste()` on an empty vector would answer with a bare `<file> :: `.
+    if (length(dup) == 0L) {
+      return(character())
+    }
+    paste(file, "::", dup)
+  }))
+}
+
+test_that("no two test_that() blocks in one file share a description", {
+  dir <- test_path(".")
+  files <- list.files(dir, pattern = "^test-.*[.]R$")
+  # The scan is worthless over an empty directory, and one that reads no
+  # block at all is the same failure one level down.
+  expect_gt(length(files), 0L)
+  expect_gt(
+    length(unlist(lapply(file.path(dir, files), test_that_descriptions))),
+    0L
+  )
+
+  expect_identical(duplicated_descriptions(dir), character())
+})
+
+test_that("the duplicate-description scan reports a planted duplicate", {
+  dir <- tempfile("hang-trace-duplicates-")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  writeLines(
+    c(
+      'test_that("twice", { expect_true(TRUE) })',
+      'test_that("once", { expect_true(TRUE) })',
+      'test_that("twice", { expect_true(TRUE) })'
+    ),
+    file.path(dir, "test-planted.R")
+  )
+  writeLines(
+    'test_that("twice", { expect_true(TRUE) })',
+    file.path(dir, "test-clean.R")
+  )
+
+  # Named, not counted: the same description in a different file is a
+  # different key and must not be reported.
+  expect_identical(duplicated_descriptions(dir), "test-planted.R :: twice")
 })
