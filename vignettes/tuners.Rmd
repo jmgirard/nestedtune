@@ -33,15 +33,13 @@ library(workflows)
 
 ```{r deps, include = FALSE}
 has_ranger <- requireNamespace("ranger", quietly = TRUE)
-has_dials <- requireNamespace("dials", quietly = TRUE)
 ```
 
-```{r deps-notice, eval = !(has_ranger && has_dials), echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
 cat(
-  "The runs below fit random forests with the **ranger** package and bound",
-  "their parameter ranges with the **dials** package. At least one of the",
-  "two is not installed here, so the rest of this page has been skipped.",
-  "Install both and rebuild to see it.\n"
+  "The runs below fit random forests with the **ranger** package, which is",
+  "not installed here, so the rest of this page has been skipped. Install",
+  "ranger and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
@@ -172,8 +170,8 @@ cat(
   "packages, and",
   if (length(missing) == 1L) "one of them is" else "some of them are",
   "not installed here:",
-  paste0("**", missing, "**", collapse = ", "),
-  ". The two racing sections",
+  paste0(paste0("**", missing, "**", collapse = ", "), "."),
+  "The two racing sections",
   if (has_finetune) "have" else "and the simulated annealing section have",
   "been skipped. Install what is missing and rebuild to see them.\n"
 )
