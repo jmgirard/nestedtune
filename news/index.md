@@ -2,6 +2,17 @@
 
 ## nestedtune 0.0.0.9000
 
+- The guide
+  [`vignette("nested-cv")`](https://nestedtune.tidymodels.org/articles/nested-cv.md)
+  is now the getting-started path alone: design, loop, what to report,
+  what each fold chose, the final fit, reproducibility and the write-up.
+  What the nested estimate means moved to a new page,
+  [`vignette("estimate")`](https://nestedtune.tidymodels.org/articles/estimate.md):
+  which quantity it estimates, why it tends to run a little pessimistic,
+  what `std_err` is and is not, why two nested estimates cannot be
+  subtracted to compare workflows, why the outer folds disagree, and
+  when nesting is worth its cost. The new page runs no code.
+
 - [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
   [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
   [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md),

@@ -3,9 +3,12 @@
 Nested cross-validation for the tidymodels ecosystem.
 
 Start with [Nested
-cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.html)
-— what the estimate means, what to report instead of your model’s own
-score, and how to read disagreement between outer folds.
+cross-validation](https://nestedtune.tidymodels.org/articles/nested-cv.html),
+which walks from a nested design to a write-up. Then read [What the
+estimate
+means](https://nestedtune.tidymodels.org/articles/estimate.html): which
+quantity the nested number estimates, what to report instead of your
+model’s own score, and how to read disagreement between outer folds.
 
 ## Installation
 
@@ -129,6 +132,8 @@ predict(final, new_data = mtcars[1:3, ])
 #> 3  23.8
 ```
 
-Why the estimate belongs to the procedure rather than to the model, and
-what to write up, is the subject of [the
-guide](https://nestedtune.tidymodels.org/articles/nested-cv.html).
+What to write up is the subject of [the
+guide](https://nestedtune.tidymodels.org/articles/nested-cv.html). Why
+the estimate belongs to the procedure rather than to the model is the
+subject of [What the estimate
+means](https://nestedtune.tidymodels.org/articles/estimate.html).
