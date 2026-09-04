@@ -421,6 +421,11 @@ by name inside that daemon's copy. The error names the missing functions
 and asks you to reinstall and then restart the pool — a running daemon
 keeps the namespace it has already loaded, so reinstalling underneath one
 changes nothing until it is replaced.</p></li>
+<li><p>The same round trip also asks every daemon for each package the workflow
+and the tuner need — the engine's, a recipe step's, and for a race the
+package its model is fitted with — and stops when one daemon cannot load
+one of them, naming how many daemons are affected and which packages.
+Install them into the daemons' library and restart the pool.</p></li>
 <li><p>A daemon that does not answer at all is reported as a non-response, not as
 a missing package, so a merely slow daemon is never met with advice to
 install what you already have. The check waits 30 seconds by default; set
