@@ -192,20 +192,34 @@ already applied:</p>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>inner <span class="ot">&lt;-</span> <span class="er">&lt;</span>the design<span class="st">'s `inside` specification&gt;(data)</span></span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="st">control &lt;- fit$procedure$control</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="st"># a grid procedure</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="st"># a grid procedure: the recorded control, untouched</span></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="st">tuned &lt;- tune_grid(object, inner, grid = grid, param_info = param_info,</span></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="st">  metrics = metrics, eval_time = eval_time, control = control)</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="st"># a Bayesian procedure: the Gaussian process is seeded from the tuning</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="st"># seed, the rule nested_tune_bayes() fixes for every fold, so the</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="st"># recorded control -- which carries no seed -- takes it here</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="st">control$seed &lt;- fit$tuning_seed</span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="st">tuned &lt;- tune_bayes(object, inner, iter = iter, initial = initial,</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="st">  objective = objective, param_info = param_info, metrics = metrics,</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="st">  eval_time = eval_time, control = control)</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="st">final &lt;- finalize_workflow(object, select_best(tuned, metric = &lt;first metric&gt;))</span></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="st">set.seed(fit$fit_seed, kind = "Mersenne-Twister",</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="st">         normal.kind = "Inversion", sample.kind = "Rejection")</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="st">fit(final, data)</span></span></code></pre><p></p></div>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="st"># a racing procedure, ANOVA or win/loss: the race'</span>s own draws <span class="sc">--</span> the</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># resample order under `randomize` -- come from the stream the tuning</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># seed set, so the recorded `control_race()` is likewise untouched</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>tuned <span class="ot">&lt;-</span> <span class="fu">tune_race_anova</span>(object, inner, <span class="at">grid =</span> grid, <span class="at">param_info =</span> param_info,</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>  <span class="at">metrics =</span> metrics, <span class="at">eval_time =</span> eval_time, <span class="at">control =</span> control)</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>tuned <span class="ot">&lt;-</span> <span class="fu">tune_race_win_loss</span>(object, inner, <span class="at">grid =</span> grid, <span class="at">param_info =</span> param_info,</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>  <span class="at">metrics =</span> metrics, <span class="at">eval_time =</span> eval_time, <span class="at">control =</span> control)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co"># an annealing procedure: the perturbations draw from the same stream, and</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co"># `control_sim_anneal()` has no seed slot, so the recorded control is</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co"># again untouched</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>tuned <span class="ot">&lt;-</span> <span class="fu">tune_sim_anneal</span>(object, inner, <span class="at">iter =</span> iter, <span class="at">initial =</span> initial,</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>  <span class="at">param_info =</span> param_info, <span class="at">metrics =</span> metrics, <span class="at">eval_time =</span> eval_time,</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>  <span class="at">control =</span> control)</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co"># a Bayesian procedure, the one branch that alters the control: the</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co"># Gaussian process is seeded from the tuning seed, the rule</span></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co"># nested_tune_bayes() fixes for every fold, so the recorded control --</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="co"># which carries no seed -- takes it here, and only here</span></span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>control<span class="sc">$</span>seed <span class="ot">&lt;-</span> fit<span class="sc">$</span>tuning_seed</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>tuned <span class="ot">&lt;-</span> <span class="fu">tune_bayes</span>(object, inner, <span class="at">iter =</span> iter, <span class="at">initial =</span> initial,</span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>  <span class="at">objective =</span> objective, <span class="at">param_info =</span> param_info, <span class="at">metrics =</span> metrics,</span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>  <span class="at">eval_time =</span> eval_time, <span class="at">control =</span> control)</span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>final <span class="ot">&lt;-</span> <span class="fu">finalize_workflow</span>(object, <span class="fu">select_best</span>(tuned, <span class="at">metric =</span> <span class="sc">&lt;</span>first metric<span class="sc">&gt;</span>))</span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a><span class="fu">set.seed</span>(fit<span class="sc">$</span>fit_seed, <span class="at">kind =</span> <span class="st">"Mersenne-Twister"</span>,</span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>         <span class="at">normal.kind =</span> <span class="st">"Inversion"</span>, <span class="at">sample.kind =</span> <span class="st">"Rejection"</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a><span class="fu">fit</span>(final, data)</span></code></pre><p></p></div>
 <p>Building the resamples sits <em>inside</em> the first seed's scope, not before it:
 constructing an <code>rset</code> draws from the generator, so a version that built them
 earlier would still be reproducible from the session seed but no longer from

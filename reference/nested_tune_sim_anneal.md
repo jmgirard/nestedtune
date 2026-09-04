@@ -306,7 +306,10 @@ from a mirai daemon where nothing shows it; pass
 as on
 [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
 `parallel_over` included: it changes the numbers a stochastic engine
-produces even at `allow_par = FALSE`.
+produces even at `allow_par = FALSE`. This classification was read on
+finetune 1.3.0; the version that added `workflow_size` to
+`control_sim_anneal()` is not named in finetune's NEWS, and the
+`>= 1.0.1` floor this package declares does not require it.
 
 **Not returned: `extract`, `save_pred`, `save_workflow`,
 `save_history`.** The first three as on

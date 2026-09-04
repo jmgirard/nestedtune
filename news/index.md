@@ -2,6 +2,33 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`extract_tune_results()`](https://nestedtune.tidymodels.org/reference/extract_tune_results.md)
+  and
+  [`extract_scored_candidates()`](https://nestedtune.tidymodels.org/reference/extract_scored_candidates.md)
+  on an object they have no method for – a `nested_results`, a list, a
+  number – now signal the `nestedtune_no_extract_method` refusal naming
+  that object whatever else was passed in `...`. Before, a stray
+  argument was reported first and the object not at all.
+
+- Three compatibility changes to the `nested_results` class. Printing
+  the columnless type token
+  [`vctrs::vec_cbind_frame_ptype()`](https://vctrs.r-lib.org/reference/vec_cbind_frame_ptype.html)
+  hands back no longer errors, and writes the banner and the rows alone:
+  neither the outer-label line nor a fold count. A column add that
+  leaves two columns sharing a record column’s name –
+  [`vctrs::vec_cbind()`](https://vctrs.r-lib.org/reference/vec_bind.html)
+  or
+  [`dplyr::bind_cols()`](https://dplyr.tidyverse.org/reference/bind_cols.html)
+  with `.name_repair = "minimal"` – returns a bare tibble carrying none
+  of the run’s attributes, as a repair that moves the column already
+  did; two columns outside the record sharing a name leave the object as
+  it is. And `names<-`, the door
+  [`dplyr::rename()`](https://dplyr.tidyverse.org/reference/rename.html)
+  uses, keeps the object and every attribute intact when each record
+  column keeps its name, a rename that duplicates a name outside the
+  record included, and returns a bare tibble when a record column is
+  renamed or a column outside the record takes one’s name.
+
 - [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
   [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
   [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md),
