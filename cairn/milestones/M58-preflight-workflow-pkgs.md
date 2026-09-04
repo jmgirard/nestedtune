@@ -7,7 +7,7 @@
 - **Principles touched:** GP3
 - **Resolves:** —
 - **Surface tier:** user-facing — a refusal every parallel driver raises before dispatch, and a host-side entry refusal
-- **Branch/PR:** `m058-preflight-workflow-pkgs`
+- **Branch/PR:** `m058-preflight-workflow-pkgs` · https://github.com/tidymodels/nestedtune/pull/68
 
 ## Goal
 
