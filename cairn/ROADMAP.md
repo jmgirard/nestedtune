@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-04 (M59 done via PR #69, merged as pushed after two
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | in-progress | — | normal | milestones/M060-guide-split.md |
+| M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | review | — | normal | milestones/M060-guide-split.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | planned | M60 | normal | milestones/M061-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | planned | M60 | normal | milestones/M062-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | planned | M60 | normal | milestones/M063-parallel-article.md |

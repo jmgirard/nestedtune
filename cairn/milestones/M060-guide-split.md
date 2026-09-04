@@ -1,6 +1,6 @@
 # M60: The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -46,7 +46,7 @@ Split `vignettes/nested-cv.Rmd` into a short getting-started guide that walks th
 - [x] T3: Write `vignettes/estimate.Rmd`: move the estimand, pessimism, `std_err`, no-comparison, disagreement-mechanism, "When this is worth the cost", feature-selection and References material out of the guide, rewriting each inline-R number as prose or a cited figure, with a `setup` chunk only; cite each source as the guide did so every entry's shelf page still backs it; every prose digit inside a backtick span or a paragraph carrying a citation.
 - [x] T4: Trim `vignettes/nested-cv.Rmd` to the path in Goal, replacing each moved passage with one sentence and a link to the concept page; keep the `deps`/`deps-notice` guard, the `error = TRUE` refusal chunks, the `autoplot()` figures, a shortened Reproducibility section and the write-up block; every prose digit inside a backtick span or inline R, and a References section kept only if a citation stays; render both `autoplot()` figures to PNG and look at them before committing (the M08 lesson).
 - [x] T5: Add the page to `_pkgdown.yml` under Guides; add `^vignettes/articles$` to `.Rbuildignore`; update `README.Rmd`'s guide paragraph to link both pages and re-render `README.md`; run `pkgdown::check_pkgdown()`.
-- [ ] T6: Measure AC6's figure and log it with its date and commit; run the profile's verify slot and `devtools::check()`; build once with `ranger` masked from `.libPaths()` for AC1's notice path.
+- [x] T6: Measure AC6's figure and log it with its date and commit; run the profile's verify slot and `devtools::check()`; build once with `ranger` masked from `.libPaths()` for AC1's notice path.
 
 ## Work log
 
@@ -62,3 +62,4 @@ Split `vignettes/nested-cv.Rmd` into a short getting-started guide that walks th
 - 2026-09-04: T4 done: the guide keeps design, grid, loop, report, fold choices with both `autoplot()` figures, final fit with the comparison and the two refusals, a shortened Reproducibility section (the `args()` chunk dropped) and the write-up; each moved passage is one paragraph plus a `vignette("estimate")` link, no citation and no References section remain, no em dash remains, the guard is green, and both figures were rendered to PNG and looked at (subtitles fit, integer breaks).
 - 2026-09-04: T5 done: `estimate` listed under Guides, `^vignettes/articles$` in `.Rbuildignore`, README.Rmd links both pages by site URL and README.md re-rendered (its code output unchanged), `pkgdown::check_pkgdown()` reports no problems.
 - 2026-09-04: T6 in progress: build time measured at commit 78e3868 as elapsed 5.8, 4.8, 4.8 s over three `tools::buildVignettes()` runs on a temp copy (median 4.8 s, AC6's cap 20 s); with ranger masked from `.libPaths()` the guide printed its notice and stopped at `knit_exit()` (no design section in the HTML); the built guide HTML holds every executed output AC1 names; `devtools::test()` clean; the first `devtools::check()` returned one WARNING, `withr::` undeclared in tests, so the fixture tempdir moved to base `tempfile()` with a caller-frame `on.exit()` (withr is deliberately not a dependency); NEWS entry added; the second check is running.
+- 2026-09-04: T6 done: the second `devtools::check()` is clean (0 errors, 0 warnings, 0 notes, 4m57s); all tasks checked, status to review.
