@@ -218,8 +218,14 @@ dispatch_folds <- function(
     ))
   }
 
-  check_daemons_can_load(call = call)
-  attach_daemon_pkgs(object, tuner, call = call)
+  # One list, read by the probe, the attach step and the host's entry check
+  # (M58), so no two of them can name different packages.
+  pkgs <- needed_pkgs(object, tuner)
+  check_daemons_can_load(
+    status = daemons_load_status(pkgs = pkgs, call = call),
+    call = call
+  )
+  attach_daemon_pkgs(object, tuner, pkgs = pkgs, call = call)
   warn_if_not_cancellable(call = call)
 
   record_dispatch("parallel")
@@ -594,6 +600,50 @@ daemon_attach_expr <- function() {
   ))
 }
 
+# What the workflow needs installed, as `tune::required_pkgs()` names it: the
+# engine's packages, a recipe step's, a tailor's (workflows 1.2.0, read
+# 2026-09-04). Asked of the workflow rather than of the engine alone (M58), so
+# a step's package is refused at entry as an engine's always was.
+#
+# A workflow `required_pkgs()` cannot answer for -- the method raises when a
+# recipe's package is not installed, say -- falls back to the engine's own
+# list, the check as it stood before M58, rather than to nothing; and an
+# object that is not a workflow answers with nothing, because
+# `dispatch_folds()` is also driven with stand-in payloads and no workflow at
+# all (test-parallel-detection.R).
+workflow_pkgs <- function(object) {
+  if (!inherits(object, "workflow")) {
+    return(character())
+  }
+  tryCatch(
+    tune::required_pkgs(object),
+    error = function(cnd) {
+      tryCatch(
+        parsnip::required_pkgs(workflows::extract_spec_parsnip(object)),
+        error = function(cnd) character()
+      )
+    }
+  )
+}
+
+# The one list of packages a run needs beside this package (M58): the
+# workflow's, and the tuner's from the registry's `requires` (M50, D-044) --
+# the list the entry refusal reads, so the refusal, the daemon probe and the
+# attach step cannot name different packages. finetune's racers register
+# `collect_metrics()`'s `tune_race` method and read their control inside the
+# fold, and each race fits its model through lme4 or BradleyTerry2 there.
+#
+# tune is left off, as it always was: this package imports it, so the
+# pre-flight's namespace load has already brought it into every daemon; base
+# R's own packages likewise.
+needed_pkgs <- function(object, tuner = NULL) {
+  pkgs <- workflow_pkgs(object)
+  if (!is.null(tuner)) {
+    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$requires)
+  }
+  setdiff(unique(pkgs), c("base", "stats", "utils", "methods", "tune"))
+}
+
 # The workflow's packages, and the tuner's, attached in every daemon before
 # any fold is sent.
 #
@@ -602,32 +652,20 @@ daemon_attach_expr <- function() {
 # stop_mirai(). A daemon that never answers is not fatal here -- it is already
 # the pre-flight's business, and this call runs after it.
 #
-# A package that will not attach is reported rather than raised on. The fold
-# that needs it fails with tune's own message naming the function it could not
-# find, which says more than a package name would; what a warning here adds is
-# the reason, at the moment it is still actionable.
+# A package that will not attach is reported rather than raised on. Since M58
+# the pre-flight refuses a daemon that cannot load one of these at all, so
+# what remains here is a package that loads but will not attach; the fold
+# that needs it fails with tune's own message naming the function it could
+# not find, which says more than a package name would, and what a warning
+# here adds is the reason, at the moment it is still actionable.
 attach_daemon_pkgs <- function(
   object,
   tuner,
+  pkgs = needed_pkgs(object, tuner),
   timeout = preflight_timeout(call = call),
   call = rlang::caller_env()
 ) {
   force(timeout)
-  pkgs <- tryCatch(tune::required_pkgs(object), error = function(cnd) {
-    character()
-  })
-  # The packages the tuner requires beside the workflow's (M50, D-044): the
-  # registry's `requires`, the same list the entry refusal reads, so the
-  # refusal and this attach cannot name different packages. finetune's racers
-  # register `collect_metrics()`'s `tune_race` method and read their control
-  # inside the fold, and each race fits its model through lme4 or
-  # BradleyTerry2 there.
-  # tune is left off the list, as it always was: this package imports it, so
-  # the pre-flight's namespace load has already brought it into every daemon.
-  if (!is.null(tuner)) {
-    pkgs <- c(pkgs, tuner_entry(tuner$tuner)$requires)
-  }
-  pkgs <- setdiff(unique(pkgs), c("base", "stats", "utils", "methods", "tune"))
   if (length(pkgs) == 0L) {
     return(invisible(character()))
   }

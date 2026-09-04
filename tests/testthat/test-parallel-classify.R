@@ -1130,3 +1130,140 @@ test_that("the package abort pluralises on the daemon count and the package coun
   expect_match(two_pkgs, "1 of 1 mirai daemon lacks packages")
   expect_match(two_pkgs, "Install them")
 })
+
+# --- Every parallel driver refuses before dispatch (M58, AC1) ---------------
+#
+# The pre-flight answer is fabricated, as the cannot-load refusal's is in
+# test-parallel-identity.R, and the pool is fabricated with it: mirai_workers()
+# says two daemons are connected, so dispatch_folds() takes the parallel
+# branch and reaches the pre-flight without a daemon anywhere. What is real is
+# everything between the driver's entry and that seam -- the argument checks,
+# the tuner description, the seeds -- and the dispatch recorder proves no
+# fold was sent.
+
+test_that("every parallel driver refuses a pool that lacks a needed package before any fold is dispatched", {
+  skip_if_no_engines()
+  skip_if_not_installed("finetune")
+  skip_if_not_installed("lme4")
+  skip_if_not_installed("BradleyTerry2")
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  nested <- det_nested(d, v = 3)
+
+  # The workflow's own first package for the grid and Bayesian drivers, read
+  # off the same helper the probe reads; each other driver's own requirement.
+  wf_pkg <- workflow_pkgs(wf)[[1L]]
+  drivers <- list(
+    list(
+      pkg = wf_pkg,
+      run = function() {
+        nested_tune_grid(wf, nested, grid = det_grid(), metrics = reg_metrics())
+      }
+    ),
+    list(
+      pkg = wf_pkg,
+      run = function() {
+        nested_tune_bayes(wf, nested, iter = 1, initial = 2)
+      }
+    ),
+    list(
+      pkg = "lme4",
+      run = function() {
+        nested_tune_race_anova(
+          wf,
+          nested,
+          grid = det_grid(),
+          control = race_control()
+        )
+      }
+    ),
+    list(
+      pkg = "BradleyTerry2",
+      run = function() {
+        nested_tune_race_win_loss(
+          wf,
+          nested,
+          grid = det_grid(),
+          control = race_control()
+        )
+      }
+    ),
+    list(
+      pkg = "finetune",
+      run = function() {
+        nested_tune_sim_anneal(wf, nested, iter = 1, initial = 1)
+      }
+    )
+  )
+
+  local_mocked_bindings(mirai_workers = function() 2L)
+
+  for (driver in drivers) {
+    pkg <- driver$pkg
+    # Three answer sets on the three axes: one daemon of two lacking one
+    # package, both daemons lacking it, and one daemon lacking two.
+    sets <- list(
+      list(
+        answers = reports(TRUE, TRUE, missing_pkgs = list(NULL, pkg)),
+        daemons = "1 of 2",
+        pkgs = pkg
+      ),
+      list(
+        answers = reports(TRUE, TRUE, missing_pkgs = list(pkg, pkg)),
+        daemons = "2 of 2",
+        pkgs = pkg
+      ),
+      list(
+        answers = reports(
+          TRUE,
+          TRUE,
+          missing_pkgs = list(NULL, c(pkg, "nestedtune.no.such.package"))
+        ),
+        daemons = "1 of 2",
+        pkgs = c(pkg, "nestedtune.no.such.package")
+      )
+    )
+    for (set in sets) {
+      local({
+        answers <- set$answers
+        local_mocked_bindings(daemons_load_status = function(...) {
+          preflight_outcome(answers, timeout = 30000)
+        })
+        reset_dispatch_record()
+        err <- expect_error(
+          driver$run(),
+          class = "nestedtune_daemons_missing_pkgs"
+        )
+        expect_s3_class(err, "nestedtune_daemons_unusable")
+        expect_null(last_dispatch())
+
+        msg <- conditionMessage(err)
+        expect_match(msg, set$daemons, fixed = TRUE)
+        for (p in set$pkgs) {
+          expect_match(msg, p, fixed = TRUE)
+        }
+        expect_match(msg, "daemons' library", fixed = TRUE)
+        expect_match(msg, "restart the pool")
+      })
+    }
+  }
+})
+
+test_that("the list the probe is sent is the workflow's packages and the tuner's", {
+  # needed_pkgs() is what dispatch_folds() hands the probe and the attach
+  # step; asserted on its own so the two readers cannot drift from it.
+  skip_if_no_engines()
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+
+  expect_identical(needed_pkgs(NULL), character())
+  expect_identical(needed_pkgs(wf), setdiff(workflow_pkgs(wf), "stats"))
+  # tune itself is left off, as the attach step always left it.
+  expect_false("tune" %in% needed_pkgs(wf, tuner_grid(det_grid())))
+  # The registry's `requires` rides beside the workflow's, per tuner.
+  expect_true(all(
+    c("finetune", "lme4") %in%
+      needed_pkgs(wf, tuner_race("tune_race_anova", det_grid()))
+  ))
+})
