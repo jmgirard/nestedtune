@@ -310,8 +310,9 @@ check_label_columns <- function(
        label its outer folds.",
       stats::setNames(bullets, rep("x", n)),
       i = "Every column beside {.field splits} and {.field inner_resamples} \\
-           labels the outer folds. rsample names them {.code id}, {.code id2} \\
-           and so on, and fills them with character or factor values."
+           labels the outer folds. A label column is named {.code id}, or \\
+           {.code id2} through {.code id9}, as rsample's readers find them, \\
+           and holds character or factor values."
     ),
     class = "nestedtune_bad_design",
     call = call
@@ -326,7 +327,9 @@ check_label_values <- function(
   labels,
   call = rlang::caller_env()
 ) {
-  values <- lapply(labels, function(col) resamples[[col]])
+  # Read as labels, not as factors: a factor whose NA is a level (addNA())
+  # answers FALSE to is.na() but labels the fold with nothing all the same.
+  values <- lapply(labels, function(col) as.character(resamples[[col]]))
   names(values) <- labels
   missing <- Reduce(`|`, lapply(values, is.na))
   repeated <- vctrs::vec_duplicate_detect(vctrs::new_data_frame(values))
@@ -338,9 +341,18 @@ check_label_values <- function(
   na_rows <- which(missing)
   n_na <- length(na_rows)
   n_labels <- length(labels)
+  # Headed by what was found: missingness alone is not a uniqueness failure.
+  header <- if (n_na > 0L && any(repeated)) {
+    "{.arg resamples} has missing and repeated outer fold labels."
+  } else if (n_na > 0L) {
+    "{.arg resamples} has {cli::qty(n_na)}{?a missing outer fold label/missing \\
+     outer fold labels}."
+  } else {
+    "{.arg resamples} does not label every outer fold uniquely."
+  }
   cli::cli_abort(
     c(
-      "{.arg resamples} does not label every outer fold uniquely.",
+      header,
       x = if (n_na > 0L) {
         "{cli::qty(n_na)}Row{?s} {na_rows} {cli::qty(n_na)}{?has/have} an \\
          {.code NA} label."

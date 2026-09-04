@@ -649,6 +649,9 @@ refusal <- function(expr) {
     rlang::abort("fitting began", class = "nestedtune_sentinel")
   }
   testthat::local_mocked_bindings(dispatch_folds = sentinel)
+  # Wide enough that cli never wraps a joined position list, so the
+  # all-positions assertions read the positions and not the line breaks.
+  rlang::local_options(cli.width = 500L)
   tryCatch(expr, error = function(cnd) cnd)
 }
 
@@ -697,10 +700,17 @@ test_that("each refusal says which defect it found (M55, AC1-AC3)", {
   expect_match(said("inner_empty_last"), "no rows")
   expect_match(said("label_na_first"), "NA")
   expect_match(said("label_na_last"), "NA")
+  expect_match(said("label_na_level_first"), "NA")
+  expect_match(said("label_na_level_last"), "NA")
+  # An NA-only refusal is headed by missingness, not by the uniqueness claim.
+  expect_no_match(said("label_na_first"), "uniquely")
+  expect_match(said("label_repeat_last"), "uniquely")
   expect_match(said("label_repeat_last"), "1 and 3")
   expect_match(said("id_integer"), "integer")
   expect_match(said("id2_integer_before"), "integer")
-  expect_match(said("weights_character_after"), "id")
+  expect_match(said("weights_character_after"), "not named as rsample")
+  expect_match(said("id10_character_after"), "not named as rsample")
+  expect_match(said("id10_character_after"), "id9")
   expect_match(said("weights_numeric_before"), "weights")
   expect_match(said("extra_list_after"), "extra")
   # Both columns of a design carrying two, in one message.
@@ -763,8 +773,12 @@ test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
   )
   expect_true(anyDuplicated(from_rsample$id) > 0L)
 
+  factor_labels <- det_nested(d)
+  factor_labels$id <- factor(factor_labels$id)
+
   well_formed <- list(
     det_nested = det_nested(d),
+    factor_labels = factor_labels,
     valid_folds = valid_folds(d),
     repeated_design = repeated_design(),
     nested_resamples = from_constructor,

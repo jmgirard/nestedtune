@@ -1960,6 +1960,15 @@ malformed_designs <- function(data) {
     x$id[at] <- NA
     list(design = x, rows = at, columns = character(0))
   }
+  # A factor whose NA is a level: is.na() on the factor is FALSE there, so a
+  # check reading the factor rather than its labels would admit it.
+  plant_na_level <- function(at) {
+    x <- base
+    labels <- x$id
+    labels[at] <- NA
+    x$id <- addNA(factor(labels))
+    list(design = x, rows = at, columns = character(0))
+  }
   plant_repeat <- function(at) {
     x <- base
     x$id[at] <- x$id[[1L]]
@@ -2007,6 +2016,7 @@ malformed_designs <- function(data) {
       plant_element("inner_resamples", at, empty)
     }),
     by_position("label_na", plant_na),
+    by_position("label_na_level", plant_na_level),
     list(
       label_repeat_last = plant_repeat(n),
       label_repeat_all = plant_repeat(seq_len(n)),
@@ -2019,6 +2029,12 @@ malformed_designs <- function(data) {
     stats::setNames(
       both("weights", c("a", "b", "c")),
       c("weights_character_before", "weights_character_after")
+    ),
+    # The near miss: a character column named one past where the readers'
+    # pattern stops.
+    stats::setNames(
+      both("id10", c("a", "b", "c")),
+      c("id10_character_before", "id10_character_after")
     ),
     stats::setNames(
       both("weights", c(1, 2, 3)),

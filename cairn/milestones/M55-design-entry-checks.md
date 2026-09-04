@@ -1,6 +1,6 @@
 # M55: Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -45,7 +45,7 @@ User-facing tier: the refusals fire from the five exported drivers, and the `res
 - [x] T3: One test block per driver in `test-nested-tune-bayes-checks.R`, `test-nested-tune-race-checks.R` (both race exports) and `test-nested-tune-sim-anneal-checks.R` over `malformed_designs(d)`, asserting class and `conditionCall()` per driver. `devtools::test()` clean.
 - [x] T4: `@param resamples` at `R/nested-tune-grid.R:36` states the contract; `NEWS.md` entry; the comment at `R/parallel.R:112` re-read against the new `check_nested()`. `devtools::document()`, `devtools::test()`, `devtools::check()` clean.
 
-- [ ] T5: Review return, findings 1-6 of the [O] lens (Review section). `check_label_values()` tests missingness on `as.character()` of each label column so a factor whose `NA` is a level (`addNA()`) is refused, with a test planting `addNA(factor(c("a", "b", NA)))` as `id` at each position; a factor-labelled well-formed design joins the AC5 controls; the `weights_character_after` assertion matches "not named as rsample"; an NA-only refusal is headed by a missingness line, not the uniqueness claim; the name hint states the rule stops at `id9`, with an `id10` probe added to `malformed_designs()`; `refusal()` pins `cli.width` so the all-positions assertions do not depend on wrapping. `devtools::test()` and `devtools::check()` clean.
+- [x] T5: Review return, findings 1-6 of the [O] lens (Review section). `check_label_values()` tests missingness on `as.character()` of each label column so a factor whose `NA` is a level (`addNA()`) is refused, with a test planting `addNA(factor(c("a", "b", NA)))` as `id` at each position; a factor-labelled well-formed design joins the AC5 controls; the `weights_character_after` assertion matches "not named as rsample"; an NA-only refusal is headed by a missingness line, not the uniqueness claim; the name hint states the rule stops at `id9`, with an `id10` probe added to `malformed_designs()`; `refusal()` pins `cli.width` so the all-positions assertions do not depend on wrapping. `devtools::test()` and `devtools::check()` clean.
 
 ## Work log
 
@@ -65,6 +65,7 @@ User-facing tier: the refusals fire from the five exported drivers, and the `res
 - 2026-09-03: criteria audit of the amended AC3 ran in full mode ([O] fresh reader, not the wording's author): no change recommended; two either-way notes (no probe pins a near-miss name such as `id10`; the clause after the semicolon binds the plant matrix, as AC1, AC2 and AC4 do), both left as they stand at the mini gate.
 - 2026-09-03: amendment executed at the mini gate (user chose adopt-as-shown over a near-miss name probe and over moving the plant matrix to T1), settling review's amendment return on AC3: "one test per driver plants, once before `id` and once after it in column order, an integer `id2`, a character `weights`, a numeric `weights` and a list `extra`, and replaces `id` in place with an integer column, asserting the class each time"; `malformed_designs()` already builds that set, so no code changed. Status → review.
 - 2026-09-03: review re-entered at ea1252f (route d): AC3 verified under the amended clause; fresh test() and check() clean; three-lens review. Defect return 1 of M55 at the step-7 gate (user chose the return over rejecting the finding): finding 1, a factor label whose `NA` is a level passes `check_label_values()`, fails AC2 inside its domain; findings 2-6 ride the same round as T5; AC2 unticked. Status → in-progress. Amendment-return track stands at 1 (AC3).
+- 2026-09-03: T5 done (defect return 1, findings 1-6): `check_label_values()` reads each label column through `as.character()`, so a factor whose `NA` is a level is refused (planted as `label_na_level` at first, last and all three rows; red before the fix, the sentinel class reached); an NA-only refusal is headed "has a missing outer fold label", repeats alone keep the uniqueness header, both together get a combined one; the name hint states `id`, or `id2` through `id9`, with `id10` planted before and after `id`; a factor-labelled `det_nested()` joins the AC5 controls; the `weights_character_after` assertion matches "not named as rsample"; `refusal()` pins `cli.width` at 500. `malformed_designs()` now returns 29 records (24 at T1, the log's 25 miscounted). `devtools::document()` no diff; `devtools::test()` 0 failures, no skips; `devtools::check()` 0 errors, 0 warnings, 0 notes (13m 25s). Status → review.
 
 ## Decisions
 
