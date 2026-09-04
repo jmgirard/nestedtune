@@ -6,9 +6,20 @@
 # assertion that matters is not that lines appear -- it is that a per-TEST start
 # and end appear, carrying the block's own description.
 
-fixture_two_blocks <- function() {
+# The directory is removed when the CALLER's frame exits (M57): the fixture
+# hands its path back, so it cannot clean up on its own exit, and every caller
+# is a `test_that()` block whose frame is the right lifetime.
+fixture_two_blocks <- function(frame = parent.frame()) {
   dir <- tempfile("hang-trace-fixture-")
   dir.create(dir)
+  do.call(
+    on.exit,
+    list(
+      substitute(unlink(dir, recursive = TRUE), list(dir = dir)),
+      add = TRUE
+    ),
+    envir = frame
+  )
   path <- file.path(dir, "test-trace-fixture.R")
   writeLines(
     c(
@@ -84,6 +95,46 @@ test_that("a block that never ends leaves an unmatched start", {
   expect_true(all(grepl("start", per_test)))
 })
 
+test_that("a file's end forgets its unended blocks as well as its ended ones", {
+  # M52's review: `end_file()` cleared `seen` and left `open` alone, so a
+  # block whose `end` never came stayed open after its file was over. The
+  # same wedged reporter as above, inspected rather than read off its lines.
+  WedgedReporter <- R6::R6Class(
+    "WedgedReporter",
+    inherit = HangTraceReporter,
+    public = list(end_test = function(context, test) invisible(NULL))
+  )
+  reporter <- WedgedReporter$new()
+  path <- fixture_two_blocks()
+  trace_lines(path, reporter = reporter)
+
+  # Both blocks were opened and neither was closed, which is the precondition:
+  # without it an empty `open` would prove nothing.
+  out <- grep(
+    " :: ",
+    trace_lines(path, reporter = HangTraceReporter$new()),
+    value = TRUE
+  )
+  expect_length(out, 4L)
+
+  own <- function(record) {
+    targets <- ls(record, all.names = TRUE)
+    targets[startsWith(targets, basename(path))]
+  }
+  expect_identical(own(reporter$open), character())
+  expect_identical(own(reporter$seen), character())
+})
+
+test_that("the two-block fixture's directory is gone once its caller returns", {
+  caller <- function() {
+    path <- fixture_two_blocks()
+    expect_true(file.exists(path))
+    dirname(path)
+  }
+  dir <- caller()
+  expect_false(dir.exists(dir))
+})
+
 # --- Parallel test files (M52) ----------------------------------------------
 #
 # With `Config/testthat/parallel: true` the reporter runs in the parent and
@@ -98,9 +149,12 @@ test_that("a block that never ends leaves an unmatched start", {
 # the runner's own composite reporter with two workers. `package = "testthat"`
 # because a worker must `library()` something and the fixture is not a
 # package; nothing else about the run depends on which package that is.
-trace_lines_parallel <- function(reporter = check_reporter_with_hang_trace()) {
-  dir <- tempfile("hang-trace-parallel-")
+trace_lines_parallel <- function(
+  reporter = check_reporter_with_hang_trace(),
+  dir = tempfile("hang-trace-parallel-")
+) {
   dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
   writeLines(
     c(
       'test_that("sleeping block", { Sys.sleep(0.5); expect_true(TRUE) })',
@@ -177,7 +231,15 @@ test_that("the reporter and the runner's composite both declare live updates", {
 })
 
 test_that("under parallel files every file and block gets exactly one live pair", {
-  out <- grep("^\\[hang-trace\\]", trace_lines_parallel(), value = TRUE)
+  dir <- tempfile("hang-trace-parallel-")
+  out <- grep(
+    "^\\[hang-trace\\]",
+    trace_lines_parallel(dir = dir),
+    value = TRUE
+  )
+  # The fixture directory is the helper's to remove (M57), asserted on this
+  # run rather than on a second one.
+  expect_false(dir.exists(dir))
 
   # One start and one end per file and per block: live mode re-announces the
   # file and the block before every forwarded event, and without the
