@@ -1,0 +1,202 @@
+---
+title: "Reading the results"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reading the results}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Every driver in this package returns the same kind of object, a
+`nested_results`, and the getting-started guide, `vignette("nested-cv")`,
+reads three things off it: the print, the summary and the estimate. This page
+reads the whole object. It walks the columns one at a time, runs each of the
+readers on one result, shows what a run looks like when one outer fold fails,
+says which dplyr verbs keep the class and which shed it, and ends with the two
+arguments a censored-regression run adds.
+
+```{r libraries, message = FALSE}
+library(nestedtune)
+library(parsnip)
+library(rsample)
+library(workflows)
+```
+
+```{r deps, include = FALSE}
+has_ranger <- requireNamespace("ranger", quietly = TRUE)
+has_recipes <- requireNamespace("recipes", quietly = TRUE)
+```
+
+```{r deps-notice, eval = !(has_ranger && has_recipes), echo = FALSE, results = "asis"}
+absent <- c("ranger", "recipes")[!c(has_ranger, has_recipes)]
+
+cat(
+  "The runs below fit random forests with the **ranger** package and",
+  "preprocess with **recipes**, and",
+  if (length(absent) == 1L) {
+    paste0("**", absent, "** is")
+  } else {
+    "neither is"
+  },
+  "installed here, so the rest of this page has been skipped. Install",
+  if (length(absent) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
+)
+
+knitr::knit_exit()
+```
+
+## The run
+
+The design, the workflow and the grid are the guide's, unchanged: five outer
+folds of `mtcars`, five inner folds under each, and a random forest with two
+parameters marked for tuning.
+
+```{r design}
+set.seed(1)
+
+folds <- nested_resamples(
+  mtcars,
+  outside = vfold_cv(v = 5),
+  inside = vfold_cv(v = 5)
+)
+
+rf <- rand_forest(mtry = tune(), min_n = tune(), trees = 500) |>
+  set_engine("ranger") |>
+  set_mode("regression")
+
+wf <- workflow(mpg ~ ., rf)
+
+grid <- expand.grid(mtry = c(2L, 5L, 8L), min_n = c(2L, 10L))
+```
+
+```{r run}
+set.seed(2)
+
+res <- nested_tune_grid(wf, folds, grid = grid)
+
+res
+```
+
+## What the columns hold
+
+The object is a tibble with one row per outer fold, and the print above
+shows its columns. Each holds one piece of what that fold did.
+
+```{r columns}
+names(res)
+```
+
+`splits` is the fold's outer split, an ordinary rsample split whose analysis
+rows the tuning saw and whose assessment rows scored the fold's model.
+
+```{r splits}
+res$splits[[1]]
+```
+
+`id` is the fold's label, copied from the design. A repeated design carries
+more than one label column, and the object records which columns they are.
+
+```{r id}
+res$id
+```
+
+`.metrics` is the score of the fold's finalized model on its assessment
+rows, one row per metric, in the shape `tune::last_fit()` produces. It is
+what `collect_metrics()` averages.
+
+```{r metrics}
+res$.metrics[[1]]
+```
+
+`.selected` is the candidate the fold's inner tuning chose, a one-row tibble
+of the tuned parameters. It is what `summary()`, `agreement()` and the
+default `autoplot()` read.
+
+```{r selected}
+res$.selected[[1]]
+```
+
+`.inner_metrics` is the whole table the inner search scored, every candidate
+on every inner resample, averaged. It is what the fold's selection was made
+from, and `vignette("tuners")` shows how its shape differs by search.
+
+```{r inner-metrics}
+res$.inner_metrics[[1]]
+```
+
+`.notes` holds what went wrong inside the fold, in tune's shape with a
+`location` naming the stage. A fold that ran cleanly has no rows.
+
+```{r notes}
+res$.notes[[1]]
+```
+
+`.completed` says whether the fold produced a score. The section on a
+failed fold below shows a `FALSE`.
+
+```{r completed}
+res$.completed
+```
+
+`.tuning_seed` and `.outer_fit_seed` are the two seeds each fold ran under,
+drawn at entry and fixed by the fold's position in the design. The guide's
+reproducibility section says how to replay one fold by hand from them.
+
+```{r seeds}
+res[, c(".tuning_seed", ".outer_fit_seed")]
+```
+
+The description of the run itself rides on the object as attributes rather
+than columns, and `vignette("tuners")` reads one of them, `procedure`.
+
+## The readers
+
+Printing describes the object in hand. `summary()` says what the run means:
+how much of the design ran, what each fold chose, and the estimate.
+
+```{r summary}
+summary(res)
+```
+
+`collect_metrics()` is the estimate as a table, the mean and standard error
+of the outer scores. With `summarize = FALSE` it is the outer scores
+themselves, one row per fold and metric, which is `.metrics` stacked with
+the fold labels beside it.
+
+```{r collect-metrics}
+collect_metrics(res)
+
+collect_metrics(res, summarize = FALSE)
+```
+
+`agreement()` counts the selections: one row per distinct combination the
+folds chose, with how many completed folds chose it. The most frequent row
+describes how stable the tuning procedure's choice was on this data. It is
+not the final model's parameters, which come from `nested_final_fit()`
+running the procedure once more on the whole dataset.
+
+```{r agreement}
+agreement(res)
+```
+
+`autoplot()` draws the same two facts. The default view is the selections,
+one panel per tuned parameter and one point per outer fold.
+
+```{r autoplot-parameters, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per tuned parameter, mtry and min_n, with one point per outer fold at the value that fold's inner tuning selected."}
+autoplot(res)
+```
+
+The other view is the outer scores, one panel per metric and one point per
+fold, with a dashed line at the mean that `collect_metrics()` reports.
+
+```{r autoplot-performance, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per metric, rmse and rsq, with one point per outer fold's score on its assessment rows and a dashed line at the mean across folds."}
+autoplot(res, type = "performance")
+```
