@@ -62,6 +62,7 @@ Ship `vignettes/tuners.Rmd` ("Choosing the inner tuner"), which runs `nested_tun
 - 2026-09-04: T5 `tuners` under Guides in `_pkgdown.yml` (`check_pkgdown()` clean); AC6 at commit 5907f06: `tools::buildVignettes(skip = <the other two>)` on a temporary copy, three runs 33.3, 31.6, 31.6 s, median 31.6 s, and one run of all three vignettes 31.6 s; four masked renders of the final page through `rmarkdown::render()` (finetune: Bayesian sections only, one notice naming finetune and annealing; lme4: Bayesian and annealing, one notice naming lme4 and BradleyTerry2; BradleyTerry2 alone: the same with one name, the extra build the re-audit asked for; ranger: notice then exit, 0 tables); citation guard green (37); `devtools::test()` 7042 passing, 0 failures; `devtools::check()` 0 errors, 0 warnings, 0 notes; NEWS entry added. Status to review.
 - 2026-09-04: review: PR #71 opened (draft); AC2-AC6 verified and ticked; AC1 and AC7 await devtools::check(), the verify slot and the three reviewers; checkpoint.
 - 2026-09-04: review: three reviewers reported (findings and dispositions in the Review section); fix-now edits F1, F3, F5-F10 applied to the page and NEWS, page rebuilt, guard and masked builds re-run; devtools::check() on the final page pending; checkpoint.
+- 2026-09-04: step-7 approval: PR #71 approved for merge (the eight fix-now edits accepted as applied).
 
 ## Review
 
