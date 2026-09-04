@@ -317,3 +317,70 @@ test_that("dispatch_folds warns once per call, whatever it is dispatching", {
     c(1, 2, 3)
   )
 })
+
+# --- The start-first queue names real files (M57) ----------------------------
+#
+# `Config/testthat/start-first` in DESCRIPTION queues the slowest files first
+# under parallel test files (M52). testthat matches each name against the
+# files it found and says nothing about a name that matches none, so a file
+# renamed or removed leaves a stale entry that quietly stops ordering
+# anything. The check reads the field the way testthat does -- names split on
+# commas and whitespace -- and resolves each against the test directory.
+
+start_first_names <- function(description) {
+  field <- read.dcf(description, fields = "Config/testthat/start-first")[[1L]]
+  if (is.na(field)) {
+    return(character())
+  }
+  names <- strsplit(field, "[[:space:],]+")[[1L]]
+  names[nzchar(names)]
+}
+
+# The `start-first` names that no `test-<name>.R` in `dir` answers to.
+unresolved_start_first <- function(description, dir) {
+  names <- start_first_names(description)
+  names[!file.exists(file.path(dir, paste0("test-", names, ".R")))]
+}
+
+test_that("every Config/testthat/start-first name resolves to a test file", {
+  # `system.file()` is pkgload's shim under `devtools::test()` and the
+  # installed package's copy under `R CMD check`; both carry the Config field.
+  description <- system.file("DESCRIPTION", package = "nestedtune")
+  expect_true(file.exists(description))
+
+  names <- start_first_names(description)
+  # The check is empty if the field is, and an empty field would be its own
+  # regression: M52 put eleven names there.
+  expect_gt(length(names), 0L)
+
+  expect_identical(
+    unresolved_start_first(description, test_path(".")),
+    character()
+  )
+})
+
+test_that("the start-first check reports a planted unknown name", {
+  dir <- tempfile("start-first-")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  description <- file.path(dir, "DESCRIPTION")
+  writeLines(
+    c(
+      "Package: planted",
+      "Config/testthat/start-first: parallel-detection, nonesuch-file,",
+      "    hang-trace"
+    ),
+    description
+  )
+
+  # Read and split as the real field is, including the continuation line;
+  # named, so a second unknown name could not hide behind a count.
+  expect_identical(
+    start_first_names(description),
+    c("parallel-detection", "nonesuch-file", "hang-trace")
+  )
+  expect_identical(
+    unresolved_start_first(description, test_path(".")),
+    "nonesuch-file"
+  )
+})
