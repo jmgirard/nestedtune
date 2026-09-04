@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-03 (M57 done and archived; M52's row pruned under the five-terminal-row rule; one LESSONS line added and the stalest pruned to hold the 50-line cap, its byte overage pre-existing; no candidate row touched; no D-entry; no Known issues entry. Validate green, 18 references advisories.)_
+_Last hygiene check: 2026-09-03 (status audit after M57's archive: nothing in flight, both GitHub inboxes empty, no outside merges, no orphaned issues; validate green with the 18 references advisories; LESSONS.md still 33,518 bytes against its 20,000-byte budget, unchanged; the M52/M51/M37/M34 finding-absorbing candidate row awaits its disposition at the route gate.)_
 
 ## Milestones
 
