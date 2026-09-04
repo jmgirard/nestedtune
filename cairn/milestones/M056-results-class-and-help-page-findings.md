@@ -1,6 +1,6 @@
 # M56: The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -48,6 +48,12 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - [x] T5: Add a racing branch (`tune_race_anova()`/`tune_race_win_loss()`, grid, `control_race()`) and an annealing branch (`tune_sim_anneal()`, `iter`, `initial`, `control_sim_anneal()`) to the recipe at `R/nested-final-fit.R:130-148`, cross-checked against `reference_anneal_final_fit()` and the racing reference loop; add "read on finetune 1.3.0" beside the `workflow_size` sentence in `R/nested-tune-sim-anneal.R:154-168` and `R/nested-tune-race.R:136-147`; `devtools::document()`; test over `man/nested_final_fit.Rd` and `tuner_registry`.
 - [x] T6: NEWS entries per AC6.
 - [x] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [ ] T8: In `can_reconstruct_results()`, `vec_restore.nested_results()` and `names<-.nested_results()` (`R/nested-results.R`), count duplicates over the record names only (each required name present exactly once), never over every name; add a test that a clash between two non-record columns, through `vec_cbind(.name_repair = "minimal")` and through `names<-`, keeps the object and its attributes (review F1, AC3).
+- [ ] T9: Reorder the `?nested_final_fit` recipe so the Bayesian branch, the one that assigns `control$seed`, comes last, and its comment says the racing and annealing branches use the recorded control untouched; `devtools::document()` (review F2).
+- [ ] T10: NEWS: the token-print sentence names the banner as what still prints, and the duplicate-name sentence names the record-column rule T8 ships (review F3).
+- [ ] T11: Test tidy-ups: replace the vacuous "did not complete" assertion in the AC1 test with one that the output holds only the banner and the rows (F4); the AC5 passing control reads the section's whole prose, not its first node (F7); the section loop breaks on its match and stops cleanly on a NULL section (F9).
+- [ ] T12: A milestone-local decision line: the duplicate shed is the second fault D-035's "one thing" did not anticipate, and `names<-` decides on the names alone because base `names<-` relabels and never moves a value (F10, H1).
+- [ ] T13: `devtools::document()`, `devtools::test()`, `devtools::check()` after T8-T12.
 
 ## Work log
 
@@ -62,6 +68,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: T6 done; two NEWS entries, one on the `extract_` refusal order (enforced by the T4 test) and one compatibility note covering the token print, the duplicate-name shed through both doors and the rename rule (the T1, T2 and T3 tests).
 - 2026-09-03: full `devtools::test()` found the two `extract_` defaults failing `test-dots-barrier.R`'s AC5 loop, which fed every registered method a list and expected the dots refusal; the loop now expects those two to refuse the object by `nestedtune_no_extract_method`, named in a `NO_METHOD_DEFAULTS` list; per-task runs above were filtered to the touched files, the full suite ran once here (0 failures after the fix).
 - 2026-09-03: T7 done; `document()` leaves the tree clean, full `devtools::test()` 0 failures, `devtools::check()` 0 errors, 0 warnings, 0 notes; status set to review.
+- 2026-09-03: /milestone-review: gate presented with the [O] findings F1-F10 and the [S] findings H1-H2; F1 confirmed by command and demonstrates AC3 failing inside its domain. defect return 1 of M56 (return floor, F1): status in-progress; T8-T13 added. Dispositions — fix now in the return: F1, F2, F3, F4, F7, F9, F10/H1; rejected: F5 (latent, no live object reaches the gate), F6 (AC1 met as written; an IP4 observation on the token's row count), F8 (registry names equal the tuner fields by construction), H2 (intentional, tested, in NEWS).
 
 ## Decisions
 
@@ -79,3 +86,4 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - Consistency gate 2026-09-03: `cairn_validate.py` exit 0, all checks passed, 19 advisories (M57 sizing tripwire, 18 references staleness) — not gate failures; no principle changed, `cairn_impact` skipped; `document()` no diff; README.Rmd and README.md last changed in the same commit; `pkgdown::check_pkgdown()` no problems; NEWS carries the milestone's user-visible changes; no new top-level files; `check()` clean as above.
 - Independent review 2026-09-03, three lenses on PR #66's diff. [S] prior-review-record: no findings — the diff closes exactly the M37, M34 and M51 deferred findings as those reviews described; the PR-thread walk over every merged PR touching these files found no inline review comments. [S] blame-history: H1 — `names<-.nested_results()` drops the value comparison D-032 said it shares with `dplyr_reconstruct()`, with no decision line recorded; H2 — the two `extract_` defaults become named exceptions to M34's every-method dots fence (tested, in NEWS). [O] diff-bug, ranked: F1 — the duplicate-name rule in `can_reconstruct_results()`, `vec_restore.nested_results()` and `names<-.nested_results()` runs over every name, so a clash between two non-record columns sheds the run record (confirmed; contradicts AC3 as written); F2 — the recipe's racing and annealing branches sit below `control$seed <- fit$tuning_seed`, so read top-to-bottom they stamp a seed onto a control that has none, contradicting their own comments (confirmed); F3 — the NEWS token-print entry says "the rows alone" but the `cli_h1` banner still prints (confirmed), and the duplicate-name sentence describes a narrower rule than ships (F1); F4 — the AC1 test's "did not complete" assertion is vacuous on a zero-failure object; F5 — the print early return is gated on `!has_results_columns()`, broader than columnless, latent (no live object reaches it); F6 — the token prints `# A tibble: 3 × 0`, the fold count as a row count under the banner (IP4 observation, AC1 met); F7 — the AC5 passing control reads only the section's first text node; F8 — the AC5 loop iterates registry names rather than each entry's `tuner` field; F9 — the section loop has no `break` and no clean stop on a NULL section; F10 — no decision entry for the duplicate shed D-035 did not anticipate.
 - conversation: PR #66 — empty read (no reviews, no comments, no unresolved threads).
+- gate 2026-09-03: user chose the return; fix now F1, F2, F3, F4, F7, F9, F10/H1 as T8-T12; rejected F5, F6, F8, H2 with the reasons in the work log; no follow-up rows.
