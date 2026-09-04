@@ -1,18 +1,17 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-03 (status audit after M57: nothing in flight, both GitHub inboxes empty, no outside merges, no orphaned issues; validate green with the 18 references advisories. LESSONS.md trimmed from 33,518 to 19,950 bytes: two lines retired (M35 review-lens, M36 name-pattern — D-036 and its tests own them), eighteen compressed to their rules, no lesson's content dropped without an owner. The M52/M51/M37/M34 candidate row took its §7 disposition: extended once more.)_
+_Last hygiene check: 2026-09-04 (M58 done via PR #68, merged as pushed after two CI-wait ceilings; validate green with the 18 references advisories; ROADMAP and LESSONS under budget; M53 row pruned past retention; no candidate row extended, no known issue added, nothing graduated or retired.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | review | — | normal | milestones/M58-preflight-workflow-pkgs.md |
+| M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | done | — | normal | milestones/archive/M58-preflight-workflow-pkgs.md |
 | M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | done | — | normal | milestones/archive/M57-test-suite-and-ci-findings.md |
 | M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | done | — | normal | milestones/archive/M56-results-class-and-help-page-findings.md |
 | M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | done | — | normal | milestones/archive/M55-design-entry-checks.md |
 | M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | done | — | normal | milestones/archive/M54-inner-finalize-analysis-frame.md |
-| M53 | `nested_final_fit()` refuses a results object whose every outer fold failed | done | — | normal | milestones/archive/M53-final-fit-all-failed.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
