@@ -7,7 +7,7 @@
 - **Principles touched:** IP1, IP2, GP3, GP4
 - **Resolves:** —
 - **Surface tier:** user-facing — an entry refusal every tuning driver raises, its help page and NEWS
-- **Branch/PR:** —
+- **Branch/PR:** `m059-inner-split-frame-checks`
 
 ## Goal
 
@@ -39,7 +39,7 @@ The five orchestrators refuse, at the call the user wrote and before any fold ru
 
 ## Tasks
 
-- [ ] T1: Tests first. Extend `malformed_designs()` (`tests/testthat/helper-orchestration.R:1991`) with the AC1–AC3 plantings — each recording the folds, splits and indices the refusal must name — and add the AC4 controls beside M55's; the grid-driver block in `test-nested-tune-grid-checks.R` asserting class, call and every planted position, one block per other driver in its checks file; the AC4 completion runs. Red.
+- [x] T1: Tests first. Extend `malformed_designs()` (`tests/testthat/helper-orchestration.R:1991`) with the AC1–AC3 plantings — each recording the folds, splits and indices the refusal must name — and add the AC4 controls beside M55's; the grid-driver block in `test-nested-tune-grid-checks.R` asserting class, call and every planted position, one block per other driver in its checks file; the AC4 completion runs. Red.
 - [ ] T2: `check_inner_splits()` in `R/checks.R`, called last in `check_nested()` (after `check_label_values()`, `:206`): the `rsplit` rule; the one-frame rule, `identical()` against `split$data` first (a pointer fast path for `nested_resamples()` designs) and against `rsample::analysis(split)` only when the outer split's indices lie in its frame, since M54 leaves an out-of-range outer index to `last_fit()`; the containment rule for whole-frame splits over `in_id` and non-`NA` `out_id`; one class, the driver's call, every position; no frame in any message (the M05/M45 lesson). Green.
 - [ ] T3: Re-vehicle the fixtures on the 2026-09-04 probe: `break_fold(stage = "inner tuning")` empties every inner split's `in_id` (the fold fails at inner tuning with tune's "All models failed" note), `break_fold(stage = "outer fit")` appends an index past the frame's end to the outer split's `in_id` (tuning completes, `last_fit()` refuses, as the appended case at `test-nested-tune-grid-failures.R:725` already shows), `break_inner_split()` empties one inner split's `in_id` (the fold completes on a truncated design). Replace the three assertions naming the recipe's foreign-variable message (`test-nested-tune-grid-failures.R:65,77,281`) with tune's new note text; run the 13 files `grep -l 'break_fold\|break_inner_split' tests/testthat/test-*.R` lists.
 - [ ] T4: `@param resamples` (`R/nested-tune-grid.R:36-50`), the NEWS entry, the `is_fold_payload()` comment (`R/parallel.R:108-118`, which also still says the check asks only for the class and a row) rewritten to say the gate now serves stand-in payloads and defence in depth; `devtools::document()`; append the decision entry superseding D-047's consequence clause, above the template block in `cairn/DECISIONS.md` (the M33 lesson).
@@ -53,6 +53,7 @@ The five orchestrators refuse, at the call the user wrote and before any fold ru
 - 2026-09-04: plan gate chose `identical()` against the outer frame and its `analysis()` over a row-count-and-names shape check because a same-shape wrong frame is exactly the case the parallel fat path exists for; falsified by the entry cost dominating a real run, which the 0.38 s per ten folds at 1e6 rows argues against.
 - 2026-09-04: plan gate chose rewriting `break_fold()` and `break_inner_split()` over rewriting their 43 call sites because the helpers own the vehicle and the call sites assert outcomes; falsified by a call site that depended on the foreign frame itself rather than on the stage that fails.
 - 2026-09-04: plan gate chose superseding D-047's consequence clause while keeping the fat path over deleting the fat path because the dispatch tests drive `dispatch_folds()` with stand-in payloads that need the gate, and the clause stays as defence in depth; falsified by the fat path taking a real design after the check ships, which would mean the check has a hole.
+- 2026-09-04: T1 — `malformed_designs()` gained 51 inner-split plantings (18 non-rsplit forms × positions, 15 frame plantings, 18 index plantings) each carrying the exact `fragments` its refusal must contain; the grid checks file asserts them, adds the tibble and repeated-row `nested_cv()` controls and the two serial completion runs. Red: every new planting reaches the dispatch sentinel unrefused.
 
 ## Decisions
 
