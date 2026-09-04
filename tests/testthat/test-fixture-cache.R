@@ -546,3 +546,41 @@ test_that("the scaffolding above leaves the shared cache as it found it", {
     remaining
   )))
 })
+
+test_that("the teardown's report is written to stderr, and nothing to stdout", {
+  # The stream is the point (M57): a worker's report goes nowhere under
+  # parallel files whichever stream it takes, so this is what a serial run
+  # under `R CMD check` puts in testthat.Rout -- unbuffered, beside the hang
+  # trace. A report fabricated by hand, so the test does not depend on what
+  # the rest of this file left in the cache.
+  report <- data.frame(
+    signature = c("fake_fit(\"wf\", \"a\")", "fake_fit(\"wf\", \"b\")"),
+    builds = c(2L, 1L),
+    requests = c(5L, 1L),
+    stringsAsFactors = FALSE
+  )
+
+  out <- character()
+  err <- capture.output(
+    out <- capture.output(print_fixture_cache_report(report), type = "output"),
+    type = "message"
+  )
+
+  expect_identical(out, character())
+  expect_match(err[[2L]], "fixture cache: 2 signatures, 3 builds, 6 requests")
+  expect_match(err, "^ +2 +5 +fake_fit\\(\"wf\", \"a\"\\)$", all = FALSE)
+  expect_match(
+    err,
+    "^WARNING: 1 fixture\\(s\\) built more than once",
+    all = FALSE
+  )
+
+  # An empty cache reports nothing, on either stream.
+  empty <- report[0L, , drop = FALSE]
+  err <- capture.output(
+    out <- capture.output(print_fixture_cache_report(empty), type = "output"),
+    type = "message"
+  )
+  expect_identical(out, character())
+  expect_identical(err, character())
+})

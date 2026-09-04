@@ -45,7 +45,7 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 
 - [x] T1: Add a test (home: `tests/testthat/test-hang-trace.R`) that parses each `tests/testthat/test-*.R`, collects `test_that()` descriptions per file and asserts none is duplicated; plant a duplicate in a tempdir copy to see it red.
 - [x] T2: In `end_file()` (`tests/testthat/helper-hang-trace.R:99-108`), prune `open` with the same `own` mask as `seen` and amend the comment at `:75-77`; add `on.exit(unlink(dir, recursive = TRUE), add = TRUE)` at `test-hang-trace.R:120` and cover `fixture_two_blocks()` (`:10-12`) from its caller; test with a no-op `end_test` subclass on the `WedgedReporter` pattern (`:69-77`) and a directory-gone assertion.
-- [ ] T3: Add `file = stderr()` to the four `cat()` calls in `tests/testthat/teardown-fixture-cache.R:15-38`; rewrite the preamble and `helper-orchestration.R:1035-1040` to say per worker; test by calling the report function under `capture.output(type = "message")`.
+- [x] T3: Add `file = stderr()` to the four `cat()` calls in `tests/testthat/teardown-fixture-cache.R:15-38`; rewrite the preamble and `helper-orchestration.R:1035-1040` to say per worker; test by calling the report function under `capture.output(type = "message")`.
 - [ ] T4: Add a test to `tests/testthat/test-parallel-detection.R` reading `Config/testthat/start-first` via `read.dcf()` and asserting each `test-<name>.R` exists; plant a bad name against a tempdir copy of DESCRIPTION to see it red.
 - [ ] T5: Add `timeout-minutes: 30` beside `runs-on` and `TESTTHAT_CPUS: 4` to the `env:` block in `.github/workflows/R-CMD-check-hard.yaml:19-33`; sum the suite's declared bounds under the cap per the M16/M48 lesson; rewrite `cairn/PROFILE.md:48-50` to name the capped workflows.
 - [ ] T6: Add `skip_if_not_installed("tibble")` as the first line of the nine blocks at `tests/testthat/test-vctrs-compat.R:122, 161, 171, 185, 211, 246, 276, 294, 342`; verify with a parse over the file's `test_that()` calls.
@@ -60,6 +60,7 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 
 - 2026-09-03: T1 done; `helper-test-source.R` parses a file's `test_that()` calls (shared with T6), the scan in `test-hang-trace.R` found no duplicate in the 57 files and reported one planted into a tempdir copy of the suite before it was trusted green.
 - 2026-09-03: T2 done; `end_file()` prunes `open` through the same `forget()` as `seen`, the pruning test failed on the unpruned `open` with the line commented out; `trace_lines_parallel()` unlinks on exit and `fixture_two_blocks()` registers the unlink on its caller's frame, each asserted gone.
+- 2026-09-03: T3 done; the four `cat()` calls moved into `print_fixture_cache_report(report, file = stderr())` in `helper-orchestration.R`, which the teardown calls with `file = stderr()` spelled out, a test captures it with `capture.output(type = "message")` and shows stdout empty; the preamble and the cache comment say per worker. Learned by execution (testthat 3.3.2): under parallel files nothing a worker's teardown writes to stdout OR stderr reaches the parent's streams, so the report is a serial-run report whichever stream it takes — the comments say so; the criterion holds as written.
 
 ## Decisions
 
