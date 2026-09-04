@@ -29,13 +29,15 @@ compat_results <- function() {
 
 # Shedding the class sheds the run's record with it. Asserting only the class
 # would leave `outer_label` readable on the returned object, which is the
-# stale claim one layer down (M36's `bare_results()`).
+# stale claim one layer down (M36's `bare_results()`). The two private
+# carriers a prototype rides on are asserted gone with the rest: a bare table
+# still wearing them would be read as a template by the next `vec_restore()`.
 expect_no_record <- function(out, name) {
   testthat::expect_false(
     inherits(out, "nested_results"),
     label = paste0(name, " keeps the class")
   )
-  for (nm in results_attributes()) {
+  for (nm in c(results_attributes(), template_attributes())) {
     testthat::expect_null(attr(out, nm), label = paste0(name, " attr ", nm))
   }
   invisible(out)
@@ -310,6 +312,29 @@ test_that("vec_cbind() sheds the class when name repair moves a record column", 
   # assertions above cannot pass on a call that left `splits` where it was.
   expect_false("splits" %in% names(through_vctrs))
   expect_true("splits" %in% names(res))
+})
+
+# The same clash with the repair switched off: both `splits` columns keep the
+# name, every record name is still present, and `$splits` answers with the
+# first. Before M56 the class survived and `attr(out, "folds_completed")` was
+# stamped on a table whose record can no longer be found by name (measured
+# 2026-09-03).
+test_that("vec_cbind() sheds the class when minimal name repair duplicates a record column", {
+  skip_if_no_engines()
+  res <- compat_results()
+  clash <- tibble::tibble(splits = seq_len(nrow(res)))
+
+  through_vctrs <- vctrs::vec_cbind(res, clash, .name_repair = "minimal")
+  through_dplyr <- dplyr::bind_cols(res, clash, .name_repair = "minimal")
+
+  expect_no_record(through_vctrs, "vec_cbind(.name_repair = \"minimal\") over a record column")
+  expect_no_record(through_dplyr, "bind_cols(.name_repair = \"minimal\") over a record column")
+  expect_identical(class(through_vctrs), class(through_dplyr))
+  expect_identical(names(through_vctrs), names(through_dplyr))
+
+  # The passing control: the name really is duplicated, so the shed above is
+  # the duplicate's and not a moved column's.
+  expect_identical(sum(names(through_vctrs) == "splits"), 2L)
 })
 
 test_that("a column add answers the same through either door with the results object second", {

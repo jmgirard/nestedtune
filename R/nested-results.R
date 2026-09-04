@@ -165,6 +165,14 @@ can_reconstruct_results <- function(data, template) {
   if (!all(cols %in% names(data))) {
     return(FALSE)
   }
+  # A duplicated name is a moved column by another route: `bind_cols(x,
+  # tibble(splits = 1:3), .name_repair = "minimal")` keeps every record name
+  # present, and `data[[nm]]` below reads whichever came first, so the record
+  # can be vouched for by name no longer (M56; the same rule `vec_restore()`
+  # applies on its own door).
+  if (anyDuplicated(names(data)) > 0L) {
+    return(FALSE)
+  }
   if (!identical(nrow(data), nrow(template))) {
     return(FALSE)
   }
@@ -356,8 +364,13 @@ vec_restore.nested_results <- function(x, to, ...) {
   # The rows in hand must carry a whole record of their own, under the names the
   # source kept it in, and must number what the source had. `vec_cbind()` cannot
   # alter an existing column, only add, recycle and REPAIR NAMES, so what it can
-  # do wrong is exactly what these two catch: recycling a one-fold object up to
-  # three rows, and renaming a record column out from under the record.
+  # do wrong is exactly what these catch: recycling a one-fold object up to
+  # three rows, and renaming a record column out from under the record. Under
+  # `.name_repair = "minimal"` the repair is no repair at all, and a second
+  # `splits` column arrives beside the record's: every required name is then
+  # present, and `x$splits` answers with whichever came first, so a record
+  # column can no longer be found by name. A duplicated name is the same fault
+  # as a moved one and is shed the same way (M37 review R7).
   attempted <- template_rows(to)
   required <- template_record(to)
   if (
@@ -365,6 +378,7 @@ vec_restore.nested_results <- function(x, to, ...) {
       !is.numeric(attempted) ||
       !is.character(required) ||
       !all(required %in% names(x)) ||
+      anyDuplicated(names(x)) > 0L ||
       !identical(nrow(x), as.integer(attempted))
   ) {
     return(bare_results(x))
