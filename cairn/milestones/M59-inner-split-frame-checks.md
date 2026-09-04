@@ -60,6 +60,7 @@ The five orchestrators refuse, at the call the user wrote and before any fold ru
 - 2026-09-04: T2–T5 ticked on the second `devtools::check()`: 0 errors, 0 warnings, 0 notes, 11m 39s; `document()` no diff; `air format --check` clean on every touched file. Status → review.
 - 2026-09-04: review step 2–3 checkpoint — PR #69 opened as draft; `document()` no diff; the five driver checks files green; AC1–AC5 evidence recorded and ticked; `devtools::check()`, the full `devtools::test()` for AC6 and the three review lenses still running.
 - 2026-09-04: review steps 3–6 — AC6 evidence recorded (full suite exit 0, 0 skips; `check()` 0/0/0), gate green, three lenses reported 17 findings; ledger and proposed dispositions in the Review section, pending the maintainer's triage at the gate.
+- 2026-09-04: gate triage accepted fix-now for O1, O2/O10, O3, O4, O8, O11, O12 — `check_inner_splits()` leaves a fold whose analysis set cannot be built to `last_fit()`, names every split of a disagreeing fold with what it carries (other frame, analysis set, outer frame), and deep-compares once per distinct frame; the two comments corrected; a mixed-frame planting (3 records, 83 total), an out-of-range outer control on a `nested_cv()` design, a no-column-name assertion and the floor at 70 added; checks and payload files green, air clean; full suite and `check()` re-running.
 
 ## Decisions
 

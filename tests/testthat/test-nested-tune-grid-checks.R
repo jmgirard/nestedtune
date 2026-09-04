@@ -665,7 +665,7 @@ test_that("every planted design is refused, naming every offender (M55, AC1-AC4)
   d <- make_reg_data()
   wf <- det_workflow(d)
   planted <- malformed_designs(d)
-  expect_gt(length(planted), 20L)
+  expect_gt(length(planted), 70L)
 
   for (nm in names(planted)) {
     record <- planted[[nm]]
@@ -739,20 +739,36 @@ test_that("each refusal says which defect it found (M55, AC1-AC3)", {
   expect_match(said("index_held_out_both_all"), "in_id holds")
   expect_match(said("index_held_out_both_all"), "out_id holds")
   # A fold whose splits agree on a wrong frame names the fold alone; one
-  # whose splits disagree names the splits that are wrong, and only those.
+  # whose splits disagree names every split with what it carries, the ones
+  # on another frame first.
   expect_no_match(said("inner_frame_foreign_first"), "inner split 1")
   expect_match(
     said("inner_frame_one_split_first_first"),
-    "inner split 1 carries"
+    "inner split 1 carries a frame that is neither"
   )
-  expect_no_match(said("inner_frame_one_split_first_first"), "inner split 2")
-  # No message carries a frame: the widest is still a few lines.
-  widest <- max(nchar(vapply(
+  expect_match(
+    said("inner_frame_one_split_first_first"),
+    "inner splits 2 and 3 carry the outer split.s own frame"
+  )
+  expect_match(
+    said("inner_frame_mixed_last"),
+    "inner split 1 carries the outer split.s analysis set"
+  )
+  expect_match(
+    said("inner_frame_mixed_last"),
+    "inner splits 2 and 3 carry the outer split.s own frame"
+  )
+  # No message carries a frame: the widest is still a few lines, and none
+  # names a column of the data the design was built on.
+  inner_messages <- vapply(
     grep("^inner_|^outer_|^index_", names(planted), value = TRUE),
     said,
     character(1)
-  )))
-  expect_lt(widest, 2000L)
+  )
+  expect_lt(max(nchar(inner_messages)), 2000L)
+  for (column in names(d)) {
+    expect_no_match(inner_messages, paste0("\\b", column, "\\b"))
+  }
 })
 
 test_that("the whole-object refusals carry the class too (M55, AC4)", {
@@ -862,6 +878,29 @@ test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
   # driver either: the refusal is about the planting, not the fixture.
   wf <- det_workflow(d)
   cnd <- refusal(nested_tune_grid(wf, det_nested(d), grid = det_grid()))
+  expect_s3_class(cnd, "nestedtune_sentinel")
+})
+
+test_that("an outer in_id past the frame is left to last_fit(), not judged against an analysis set that cannot be built (M59)", {
+  skip_if_no_engines()
+
+  # A `nested_cv()` design's inner splits carry the outer analysis set. With
+  # an index past the frame appended to the outer `in_id`, that set cannot
+  # be built, and the fold is not refused at entry as a frame mismatch: the
+  # outer fit is where the index fails, as the failures file shows for the
+  # `nested_resamples()` shape.
+  d <- make_reg_data()
+  set.seed(1)
+  design <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 2),
+    inside = rsample::vfold_cv(v = 2)
+  )
+  design$splits[[1L]]$in_id <- c(design$splits[[1L]]$in_id, 999999L)
+  expect_invisible(check_nested(design))
+  expect_identical(check_nested(design), design)
+  wf <- det_workflow(d)
+  cnd <- refusal(nested_tune_grid(wf, design, grid = det_grid()))
   expect_s3_class(cnd, "nestedtune_sentinel")
 })
 

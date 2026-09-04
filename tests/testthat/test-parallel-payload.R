@@ -113,10 +113,12 @@ test_that("the dispatch gate recognises the payloads it must lean", {
 
 test_that("an inner rset whose splits hold different frames is refused leaning", {
   # The invariant lean_payload() rests on: one frame per fold's inner splits,
-  # taken off the first and written back onto all. check_nested() does not
-  # enforce it, so the gate must -- otherwise a split is silently tuned on
-  # another split's rows in parallel and its own serially (IP2), and on rows the
-  # outer assessment set may hold (IP1).
+  # taken off the first and written back onto all. check_nested() enforces it
+  # at the driver's call since M59 (check_inner_splits()), so this gate is
+  # defence in depth for a payload that reaches dispatch_folds() another way
+  # -- otherwise a split is silently tuned on another split's rows in parallel
+  # and its own serially (IP2), and on rows the outer assessment set may hold
+  # (IP1).
   d <- payload_fixture_data(n = 200, p = 3)
   outer <- rsample::make_splits(list(analysis = 1:150, assessment = 151:200), d)
   heterogeneous <- rsample::manual_rset(

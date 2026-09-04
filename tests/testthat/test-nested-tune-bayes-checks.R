@@ -210,7 +210,7 @@ test_that("every malformed design is refused at entry (M55)", {
   d <- make_reg_data()
   wf <- bayes_workflow(d)
   planted <- malformed_designs(d)
-  expect_gt(length(planted), 20L)
+  expect_gt(length(planted), 70L)
 
   for (nm in names(planted)) {
     cnd <- refusal(nested_tune_bayes(wf, planted[[nm]]$design))

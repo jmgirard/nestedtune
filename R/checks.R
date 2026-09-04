@@ -433,62 +433,81 @@ check_inner_splits <- function(resamples, call = rlang::caller_env()) {
     )
   }
 
-  # Which frame each inner split carries: the outer split's own, its analysis
-  # set, or neither. A fold's splits must agree on one of the first two; the
-  # splits named are those that do not carry the fold's frame -- the first
-  # split's, when that one is admissible -- or, when no split carries an
-  # admissible frame, every split, as one bullet.
+  # Which frame each inner split carries: the outer split's own ("whole"),
+  # its analysis set, or neither ("other"). A fold's splits must all carry
+  # one of the first two. A fold whose splits all carry another frame gets
+  # one bullet; a fold whose splits disagree names every split with what it
+  # carries, the ones on another frame first. When the analysis set cannot
+  # be built (an outer `in_id` past the frame, M54) the splits not on the
+  # outer frame are left to `last_fit()` rather than judged against nothing.
   whole <- vector("list", n)
-  wrong <- vector("list", n)
+  kind <- vector("list", n)
   for (f in seq_len(n)) {
     split <- outer[[f]]
-    splits <- inner[[f]][["splits"]]
-    is_whole <- vapply(
-      splits,
-      function(s) identical(s[["data"]], split[["data"]]),
-      logical(1)
-    )
-    is_analysis <- rep(FALSE, length(splits))
+    frames <- lapply(inner[[f]][["splits"]], function(s) s[["data"]])
+    is_whole <- vapply(frames, identical, logical(1), split[["data"]])
+    is_analysis <- rep(FALSE, length(frames))
+    left <- FALSE
     if (!all(is_whole)) {
       analysis <- outer_analysis(split)
-      if (!is.null(analysis)) {
-        is_analysis[!is_whole] <- vapply(
-          splits[!is_whole],
-          function(s) identical(s[["data"]], analysis),
-          logical(1)
-        )
+      if (is.null(analysis)) {
+        left <- TRUE
+      } else {
+        # One deep compare per distinct frame: the first split not on the
+        # outer frame is compared against the analysis set, and the others
+        # share its verdict when they carry the same frame (a pointer
+        # compare when it is the same object, as `nested_cv()` builds them).
+        rest <- which(!is_whole)
+        first <- rest[[1L]]
+        is_analysis[[first]] <- identical(frames[[first]], analysis)
+        for (s in rest[-1L]) {
+          is_analysis[[s]] <- if (identical(frames[[s]], frames[[first]])) {
+            is_analysis[[first]]
+          } else {
+            identical(frames[[s]], analysis)
+          }
+        }
       }
     }
-    admissible <- is_whole | is_analysis
     whole[[f]] <- is_whole
-    wrong[[f]] <- if (!any(admissible)) {
-      seq_along(splits)
-    } else if (!admissible[[1L]]) {
-      which(!admissible)
-    } else if (is_whole[[1L]]) {
-      which(!is_whole)
+    kind[[f]] <- if (left) {
+      NULL
     } else {
-      which(!is_analysis)
+      ifelse(is_whole, "whole", ifelse(is_analysis, "analysis", "other"))
     }
   }
-  bad <- which(lengths(wrong) > 0L)
+  disagrees <- function(k) {
+    !is.null(k) && (any(k == "other") || length(unique(k)) > 1L)
+  }
+  bad <- which(vapply(kind, disagrees, logical(1)))
   if (length(bad) > 0L) {
+    carries <- c(
+      other = "a frame that is neither the outer split's own nor its analysis set",
+      analysis = "the outer split's analysis set",
+      whole = "the outer split's own frame"
+    )
     bullets <- vapply(
       bad,
       function(f) {
-        pos <- wrong[[f]]
-        if (length(pos) == length(inner[[f]][["splits"]])) {
-          cli::format_inline(
+        k <- kind[[f]]
+        if (all(k == "other")) {
+          return(cli::format_inline(
             "Outer fold {f}: every inner split carries a frame that is \\
              neither the outer split's own nor its analysis set."
-          )
-        } else {
-          cli::format_inline(
-            "Outer fold {f}: inner {cli::qty(length(pos))}split{?s} {pos} \\
-             {cli::qty(length(pos))}carr{?ies/y} a frame the fold's other \\
-             inner splits do not."
-          )
+          ))
         }
+        parts <- vapply(
+          names(carries)[names(carries) %in% k],
+          function(name) {
+            pos <- which(k == name)
+            cli::format_inline(paste0(
+              "inner {cli::qty(length(pos))}split{?s} {pos} ",
+              "{cli::qty(length(pos))}carr{?ies/y} {carries[[name]]}"
+            ))
+          },
+          character(1)
+        )
+        cli::format_inline("Outer fold {f}: {paste(parts, collapse = '; ')}.")
       },
       character(1)
     )

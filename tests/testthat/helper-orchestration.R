@@ -2118,6 +2118,36 @@ malformed_designs <- function(data) {
     }
     record(x, fragments = vapply(at, fold_every, character(1)))
   }
+  # Two admissible frames in one fold: the first inner split on the outer
+  # split's analysis set, the rest on the outer frame. Each is a frame the
+  # rule admits alone; together they are not one frame, and the refusal
+  # names every split with what it carries rather than anchoring on either.
+  plant_mixed <- function(at) {
+    x <- base
+    for (f in at) {
+      s <- x$inner_resamples[[f]]$splits[[1L]]
+      s$data <- rsample::analysis(x$splits[[f]])
+      x$inner_resamples[[f]]$splits[[1L]] <- s
+    }
+    record(
+      x,
+      fragments = c(
+        vapply(at, fold_split, character(1), s = 1L),
+        vapply(
+          at,
+          function(f) {
+            sprintf("Outer fold %d: inner split 1 carries the outer", f)
+          },
+          character(1)
+        ),
+        vapply(
+          at,
+          function(f) sprintf("inner splits 2 and 3 carry the outer split"),
+          character(1)
+        )
+      )
+    )
+  }
   # An index the outer split does not hold, appended to the last inner
   # split's `in_id`, `out_id` or both: a row the outer fold holds out, or one
   # past the frame's end. The fragment "holds <index>" is what the message
@@ -2184,6 +2214,7 @@ malformed_designs <- function(data) {
         plant_inner(at, inner_positions[[sp]], foreign$splits[[1L]], fold_split)
     }
     inner_rules[[paste0("outer_frame_foreign_", fp)]] <- plant_outer(at)
+    inner_rules[[paste0("inner_frame_mixed_", fp)]] <- plant_mixed(at)
     for (slot in c("in_id", "out_id", "both")) {
       inner_rules[[paste("index_held_out", slot, fp, sep = "_")]] <-
         plant_index(at, slot, held_out)

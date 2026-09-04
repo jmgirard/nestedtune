@@ -391,7 +391,7 @@ test_that("every malformed design is refused at entry, by both racers (M55)", {
   wf <- det_workflow(d)
   ctrl <- race_control()
   planted <- malformed_designs(d)
-  expect_gt(length(planted), 20L)
+  expect_gt(length(planted), 70L)
 
   for (fn in RACERS) {
     for (nm in names(planted)) {
