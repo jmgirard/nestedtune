@@ -52,7 +52,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - [x] T9: Reorder the `?nested_final_fit` recipe so the Bayesian branch, the one that assigns `control$seed`, comes last, and its comment says the racing and annealing branches use the recorded control untouched; `devtools::document()` (review F2).
 - [x] T10: NEWS: the token-print sentence names the banner as what still prints, and the duplicate-name sentence names the record-column rule T8 ships (review F3).
 - [x] T11: Test tidy-ups: replace the vacuous "did not complete" assertion in the AC1 test with one that the output holds only the banner and the rows (F4); the AC5 passing control reads the section's whole prose, not its first node (F7); the section loop breaks on its match and stops cleanly on a NULL section (F9).
-- [ ] T12: A milestone-local decision line: the duplicate shed is the second fault D-035's "one thing" did not anticipate, and `names<-` decides on the names alone because base `names<-` relabels and never moves a value (F10, H1).
+- [x] T12: A milestone-local decision line: the duplicate shed is the second fault D-035's "one thing" did not anticipate, and `names<-` decides on the names alone because base `names<-` relabels and never moves a value (F10, H1).
 - [ ] T13: `devtools::document()`, `devtools::test()`, `devtools::check()` after T8-T12.
 
 ## Work log
@@ -73,8 +73,11 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: T9 done; the recipe now runs grid, racing, annealing, then Bayesian, so the `control$seed` assignment sits below every branch that uses the recorded control untouched, and each untouched branch says so; `document()` rewrote `man/nested_final_fit.Rd`; registry file clean.
 - 2026-09-03: T10 done; the compatibility note says the banner and the rows print, that a name shared outside the record leaves the object as it is, and that `names<-` keeps the object on a duplicate outside the record.
 - 2026-09-03: T11 done; the AC1 test asserts the token prints two non-blank lines, the banner and a `× 0` tibble header (the header is `x 0` under testthat, which turns cli unicode off, so the pattern accepts either); the AC5 control reads every non-code node of the section, and skips `tune_grid`, which the section closing paragraph cross-references as a call; the section loop breaks on its match and returns after the NULL assertion; both files clean.
+- 2026-09-03: T12 done; decision line below on the duplicate shed and the names-only rename test.
 
 ## Decisions
+
+- 2026-09-03: A duplicated record name is shed like a moved one, and only a record name. D-035 named name repair moving a record column as the one thing `vec_cbind()` can do wrong that a row count does not catch; a second column arriving under a record name with `.name_repair = "minimal"` is a second, since `x$splits` then answers with whichever came first and the record can no longer be found by name. The count runs over the record's names alone because the three doors vouch for the record by name and read no name outside it, so a clash between two caller-added columns is theirs to keep. `names<-.nested_results()` decides on the names alone, dropping the value comparison D-032 said it shares with `dplyr_reconstruct()`: base `names<-` relabels columns and never moves or alters a value, so the record is intact exactly when each record column keeps its name and no other column takes one, and comparing values would re-establish what the names already settle. Falsified by a `names<-` path that reorders or drops a column, or by a reader of the record that resolves a column by position rather than name.
 
 ## Review
 
