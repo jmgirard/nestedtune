@@ -22,6 +22,12 @@
 #   5. every `## References` entry is cited somewhere in that page's prose
 #   6. every author-year citation in `R/` roxygen resolves to a shelf page the
 #      same way
+#   7. the prose-numeral rule: once fenced chunks, every backtick-quoted span,
+#      the YAML header and the `## References` section are removed, every
+#      paragraph that still contains a digit also contains an author-year
+#      citation -- so a number in the prose is either produced by the page's
+#      own code (inline R, quoted code) or backed by a cited source, never
+#      typed in from memory
 #
 # A page with no citation and no References section passes rules 1-5: it makes
 # no cited claim and lists nothing. A page with one but not the other fails --
@@ -135,7 +141,11 @@ page_halves <- function(path) {
     return(list(prose = character(), entries = character(), heading = NA))
   }
   if (length(at) == 0L) {
-    return(list(prose = strip_code(lines), entries = character(), heading = FALSE))
+    return(list(
+      prose = strip_code(lines),
+      entries = character(),
+      heading = FALSE
+    ))
   }
   list(
     prose = strip_code(lines[seq_len(at - 1L)]),
@@ -368,6 +378,55 @@ expect_entries_cited <- function(pages, dir) {
   expect_equal(uncited, character(0))
 }
 
+# The prose the numeral rule reads: the page before its `## References`
+# heading (or all of it), less the YAML header, the fenced chunks and every
+# backtick span -- inline R and quoted code alike, since a digit inside either
+# is code, not a claim.
+numeral_prose <- function(path) {
+  lines <- readLines(path, warn = FALSE)
+  at <- grep("^##\\s+References\\s*$", lines)
+  if (length(at)) {
+    lines <- lines[seq_len(at[1] - 1L)]
+  }
+  lines <- strip_fences(strip_yaml(lines))
+  gsub("`[^`]*`", "", lines, perl = TRUE)
+}
+
+# The units the numeral rule reads: blank-line paragraphs, with each list
+# item its own unit and its marker removed -- an item's number belongs to the
+# item, and a numbered list's `1.` marker is not a claim.
+numeral_units <- function(lines) {
+  item <- grepl("^\\s*(?:[-*+]|[0-9]+[.)])\\s+", lines, perl = TRUE)
+  lines[item] <- sub(
+    "^\\s*(?:[-*+]|[0-9]+[.)])\\s+",
+    "",
+    lines[item],
+    perl = TRUE
+  )
+  group <- cumsum(lines == "" | item)
+  out <- vapply(
+    split(lines, group),
+    function(p) trimws(paste(p[p != ""], collapse = " ")),
+    character(1),
+    USE.NAMES = FALSE
+  )
+  out[nzchar(out)]
+}
+
+# Rule 7: every paragraph carrying a digit also carries a citation.
+expect_numerals_cited <- function(pages, dir) {
+  uncited <- character()
+  for (p in pages) {
+    paras <- numeral_units(numeral_prose(file.path(dir, p)))
+    for (para in paras[grepl("[0-9]", paras)]) {
+      if (length(citekeys_in(para)) == 0L) {
+        uncited <- c(uncited, paste0(p, ": ", substr(para, 1L, 60L)))
+      }
+    }
+  }
+  expect_equal(uncited, character(0))
+}
+
 # ---- The real tree ----------------------------------------------------------
 
 test_that("the guard enumerates more than one page under vignettes/", {
@@ -394,7 +453,10 @@ test_that("some page under vignettes/ makes a cited claim", {
 test_that("every page has at most one References heading", {
   skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
 
-  expect_one_references_heading(vignette_pages(vignettes_dir()), vignettes_dir())
+  expect_one_references_heading(
+    vignette_pages(vignettes_dir()),
+    vignettes_dir()
+  )
 })
 
 test_that("every source cited in a page's prose is listed in its References", {
@@ -424,6 +486,12 @@ test_that("every References entry is cited somewhere in its page's prose", {
   skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
 
   expect_entries_cited(vignette_pages(vignettes_dir()), vignettes_dir())
+})
+
+test_that("every paragraph with a digit in a page's prose carries a citation", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
+
+  expect_numerals_cited(vignette_pages(vignettes_dir()), vignettes_dir())
 })
 
 test_that("every source cited in R/ roxygen is backed by a shelf page", {
@@ -582,7 +650,11 @@ test_that("a defect one directory deep is found by the same rule", {
   root <- fixture_tree()
   dir <- file.path(root, "vignettes")
   plant_page(root, "cited.Rmd", "As Somebody (2020) showed.", SOMEBODY)
-  plant_page(root, file.path("deeper", "cited-only.Rmd"), "As Somebody (2020) showed.")
+  plant_page(
+    root,
+    file.path("deeper", "cited-only.Rmd"),
+    "As Somebody (2020) showed."
+  )
   pages <- vignette_pages(dir)
 
   expect_setequal(pages, c("cited.Rmd", "deeper/cited-only.Rmd"))
@@ -590,4 +662,72 @@ test_that("a defect one directory deep is found by the same rule", {
     expect_citations_listed(pages, dir),
     "deeper/cited-only.Rmd: somebody2020"
   )
+})
+
+test_that("an uncited digit in a plain paragraph turns the numeral rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "digit.Rmd", "The bias was 4.2 points on null data.")
+  pages <- vignette_pages(dir)
+
+  expect_failure(
+    expect_numerals_cited(pages, dir),
+    "digit.Rmd: The bias was 4.2"
+  )
+  # A digit is not a citation, so the citation rules stay silent on it.
+  expect_success(expect_citations_listed(pages, dir))
+})
+
+test_that("an uncited digit in a list item turns the numeral rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(
+    root,
+    "list.Rmd",
+    c(
+      "Two points:",
+      "",
+      "1. a point with no number, under a numbered marker",
+      "- 41,121 hospital visits"
+    )
+  )
+  pages <- vignette_pages(dir)
+
+  expect_failure(expect_numerals_cited(pages, dir), "list.Rmd: 41,121 hospital")
+})
+
+test_that("an uncited digit one directory deep turns the numeral rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "plain.Rmd", "A page with no number.")
+  plant_page(root, file.path("deeper", "digit.Rmd"), "It took 20 seconds.")
+  pages <- vignette_pages(dir)
+
+  expect_failure(
+    expect_numerals_cited(pages, dir),
+    "deeper/digit.Rmd: It took 20"
+  )
+})
+
+test_that("a digit inside a backtick span, or beside a citation, passes the numeral rule", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(
+    root,
+    "quoted.Rmd",
+    c(
+      "`mtcars` has `r nrow(mtcars)` rows and the grid has `6` points.",
+      "",
+      "Predict on `mtcars[1:3, ]` to see the shape."
+    )
+  )
+  plant_page(
+    root,
+    "cited.Rmd",
+    "Somebody (2020) found a bias of 4.2 points on 40 samples.",
+    SOMEBODY
+  )
+  pages <- vignette_pages(dir)
+
+  expect_success(expect_numerals_cited(pages, dir))
 })
