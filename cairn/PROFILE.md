@@ -47,13 +47,12 @@ rules in tracking-rules:
   meet; it bites on `push` only, GitHub evaluating it on a `pull_request` against the whole PR diff. **Hang
   caps at two scopes** turn a hang into a failed job with a timestamp: `R-CMD-check` bounds its job at 60
   minutes and its `check-r-package` step at 30, `test-coverage` its job at 20, `R-CMD-check-hard` its job at
-  30 (M57: no Suggests, so no long dependency build and no daemon test runs); re-read the figures with
-  `grep -n timeout-minutes .github/workflows/*.yaml` (`stress-daemon-tests.yaml` also appears; not audited).
-  The step bound is the guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 minutes
-  under `R CMD check` and 40 under `covr`, hence the two scopes). It was 20 until M48 (2026-09-02) saw the windows
-  step killed at 20 three runs in a row; 30 is not free headroom, and a leg nearing it is a suite to make
-  faster, which is what M52 did. 60 is the devel leg's from-source build of 129 dependencies, which a
-  20-minute job cap killed before cache-save; it leaves every non-check step bounded only by the job.
+  30 (M57; its yaml says why one scope); re-read them with `grep -n timeout-minutes .github/workflows/*.yaml`.
+  The step bound is the guarantee, on the code both hangs were in (`test_check("nestedtune")`, 52 min under `R
+  CMD check` and 40 under `covr`, hence the two scopes). It was 20 until M48 (2026-09-02) saw the windows step
+  killed at 20 three runs in a row; 30 is not free headroom, and a leg nearing it is a suite to make faster
+  (M52). 60 is the devel leg's from-source build of 129 dependencies, which a 20-minute job cap killed before
+  cache-save; it leaves every non-check step bounded only by the job.
   **Parallel test files** (`Config/testthat/parallel: true`, M52): `Config/testthat/start-first` in
   DESCRIPTION queues the slowest files first, so the run is bounded by the largest file rather than by
   whatever lands last; the worker count is `TESTTHAT_CPUS` (testthat prefers `getOption("Ncpus")` when set; no `.Rprofile` sets it), set in both gating workflows' job `env:` at one
