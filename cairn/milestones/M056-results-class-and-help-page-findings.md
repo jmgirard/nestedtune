@@ -7,7 +7,7 @@
 - **Principles touched:** IP4, GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — exported class methods and help pages
-- **Branch/PR:** `m056-results-class-and-help-page-findings`
+- **Branch/PR:** `m056-results-class-and-help-page-findings` · https://github.com/tidymodels/nestedtune/pull/66
 
 ## Goal
 
