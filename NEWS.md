@@ -8,15 +8,17 @@
 
 * Three compatibility changes to the `nested_results` class. Printing the
   columnless type token `vctrs::vec_cbind_frame_ptype()` hands back no
-  longer errors, and writes the rows alone: neither the outer-label line
-  nor a fold count. A column add that leaves two columns sharing a record
-  column's name -- `vctrs::vec_cbind()` or `dplyr::bind_cols()` with
-  `.name_repair = "minimal"` -- returns a bare tibble carrying none of the
-  run's attributes, as a repair that moves the column already did. And
-  `names<-`, the door `dplyr::rename()` uses, keeps the object and every
-  attribute intact when each record column keeps its name, and returns a
-  bare tibble when a record column is renamed or a column outside the
-  record takes one's name.
+  longer errors, and writes the banner and the rows alone: neither the
+  outer-label line nor a fold count. A column add that leaves two columns
+  sharing a record column's name -- `vctrs::vec_cbind()` or
+  `dplyr::bind_cols()` with `.name_repair = "minimal"` -- returns a bare
+  tibble carrying none of the run's attributes, as a repair that moves the
+  column already did; two columns outside the record sharing a name leave
+  the object as it is. And `names<-`, the door `dplyr::rename()` uses,
+  keeps the object and every attribute intact when each record column keeps
+  its name, a rename that duplicates a name outside the record included,
+  and returns a bare tibble when a record column is renamed or a column
+  outside the record takes one's name.
 
 * `nested_tune_grid()`, `nested_tune_bayes()`, `nested_tune_race_anova()`,
   `nested_tune_race_win_loss()` and `nested_tune_sim_anneal()` refuse a
