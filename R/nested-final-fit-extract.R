@@ -87,8 +87,9 @@ extract_tune_results.default <- function(x, ...) {
   # No dots check here. A caller holding the wrong object is told so whatever
   # else they passed: a dots check before the refusal answered
   # `extract_tune_results(1, foo = 1)` with a complaint about `foo` and said
-  # nothing of `1` (M34 review F5). The abort never returns, so a check after
-  # it would never run either; the methods check their own dots.
+  # nothing of `1` (an M34 review finding, closed in M56). The abort never
+  # returns, so a check after it would never run either; the methods check
+  # their own dots.
   #
   # `current_env()` and not `caller_env()`: inside a method reached by
   # UseMethod() the former renders the generic's own call --

@@ -370,7 +370,8 @@ vec_restore.nested_results <- function(x, to, ...) {
   # `splits` column arrives beside the record's: every required name is then
   # present, and `x$splits` answers with whichever came first, so a record
   # column can no longer be found by name. A duplicated name is the same fault
-  # as a moved one and is shed the same way (M37 review R7).
+  # as a moved one and is shed the same way (an M37 review finding, closed in
+  # M56).
   attempted <- template_rows(to)
   required <- template_record(to)
   if (

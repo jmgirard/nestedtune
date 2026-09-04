@@ -125,8 +125,10 @@ test_that("names<- sheds the record for every record column and keeps it for a c
   out <- with_extra
   names(out)[names(out) == "extra"] <- "renamed"
   expect_record_kept(out, res)
-  expect_identical(attributes(out)[setdiff(names(attributes(out)), "names")],
-    attributes(with_extra)[setdiff(names(attributes(with_extra)), "names")])
+  expect_identical(
+    attributes(out)[setdiff(names(attributes(out)), "names")],
+    attributes(with_extra)[setdiff(names(attributes(with_extra)), "names")]
+  )
   expect_true("renamed" %in% names(out))
   expect_false("extra" %in% names(out))
 
@@ -362,8 +364,14 @@ test_that("vec_cbind() sheds the class when minimal name repair duplicates a rec
   through_vctrs <- vctrs::vec_cbind(res, clash, .name_repair = "minimal")
   through_dplyr <- dplyr::bind_cols(res, clash, .name_repair = "minimal")
 
-  expect_no_record(through_vctrs, "vec_cbind(.name_repair = \"minimal\") over a record column")
-  expect_no_record(through_dplyr, "bind_cols(.name_repair = \"minimal\") over a record column")
+  expect_no_record(
+    through_vctrs,
+    "vec_cbind(.name_repair = \"minimal\") over a record column"
+  )
+  expect_no_record(
+    through_dplyr,
+    "bind_cols(.name_repair = \"minimal\") over a record column"
+  )
   expect_identical(class(through_vctrs), class(through_dplyr))
   expect_identical(names(through_vctrs), names(through_dplyr))
 

@@ -198,8 +198,14 @@ test_that("an object with no method is refused as such whatever rides in the dot
   # dots check moved rather than went.
   skip_if_no_engines()
   final <- final_for_extract()
-  expect_error(extract_tune_results(final, foo = 1), class = "rlib_error_dots_nonempty")
-  expect_error(extract_scored_candidates(final, foo = 1), class = "rlib_error_dots_nonempty")
+  expect_error(
+    extract_tune_results(final, foo = 1),
+    class = "rlib_error_dots_nonempty"
+  )
+  expect_error(
+    extract_scored_candidates(final, foo = 1),
+    class = "rlib_error_dots_nonempty"
+  )
 })
 
 test_that("the refusals read the same for both accessors", {
