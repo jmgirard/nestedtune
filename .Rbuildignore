@@ -13,3 +13,4 @@
 ^[.]?air[.]toml$
 ^\.vscode$
 ^README\.Rmd$
+^vignettes/articles$

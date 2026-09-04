@@ -17,6 +17,7 @@ articles:
   navbar: ~
   contents:
   - nested-cv
+  - estimate
 
 reference:
 - title: Nested resampling
