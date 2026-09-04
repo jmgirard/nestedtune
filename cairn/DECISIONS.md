@@ -1461,6 +1461,35 @@ input because a rename cannot move a value. Falsified by a `names<-` path
 that reorders or drops a column, or by a reader of the record that resolves
 a column by position rather than name.
 
+### D-049 (2026-09-04): the entry check holds each fold's inner splits to their outer split — every one an `rsplit`, all on the outer frame or its analysis set, and a whole-frame split indexing only the outer `in_id` — supersedes the consequence clause of D-047 that admitted an inner design over another frame
+
+**Context:** D-047's consequence clause left a `manual_rset()` of inner
+splits over another frame admitted and handled by the parallel fat path,
+which the serial loop does not share. Probed at M59's plan gate: a hand-built
+inner split whose `in_id` holds an outer-assessment row runs to completion
+unrefused, the IP1 breach in check form.
+
+**Decision:** `check_nested()` runs three further rules, last, under the one
+`nestedtune_bad_design` class and the driver's call: every element of a
+fold's inner `splits` is an `rsplit`; a fold's inner splits all carry one
+frame `identical()` to the outer split's `$data` (the `nested_resamples()`
+shape) or to `rsample::analysis()` of that split (the `nested_cv()` shape),
+the analysis set compared only when the outer indices lie in the frame; and
+a whole-frame inner split's `in_id` and non-`NA` `out_id` lie inside the
+outer `in_id`. The fat path and `is_fold_payload()`'s shared-frame clause
+stay, serving the dispatch tests' stand-in payloads and standing as defence
+in depth. Considered and rejected: a row-count-and-names shape check (admits
+the same-shape wrong frame the fat path exists for); deleting the fat path
+(the dispatch tests need the gate).
+
+**Consequences:** a design reaching a driver malformed in these shapes is
+refused at the call rather than tuned as given; the suite's failure fixtures
+inject their failures through indices inside the design's own frame. An
+analysis-framed inner split's index range, and an outer `in_id` past the
+frame, stay `rsample::analysis()`'s and `last_fit()`'s to refuse (M54).
+Falsified by an rsample-built design the rules refuse, or by the fat path
+taking a real design after the check ships.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

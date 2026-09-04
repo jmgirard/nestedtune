@@ -731,16 +731,20 @@ test_that("each refusal says which defect it found (M55, AC1-AC3)", {
   expect_match(said("inner_frame_same_shape_last"), "frame")
   expect_match(said("inner_frame_one_split_all_last"), "frame")
   expect_match(said("outer_frame_foreign_first"), "frame")
-  expect_match(said("index_held_out_in_id_first"), "in_id")
-  expect_no_match(said("index_held_out_in_id_first"), "out_id")
-  expect_match(said("index_past_end_out_id_last"), "out_id")
-  expect_no_match(said("index_past_end_out_id_last"), "in_id")
-  expect_match(said("index_held_out_both_all"), "in_id")
-  expect_match(said("index_held_out_both_all"), "out_id")
+  # The slot named is the one planted; the hint names `in_id` regardless.
+  expect_match(said("index_held_out_in_id_first"), "in_id holds")
+  expect_no_match(said("index_held_out_in_id_first"), "out_id holds")
+  expect_match(said("index_past_end_out_id_last"), "out_id holds 999999")
+  expect_no_match(said("index_past_end_out_id_last"), "in_id holds")
+  expect_match(said("index_held_out_both_all"), "in_id holds")
+  expect_match(said("index_held_out_both_all"), "out_id holds")
   # A fold whose splits agree on a wrong frame names the fold alone; one
   # whose splits disagree names the splits that are wrong, and only those.
   expect_no_match(said("inner_frame_foreign_first"), "inner split 1")
-  expect_match(said("inner_frame_one_split_first_first"), "inner split 1 carries")
+  expect_match(
+    said("inner_frame_one_split_first_first"),
+    "inner split 1 carries"
+  )
   expect_no_match(said("inner_frame_one_split_first_first"), "inner split 2")
   # No message carries a frame: the widest is still a few lines.
   widest <- max(nchar(vapply(
@@ -823,13 +827,17 @@ test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
     list(analysis = c(1:60, 1L), assessment = 61:90),
     d
   )
+  # Built ahead of the call: `nested_cv()` treats an inline `outside` as a
+  # specification to re-evaluate with its own `data`, which `manual_rset()`
+  # has no argument for.
+  manual_outer <- rsample::manual_rset(
+    list(repeat_split, repeat_split),
+    c("Fold1", "Fold2")
+  )
   set.seed(1)
   manual_repeat <- rsample::nested_cv(
     d,
-    outside = rsample::manual_rset(
-      list(repeat_split, repeat_split),
-      c("Fold1", "Fold2")
-    ),
+    outside = manual_outer,
     inside = rsample::vfold_cv(v = 2)
   )
   expect_true(anyDuplicated(manual_repeat$splits[[1L]]$in_id) > 0L)

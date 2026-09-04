@@ -204,6 +204,9 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
   check_inner_rows(resamples, call = call)
   check_label_columns(resamples, labels, call = call)
   check_label_values(resamples, labels, call = call)
+  # And the three over each fold's inner splits (M59), last of all: they read
+  # inside the inner rsets the class rules vouched for.
+  check_inner_splits(resamples, call = call)
   invisible(resamples)
 }
 
@@ -372,6 +375,210 @@ check_label_values <- function(
     class = "nestedtune_bad_design",
     call = call
   )
+}
+
+# The three rules over a fold's inner splits (M59). Every element of a fold's
+# inner `splits` list is an rsplit; every inner split of a fold carries one
+# frame, either the outer split's own (`nested_resamples()` remaps its inner
+# indices onto the caller's data) or that split's analysis set
+# (`rsample::nested_cv()` builds the inner design on it); and an inner split
+# carrying the outer frame indexes only rows in the outer `in_id` -- an inner
+# analysis or assessment set reaching an outer assessment row is the leak IP1
+# forbids, and a hand-built one ran to completion unrefused before this
+# (probed 2026-09-04). Before, an inner design over another frame was admitted
+# and sent down the parallel fat path (D-047's consequence, superseded by
+# D-049); `is_fold_payload()` keeps that gate for the stand-in payloads the
+# dispatch tests drive, and as defence in depth.
+#
+# `identical()` against the outer frame first -- pointer equality on a
+# `nested_resamples()` design, so the common case costs nothing -- and against
+# `rsample::analysis()` only for a fold whose outer indices lie in its frame:
+# an outer `in_id` reaching past the data is left to `last_fit()` (M54), and
+# `analysis()` would raise here instead. No frame reaches a message (the
+# M05/M45 lesson); every bullet names positions. A rule that finds an offender
+# refuses before the next rule reads what it would have judged.
+check_inner_splits <- function(resamples, call = rlang::caller_env()) {
+  outer <- resamples[["splits"]]
+  inner <- resamples[["inner_resamples"]]
+  n <- length(outer)
+  x_bullets <- function(bullets) {
+    stats::setNames(bullets, rep("x", length(bullets)))
+  }
+
+  not_rsplit <- lapply(inner, function(rs) {
+    which(!vapply(rs[["splits"]], inherits, logical(1), "rsplit"))
+  })
+  bad <- which(lengths(not_rsplit) > 0L)
+  if (length(bad) > 0L) {
+    bullets <- vapply(
+      bad,
+      function(f) {
+        pos <- not_rsplit[[f]]
+        cli::format_inline(
+          "Outer fold {f}: inner {cli::qty(length(pos))}split{?s} {pos} \\
+           {?is/are} not {.cls rsplit}."
+        )
+      },
+      character(1)
+    )
+    cli::cli_abort(
+      c(
+        "{.arg resamples} has an inner split that is not an {.cls rsplit}.",
+        x_bullets(bullets),
+        i = "Every element of an inner design's {.field splits} column is one \\
+             {.cls rsplit}, as {.fn rsample::vfold_cv} and its kin build them."
+      ),
+      class = "nestedtune_bad_design",
+      call = call
+    )
+  }
+
+  # Which frame each inner split carries: the outer split's own, its analysis
+  # set, or neither. A fold's splits must agree on one of the first two; the
+  # splits named are those that do not carry the fold's frame -- the first
+  # split's, when that one is admissible -- or, when no split carries an
+  # admissible frame, every split, as one bullet.
+  whole <- vector("list", n)
+  wrong <- vector("list", n)
+  for (f in seq_len(n)) {
+    split <- outer[[f]]
+    splits <- inner[[f]][["splits"]]
+    is_whole <- vapply(
+      splits,
+      function(s) identical(s[["data"]], split[["data"]]),
+      logical(1)
+    )
+    is_analysis <- rep(FALSE, length(splits))
+    if (!all(is_whole)) {
+      analysis <- outer_analysis(split)
+      if (!is.null(analysis)) {
+        is_analysis[!is_whole] <- vapply(
+          splits[!is_whole],
+          function(s) identical(s[["data"]], analysis),
+          logical(1)
+        )
+      }
+    }
+    admissible <- is_whole | is_analysis
+    whole[[f]] <- is_whole
+    wrong[[f]] <- if (!any(admissible)) {
+      seq_along(splits)
+    } else if (!admissible[[1L]]) {
+      which(!admissible)
+    } else if (is_whole[[1L]]) {
+      which(!is_whole)
+    } else {
+      which(!is_analysis)
+    }
+  }
+  bad <- which(lengths(wrong) > 0L)
+  if (length(bad) > 0L) {
+    bullets <- vapply(
+      bad,
+      function(f) {
+        pos <- wrong[[f]]
+        if (length(pos) == length(inner[[f]][["splits"]])) {
+          cli::format_inline(
+            "Outer fold {f}: every inner split carries a frame that is \\
+             neither the outer split's own nor its analysis set."
+          )
+        } else {
+          cli::format_inline(
+            "Outer fold {f}: inner {cli::qty(length(pos))}split{?s} {pos} \\
+             {cli::qty(length(pos))}carr{?ies/y} a frame the fold's other \\
+             inner splits do not."
+          )
+        }
+      },
+      character(1)
+    )
+    cli::cli_abort(
+      c(
+        "{.arg resamples} has inner splits built on a frame that is not their \\
+         outer fold's.",
+        x_bullets(bullets),
+        i = "Every inner split of an outer fold indexes one frame: the data \\
+             the outer split holds, as {.fn nested_resamples} builds them, or \\
+             that split's analysis set, as {.fn rsample::nested_cv} does."
+      ),
+      class = "nestedtune_bad_design",
+      call = call
+    )
+  }
+
+  # Containment, for the folds whose inner splits carry the outer frame. An
+  # `NA` `out_id` is rsample's "the complement", left as it is; every other
+  # index in either slot must be one the outer split's `in_id` holds.
+  bullets <- character(0)
+  for (f in seq_len(n)) {
+    if (!all(whole[[f]])) {
+      next
+    }
+    outer_in <- as.integer(outer[[f]][["in_id"]])
+    splits <- inner[[f]][["splits"]]
+    for (s in seq_along(splits)) {
+      in_id <- as.integer(splits[[s]][["in_id"]])
+      out_id <- as.integer(splits[[s]][["out_id"]])
+      out_id <- out_id[!is.na(out_id)]
+      in_bad <- unique(in_id[!(in_id %in% outer_in)])
+      out_bad <- unique(out_id[!(out_id %in% outer_in)])
+      if (length(in_bad) == 0L && length(out_bad) == 0L) {
+        next
+      }
+      # As character, so cli names the indices rather than counting them.
+      parts <- c(
+        if (length(in_bad) > 0L) {
+          cli::format_inline("{.field in_id} holds {as.character(in_bad)}")
+        },
+        if (length(out_bad) > 0L) {
+          cli::format_inline("{.field out_id} holds {as.character(out_bad)}")
+        }
+      )
+      n_bad <- length(unique(c(in_bad, out_bad)))
+      bullets <- c(
+        bullets,
+        cli::format_inline(
+          "Outer fold {f}, inner split {s}: {paste(parts, collapse = ' and ')}, \\
+           {cli::qty(n_bad)}{?a row/rows} the outer split does not hold."
+        )
+      )
+    }
+  }
+  if (length(bullets) > 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg resamples} has an inner split indexing rows its outer fold \\
+         does not hold.",
+        x_bullets(bullets),
+        i = "An inner split built on the outer split's frame may index only \\
+             the rows in that split's {.field in_id}: an inner analysis or \\
+             assessment set reaching an outer assessment row leaks it into \\
+             the tuning."
+      ),
+      class = "nestedtune_bad_design",
+      call = call
+    )
+  }
+  invisible(resamples)
+}
+
+# The outer split's analysis set, or NULL when it cannot be built: an outer
+# `in_id` reaching past the frame is `last_fit()`'s to refuse (M54), not this
+# check's.
+outer_analysis <- function(split) {
+  idx <- split[["in_id"]]
+  data <- split[["data"]]
+  if (
+    !is.data.frame(data) ||
+      !is.numeric(idx) ||
+      length(idx) == 0L ||
+      anyNA(idx) ||
+      any(idx < 1L) ||
+      max(idx) > nrow(data)
+  ) {
+    return(NULL)
+  }
+  rsample::analysis(split)
 }
 
 check_grid <- function(grid, call = rlang::caller_env()) {

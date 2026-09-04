@@ -61,8 +61,9 @@ test_that("the failing stage and its cause are recorded, tune's own notes includ
   expect_identical(notes$location[[1L]], "inner tuning")
   expect_identical(notes$type[[1L]], "error")
   # tune's own notes carried through verbatim (GP1): the real cause is the
-  # recipe refusing the foreign frame, and only tune ever saw it.
-  expect_true(any(grepl("Not all variables in the recipe", notes$note)))
+  # recipe's PCA step failing on an analysis set of no rows, and only tune
+  # ever saw it.
+  expect_true(any(grepl("a dimension is zero", notes$note)))
 
   set.seed(2)
   fit_failed <- suppressWarnings(memoised(nested_tune_grid(
@@ -74,7 +75,7 @@ test_that("the failing stage and its cause are recorded, tune's own notes includ
   fit_notes <- fit_failed$.notes[[3L]]
 
   expect_identical(fit_notes$location[[1L]], "outer fit")
-  expect_true(any(grepl("Not all variables in the recipe", fit_notes$note)))
+  expect_true(any(grepl("past the end", fit_notes$note)))
 })
 
 test_that("a completed fold carries an empty note table", {
@@ -278,7 +279,7 @@ test_that("a fold that completed on a truncated inner design keeps tune's notes"
   expect_true(res$.completed[[2L]])
   expect_true(nrow(res$.notes[[2L]]) > 0L)
   expect_true(any(grepl(
-    "Not all variables in the recipe",
+    "a dimension is zero",
     res$.notes[[2L]]$note
   )))
   # A genuinely clean fold still carries nothing.

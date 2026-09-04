@@ -339,34 +339,50 @@ ref_field <- function(ref, field) {
 
 # One outer fold engineered to fail, at a stage of our choosing (M03).
 #
-# The failure is injected into the *design*, not the workflow: the named fold's
-# inner rset -- or its outer split -- is rebuilt on a frame the recipe cannot
-# prep, so that fold fails at that stage while its neighbours run untouched.
-# Keyed to fold position rather than to a counter, so it stays deterministic
-# however the loop is scheduled.
+# The failure is injected into the *design*, not the workflow, and inside the
+# design's own frame: since M59 the entry check refuses an inner split built
+# on any other frame, so the vehicle is the indices. Keyed to fold position
+# rather than to a counter, so it stays deterministic however the loop is
+# scheduled.
+#
+# "inner tuning" empties every inner split's `in_id` in the named fold: the
+# recipe preps on no rows and every candidate fails, so tune raises its "All
+# models failed" note and the fold fails at that stage. "outer fit" appends
+# an index past the frame's end to the outer split's `in_id`: every inner
+# index still maps, so tuning completes and `last_fit()` refuses the split
+# (the appended case test-nested-tune-grid-failures.R also asserts). Both
+# pass the entry check: an empty `in_id` lies inside the outer split's, and
+# the outer split's own range is `last_fit()`'s to refuse (M54).
 foreign_frame <- function(n = 30, seed = 909) {
   set.seed(seed)
   data.frame(z = rnorm(n), w = rnorm(n))
 }
 
+empty_in_id <- function(split) {
+  split$in_id <- integer(0)
+  split
+}
+
 break_fold <- function(nested, fold, stage = c("inner tuning", "outer fit")) {
   stage <- match.arg(stage)
-  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
   if (stage == "inner tuning") {
-    nested$inner_resamples[[fold]] <- foreign
+    nested$inner_resamples[[fold]]$splits <- lapply(
+      nested$inner_resamples[[fold]]$splits,
+      empty_in_id
+    )
   } else {
-    nested$splits[[fold]] <- foreign$splits[[1L]]
+    nested$splits[[fold]]$in_id <- c(nested$splits[[fold]]$in_id, 999999L)
   }
   nested
 }
 
-# One inner split of one outer fold, rebuilt on a foreign frame. That inner
-# resample fails while the rest of the fold's inner design survives, so tuning
-# still yields a candidate and the fold completes -- on a truncated inner design
+# One inner split of one outer fold, its `in_id` emptied. That inner resample
+# fails while the rest of the fold's inner design survives, so tuning still
+# yields a candidate and the fold completes -- on a truncated inner design
 # that tune recorded notes about.
 break_inner_split <- function(nested, fold, split = 1L) {
-  foreign <- rsample::vfold_cv(foreign_frame(), v = 3)
-  nested$inner_resamples[[fold]]$splits[[split]] <- foreign$splits[[1L]]
+  nested$inner_resamples[[fold]]$splits[[split]] <-
+    empty_in_id(nested$inner_resamples[[fold]]$splits[[split]])
   nested
 }
 
@@ -2127,7 +2143,9 @@ malformed_designs <- function(data) {
     }
     record(x, fragments = fragments)
   }
-  held_out <- function(f) as.integer(rsample::complement(base$splits[[f]])[[1L]])
+  held_out <- function(f) {
+    as.integer(rsample::complement(base$splits[[f]])[[1L]])
+  }
   past_end <- function(f) 999999L
   not_rsplit <- list(
     string = "not an rsplit",
