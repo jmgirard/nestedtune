@@ -1,13 +1,13 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-04 (M59 done via PR #69, merged as pushed after two CI-wait ceilings; validate green with the references advisories; the promoted inner-frame row removed, two follow-up rows added and the M54 row pruned past retention; ROADMAP and LESSONS under budget; one lesson added, one trimmed, one pruned; no known issue added, nothing graduated or retired.)_
+_Last hygiene check: 2026-09-04 (M60 done via PR #70, merged as pushed after one CI-wait ceiling; validate green with the references advisories; the M55 row pruned past retention; ROADMAP and LESSONS under budget; one lesson added; no candidate row, no known issue, nothing graduated or retired.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | review | — | normal | milestones/M060-guide-split.md |
+| M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | done | — | normal | milestones/archive/M60-guide-split.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | planned | M60 | normal | milestones/M061-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | planned | M60 | normal | milestones/M062-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | planned | M60 | normal | milestones/M063-parallel-article.md |
@@ -16,7 +16,6 @@ _Last hygiene check: 2026-09-04 (M59 done via PR #69, merged as pushed after two
 | M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | done | — | normal | milestones/archive/M58-preflight-workflow-pkgs.md |
 | M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | done | — | normal | milestones/archive/M57-test-suite-and-ci-findings.md |
 | M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | done | — | normal | milestones/archive/M56-results-class-and-help-page-findings.md |
-| M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | done | — | normal | milestones/archive/M55-design-entry-checks.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
