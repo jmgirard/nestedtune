@@ -31,23 +31,13 @@ library(workflows)
 
 ```{r deps, include = FALSE}
 has_ranger <- requireNamespace("ranger", quietly = TRUE)
-has_recipes <- requireNamespace("recipes", quietly = TRUE)
 ```
 
-```{r deps-notice, eval = !(has_ranger && has_recipes), echo = FALSE, results = "asis"}
-absent <- c("ranger", "recipes")[!c(has_ranger, has_recipes)]
-
+```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
 cat(
-  "The runs below fit random forests with the **ranger** package and",
-  "preprocess with **recipes**, and",
-  if (length(absent) == 1L) {
-    paste0("**", absent, "** is")
-  } else {
-    "neither is"
-  },
-  "installed here, so the rest of this page has been skipped. Install",
-  if (length(absent) == 1L) "it" else "them",
-  "and rebuild to see it.\n"
+  "The runs below fit random forests with the **ranger** package, which is",
+  "not installed here, so the rest of this page has been skipped. Install",
+  "ranger and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
@@ -357,7 +347,7 @@ absent <- c("censored", "survival")[!c(has_censored, has_survival)]
 cat(
   "The run below needs the **censored** and **survival** packages, and",
   if (length(absent) == 1L) {
-    paste0("**", absent, "** is")
+    paste0("**", absent, "** is not")
   } else {
     "neither is"
   },

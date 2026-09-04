@@ -19,6 +19,7 @@ articles:
   - nested-cv
   - estimate
   - tuners
+  - results
 
 reference:
 - title: Nested resampling
