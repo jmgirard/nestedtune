@@ -94,9 +94,10 @@ here to apply.
 standard deviation of the fold scores divided by the square root of how many
 there were. It is not the fold-to-fold spread, which is larger by that same
 factor. Quoting `std_err` as though it described the folds understates their
-disagreement. `collect_metrics(res, summarize = FALSE)` gives the per-fold
-scores, and `autoplot(res, type = "performance")` draws them with a dashed line
-at the mean.
+disagreement. On a results object `res`, as `vignette("nested-cv")` builds
+one, `collect_metrics(res, summarize = FALSE)` gives the per-fold scores, and
+`autoplot(res, type = "performance")` draws them with a dashed line at the
+mean.
 
 It is also not a confidence interval. This package deliberately ships no
 inference on the nested estimate.
@@ -160,7 +161,7 @@ outnumber the observations. Their phrase is p ≫ n, not merely p > n. With 400
 observations and 100 features, the worst optimism they saw on pure noise was
 under 3 points. At 40 observations and 1000 features a shrunken-centroid
 classifier's own score read 0.384 where the truth was 0.5. Even there it
-depends on the learner: in that same cell a linear SVM read 0.475 and a tree
+depends on the learner: in that same cell an SVM read 0.475 and a tree
 0.498, both within 3 points of the truth. Wide data, a big grid, and a
 preprocessing step that the loop has to redo are where the money is. That
 paper's own conclusion is not to nest but to correct the flat score cheaply

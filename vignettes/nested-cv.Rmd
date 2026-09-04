@@ -275,7 +275,7 @@ tune::show_best(res, metric = "rmse")
 tune::select_best(final, metric = "rmse")
 ```
 
-## When this is worth the cost
+## Where this example sits
 
 Nesting is expensive, and it removes most when the search is large relative to
 the data: wide data, a big grid, and preprocessing the loop has to redo. It

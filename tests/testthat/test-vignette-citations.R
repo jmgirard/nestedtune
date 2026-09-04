@@ -12,7 +12,8 @@
 # (so a site-only article under `vignettes/articles/` is held to the same
 # rules as a CRAN vignette), stated at the level the code actually reaches:
 #
-#   1. a page has at most one `## References` heading
+#   1. a page has at most one `## References` heading, and a page that has
+#      one lists at least one entry under it
 #   2. every author-year citation in the page's prose -- narrative
 #      (`Varma and Simon (2006)`) or parenthetical (`(Bayle et al., 2026)`) --
 #      has an entry in that page's `## References` section
@@ -133,7 +134,10 @@ strip_code <- function(lines) {
 # A page split at its `## References` heading. No heading: the whole page is
 # prose and there are no entries. More than one heading: `heading = NA`, which
 # rule 1 asserts on directly -- otherwise every later rule would read only the
-# first section and a duplicated heading would ship green.
+# first section and a duplicated heading would ship green. A heading on the
+# last line yields no entries (`seq_len()`, not `seq()`, which would run
+# backwards there and read the heading itself as an entry), and rule 1b turns
+# that red.
 page_halves <- function(path) {
   lines <- readLines(path, warn = FALSE)
   at <- grep("^##\\s+References\\s*$", lines)
@@ -149,7 +153,7 @@ page_halves <- function(path) {
   }
   list(
     prose = strip_code(lines[seq_len(at - 1L)]),
-    entries = paragraphs(lines[seq(at + 1L, length(lines))]),
+    entries = paragraphs(lines[seq_len(length(lines) - at) + at]),
     heading = TRUE
   )
 }
@@ -306,6 +310,22 @@ expect_one_references_heading <- function(pages, dir) {
   expect_equal(doubled, character(0))
 }
 
+# Rule 1b: a page with a `## References` heading lists something under it.
+# The pre-split guard asserted this on its one page; an emptied or truncated
+# section would otherwise pass every other rule, since nothing is listed to
+# fail on.
+expect_references_nonempty <- function(pages, dir) {
+  empty <- pages[vapply(
+    pages,
+    function(p) {
+      halves <- page_halves(file.path(dir, p))
+      isTRUE(halves$heading) && length(halves$entries) == 0L
+    },
+    logical(1)
+  )]
+  expect_equal(empty, character(0))
+}
+
 # Rule 2: every citation in a page's prose is listed in that page's References.
 expect_citations_listed <- function(pages, dir) {
   unlisted <- character()
@@ -459,6 +479,12 @@ test_that("every page has at most one References heading", {
   )
 })
 
+test_that("every page with a References heading lists an entry under it", {
+  skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
+
+  expect_references_nonempty(vignette_pages(vignettes_dir()), vignettes_dir())
+})
+
 test_that("every source cited in a page's prose is listed in its References", {
   skip_if_not(dir.exists(vignettes_dir()), "vignettes/ absent (built package)")
 
@@ -519,7 +545,9 @@ test_that("every source cited in R/ roxygen is backed by a shelf page", {
 # A temporary `vignettes/` with a one-page shelf beside it. `Somebody (2020)`
 # is on that shelf; `Nobody (2021)` is not. Pages are written with the YAML
 # header and a setup chunk a real page carries, so the stripping runs over the
-# same shape it meets in the tree.
+# same shape it meets in the tree. The header carries a `date:` with digits
+# and the cited fixture a References entry with digits, so the green numeral
+# fixtures go red if either strip stops running.
 
 fixture_tree <- function() {
   # A base tempdir removed at the calling block's exit: withr is deliberately
@@ -552,6 +580,7 @@ plant_page <- function(root, name, body, references = NULL) {
   lines <- c(
     "---",
     "title: \"A planted page\"",
+    "date: \"2020-01-01\"",
     "---",
     "",
     "```{r setup, include = FALSE}",
@@ -579,6 +608,7 @@ test_that("a page citing and listing a backed source, and a page with neither, p
 
   expect_setequal(pages, c("cited.Rmd", "plain.Rmd"))
   expect_success(expect_one_references_heading(pages, dir))
+  expect_success(expect_references_nonempty(pages, dir))
   expect_success(expect_citations_listed(pages, dir))
   expect_success(expect_entries_parse(pages, dir))
   expect_success(expect_entries_backed(pages, dir, file.path(root, "shelf")))
@@ -640,6 +670,16 @@ test_that("a citation with no References section turns the listed rule red", {
     "cited-only.Rmd: somebody2020"
   )
   expect_success(expect_entries_cited(pages, dir))
+})
+
+test_that("an emptied References section turns the entries rule red", {
+  root <- fixture_tree()
+  dir <- file.path(root, "vignettes")
+  plant_page(root, "emptied.Rmd", "A page whose list was deleted.", character())
+  pages <- vignette_pages(dir)
+
+  expect_failure(expect_references_nonempty(pages, dir), "emptied.Rmd")
+  expect_success(expect_one_references_heading(pages, dir))
 })
 
 test_that("a duplicated References heading turns the heading rule red", {
