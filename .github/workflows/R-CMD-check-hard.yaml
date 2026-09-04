@@ -18,6 +18,14 @@ permissions: read-all
 jobs:
   check-no-suggests:
     runs-on: ${{ matrix.config.os }}
+    # A hang here would otherwise run to GitHub's 6-hour default. One job
+    # cap rather than R-CMD-check.yaml's two scopes: this leg installs no
+    # Suggests and uses no cache, so there is no from-source dependency
+    # build to protect from the cap, and the suite skips every daemon test
+    # for want of mirai. The last green run on main took 12m09s end to end,
+    # 9m10s of it in the check step (job 100897115868 of run 33832117316,
+    # 2026-09-04), so 30 is about 2.5x that.
+    timeout-minutes: 30
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
@@ -30,6 +38,10 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # See R-CMD-check.yaml: test files run in parallel, one worker per
+      # core, and this leg runs on ubuntu alone (4 vCPUs). Unset, testthat
+      # would use 2.
+      TESTTHAT_CPUS: 4
 
     steps:
       - uses: actions/checkout@v6
