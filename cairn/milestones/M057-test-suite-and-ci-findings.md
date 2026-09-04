@@ -98,3 +98,4 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 - 2026-09-03: step-6 checkpoint; seven findings fixed on the branch, four rejected with reasons above, awaiting the step-7 gate.
 - 2026-09-03: step-7 approval: PR #67 approved for merge
 - 2026-09-03: CI wait on PR #67 hit the harness ceiling with six checks pending and three passed (the hard leg 9m6s, pkgdown, format-suggest); the watcher was stopped, not merged past; resume re-derives the state
+- 2026-09-03: resume: PR #67 open, 11 checks green, main unmoved; merge chip re-posed and approved
