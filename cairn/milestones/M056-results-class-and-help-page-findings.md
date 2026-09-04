@@ -49,7 +49,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - [x] T6: NEWS entries per AC6.
 - [x] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
 - [x] T8: In `can_reconstruct_results()`, `vec_restore.nested_results()` and `names<-.nested_results()` (`R/nested-results.R`), count duplicates over the record names only (each required name present exactly once), never over every name; add a test that a clash between two non-record columns, through `vec_cbind(.name_repair = "minimal")` and through `names<-`, keeps the object and its attributes (review F1, AC3).
-- [ ] T9: Reorder the `?nested_final_fit` recipe so the Bayesian branch, the one that assigns `control$seed`, comes last, and its comment says the racing and annealing branches use the recorded control untouched; `devtools::document()` (review F2).
+- [x] T9: Reorder the `?nested_final_fit` recipe so the Bayesian branch, the one that assigns `control$seed`, comes last, and its comment says the racing and annealing branches use the recorded control untouched; `devtools::document()` (review F2).
 - [ ] T10: NEWS: the token-print sentence names the banner as what still prints, and the duplicate-name sentence names the record-column rule T8 ships (review F3).
 - [ ] T11: Test tidy-ups: replace the vacuous "did not complete" assertion in the AC1 test with one that the output holds only the banner and the rows (F4); the AC5 passing control reads the section's whole prose, not its first node (F7); the section loop breaks on its match and stops cleanly on a NULL section (F9).
 - [ ] T12: A milestone-local decision line: the duplicate shed is the second fault D-035's "one thing" did not anticipate, and `names<-` decides on the names alone because base `names<-` relabels and never moves a value (F10, H1).
@@ -70,6 +70,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: T7 done; `document()` leaves the tree clean, full `devtools::test()` 0 failures, `devtools::check()` 0 errors, 0 warnings, 0 notes; status set to review.
 - 2026-09-03: /milestone-review: gate presented with the [O] findings F1-F10 and the [S] findings H1-H2; F1 confirmed by command and demonstrates AC3 failing inside its domain. defect return 1 of M56 (return floor, F1): status in-progress; T8-T13 added. Dispositions — fix now in the return: F1, F2, F3, F4, F7, F9, F10/H1; rejected: F5 (latent, no live object reaches the gate), F6 (AC1 met as written; an IP4 observation on the token's row count), F8 (registry names equal the tuner fields by construction), H2 (intentional, tested, in NEWS).
 - 2026-09-03: T8 done; `duplicated_record_names()` counts duplicates over the record's names alone and the three doors call it (the non-record clash shed the record through all three before the fix, reproduced); the test adds a clash between two caller-added columns through `vec_cbind()`, `bind_cols()` and `names<-`, each keeping the object and its attributes; compat and results files clean.
+- 2026-09-03: T9 done; the recipe now runs grid, racing, annealing, then Bayesian, so the `control$seed` assignment sits below every branch that uses the recorded control untouched, and each untouched branch says so; `document()` rewrote `man/nested_final_fit.Rd`; registry file clean.
 
 ## Decisions
 
