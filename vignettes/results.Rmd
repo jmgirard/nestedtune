@@ -334,3 +334,130 @@ Both of those hand back the data and nothing more: no print method, no
 cannot describe itself as a five-fold design, so it stops describing itself.
 To read a partial run, read the run: `collect_metrics(failed)` already
 averages the folds that completed, and warns that it did.
+
+## The two arguments a censored-regression run adds
+
+Every driver takes two more arguments than the runs above used, and both
+reach tune untouched. `event_level` is for classification: it names which
+level of the outcome factor counts as the event, `"first"` unless you say
+otherwise, and it sets the same slot on the inner tuning and on the outer
+scoring fit at once. A regression or censored-regression run ignores it, as
+tune does. `eval_time` is for censored regression, and it changes the shape
+of the result, so the rest of this section runs one.
+
+```{r srv-deps, include = FALSE}
+has_censored <- requireNamespace("censored", quietly = TRUE)
+has_survival <- requireNamespace("survival", quietly = TRUE)
+has_srv <- has_censored && has_survival
+```
+
+```{r srv-notice, eval = !has_srv, echo = FALSE, results = "asis"}
+absent <- c("censored", "survival")[!c(has_censored, has_survival)]
+
+cat(
+  "The run below needs the **censored** and **survival** packages, and",
+  if (length(absent) == 1L) {
+    paste0("**", absent, "** is")
+  } else {
+    "neither is"
+  },
+  "installed here, so this section has been skipped. Install",
+  if (length(absent) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
+)
+```
+
+```{r srv-data, eval = has_srv}
+set.seed(51)
+
+n <- 180
+x1 <- rnorm(n)
+x2 <- rnorm(n)
+lp <- 0.9 * x1 - 0.6 * x2
+early <- rbinom(n, 1, 0.45)
+event_time <- ifelse(
+  early == 1,
+  runif(n, 0.02, 0.6) * exp(-lp / 6),
+  rlnorm(n, meanlog = log(15) - lp, sdlog = 0.8)
+)
+censor_time <- runif(n, 3, 60)
+
+surv_df <- data.frame(
+  time = pmin(event_time, censor_time),
+  event = as.numeric(event_time <= censor_time),
+  x1 = x1,
+  x2 = x2
+)
+```
+
+The data is simulated: two predictors, a time, and an event indicator that
+is zero where the observation was censored before its event. The model is a
+parametric survival regression whose one tunable is the distribution of the
+event times, and the grid names three.
+
+```{r srv-workflow, eval = has_srv, message = FALSE}
+library(censored)
+
+surv_spec <- survival_reg(dist = tune()) |>
+  set_engine("survival") |>
+  set_mode("censored regression")
+
+surv_wf <- workflow(survival::Surv(time, event) ~ x1 + x2, surv_spec)
+
+surv_grid <- data.frame(dist = c("weibull", "lognormal", "exponential"))
+```
+
+A dynamic survival metric is evaluated at a time: the Brier score at one
+time asks how well the model predicts who has survived to that point. So the
+metric has one value per time, and `eval_time` is where the times are given.
+They reach the inner tuning, which selects on the first of them and warns
+once per fold to say so (the chunk mutes those warnings), and the outer
+scoring fit, which scores at each.
+
+```{r srv-run, eval = has_srv, warning = FALSE}
+set.seed(61)
+
+surv_folds <- nested_resamples(
+  surv_df,
+  outside = vfold_cv(v = 3),
+  inside = vfold_cv(v = 3)
+)
+
+set.seed(62)
+
+surv_res <- nested_tune_grid(
+  surv_wf,
+  surv_folds,
+  grid = surv_grid,
+  metrics = yardstick::metric_set(yardstick::brier_survival),
+  eval_time = c(0.5, 10)
+)
+
+collect_metrics(surv_res)
+```
+
+```{r srv-prose, eval = has_srv, echo = FALSE, results = "asis"}
+times <- sort(unique(collect_metrics(surv_res)$.eval_time))
+
+cat(sprintf(
+  paste0(
+    "The estimate carries an `.eval_time` column, and has one row per metric ",
+    "and time: the Brier score at %s and at %s, each the mean over the outer ",
+    "folds of that fold's score at that time. The per-fold table carries the ",
+    "same column, and so does each fold's `.metrics`.\n"
+  ),
+  times[1],
+  times[2]
+))
+```
+
+```{r srv-per-fold, eval = has_srv}
+collect_metrics(surv_res, summarize = FALSE)
+
+surv_res$.selected[[1]]
+```
+
+Everything else reads as before. `summary()`, `agreement()` and the default
+`autoplot()` report the selected distribution the way they report `mtry`
+above, and `autoplot(type = "performance")` draws one panel per metric and
+time.
