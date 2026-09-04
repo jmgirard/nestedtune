@@ -204,7 +204,15 @@ test_that("printing the frame prototype emits neither the outer label nor a fold
   lines <- NULL
   expect_no_error(lines <- cli::cli_fmt(print(token)))
   expect_false(any(grepl("Outer resamples", lines, fixed = TRUE)))
-  expect_false(any(grepl("did not complete", lines, fixed = TRUE)))
+  # Everything written is the banner and the rows: after the blank line
+  # `cli_h1()` opens with, the banner, then the tibble header and nothing
+  # after it (a columnless tibble prints no body), so a fold-count line has
+  # nowhere to hide. Measured on the fixture 2026-09-03: three lines.
+  body <- lines[nzchar(lines)]
+  expect_length(body, 2L)
+  expect_true(grepl("Nested cross-validation results", body[[1L]], fixed = TRUE))
+  # `×` under cli's unicode output, `x` under testthat's ASCII one.
+  expect_true(grepl("^# A tibble: [0-9]+ [×x] 0\\s*$", body[[2L]]))
 
   # The passing control: the same method on the object the token came from
   # writes the label line, so the two absences above are the token's and not

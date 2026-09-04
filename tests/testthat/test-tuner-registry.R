@@ -91,9 +91,13 @@ test_that("the final-fit reproducibility recipe calls every registry tuner", {
         identical(trimws(rd_text(node[[1L]])), "Reproducibility")
     ) {
       section <- node[[2L]]
+      break
     }
   }
   expect_false(is.null(section))
+  if (is.null(section)) {
+    return(invisible())
+  }
 
   # The recipe is the section's one code block, so the domain the calls are
   # looked for in is shown non-empty and to be code rather than prose.
@@ -112,9 +116,24 @@ test_that("the final-fit reproducibility recipe calls every registry tuner", {
     )
   }
 
-  # The passing control: the prose around the block mentions no tuner by
-  # call, so a match above is the recipe's and not a section-wide one; and a
-  # name the registry does not hold is not found, so the pattern can fail.
-  expect_false(grepl("\\btune_race_anova\\(", rd_text(section[[1L]])))
+  # The passing control: the prose around the block -- every node of the
+  # section that is not the code block -- calls none of the tuners the
+  # recipe branches on, so a match above is the recipe's and not a
+  # section-wide one; and a name the registry does not hold is not found,
+  # so the pattern can fail. `tune_grid` is left out of the control because
+  # the section's closing paragraph cross-references `tune::tune_grid()`
+  # as a call, on the repeated-call consequence it states.
+  prose <- rd_text(Filter(
+    function(node) !identical(attr(node, "Rd_tag"), "\\preformatted"),
+    section
+  ))
+  expect_true(nchar(prose) > 0L)
+  expect_true(grepl("\\btune_grid\\(", prose))
+  for (nm in setdiff(names(tuner_registry), "tune_grid")) {
+    expect_false(
+      grepl(paste0("\\b", nm, "\\("), prose),
+      label = paste0("prose calls ", nm, "(")
+    )
+  }
   expect_false(grepl("\\bfit_resamples\\(", recipe))
 })
