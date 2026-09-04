@@ -245,7 +245,10 @@ prints finetune's elimination log from a serial run, once per fold, and
 from a mirai daemon where nothing shows it; \code{verbose} likewise. \code{pkgs},
 \code{parallel_over} and \code{workflow_size} behave as on \code{\link[=nested_tune_grid]{nested_tune_grid()}},
 \code{parallel_over} included: it changes the numbers a stochastic engine
-produces even at \code{allow_par = FALSE}.
+produces even at \code{allow_par = FALSE}. This classification was read on
+finetune 1.3.0; the version that added \code{workflow_size} to
+\code{control_race()} is not named in finetune's NEWS, and the \verb{>= 1.0.1}
+floor this package declares does not require it.
 
 \strong{Not returned: \code{extract}, \code{save_pred}, \code{save_workflow}.} As on
 \code{\link[=nested_tune_grid]{nested_tune_grid()}}: each lands on the inner race result a fold record

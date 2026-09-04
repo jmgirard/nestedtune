@@ -142,6 +142,19 @@
 #' tuned <- tune_bayes(object, inner, iter = iter, initial = initial,
 #'   objective = objective, param_info = param_info, metrics = metrics,
 #'   eval_time = eval_time, control = control)
+#' # a racing procedure, ANOVA or win/loss: the race's own draws -- the
+#' # resample order under `randomize` -- come from the stream the tuning
+#' # seed set, so the recorded `control_race()` is used as it is
+#' tuned <- tune_race_anova(object, inner, grid = grid, param_info = param_info,
+#'   metrics = metrics, eval_time = eval_time, control = control)
+#' tuned <- tune_race_win_loss(object, inner, grid = grid, param_info = param_info,
+#'   metrics = metrics, eval_time = eval_time, control = control)
+#' # an annealing procedure: the perturbations draw from the same stream, and
+#' # `control_sim_anneal()` has no seed slot, so the recorded control is
+#' # likewise used as it is
+#' tuned <- tune_sim_anneal(object, inner, iter = iter, initial = initial,
+#'   param_info = param_info, metrics = metrics, eval_time = eval_time,
+#'   control = control)
 #' final <- finalize_workflow(object, select_best(tuned, metric = <first metric>))
 #' set.seed(fit$fit_seed, kind = "Mersenne-Twister",
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
