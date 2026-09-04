@@ -415,3 +415,47 @@ test_that("the probe sends the package list, and a daemon that has them all repo
   expect_identical(status$missing_pkgs, 2L)
   expect_identical(status$missing_packages, "nestedtune.no.such.package")
 })
+
+test_that("a heterogeneous pool names the daemon that lacks a needed package", {
+  # AC2: the same two-daemon pool the cannot-load test above builds, asked a
+  # question both daemons can answer. `package = "mirai"` is the loadable
+  # stand-in -- under devtools::test() neither daemon holds nestedtune, and
+  # the cannot-load rung would take the class -- and ranger is what the
+  # scratch library lacks.
+  skip_if_no_daemons()
+  skip_if_not_installed("ranger")
+  skip_on_os("windows")
+
+  lean <- lean_library()
+  skip_if(is.null(lean), "could not build a scratch library (no symlinks?)")
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  setTimeLimit(elapsed = 180, transient = TRUE)
+  on.exit(setTimeLimit(), add = TRUE, after = FALSE)
+
+  started <- Sys.time()
+  connections <- start_mixed_daemons(lean)
+  skip_if(connections < 2, "the heterogeneous pool did not assemble")
+
+  status <- daemons_load_status(
+    package = "mirai",
+    pkgs = "ranger",
+    timeout = 30000
+  )
+  elapsed <- as.numeric(Sys.time() - started, units = "secs")
+
+  expect_identical(status$total, 2L)
+  expect_identical(status$cannot_load, 0L)
+  expect_identical(status$incompatible, 0L)
+  expect_identical(status$no_answer, 0L)
+  expect_identical(status$missing_pkgs, 1L)
+  expect_identical(status$missing_packages, "ranger")
+  expect_identical(status$outcome, "missing_pkgs")
+
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_missing_pkgs"
+  )
+  expect_match(conditionMessage(err), "ranger")
+  expect_lt(elapsed, 150)
+})

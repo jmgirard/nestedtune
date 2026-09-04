@@ -464,6 +464,46 @@ time_budget_ledger <- function() {
       "the probe sends the package list, and a daemon that has them all reports none",
       note = "explicit timeout = 30000"
     ),
+    tb_row(
+      "test-parallel-detection.R",
+      433L,
+      "setTimeLimit",
+      0,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "not a bound on a blocked mirai wait (M14)"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      434L,
+      "setTimeLimit",
+      0,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "restore"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      437L,
+      "start_mixed_daemons",
+      60,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "its own `timeout` default"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      440L,
+      "daemons_load_status",
+      30,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "explicit timeout = 30000"
+    ),
+    tb_row(
+      "test-parallel-detection.R",
+      456L,
+      "check_daemons_can_load",
+      0,
+      "a heterogeneous pool names the daemon that lacks a needed package",
+      note = "status already in hand"
+    ),
     # --- test-parallel-detection.R ------------------------------------------
     tb_row(
       "test-parallel-detection.R",
