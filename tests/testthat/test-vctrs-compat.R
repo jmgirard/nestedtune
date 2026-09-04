@@ -526,9 +526,11 @@ test_that(".inner_metrics is in the record vec_restore() and rbind() check", {
 
 # --- tibble is a Suggest (M57) ----------------------------------------------
 #
-# `R-CMD-check-hard.yaml` installs no Suggests, and every block above that
-# builds a `tibble::` value would fail there rather than skip. The check reads
-# the blocks as code, so a block that acquires a `tibble::` call later is
+# `tibble` is in Suggests, so a block that builds a `tibble::` value skips
+# without it, as every other Suggests use in the suite does. (The no-Suggests
+# leg, `R-CMD-check-hard.yaml`, still has it: tibble is an Import of dplyr and
+# tune, so the skip never fires there. It guards a library without dplyr's
+# hard closure.) The check reads the blocks as code, so a block that acquires a `tibble::` call later is
 # caught the day it does, and a skip in the wrong position -- after a line
 # that already needs tibble -- counts as no skip at all.
 

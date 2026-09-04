@@ -55,7 +55,7 @@ rules in tracking-rules:
   cache-save; it leaves every non-check step bounded only by the job.
   **Parallel test files** (`Config/testthat/parallel: true`, M52): `Config/testthat/start-first` in
   DESCRIPTION queues the slowest files first, so the run is bounded by the largest file rather than by
-  whatever lands last; the worker count is `TESTTHAT_CPUS` (testthat prefers `getOption("Ncpus")` when set; no `.Rprofile` sets it), set in both gating workflows' job `env:` at one
+  whatever lands last; the worker count is `TESTTHAT_CPUS` (testthat prefers `getOption("Ncpus")` when set; no `.Rprofile` sets it), set in the three check workflows' job `env:` at one
   per runner core (4 on ubuntu and windows, 3 on macOS) and left at testthat's default of 2 locally;
   `benchmarks/profile-tests.R` pins itself serial so its per-file figures stay comparable. **A
   `workflow_dispatch`-only stress workflow** (`stress-daemon-tests.yaml`) hunts the hang on demand, invisible

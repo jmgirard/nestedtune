@@ -220,7 +220,7 @@ test_that("AC5: every registered method whose `...` is unused fences it", {
 #
 # The signature alone. M34 also scanned every in-repo `collect_metrics(` call
 # for a positional `summarize`; M57 removed the scan, since a positional
-# argument past `...` already errors at the call (test-collect-metrics.R
+# argument past `...` already errors at the call (the runtime block below
 # holds that), and a text scan over the repo's own files was a second checker
 # for the same fact.
 
@@ -232,8 +232,11 @@ test_that("AC6: collect_metrics() puts `summarize` behind the barrier", {
 })
 
 test_that("AC6: a positional `summarize` is refused at the call, a named one is not", {
-  skip_if_not_installed("recipes")
+  skip_if_no_engines()
+  # Seeded as test-vctrs-compat.R's `compat_results()` seeds it, so the
+  # request keys to the run that file already built rather than a second fit.
   d <- make_reg_data()
+  set.seed(2)
   res <- memoised(nested_tune_grid(
     det_workflow(d),
     det_nested(d),

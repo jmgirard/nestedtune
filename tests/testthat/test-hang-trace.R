@@ -106,16 +106,12 @@ test_that("a file's end forgets its unended blocks as well as its ended ones", {
   )
   reporter <- WedgedReporter$new()
   path <- fixture_two_blocks()
-  trace_lines(path, reporter = reporter)
+  out <- grep(" :: ", trace_lines(path, reporter = reporter), value = TRUE)
 
-  # Both blocks were opened and neither was closed, which is the precondition:
-  # without it an empty `open` would prove nothing.
-  out <- grep(
-    " :: ",
-    trace_lines(path, reporter = HangTraceReporter$new()),
-    value = TRUE
-  )
-  expect_length(out, 4L)
+  # Both blocks were opened and neither was closed, on this reporter, which
+  # is the precondition: without it an empty `open` would prove nothing.
+  expect_length(out, 2L)
+  expect_true(all(grepl("start", out)))
 
   own <- function(record) {
     targets <- ls(record, all.names = TRUE)

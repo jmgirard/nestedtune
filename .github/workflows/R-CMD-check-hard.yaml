@@ -22,9 +22,10 @@ jobs:
     # cap rather than R-CMD-check.yaml's two scopes: this leg installs no
     # Suggests and uses no cache, so there is no from-source dependency
     # build to protect from the cap, and the suite skips every daemon test
-    # for want of mirai. The last green run on main took 12m09s end to end,
-    # 9m10s of it in the check step (job 100897115868 of run 33832117316,
-    # 2026-09-04), so 30 is about 2.5x that.
+    # for want of mirai. The last green run (a pull_request run of the
+    # M56 branch) took 12m09s end to end, 9m10s of it in the check step
+    # (job 100897115868 of run 33832117316, 2026-09-04), so 30 is about
+    # 2.5x that.
     timeout-minutes: 30
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
