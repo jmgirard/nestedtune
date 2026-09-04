@@ -77,6 +77,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: T13 done; `document()` leaves the tree clean, full `devtools::test()` 0 failures (5736 passes), `devtools::check()` 0 errors, 0 warnings, 0 notes; status set to review for the second review pass.
 - 2026-09-03: /milestone-review second pass: AC1-AC7 re-verified, gate clean, three lenses returned G1-G4 (no code defect) and one bot format thread, fixed now; presented at the gate.
 - 2026-09-03: step-7 approval: PR #66 approved for merge; G2 to land as a D-entry at hygiene.
+- 2026-09-03: step 8: marker written, PR #66 marked ready; the CI watch hit the harness ceiling with format-suggest, pkgdown and ubuntu release green and six checks pending; stopped for resume, this push restarts the checks.
 
 ## Decisions
 
