@@ -380,6 +380,41 @@ test_that("vec_cbind() sheds the class when minimal name repair duplicates a rec
   expect_identical(sum(names(through_vctrs) == "splits"), 2L)
 })
 
+# The duplicate rule is the record's, not every name's: two caller-added
+# columns coming to share a name touch nothing the record is read from, so
+# the object keeps its class and attributes through the column-add doors and
+# through `names<-` alike. Before M56's return, all three doors counted
+# duplicates over every name and shed the record here (measured 2026-09-03;
+# M56 review F1).
+test_that("a name shared by two columns outside the record keeps the object through every door", {
+  skip_if_no_engines()
+  res <- compat_results()
+  with_extra <- dplyr::mutate(res, extra = seq_len(dplyr::n()))
+  expect_record_kept(with_extra, res)
+  clash <- tibble::tibble(extra = seq_len(nrow(res)) + 10L)
+
+  through_vctrs <- vctrs::vec_cbind(with_extra, clash, .name_repair = "minimal")
+  through_dplyr <- dplyr::bind_cols(with_extra, clash, .name_repair = "minimal")
+  expect_record_kept(through_vctrs, res)
+  expect_record_kept(through_dplyr, res)
+  expect_identical(class(through_vctrs), class(through_dplyr))
+
+  two <- dplyr::mutate(with_extra, other = seq_len(dplyr::n()) + 20L)
+  renamed <- two
+  names(renamed)[names(renamed) == "other"] <- "extra"
+  expect_record_kept(renamed, res)
+  expect_identical(
+    attributes(renamed)[setdiff(names(attributes(renamed)), "names")],
+    attributes(two)[setdiff(names(attributes(two)), "names")]
+  )
+
+  # The passing control: the name really is duplicated on every door, so the
+  # object kept above is one the duplicate reached and not one it missed.
+  expect_identical(sum(names(through_vctrs) == "extra"), 2L)
+  expect_identical(sum(names(through_dplyr) == "extra"), 2L)
+  expect_identical(sum(names(renamed) == "extra"), 2L)
+})
+
 test_that("a column add answers the same through either door with the results object second", {
   skip_if_no_engines()
   res <- compat_results()
