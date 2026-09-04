@@ -1,6 +1,6 @@
 # M58: The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -43,7 +43,7 @@ A run whose daemons or host lack a package the workflow or the tuner needs is re
 - [x] T2: A helper `needed_pkgs(object, tuner)` returning `tune::required_pkgs(object)` under the attach step's `tryCatch` plus the registry's `requires`, read by the probe, by `attach_daemon_pkgs()` (`R/parallel.R:593`) and by T4; `dispatch_folds()` (`R/parallel.R:221`) passes it to the pre-flight; `check_daemons_can_load()` (`R/parallel.R:756`) gains the `missing_pkgs` abort — count, packages, install-then-restart remedy, the serial alternative — and cross-fault bullets on the cannot-load and incompatible branches; the per-driver refusal test (AC1) with its 0-second ledger rows.
 - [x] T3: The real-pool test in `tests/testthat/test-parallel-detection.R` beside the existing heterogeneous-pool test (`:56`), its rows in `helper-time-budget.R` and the `test-suite-hygiene.R` guard (AC2).
 - [x] T4: Host side: `check_model_spec()` (`R/checks.R:91`) becomes a workflow-level check over the helper's workflow half, carrying `nestedtune_pkg_not_installed` with the tuner refusal's install hint; the custom-step test across the five drivers and `nested_final_fit()` (AC4).
-- [ ] T5: The roxygen daemons bullet (`R/nested-tune-grid.R:340-353`), the NEWS entry, the DESIGN architecture sentence on the pre-flight and attach (`cairn/DESIGN.md:261-263`), `air format --check` on the touched files, `devtools::document()`, full `devtools::check()` (AC5, AC6).
+- [x] T5: The roxygen daemons bullet (`R/nested-tune-grid.R:340-353`), the NEWS entry, the DESIGN architecture sentence on the pre-flight and attach (`cairn/DESIGN.md:261-263`), `air format --check` on the touched files, `devtools::document()`, full `devtools::check()` (AC5, AC6).
 
 ## Work log
 
@@ -57,6 +57,8 @@ A run whose daemons or host lack a package the workflow or the tuner needs is re
 - 2026-09-04: T2 done. `workflow_pkgs(object)` reads `tune::required_pkgs(object)` and falls back to the engine's list when that call raises, `needed_pkgs(object, tuner)` adds the registry's `requires`; `dispatch_folds()` hands the list to the probe and the attach step, which now takes `pkgs` as an argument. The per-driver refusal test loops the five drivers over three fabricated answer sets under mocked `mirai_workers()` and `daemons_load_status()`; no wait call, so no ledger row. Full `devtools::test()` clean.
 - 2026-09-04: T3 done. The AC2 test sits at the end of `test-parallel-detection.R` with five ledger rows; it ran unskipped locally (10 expectations) and the hygiene guard is green. The real-pool silent-case test T1 moved here also ran unskipped.
 - 2026-09-04: T4 done. `check_model_spec()` is replaced by `check_workflow_pkgs()`, reading `workflow_pkgs()` and refusing under `nestedtune_pkg_not_installed` with the same `install.packages()` hint the tuner refusal gives. New file `tests/testthat/test-workflow-pkgs.R`: a step with a `required_pkgs()` method naming an uninstalled package, refused by the six entry points with the user's call named and nothing dispatched; the engine case and the silent case kept. Full `devtools::test()` clean.
+- 2026-09-04: T5 done. Roxygen daemons bullet, NEWS entry and the DESIGN architecture sentence added; `air format --check` clean on R/ and tests/; `devtools::document()` rewrote only `man/nested_tune_grid.Rd` and is stable on a second run; `devtools::check()` 0 errors, 0 warnings, 0 notes.
+- 2026-09-04: all tasks checked, verify slot clean; status set to review by /milestone-implement. Two judgments not in the plan, recorded here: `workflow_pkgs()` falls back to the engine's list when `tune::required_pkgs()` raises, so the pre-M58 engine check never weakens; and the incompatible branch carries no missing-package bullet because the package rung outranks it, so the pair is named by the package abort.
 
 ## Decisions
 

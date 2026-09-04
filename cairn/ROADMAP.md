@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-03 (status audit after M57: nothing in flight, both
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | in-progress | — | normal | milestones/M58-preflight-workflow-pkgs.md |
+| M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | review | — | normal | milestones/M58-preflight-workflow-pkgs.md |
 | M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | done | — | normal | milestones/archive/M57-test-suite-and-ci-findings.md |
 | M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | done | — | normal | milestones/archive/M56-results-class-and-help-page-findings.md |
 | M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | done | — | normal | milestones/archive/M55-design-entry-checks.md |
