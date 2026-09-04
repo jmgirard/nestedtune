@@ -1,6 +1,6 @@
 # M60: The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
