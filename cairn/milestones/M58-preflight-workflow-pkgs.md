@@ -1,13 +1,13 @@
 # M58: The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP3
 - **Resolves:** —
 - **Surface tier:** user-facing — a refusal every parallel driver raises before dispatch, and a host-side entry refusal
-- **Branch/PR:** —
+- **Branch/PR:** `m058-preflight-workflow-pkgs`
 
 ## Goal
 
