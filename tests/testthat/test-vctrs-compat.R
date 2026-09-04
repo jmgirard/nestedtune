@@ -159,6 +159,7 @@ test_that("vec_slice() reordering the rows keeps the class and the record", {
 # AC3. The same operation through either door.
 
 test_that("vec_cbind() and bind_cols() adding a column answer the same way", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   extra <- tibble::tibble(extra = 1:3)
@@ -231,6 +232,7 @@ test_that("printing the frame prototype emits neither the outer label nor a fold
 # refusal is distinguished from an ordinary lossy cast.
 
 test_that("a nested_results casts to its own tibble prototype", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   proto <- tibble::as_tibble(vctrs::vec_ptype(res))
@@ -241,6 +243,7 @@ test_that("a nested_results casts to its own tibble prototype", {
 })
 
 test_that("a tibble does not cast to a nested_results", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   proto <- tibble::as_tibble(vctrs::vec_ptype(res))
@@ -255,6 +258,7 @@ test_that("a tibble does not cast to a nested_results", {
 # AC3's behavior, not restated here.
 
 test_that("vec_ptype2() returns a prototype for every pair of the three types", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   tbl <- tibble::as_tibble(vctrs::vec_ptype(res))
@@ -281,6 +285,7 @@ test_that("vec_ptype2() returns a prototype for every pair of the three types", 
 # and what rsample does with its own.
 
 test_that("group_by(), rowwise() and as_tibble() leave the recorded attributes readable", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
 
@@ -316,6 +321,7 @@ test_that("group_by(), rowwise() and as_tibble() leave the recorded attributes r
 # methods were registered (T6), and what `dplyr::bind_cols()` does today (T7).
 
 test_that("combining with a table whose columns differ answers rather than raising", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   other <- tibble::tibble(other = 1)
@@ -346,6 +352,7 @@ test_that("combining with a table whose columns differ answers rather than raisi
 })
 
 test_that("vec_cbind() sheds the class when name repair moves a record column", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   clash <- tibble::tibble(splits = 1:3)
@@ -369,6 +376,7 @@ test_that("vec_cbind() sheds the class when name repair moves a record column", 
 # stamped on a table whose record can no longer be found by name (measured
 # 2026-09-03).
 test_that("vec_cbind() sheds the class when minimal name repair duplicates a record column", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   clash <- tibble::tibble(splits = seq_len(nrow(res)))
@@ -399,6 +407,7 @@ test_that("vec_cbind() sheds the class when minimal name repair duplicates a rec
 # duplicates over every name and shed the record here (measured 2026-09-03;
 # M56 review F1).
 test_that("a name shared by two columns outside the record keeps the object through every door", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   with_extra <- dplyr::mutate(res, extra = seq_len(dplyr::n()))
@@ -428,6 +437,7 @@ test_that("a name shared by two columns outside the record keeps the object thro
 })
 
 test_that("a column add answers the same through either door with the results object second", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   extra <- tibble::tibble(extra = 1:3)
@@ -476,6 +486,7 @@ test_that("vec_rbind() and vec_c() shed on one argument where bind_rows() keeps"
 # under the class, which `$<-` leaves wearing it.
 
 test_that(".inner_metrics is in the record vec_restore() and rbind() check", {
+  skip_if_not_installed("tibble")
   skip_if_no_engines()
   res <- compat_results()
   bare <- tibble::as_tibble(res)
@@ -511,4 +522,55 @@ test_that(".inner_metrics is in the record vec_restore() and rbind() check", {
   # survives a one-argument rbind().
   expect_record_kept(vctrs::vec_restore(bare, res), res)
   expect_record_kept(rbind(res), res)
+})
+
+# --- tibble is a Suggest (M57) ----------------------------------------------
+#
+# `R-CMD-check-hard.yaml` installs no Suggests, and every block above that
+# builds a `tibble::` value would fail there rather than skip. The check reads
+# the blocks as code, so a block that acquires a `tibble::` call later is
+# caught the day it does, and a skip in the wrong position -- after a line
+# that already needs tibble -- counts as no skip at all.
+
+# Whether `x` contains a `pkg::` call, walked as code rather than searched as
+# text, so a string that happens to say `tibble::` -- this block's own
+# description -- is not a use.
+calls_namespace <- function(x, pkg) {
+  if (!is.call(x)) {
+    return(FALSE)
+  }
+  if (identical(x[[1L]], as.name("::")) && identical(x[[2L]], as.name(pkg))) {
+    return(TRUE)
+  }
+  # Every element, the function position included: `tibble::tibble(...)` is a
+  # call whose function is itself the `::` call.
+  any(vapply(as.list(x), calls_namespace, logical(1), pkg = pkg))
+}
+
+test_that("every block that calls tibble:: opens with the tibble skip", {
+  calls <- test_that_calls(test_path("test-vctrs-compat.R"))
+  uses_tibble <- vapply(
+    calls,
+    function(call) calls_namespace(call$body, "tibble"),
+    logical(1)
+  )
+  # The check is empty if nothing here calls tibble, which is not this file.
+  expect_gt(sum(uses_tibble), 0L)
+
+  opens_with_skip <- vapply(
+    calls,
+    function(call) {
+      body <- call$body
+      is.call(body) &&
+        identical(body[[1L]], as.name("{")) &&
+        length(body) > 1L &&
+        identical(body[[2L]], quote(skip_if_not_installed("tibble")))
+    },
+    logical(1)
+  )
+  descriptions <- vapply(calls, `[[`, character(1), "description")
+  expect_identical(
+    descriptions[uses_tibble & !opens_with_skip],
+    character()
+  )
 })
