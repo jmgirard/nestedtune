@@ -121,16 +121,22 @@ start_daemons <- function(n) {
 # `missing =` names the symbols a loaded daemon lacks, keyed by position, so a
 # mixed pool is written in one call: reports(TRUE, FALSE, missing = list(NULL,
 # NULL)) is a load failure beside a healthy daemon.
-reports <- function(..., missing = NULL) {
+#
+# `missing_pkgs =` names the workflow's or the tuner's packages a daemon
+# cannot load, keyed by position the same way (M58); a daemon that cannot
+# load the package still answers it, as the real probe does.
+reports <- function(..., missing = NULL, missing_pkgs = NULL) {
   loaded <- c(...)
   lapply(seq_along(loaded), function(i) {
     if (is.na(loaded[[i]])) {
       return(structure(20L, class = c("errorValue", "try-error")))
     }
     absent <- if (is.null(missing)) NULL else missing[[i]]
+    lacking <- if (is.null(missing_pkgs)) NULL else missing_pkgs[[i]]
     list(
       loaded = loaded[[i]],
-      missing = if (is.null(absent)) character() else absent
+      missing = if (is.null(absent)) character() else absent,
+      missing_pkgs = if (is.null(lacking)) character() else lacking
     )
   })
 }

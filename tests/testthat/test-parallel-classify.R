@@ -503,13 +503,18 @@ test_that("the probe expression asks the daemon for nothing but base R", {
     sort(unique(names_called(daemon_probe_expr()))),
     sort(c(
       "{",
+      "<-",
+      "[",
+      "!",
       "asNamespace",
       "character",
       "if",
       "list",
+      "logical",
       "ls",
       "requireNamespace",
-      "setdiff"
+      "setdiff",
+      "vapply"
     ))
   )
 })
@@ -578,12 +583,13 @@ test_that("an incompatible daemon outranks one that never answered", {
 })
 
 test_that("every outcome the ladder can produce is reachable and distinct", {
-  # All four in one place, so a future branch added above or below any of them
+  # All five in one place, so a future branch added above or below any of them
   # cannot quietly absorb its neighbour.
   outcomes <- vapply(
     list(
       reports(TRUE, TRUE),
       reports(TRUE, TRUE, missing = list(NULL, "rehydrate_payload")),
+      reports(TRUE, TRUE, missing_pkgs = list(NULL, "ranger")),
       reports(TRUE, NA),
       reports(TRUE, FALSE)
     ),
@@ -592,7 +598,7 @@ test_that("every outcome the ladder can produce is reachable and distinct", {
   )
   expect_identical(
     outcomes,
-    c("ok", "incompatible", "no_response", "cannot_load")
+    c("ok", "incompatible", "missing_pkgs", "no_response", "cannot_load")
   )
 })
 
@@ -831,7 +837,7 @@ test_that("a daemon answering something other than a report counts as silent", {
   # both classify as non-response rather than as a load failure -- the same
   # positive-shape discipline classify_fold_result() rests on.
   answers <- list(
-    list(loaded = TRUE, missing = character()),
+    list(loaded = TRUE, missing = character(), missing_pkgs = character()),
     structure(20L, class = c("errorValue", "try-error"))
   )
   status <- preflight_outcome(answers)
@@ -861,18 +867,62 @@ test_that("a report is rejected unless every field has the right shape", {
   # Positive validation means each field is checked, not just the names: a
   # record whose `missing` came back as something other than a character vector
   # is a malformed answer, not a daemon with nothing missing.
+  none <- character()
   expect_null(daemon_report(list(loaded = TRUE)))
-  expect_null(daemon_report(list(loaded = NA, missing = character())))
-  expect_null(daemon_report(list(loaded = "yes", missing = character())))
-  expect_null(daemon_report(list(loaded = TRUE, missing = 1L)))
-  expect_null(daemon_report(list(loaded = TRUE, missing = NA_character_)))
+  expect_null(daemon_report(list(loaded = TRUE, missing = none)))
+  expect_null(daemon_report(list(
+    loaded = NA,
+    missing = none,
+    missing_pkgs = none
+  )))
+  expect_null(daemon_report(list(
+    loaded = "yes",
+    missing = none,
+    missing_pkgs = none
+  )))
+  expect_null(daemon_report(list(
+    loaded = TRUE,
+    missing = 1L,
+    missing_pkgs = none
+  )))
+  expect_null(daemon_report(list(
+    loaded = TRUE,
+    missing = NA_character_,
+    missing_pkgs = none
+  )))
   expect_null(daemon_report(list(
     loaded = c(TRUE, TRUE),
-    missing = character()
+    missing = none,
+    missing_pkgs = none
+  )))
+  # The package field is held to the same shape (M58): a report whose
+  # `missing_pkgs` is not a character vector, or carries an NA, is malformed,
+  # not a daemon that lacks nothing.
+  expect_null(daemon_report(list(
+    loaded = TRUE,
+    missing = none,
+    missing_pkgs = 1L
+  )))
+  expect_null(daemon_report(list(
+    loaded = TRUE,
+    missing = none,
+    missing_pkgs = NA_character_
   )))
   expect_identical(
-    daemon_report(list(loaded = TRUE, missing = "fold_task")),
-    list(loaded = TRUE, missing = "fold_task")
+    daemon_report(list(
+      loaded = TRUE,
+      missing = "fold_task",
+      missing_pkgs = none
+    )),
+    list(loaded = TRUE, missing = "fold_task", missing_pkgs = none)
+  )
+  expect_identical(
+    daemon_report(list(
+      loaded = FALSE,
+      missing = none,
+      missing_pkgs = "ranger"
+    )),
+    list(loaded = FALSE, missing = none, missing_pkgs = "ranger")
   )
 })
 
@@ -891,4 +941,192 @@ test_that("dispatch accepts daemons primed with the package", {
   # normally answers in well under one (M16 T4).
   status <- daemons_load_status(timeout = 60000)
   expect_true(check_daemons_can_load(status))
+})
+
+# --- A daemon that lacks a package the workflow or the tuner needs (M58) ----
+#
+# The attach step warned about a package that would not attach and let the
+# run go on to fail every fold that touched it. The probe now asks each daemon
+# for every package the workflow and the tuner need, ahead of the load
+# branch, and the pre-flight refuses the pool that lacks one -- the same
+# refusal it already made for the package itself, with the same
+# install-then-restart remedy.
+
+test_that("the ladder orders every outcome, and the package rung sits between load and build", {
+  # AC3, one assertion per rung: each pair of adjacent outcomes fabricated
+  # together resolves to the higher one. `cannot_load` > `missing_pkgs` >
+  # `incompatible` > `no_response` > `ok`.
+  both <- function(...) preflight_outcome(reports(...))$outcome
+  expect_identical(
+    both(FALSE, TRUE, missing_pkgs = list(NULL, "ranger")),
+    "cannot_load"
+  )
+  expect_identical(
+    both(
+      TRUE,
+      TRUE,
+      missing = list("rehydrate_payload", NULL),
+      missing_pkgs = list(NULL, "ranger")
+    ),
+    "missing_pkgs"
+  )
+  expect_identical(
+    both(TRUE, NA, missing = list("rehydrate_payload", NULL)),
+    "incompatible"
+  )
+  expect_identical(both(TRUE, NA), "no_response")
+  expect_identical(both(TRUE, TRUE), "ok")
+})
+
+test_that("a daemon that loads the package but lacks a needed one is missing_pkgs", {
+  status <- preflight_outcome(
+    reports(TRUE, TRUE, missing_pkgs = list(NULL, "ranger"))
+  )
+  expect_identical(status$outcome, "missing_pkgs")
+  expect_identical(status$missing_pkgs, 1L)
+  expect_identical(status$missing_packages, "ranger")
+  expect_identical(status$cannot_load, 0L)
+  expect_identical(status$incompatible, 0L)
+  expect_identical(status$no_answer, 0L)
+  expect_identical(status$total, 2L)
+})
+
+test_that("the missing packages are the union across the pool, and the count is of daemons", {
+  # Two daemons short of different packages is one pool short of both; the
+  # count is how many daemons are affected, which the message leads with.
+  status <- preflight_outcome(
+    reports(
+      TRUE,
+      TRUE,
+      TRUE,
+      missing_pkgs = list("lme4", c("ranger", "lme4"), NULL)
+    )
+  )
+  expect_identical(status$missing_pkgs, 2L)
+  expect_identical(status$missing_packages, c("lme4", "ranger"))
+})
+
+test_that("a daemon that cannot load the package still reports the packages it lacks", {
+  # The probe asks the package question ahead of the load branch, so the
+  # count includes a daemon on the cannot-load path and the abort below can
+  # name both facts from one round trip.
+  status <- preflight_outcome(
+    reports(FALSE, TRUE, missing_pkgs = list("ranger", NULL))
+  )
+  expect_identical(status$outcome, "cannot_load")
+  expect_identical(status$missing_pkgs, 1L)
+  expect_identical(status$missing_packages, "ranger")
+})
+
+test_that("the missing-package abort names the count, the packages, and the install-then-restart remedy", {
+  status <- preflight_outcome(
+    reports(
+      TRUE,
+      TRUE,
+      missing_pkgs = list(NULL, c("BradleyTerry2", "ranger"))
+    ),
+    timeout = 2000
+  )
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_missing_pkgs"
+  )
+  expect_s3_class(err, "nestedtune_daemons_unusable")
+  msg <- conditionMessage(err)
+  expect_match(msg, "1 of 2")
+  expect_match(msg, "BradleyTerry2")
+  expect_match(msg, "ranger")
+  expect_match(msg, "daemons' library")
+  expect_match(msg, "restart the pool")
+  expect_match(msg, "mirai::daemons(0)", fixed = TRUE)
+  # Not the package's own remedies: it IS loaded on these daemons.
+  expect_no_match(msg, "pkgload::load_all")
+  expect_no_match(msg, "different build")
+})
+
+test_that("a missing package beside a daemon that cannot load is named by the load abort", {
+  # AC3, pair one: the load failure keeps the class, and the abort still
+  # names the package the other daemon lacks -- the M10-D1 rule, so the user
+  # does not install, restart, and meet the second fault on the next run.
+  status <- preflight_outcome(
+    reports(FALSE, TRUE, missing_pkgs = list(NULL, "ranger")),
+    timeout = 2000
+  )
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_cannot_load"
+  )
+  msg <- conditionMessage(err)
+  expect_match(msg, "cannot load")
+  expect_match(msg, "1 daemon lacks a package")
+  expect_match(msg, "ranger")
+
+  # And the bullet is absent when there is nothing to report.
+  plain <- conditionMessage(expect_error(
+    check_daemons_can_load(preflight_outcome(reports(FALSE), timeout = 2000)),
+    class = "nestedtune_daemons_cannot_load"
+  ))
+  expect_no_match(plain, "lacks")
+})
+
+test_that("a missing package beside an incompatible build is named by the package abort", {
+  # AC3, pair two: the package rung outranks the build rung, and the abort
+  # names the old build and its symbols beside the packages.
+  status <- preflight_outcome(
+    reports(
+      TRUE,
+      TRUE,
+      missing = list("rehydrate_payload", NULL),
+      missing_pkgs = list(NULL, "ranger")
+    ),
+    timeout = 2000
+  )
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_missing_pkgs"
+  )
+  msg <- conditionMessage(err)
+  expect_match(msg, "ranger")
+  expect_match(msg, "different build")
+  expect_match(msg, "rehydrate_payload")
+})
+
+test_that("a missing package beside a silent daemon is named by the package abort", {
+  # AC3, pair three.
+  status <- preflight_outcome(
+    reports(TRUE, NA, missing_pkgs = list("ranger", NULL)),
+    timeout = 1500
+  )
+  err <- expect_error(
+    check_daemons_can_load(status),
+    class = "nestedtune_daemons_missing_pkgs"
+  )
+  msg <- conditionMessage(err)
+  expect_match(msg, "ranger")
+  expect_match(msg, "did not answer")
+  expect_match(msg, "1500")
+})
+
+test_that("the package abort pluralises on the daemon count and the package count separately", {
+  # Two quantities in one sentence, as the incompatible abort has (M24 review
+  # F2): two daemons lacking one package, and one daemon lacking two.
+  two_daemons <- conditionMessage(expect_error(
+    check_daemons_can_load(preflight_outcome(
+      reports(TRUE, TRUE, missing_pkgs = list("ranger", "ranger")),
+      timeout = 2000
+    )),
+    class = "nestedtune_daemons_missing_pkgs"
+  ))
+  expect_match(two_daemons, "2 of 2 mirai daemons lack a package")
+  expect_match(two_daemons, "those daemons")
+
+  two_pkgs <- conditionMessage(expect_error(
+    check_daemons_can_load(preflight_outcome(
+      reports(TRUE, missing_pkgs = list(c("lme4", "ranger"))),
+      timeout = 2000
+    )),
+    class = "nestedtune_daemons_missing_pkgs"
+  ))
+  expect_match(two_pkgs, "1 of 1 mirai daemon lacks packages")
+  expect_match(two_pkgs, "Install them")
 })

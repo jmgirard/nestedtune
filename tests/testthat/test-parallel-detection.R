@@ -384,3 +384,34 @@ test_that("the start-first check reports a planted unknown name", {
     "nonesuch-file"
   )
 })
+
+# --- The probe carries the package list (M58) --------------------------------
+#
+# The seam tests in test-parallel-classify.R fabricate per-daemon answers; the
+# two tests here send the list to a real pool. The first is the case the new
+# report must stay silent in; the second is the heterogeneous pool, where one
+# daemon's scratch library holds mirai and nanonext and nothing else.
+
+test_that("the probe sends the package list, and a daemon that has them all reports none", {
+  # Against a real pool: every package this session imports is loadable on a
+  # primed daemon, so asking for two of them is the silent case the new
+  # report must stay silent in.
+  skip_if_no_daemons()
+
+  on.exit(mirai::daemons(0), add = TRUE)
+  start_daemons(2)
+
+  status <- daemons_load_status(pkgs = c("cli", "rlang"), timeout = 30000)
+  expect_identical(status$outcome, "ok")
+  expect_identical(status$missing_pkgs, 0L)
+  expect_identical(status$missing_packages, character())
+
+  # And a package no library holds is reported by every daemon, by name.
+  status <- daemons_load_status(
+    pkgs = c("cli", "nestedtune.no.such.package"),
+    timeout = 30000
+  )
+  expect_identical(status$outcome, "missing_pkgs")
+  expect_identical(status$missing_pkgs, 2L)
+  expect_identical(status$missing_packages, "nestedtune.no.such.package")
+})
