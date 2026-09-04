@@ -6,8 +6,9 @@
   getting-started guide's design and workflow, prints what one fold's
   `.inner_metrics` records for each, passes a `tune::control_bayes()` through
   `...` and reads the recorded `procedure`, and says what differs from calling
-  tune or finetune directly. The racing and annealing sections build only
-  where finetune, lme4 and BradleyTerry2 are installed.
+  tune or finetune directly. The racing sections build only where finetune,
+  lme4 and BradleyTerry2 are installed, and the annealing section where
+  finetune is.
 
 * The guide `vignette("nested-cv")` is now the getting-started path alone:
   design, loop, what to report, what each fold chose, the final fit,

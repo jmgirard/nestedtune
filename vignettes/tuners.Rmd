@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 
 The getting-started guide, `vignette("nested-cv")`, tunes each outer fold
 over a fixed grid with `nested_tune_grid()`. That is one of five ways the
-inner search can run. The other four are tune's Bayesian optimisation and
+inner search can run. The other four are tune's Bayesian optimization and
 finetune's two racing methods and its simulated annealing, and each has a
 driver here that takes the same design and workflow and returns the same
 kind of object. This page runs all four on the guide's example, shows what
@@ -98,7 +98,7 @@ params <- update(
 params
 ```
 
-## Bayesian optimisation
+## Bayesian optimization
 
 `nested_tune_bayes()` runs `tune::tune_bayes()` inside each outer fold. The
 search starts from a small space-filling set of candidates, scores them on
@@ -157,9 +157,9 @@ measures ANOVA fitted by `lme4`, and `nested_tune_race_win_loss()` with a
 Bradley-Terry model of pairwise wins fitted by `BradleyTerry2`.
 
 ```{r race-notice, eval = !has_race, echo = FALSE, results = "asis"}
-missing <- c("finetune", "lme4", "BradleyTerry2")
-missing <- missing[!vapply(
-  missing,
+absent <- c("finetune", "lme4", "BradleyTerry2")
+absent <- absent[!vapply(
+  absent,
   requireNamespace,
   logical(1),
   quietly = TRUE
@@ -168,9 +168,9 @@ missing <- missing[!vapply(
 cat(
   "The racing runs need the **finetune**, **lme4** and **BradleyTerry2**",
   "packages, and",
-  if (length(missing) == 1L) "one of them is" else "some of them are",
+  if (length(absent) == 1L) "one of them is" else "some of them are",
   "not installed here:",
-  paste0(paste0("**", missing, "**", collapse = ", "), "."),
+  paste0(paste0("**", absent, "**", collapse = ", "), "."),
   "The two racing sections",
   if (has_finetune) "have" else "and the simulated annealing section have",
   "been skipped. Install what is missing and rebuild to see them.\n"
@@ -180,9 +180,9 @@ cat(
 ```{r race-anova, eval = has_race}
 set.seed(3)
 
-anova <- nested_tune_race_anova(wf, folds, grid = grid)
+race <- nested_tune_race_anova(wf, folds, grid = grid)
 
-anova
+race
 ```
 
 A fold's `.inner_metrics` from a race is the whole grid, and the `n` column
@@ -192,20 +192,21 @@ where elimination did the most work:
 
 ```{r race-anova-inner, eval = has_race}
 fits <- vapply(
-  anova$.inner_metrics,
+  race$.inner_metrics,
   function(m) sum(m$n[m$.metric == "rmse"]),
   numeric(1)
 )
+names(fits) <- race$id
 fits
 
 cheapest <- which.min(fits)
 
-anova$.inner_metrics[[cheapest]]
+race$.inner_metrics[[cheapest]]
 ```
 
 ```{r race-anova-count, eval = has_race, include = FALSE}
 inner_v <- nrow(folds$inner_resamples[[1]])
-rmse_rows <- anova$.inner_metrics[[cheapest]]
+rmse_rows <- race$.inner_metrics[[cheapest]]
 rmse_rows <- rmse_rows[rmse_rows$.metric == "rmse", ]
 eliminated <- sum(rmse_rows$n < inner_v)
 ```
@@ -217,7 +218,7 @@ cat(sprintf(
     "resamples, so they were dropped before the race ended, and the fold ",
     "spent %d fits on tuning where the full grid costs %d.\n"
   ),
-  anova$id[cheapest],
+  race$id[cheapest],
   eliminated,
   nrow(rmse_rows),
   inner_v,
@@ -282,7 +283,7 @@ cat(sprintf(
 
 ## Passing a control through `...`
 
-None of the drivers has a `control` argument of its own. A control object of
+None of the four drivers on this page has a `control` argument of its own. A control object of
 the matching kind, `tune::control_bayes()` for the Bayesian driver,
 `finetune::control_race()` and `finetune::control_sim_anneal()` for the
 others, is passed as `control` through `...`, and reaches the inner tuning
@@ -342,14 +343,18 @@ grid for a race, and `.selected` is the best candidate by the first metric.
 So a control's `extract`, `save_pred` and `save_workflow` slots cost their
 work inside every fold and return nothing on a nested run. The final fit
 keeps its tuning run whole, and that is where those slots' results are
-reachable.
+reachable. The annealing control's `save_history` slot writes finetune's
+search history to a file in the temporary directory of the process that
+tuned, each fold overwriting the last, and nothing of it reaches the result
+or the final fit.
 
-The racing drivers refuse at entry when a package their race needs is not
-installed, rather than one outer loop's worth of work later when finetune
-would ask for it, and they refuse a `burn_in` that no fold's inner design
-can meet before any fold runs.
+The racing and annealing drivers refuse at entry when a package their
+search needs is not installed, rather than one outer loop's worth of work
+later when finetune would ask for it, and the racers refuse a `burn_in` that
+no fold's inner design can meet before any fold runs.
 
 Seeding is the guide's contract on all four: seed the session before the
-call, and each fold draws its own tuning and fitting seeds from that state,
+call, and each fold gets its own tuning and fitting seeds, all drawn from
+that state at entry,
 so the same seed gives the same result serially and in parallel. The help
 page of each driver gives the exact hand-replication recipe for one fold.
