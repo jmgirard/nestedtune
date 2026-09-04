@@ -2,6 +2,22 @@
 
 ## nestedtune 0.0.0.9000
 
+- A new vignette,
+  [`vignette("tuners")`](https://nestedtune.tidymodels.org/articles/tuners.md)
+  (“Choosing the inner tuner”), runs
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
+  [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md),
+  [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  and
+  [`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md)
+  on the getting-started guide’s design and workflow, prints what one
+  fold’s `.inner_metrics` records for each, passes a
+  [`tune::control_bayes()`](https://tune.tidymodels.org/reference/control_bayes.html)
+  through `...` and reads the recorded `procedure`, and says what
+  differs from calling tune or finetune directly. The racing sections
+  build only where finetune, lme4 and BradleyTerry2 are installed, and
+  the annealing section where finetune is.
+
 - The guide
   [`vignette("nested-cv")`](https://nestedtune.tidymodels.org/articles/nested-cv.md)
   is now the getting-started path alone: design, loop, what to report,
