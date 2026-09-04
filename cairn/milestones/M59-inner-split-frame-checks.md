@@ -63,6 +63,7 @@ The five orchestrators refuse, at the call the user wrote and before any fold ru
 - 2026-09-04: gate triage accepted fix-now for O1, O2/O10, O3, O4, O8, O11, O12 — `check_inner_splits()` leaves a fold whose analysis set cannot be built to `last_fit()`, names every split of a disagreeing fold with what it carries (other frame, analysis set, outer frame), and deep-compares once per distinct frame; the two comments corrected; a mixed-frame planting (3 records, 83 total), an out-of-range outer control on a `nested_cv()` design, a no-column-name assertion and the floor at 70 added; checks and payload files green, air clean; full suite and `check()` re-running.
 - 2026-09-04: `check()` after the fix-now commit: one failure, the M16 ledger again — the O4 comment grew `test-parallel-payload.R` by two lines, moving its `start_daemons()` call from 302 to 304; row renumbered, `test-suite-hygiene.R` green; full `devtools::test()` before the renumber was exit 0 with no skips; `check()` re-running.
 - 2026-09-04: review re-verification after the fix-now commits green (`check()` 0/0/0, full suite 0 skips); dispositions recorded; merge approval requested at the gate.
+- 2026-09-04: step-7 approval: PR #69 approved for merge.
 
 ## Decisions
 
