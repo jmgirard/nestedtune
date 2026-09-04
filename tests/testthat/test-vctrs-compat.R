@@ -210,7 +210,11 @@ test_that("printing the frame prototype emits neither the outer label nor a fold
   # nowhere to hide. Measured on the fixture 2026-09-03: three lines.
   body <- lines[nzchar(lines)]
   expect_length(body, 2L)
-  expect_true(grepl("Nested cross-validation results", body[[1L]], fixed = TRUE))
+  expect_true(grepl(
+    "Nested cross-validation results",
+    body[[1L]],
+    fixed = TRUE
+  ))
   # `×` under cli's unicode output, `x` under testthat's ASCII one.
   expect_true(grepl("^# A tibble: [0-9]+ [×x] 0\\s*$", body[[2L]]))
 
