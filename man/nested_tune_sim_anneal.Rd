@@ -244,6 +244,9 @@ it; pass \code{control = control_sim_anneal(verbose_iter = FALSE)} for a quiet
 run. \code{verbose} likewise. \code{pkgs}, \code{parallel_over} and \code{workflow_size}
 behave as on \code{\link[=nested_tune_grid]{nested_tune_grid()}}, \code{parallel_over} included: it changes
 the numbers a stochastic engine produces even at \code{allow_par = FALSE}.
+This classification was read on finetune 1.3.0; the version that added
+\code{workflow_size} to \code{control_sim_anneal()} is not named in finetune's
+NEWS, and the \verb{>= 1.0.1} floor this package declares does not require it.
 
 \strong{Not returned: \code{extract}, \code{save_pred}, \code{save_workflow}, \code{save_history}.}
 The first three as on \code{\link[=nested_tune_grid]{nested_tune_grid()}}: each lands on the inner

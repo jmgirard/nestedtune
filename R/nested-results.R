@@ -143,6 +143,15 @@ record_columns <- function(x) {
   nms %in% fixed | nms %in% id_columns(x)
 }
 
+# Whether a name the record is kept in occurs more than once among `nms`.
+# Counted over the record's names alone: the three doors that ask -- the
+# two template-taking reconstructions and `names<-` -- vouch for the record
+# by name, and a name two caller-added columns share is read by none of
+# them (an M56 review finding).
+duplicated_record_names <- function(nms, record) {
+  anyDuplicated(nms[nms %in% record]) > 0L
+}
+
 # Whether `data` may wear `template`'s class: every column of the template's
 # record still present, holding the same values, over the same number of rows.
 # Row ORDER is exempt -- the folds are a set, and arrange() rearranging them
@@ -163,6 +172,15 @@ can_reconstruct_results <- function(data, template) {
   }
   cols <- sort(names(template)[record_columns(template)])
   if (!all(cols %in% names(data))) {
+    return(FALSE)
+  }
+  # A duplicated record name is a moved column by another route: `bind_cols(x,
+  # tibble(splits = 1:3), .name_repair = "minimal")` keeps every record name
+  # present, and `data[[nm]]` below reads whichever came first, so the record
+  # can be vouched for by name no longer (M56; the same rule `vec_restore()`
+  # applies on its own door). Two columns outside the record sharing a name
+  # touch nothing the record is read from, and are left alone.
+  if (duplicated_record_names(names(data), cols)) {
     return(FALSE)
   }
   if (!identical(nrow(data), nrow(template))) {
@@ -356,8 +374,14 @@ vec_restore.nested_results <- function(x, to, ...) {
   # The rows in hand must carry a whole record of their own, under the names the
   # source kept it in, and must number what the source had. `vec_cbind()` cannot
   # alter an existing column, only add, recycle and REPAIR NAMES, so what it can
-  # do wrong is exactly what these two catch: recycling a one-fold object up to
-  # three rows, and renaming a record column out from under the record.
+  # do wrong is exactly what these catch: recycling a one-fold object up to
+  # three rows, and renaming a record column out from under the record. Under
+  # `.name_repair = "minimal"` the repair is no repair at all, and a second
+  # `splits` column arrives beside the record's: every required name is then
+  # present, and `x$splits` answers with whichever came first, so a record
+  # column can no longer be found by name. A duplicated record name is the
+  # same fault as a moved one and is shed the same way (an M37 review finding,
+  # closed in M56); a name duplicated outside the record is not.
   attempted <- template_rows(to)
   required <- template_record(to)
   if (
@@ -365,6 +389,7 @@ vec_restore.nested_results <- function(x, to, ...) {
       !is.numeric(attempted) ||
       !is.character(required) ||
       !all(required %in% names(x)) ||
+      duplicated_record_names(names(x), required) ||
       !identical(nrow(x), as.integer(attempted))
   ) {
     return(bare_results(x))
@@ -605,7 +630,21 @@ rbind.nested_results <- function(..., deparse.level = 1) {
   if (!is.data.frame(out)) {
     return(out)
   }
-  reconstruct_results(out, x)
+  # Renaming moves no column and changes no value, so the record is intact
+  # exactly when each record column still answers to its name and no other
+  # column has taken one: the names alone decide, and the full value
+  # comparison `reconstruct_results()` runs is not needed to know it. The
+  # object comes back as `NextMethod()` left it, class and attributes
+  # untouched; only a record name that moved or was duplicated sheds them,
+  # and two columns outside the record coming to share a name does not.
+  record <- record_columns(x)
+  if (
+    identical(names(out)[record], names(x)[record]) &&
+      !duplicated_record_names(names(out), names(x)[record])
+  ) {
+    return(out)
+  }
+  bare_results(out)
 }
 
 # The columns every `nested_results` method reads: the per-fold record, plus at

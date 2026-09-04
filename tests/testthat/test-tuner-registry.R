@@ -66,3 +66,74 @@ test_that("the racers take a grid and do not iterate; the Bayesian and annealing
   expect_identical(desc$tuner, "tune_race_anova")
   expect_identical(desc$args, list(grid = data.frame(num_comp = 1:3)))
 })
+
+# The `?nested_final_fit` reproducibility recipe carries a branch for every
+# tuner the registry names: each tuning function appears as a call inside
+# the recipe's code block (M56 AC5). Read from the source tree where `man/`
+# is on disk and from the installed help database under `R CMD check`.
+test_that("the final-fit reproducibility recipe calls every registry tuner", {
+  src <- test_path("..", "..", "man", "nested_final_fit.Rd")
+  rd <- if (file.exists(src)) {
+    tools::parse_Rd(src)
+  } else {
+    tools::Rd_db("nestedtune")[["nested_final_fit.Rd"]]
+  }
+  rd_text <- function(x) {
+    if (is.character(x)) {
+      return(paste(x, collapse = ""))
+    }
+    paste(vapply(x, rd_text, character(1)), collapse = "")
+  }
+  section <- NULL
+  for (node in rd) {
+    if (
+      identical(attr(node, "Rd_tag"), "\\section") &&
+        identical(trimws(rd_text(node[[1L]])), "Reproducibility")
+    ) {
+      section <- node[[2L]]
+      break
+    }
+  }
+  expect_false(is.null(section))
+  if (is.null(section)) {
+    return(invisible())
+  }
+
+  # The recipe is the section's one code block, so the domain the calls are
+  # looked for in is shown non-empty and to be code rather than prose.
+  blocks <- Filter(
+    function(node) identical(attr(node, "Rd_tag"), "\\preformatted"),
+    section
+  )
+  expect_length(blocks, 1L)
+  recipe <- rd_text(blocks[[1L]])
+  expect_true(grepl("set.seed(", recipe, fixed = TRUE))
+
+  for (nm in names(tuner_registry)) {
+    expect_true(
+      grepl(paste0("\\b", nm, "\\("), recipe),
+      label = paste0("recipe calls ", nm, "(")
+    )
+  }
+
+  # The passing control: the prose around the block -- every node of the
+  # section that is not the code block -- calls none of the tuners the
+  # recipe branches on, so a match above is the recipe's and not a
+  # section-wide one; and a name the registry does not hold is not found,
+  # so the pattern can fail. `tune_grid` is left out of the control because
+  # the section's closing paragraph cross-references `tune::tune_grid()`
+  # as a call, on the repeated-call consequence it states.
+  prose <- rd_text(Filter(
+    function(node) !identical(attr(node, "Rd_tag"), "\\preformatted"),
+    section
+  ))
+  expect_true(nchar(prose) > 0L)
+  expect_true(grepl("\\btune_grid\\(", prose))
+  for (nm in setdiff(names(tuner_registry), "tune_grid")) {
+    expect_false(
+      grepl(paste0("\\b", nm, "\\("), prose),
+      label = paste0("prose calls ", nm, "(")
+    )
+  }
+  expect_false(grepl("\\bfit_resamples\\(", recipe))
+})

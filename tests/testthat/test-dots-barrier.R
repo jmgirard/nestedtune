@@ -134,6 +134,12 @@ DOTS_EXEMPT_METHODS <- c(
   "names<-.nested_results"
 )
 
+# Default methods that refuse the object ahead of the dots (M56).
+NO_METHOD_DEFAULTS <- c(
+  "extract_tune_results.default",
+  "extract_scored_candidates.default"
+)
+
 # The registry the package's own NAMESPACE writes, read back from the loaded
 # namespace: one row per `S3method()` directive, generic and class.
 registered_s3_methods <- function() {
@@ -177,6 +183,16 @@ test_that("AC5: every registered method whose `...` is unused fences it", {
     if (!"..." %in% names(formals(method))) {
       expect_s3_class(cnd, "error")
       expect_match(conditionMessage(cnd), "unused argument")
+      next
+    }
+    # The two `extract_` defaults refuse the object before anything else: a
+    # caller holding the wrong object is told so whatever rides in `...`
+    # (M56), so the stand-in list is refused as having no method, and the
+    # stray argument never reaches a fence. Still a refusal, asserted by its
+    # own class; the methods on `nested_final_fit` fence their dots and are
+    # probed by test-nested-final-fit-extract.R.
+    if (name %in% NO_METHOD_DEFAULTS) {
+      expect_s3_class(cnd, "nestedtune_no_extract_method")
       next
     }
     expect_s3_class(cnd, "rlib_error_dots_nonempty")

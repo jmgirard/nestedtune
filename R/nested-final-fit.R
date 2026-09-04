@@ -132,12 +132,26 @@
 #'          normal.kind = "Inversion", sample.kind = "Rejection")
 #' inner <- <the design's `inside` specification>(data)
 #' control <- fit$procedure$control
-#' # a grid procedure
+#' # a grid procedure: the recorded control, untouched
 #' tuned <- tune_grid(object, inner, grid = grid, param_info = param_info,
 #'   metrics = metrics, eval_time = eval_time, control = control)
-#' # a Bayesian procedure: the Gaussian process is seeded from the tuning
-#' # seed, the rule nested_tune_bayes() fixes for every fold, so the
-#' # recorded control -- which carries no seed -- takes it here
+#' # a racing procedure, ANOVA or win/loss: the race's own draws -- the
+#' # resample order under `randomize` -- come from the stream the tuning
+#' # seed set, so the recorded `control_race()` is likewise untouched
+#' tuned <- tune_race_anova(object, inner, grid = grid, param_info = param_info,
+#'   metrics = metrics, eval_time = eval_time, control = control)
+#' tuned <- tune_race_win_loss(object, inner, grid = grid, param_info = param_info,
+#'   metrics = metrics, eval_time = eval_time, control = control)
+#' # an annealing procedure: the perturbations draw from the same stream, and
+#' # `control_sim_anneal()` has no seed slot, so the recorded control is
+#' # again untouched
+#' tuned <- tune_sim_anneal(object, inner, iter = iter, initial = initial,
+#'   param_info = param_info, metrics = metrics, eval_time = eval_time,
+#'   control = control)
+#' # a Bayesian procedure, the one branch that alters the control: the
+#' # Gaussian process is seeded from the tuning seed, the rule
+#' # nested_tune_bayes() fixes for every fold, so the recorded control --
+#' # which carries no seed -- takes it here, and only here
 #' control$seed <- fit$tuning_seed
 #' tuned <- tune_bayes(object, inner, iter = iter, initial = initial,
 #'   objective = objective, param_info = param_info, metrics = metrics,

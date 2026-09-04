@@ -29,13 +29,15 @@ compat_results <- function() {
 
 # Shedding the class sheds the run's record with it. Asserting only the class
 # would leave `outer_label` readable on the returned object, which is the
-# stale claim one layer down (M36's `bare_results()`).
+# stale claim one layer down (M36's `bare_results()`). The two private
+# carriers a prototype rides on are asserted gone with the rest: a bare table
+# still wearing them would be read as a template by the next `vec_restore()`.
 expect_no_record <- function(out, name) {
   testthat::expect_false(
     inherits(out, "nested_results"),
     label = paste0(name, " keeps the class")
   )
-  for (nm in results_attributes()) {
+  for (nm in c(results_attributes(), template_attributes())) {
     testthat::expect_null(attr(out, nm), label = paste0(name, " attr ", nm))
   }
   invisible(out)
@@ -100,6 +102,43 @@ test_that("rename() moving a record column keeps neither the class nor the recor
   expect_no_record(out, "rename(x, fold = id)")
 })
 
+# Every record column in turn, through `names<-` directly -- the door
+# `rename()` uses -- and a column outside the record, which the record does
+# not depend on and whose rename keeps the object whole.
+test_that("names<- sheds the record for every record column and keeps it for a column outside it", {
+  skip_if_no_engines()
+  res <- compat_results()
+  record <- which(record_columns(res))
+  expect_true(length(record) >= 8L)
+
+  for (i in record) {
+    nm <- names(res)[[i]]
+    out <- res
+    names(out)[[i]] <- "renamed"
+    expect_no_record(out, paste0("names<- on ", nm))
+    # The passing control: the column really was renamed.
+    expect_false(nm %in% names(out), label = paste0(nm, " still present"))
+  }
+
+  with_extra <- dplyr::mutate(res, extra = seq_len(dplyr::n()))
+  expect_record_kept(with_extra, res)
+  out <- with_extra
+  names(out)[names(out) == "extra"] <- "renamed"
+  expect_record_kept(out, res)
+  expect_identical(
+    attributes(out)[setdiff(names(attributes(out)), "names")],
+    attributes(with_extra)[setdiff(names(attributes(with_extra)), "names")]
+  )
+  expect_true("renamed" %in% names(out))
+  expect_false("extra" %in% names(out))
+
+  # A column outside the record taking a record column's name is a duplicate,
+  # and sheds the record like a moved one.
+  clash <- with_extra
+  names(clash)[names(clash) == "extra"] <- "splits"
+  expect_no_record(clash, "names<- duplicating splits")
+})
+
 # AC2. Reordering rows is inside the invariants: the folds are a set, and an
 # object holding all of them still answers for the run whatever order they sit
 # in.
@@ -151,6 +190,39 @@ test_that("the frame prototype carries the run's description and no fold counts"
   expect_identical(attr(token, "grid"), attr(res, "grid"))
   expect_null(attr(token, "folds_attempted"))
   expect_null(attr(token, "folds_completed"))
+})
+
+# Printing the token says only what it holds. The outer-label line would
+# describe a run the token has no rows of, and the fold-count line reads a
+# column it does not carry: before M56, `print()` wrote the label and then
+# errored on the missing `.completed` (measured 2026-09-03).
+test_that("printing the frame prototype emits neither the outer label nor a fold count", {
+  skip_if_no_engines()
+  res <- compat_results()
+  token <- vctrs::vec_cbind_frame_ptype(res)
+
+  lines <- NULL
+  expect_no_error(lines <- cli::cli_fmt(print(token)))
+  expect_false(any(grepl("Outer resamples", lines, fixed = TRUE)))
+  # Everything written is the banner and the rows: after the blank line
+  # `cli_h1()` opens with, the banner, then the tibble header and nothing
+  # after it (a columnless tibble prints no body), so a fold-count line has
+  # nowhere to hide. Measured on the fixture 2026-09-03: three lines.
+  body <- lines[nzchar(lines)]
+  expect_length(body, 2L)
+  expect_true(grepl(
+    "Nested cross-validation results",
+    body[[1L]],
+    fixed = TRUE
+  ))
+  # `×` under cli's unicode output, `x` under testthat's ASCII one.
+  expect_true(grepl("^# A tibble: [0-9]+ [×x] 0\\s*$", body[[2L]]))
+
+  # The passing control: the same method on the object the token came from
+  # writes the label line, so the two absences above are the token's and not
+  # the method's.
+  full <- cli::cli_fmt(print(res))
+  expect_true(any(grepl("Outer resamples", full, fixed = TRUE)))
 })
 
 # AC4. A results object casts down to a table; a table does not cast up to a
@@ -289,6 +361,70 @@ test_that("vec_cbind() sheds the class when name repair moves a record column", 
   # assertions above cannot pass on a call that left `splits` where it was.
   expect_false("splits" %in% names(through_vctrs))
   expect_true("splits" %in% names(res))
+})
+
+# The same clash with the repair switched off: both `splits` columns keep the
+# name, every record name is still present, and `$splits` answers with the
+# first. Before M56 the class survived and `attr(out, "folds_completed")` was
+# stamped on a table whose record can no longer be found by name (measured
+# 2026-09-03).
+test_that("vec_cbind() sheds the class when minimal name repair duplicates a record column", {
+  skip_if_no_engines()
+  res <- compat_results()
+  clash <- tibble::tibble(splits = seq_len(nrow(res)))
+
+  through_vctrs <- vctrs::vec_cbind(res, clash, .name_repair = "minimal")
+  through_dplyr <- dplyr::bind_cols(res, clash, .name_repair = "minimal")
+
+  expect_no_record(
+    through_vctrs,
+    "vec_cbind(.name_repair = \"minimal\") over a record column"
+  )
+  expect_no_record(
+    through_dplyr,
+    "bind_cols(.name_repair = \"minimal\") over a record column"
+  )
+  expect_identical(class(through_vctrs), class(through_dplyr))
+  expect_identical(names(through_vctrs), names(through_dplyr))
+
+  # The passing control: the name really is duplicated, so the shed above is
+  # the duplicate's and not a moved column's.
+  expect_identical(sum(names(through_vctrs) == "splits"), 2L)
+})
+
+# The duplicate rule is the record's, not every name's: two caller-added
+# columns coming to share a name touch nothing the record is read from, so
+# the object keeps its class and attributes through the column-add doors and
+# through `names<-` alike. Before M56's return, all three doors counted
+# duplicates over every name and shed the record here (measured 2026-09-03;
+# M56 review F1).
+test_that("a name shared by two columns outside the record keeps the object through every door", {
+  skip_if_no_engines()
+  res <- compat_results()
+  with_extra <- dplyr::mutate(res, extra = seq_len(dplyr::n()))
+  expect_record_kept(with_extra, res)
+  clash <- tibble::tibble(extra = seq_len(nrow(res)) + 10L)
+
+  through_vctrs <- vctrs::vec_cbind(with_extra, clash, .name_repair = "minimal")
+  through_dplyr <- dplyr::bind_cols(with_extra, clash, .name_repair = "minimal")
+  expect_record_kept(through_vctrs, res)
+  expect_record_kept(through_dplyr, res)
+  expect_identical(class(through_vctrs), class(through_dplyr))
+
+  two <- dplyr::mutate(with_extra, other = seq_len(dplyr::n()) + 20L)
+  renamed <- two
+  names(renamed)[names(renamed) == "other"] <- "extra"
+  expect_record_kept(renamed, res)
+  expect_identical(
+    attributes(renamed)[setdiff(names(attributes(renamed)), "names")],
+    attributes(two)[setdiff(names(attributes(two)), "names")]
+  )
+
+  # The passing control: the name really is duplicated on every door, so the
+  # object kept above is one the duplicate reached and not one it missed.
+  expect_identical(sum(names(through_vctrs) == "extra"), 2L)
+  expect_identical(sum(names(through_dplyr) == "extra"), 2L)
+  expect_identical(sum(names(renamed) == "extra"), 2L)
 })
 
 test_that("a column add answers the same through either door with the results object second", {
