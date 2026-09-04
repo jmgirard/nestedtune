@@ -65,6 +65,7 @@ Ship `vignettes/tuners.Rmd` ("Choosing the inner tuner"), which runs `nested_tun
 - 2026-09-04: step-7 approval: PR #71 approved for merge (the eight fix-now edits accepted as applied).
 - 2026-09-04: CI wait hit the 10-minute ceiling once with seven check legs still pending and none red (format-suggest and pkgdown green); stopped per the wait rule, resume re-derives the state.
 - 2026-09-04: resume: PR #71 open, default branch unmoved, every box evidenced and the approval recorded; re-entered at step 7 (route c), the branch pushed, the conversation read empty again, the merge chip re-posed and approved.
+- 2026-09-04: second CI wait hit the 10-minute ceiling with seven check legs still pending and none red (format-suggest and pkgdown green on head 24a6579); stopped per the wait rule, the marker removed, resume re-derives the state.
 
 ## Review
 
