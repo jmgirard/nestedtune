@@ -7,7 +7,7 @@
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** internal — test helpers, test files and a CI workflow, none of which an external consumer relies on
-- **Branch/PR:** `m057-test-suite-and-ci-findings`
+- **Branch/PR:** `m057-test-suite-and-ci-findings` · https://github.com/tidymodels/nestedtune/pull/67
 
 ## Goal
 
@@ -21,13 +21,13 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 
 ## Acceptance criteria
 
-- [ ] AC1: No two `test_that()` blocks in one file under `tests/testthat/test-*.R` share a description, as checked by a test that scans that glob; the test is shown red on a planted duplicate before it is trusted green.
-- [ ] AC2: `HangTraceReporter$end_file()` removes the ending file's targets from `open` as well as `seen`, so after a file whose block never ends no target of that file remains in `open`; and `trace_lines_parallel()` and `fixture_two_blocks()` remove their temporary directories on exit; a test asserts each.
-- [ ] AC3: `teardown-fixture-cache.R` writes its report with `cat(file = stderr())`, and its preamble and `helper-orchestration.R`'s cache comment state that the cache is per worker process under parallel test files; a test captures the report with `capture.output(type = "message")`.
-- [ ] AC4: Every name in DESCRIPTION's `Config/testthat/start-first` resolves to an existing `tests/testthat/test-<name>.R`, as checked by a test reading the field; the test is shown red on a planted unknown name before it is trusted green.
-- [ ] AC5: `.github/workflows/R-CMD-check-hard.yaml`'s job declares `timeout-minutes` and sets `TESTTHAT_CPUS` in its `env:`, and `cairn/PROFILE.md`'s hang-cap sentence names the capped workflows without a hit count.
-- [ ] AC6: Every `test_that()` call in `tests/testthat/test-vctrs-compat.R` whose body contains `tibble::` opens with `skip_if_not_installed("tibble")`, as checked by parsing the file's `test_that()` calls.
-- [ ] AC7: In `tests/testthat/test-dots-barrier.R`, the registry probe asserts that a named list of registered methods (`print`, `collect_metrics`, `autoplot`, `summary` for `nested_results`; `print`, `extract_tune_results`, `extract_scored_candidates` for `nested_final_fit`) is among the methods it probes, shown red when one is removed; and the `collect_metrics(` source scan, its two filters and its discrimination test are gone while the runtime test that a positional argument past `...` errors remains.
+- [x] AC1: No two `test_that()` blocks in one file under `tests/testthat/test-*.R` share a description, as checked by a test that scans that glob; the test is shown red on a planted duplicate before it is trusted green.
+- [x] AC2: `HangTraceReporter$end_file()` removes the ending file's targets from `open` as well as `seen`, so after a file whose block never ends no target of that file remains in `open`; and `trace_lines_parallel()` and `fixture_two_blocks()` remove their temporary directories on exit; a test asserts each.
+- [x] AC3: `teardown-fixture-cache.R` writes its report with `cat(file = stderr())`, and its preamble and `helper-orchestration.R`'s cache comment state that the cache is per worker process under parallel test files; a test captures the report with `capture.output(type = "message")`.
+- [x] AC4: Every name in DESCRIPTION's `Config/testthat/start-first` resolves to an existing `tests/testthat/test-<name>.R`, as checked by a test reading the field; the test is shown red on a planted unknown name before it is trusted green.
+- [x] AC5: `.github/workflows/R-CMD-check-hard.yaml`'s job declares `timeout-minutes` and sets `TESTTHAT_CPUS` in its `env:`, and `cairn/PROFILE.md`'s hang-cap sentence names the capped workflows without a hit count.
+- [x] AC6: Every `test_that()` call in `tests/testthat/test-vctrs-compat.R` whose body contains `tibble::` opens with `skip_if_not_installed("tibble")`, as checked by parsing the file's `test_that()` calls.
+- [x] AC7: In `tests/testthat/test-dots-barrier.R`, the registry probe asserts that a named list of registered methods (`print`, `collect_metrics`, `autoplot`, `summary` for `nested_results`; `print`, `extract_tune_results`, `extract_scored_candidates` for `nested_final_fit`) is among the methods it probes, shown red when one is removed; and the `collect_metrics(` source scan, its two filters and its discrimination test are gone while the runtime test that a positional argument past `...` errors remains.
 - [ ] AC8: `devtools::test()` and `devtools::check()` pass.
 
 ## Coverage
@@ -70,3 +70,12 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 ## Decisions
 
 ## Review
+
+- 2026-09-03 review: PR #67 opened as a draft; `origin/main` had not moved since the branch was cut (no merge needed).
+- AC1: the parse-based scan over `tests/testthat/test-*.R` found 57 files, 0 duplicated descriptions; a copy of the suite with a second `no two test_that() blocks in one file share a description` block appended to `test-hang-trace.R` reported exactly `test-hang-trace.R :: <that description>`; the in-suite discrimination test plants a duplicate in a tempdir and names it. Verified.
+- AC2: a subclass restoring the pre-M57 `end_file()` (pruning `seen` only) under a no-op `end_test` left `test-fx.R :: a` and `test-fx.R :: b` in `open` after the file ended; the branch's `end_file()` left `open` empty of that file's targets; `trace_lines_parallel()` unlinks its directory on exit and `fixture_two_blocks()` registers the unlink on its caller's frame, each asserted gone by a test in `test-hang-trace.R`. Verified.
+- AC3: `teardown-fixture-cache.R:28` calls `print_fixture_cache_report(fixture_cache_report(), file = stderr())`, whose `cat()` calls all pass `file`; the teardown preamble (lines 11–14) and `helper-orchestration.R:1040–1043` say the cache is per worker process under parallel test files; `test-fixture-cache.R`'s new block captures the report with `capture.output(type = "message")` and asserts stdout empty. Verified.
+- AC4: `read.dcf()` on DESCRIPTION yields 11 `start-first` names, all resolving to `tests/testthat/test-<name>.R`; the in-suite discrimination test plants `nonesuch-file` in a tempdir DESCRIPTION (with a continuation line) and reports exactly that name. Verified.
+- AC5: `R-CMD-check-hard.yaml:28` `timeout-minutes: 30` on the job, `:44` `TESTTHAT_CPUS: 4` in `env:`; `cairn/PROFILE.md:48–50` names `R-CMD-check`, `test-coverage` and `R-CMD-check-hard` with their caps and contains no hit count (`grep -c hits` = 0); PROFILE at 119 lines. Verified.
+- AC6: the parse walk over `test-vctrs-compat.R` finds 11 `tibble::`-calling blocks, all opening with `skip_if_not_installed("tibble")`; a copy with the third skip removed was flagged by description (`a tibble does not cast to a nested_results`). Verified.
+- AC7: `DOTS_PROBED_METHODS` names the seven methods and `setdiff()` against the live registry's probed set is empty; with `summary.nested_results` removed from the probed set the check names it; `collect_metrics_call_args`, the corpus walk, both positional filters and the scan's discrimination test are absent from `test-dots-barrier.R` (grep empty), and the runtime test asserts `rlib_error_dots_nonempty` on `collect_metrics(res, FALSE)` with a named control. Verified.
