@@ -696,33 +696,31 @@ test_that("an error raised by last_fit() is recorded against the outer fit", {
   skip_if_no_engines()
   d <- make_reg_data()
 
-  # An rsplit indexing a row that does not exist: tuning succeeds, and last_fit()
-  # raises rather than filing the problem in its notes as a foreign-but-valid
-  # split would. The vehicle used to be a `splits` element that was not an
-  # rsplit at all, which M19 now refuses at the call -- so it could no longer
-  # reach the loop, and what this test is about is the loop's handling of a
-  # raising last_fit(), not the class of the split.
-  nested <- det_nested(d)
-  nested$splits[[2L]]$in_id <- c(1L, 999999L)
-
-  set.seed(2)
-  res <- suppressWarnings(
-    memoised(nested_tune_grid(
+  # An outer split indexing a row that does not exist: tuning succeeds, and
+  # last_fit() raises rather than filing the problem in its notes. The vehicle
+  # used to be a `splits` element that was not an rsplit at all, which M19
+  # refuses at the call, then an outer `in_id` substituted by `c(1L, 999999L)`,
+  # which M59 refuses at the call too, since the fold's inner splits then
+  # index rows the outer split does not hold -- so neither reaches the loop,
+  # and what this test is about is the loop's handling of a raising
+  # last_fit(), not the shape of the split. The substituted form stays as the
+  # refused control.
+  substituted <- det_nested(d)
+  substituted$splits[[2L]]$in_id <- c(1L, 999999L)
+  expect_error(
+    nested_tune_grid(
       det_workflow(d),
-      nested,
+      substituted,
       grid = det_grid(),
       metrics = reg_metrics()
-    ))
+    ),
+    class = "nestedtune_bad_design"
   )
 
-  expect_identical(res$.completed, c(TRUE, FALSE, TRUE))
-  expect_identical(res$.notes[[2L]]$location[[1L]], "outer fit")
-  expect_true(any(grepl("past the end", res$.notes[[2L]]$note)))
-
-  # The same stage when the bad index is appended rather than substituted:
-  # every inner index still maps, so only the outer split reaches past the
-  # data, and the analysis-frame rebuild before tuning leaves the split for
-  # last_fit() rather than raising there.
+  # The bad index appended rather than substituted: every inner index still
+  # maps, so only the outer split reaches past the data, and the
+  # analysis-frame rebuild before tuning leaves the split for last_fit()
+  # rather than raising there.
   appended <- det_nested(d)
   appended$splits[[2L]]$in_id <- c(appended$splits[[2L]]$in_id, 999999L)
   set.seed(2)

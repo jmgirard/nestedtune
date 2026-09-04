@@ -248,8 +248,14 @@ test_that("BC6: a failed fold matches serially in every field but its traces", {
   # formats it, and a daemon's width is its own, so the same note arrives
   # wrapped at 80 columns in parallel and at the host's width serially. The
   # words are identical; only the line breaks differ. RR03 verified the text
-  # matched, but its probe formatted both sides at the same width.
-  unwrap <- function(x) gsub("[[:space:]]+", " ", x)
+  # matched, but its probe formatted both sides at the same width. cli's
+  # bullet glyphs are the same kind of difference: a daemon has no UTF-8
+  # console, so the info bullet tune's note carries arrives as `i` where the
+  # host writes the glyph (the M59 fixture's zero-row note is the first with
+  # one), and both spellings are read as the ASCII one.
+  unwrap <- function(x) {
+    gsub("[[:space:]]+", " ", gsub("\u2139", "i", x, fixed = TRUE))
+  }
   for (i in seq_len(nrow(serial))) {
     s_notes <- serial$.notes[[i]]
     p_notes <- parallel$.notes[[i]]
