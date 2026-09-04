@@ -46,7 +46,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - [x] T3: In `names<-.nested_results()` (`R/nested-results.R:603-609`), compare the record columns' names before and after and return the object unchanged when they survive, else `bare_results(out)`, with a comment on why the name check suffices; loop test over `record_columns(res)` and one non-record column.
 - [x] T4: Swap `check_dots_empty()` and `abort_no_extract_method()` in both default methods (`R/nested-final-fit-extract.R:86-96`, `:175-179`), keeping the `current_env()` comment valid; test with `rlang::catch_cnd()` on each generic.
 - [x] T5: Add a racing branch (`tune_race_anova()`/`tune_race_win_loss()`, grid, `control_race()`) and an annealing branch (`tune_sim_anneal()`, `iter`, `initial`, `control_sim_anneal()`) to the recipe at `R/nested-final-fit.R:130-148`, cross-checked against `reference_anneal_final_fit()` and the racing reference loop; add "read on finetune 1.3.0" beside the `workflow_size` sentence in `R/nested-tune-sim-anneal.R:154-168` and `R/nested-tune-race.R:136-147`; `devtools::document()`; test over `man/nested_final_fit.Rd` and `tuner_registry`.
-- [ ] T6: NEWS entries per AC6.
+- [x] T6: NEWS entries per AC6.
 - [ ] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
@@ -59,6 +59,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: T3 done; `names<-.nested_results()` returns `NextMethod()`'s object when every record column keeps its name and no name is duplicated, else `bare_results()`; the loop test covers the eight record columns, one added column renamed, and one added column renamed onto `splits`; compat files clean.
 - 2026-09-03: T4 done; both `extract_` defaults abort with `nestedtune_no_extract_method` before any dots check (the dots error came first before the fix, reproduced); the test asserts the class on each generic with `foo = 1` and that the methods still refuse a stray argument; extract file clean.
 - 2026-09-03: T5 done; the recipe gained a racing branch (both racers, `grid`, the recorded `control_race()` as is) and an annealing branch (`iter`, `initial`, the recorded `control_sim_anneal()` as is), argument names checked against finetune 1.3.0's workflow methods and the two reference final fits; the racing and annealing pages say the `workflow_size` classification was read on finetune 1.3.0 (its adding version is absent from finetune's NEWS, grep on the installed file); `document()` run; the Rd test in `test-tuner-registry.R` finds each registry name as a call in the recipe's one code block; registry and control-slots files clean.
+- 2026-09-03: T6 done; two NEWS entries, one on the `extract_` refusal order (enforced by the T4 test) and one compatibility note covering the token print, the duplicate-name shed through both doors and the rename rule (the T1, T2 and T3 tests).
 
 ## Decisions
 
