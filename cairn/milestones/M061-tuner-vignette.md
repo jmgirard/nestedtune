@@ -1,13 +1,13 @@
 # M61: A vignette runs the four alternative inner tuners on one design and shows what each records
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — a vignette shipped in the package and on the site
-- **Branch/PR:** —
+- **Branch/PR:** m061-tuner-vignette
 
 ## Goal
 
