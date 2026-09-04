@@ -1,13 +1,13 @@
 # M57: The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** internal — test helpers, test files and a CI workflow, none of which an external consumer relies on
-- **Branch/PR:** —
+- **Branch/PR:** `m057-test-suite-and-ci-findings`
 
 ## Goal
 
@@ -43,7 +43,7 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 
 ## Tasks
 
-- [ ] T1: Add a test (home: `tests/testthat/test-hang-trace.R`) that parses each `tests/testthat/test-*.R`, collects `test_that()` descriptions per file and asserts none is duplicated; plant a duplicate in a tempdir copy to see it red.
+- [x] T1: Add a test (home: `tests/testthat/test-hang-trace.R`) that parses each `tests/testthat/test-*.R`, collects `test_that()` descriptions per file and asserts none is duplicated; plant a duplicate in a tempdir copy to see it red.
 - [ ] T2: In `end_file()` (`tests/testthat/helper-hang-trace.R:99-108`), prune `open` with the same `own` mask as `seen` and amend the comment at `:75-77`; add `on.exit(unlink(dir, recursive = TRUE), add = TRUE)` at `test-hang-trace.R:120` and cover `fixture_two_blocks()` (`:10-12`) from its caller; test with a no-op `end_test` subclass on the `WedgedReporter` pattern (`:69-77`) and a directory-gone assertion.
 - [ ] T3: Add `file = stderr()` to the four `cat()` calls in `tests/testthat/teardown-fixture-cache.R:15-38`; rewrite the preamble and `helper-orchestration.R:1035-1040` to say per worker; test by calling the report function under `capture.output(type = "message")`.
 - [ ] T4: Add a test to `tests/testthat/test-parallel-detection.R` reading `Config/testthat/start-first` via `read.dcf()` and asserting each `test-<name>.R` exists; plant a bad name against a tempdir copy of DESCRIPTION to see it red.
@@ -57,6 +57,8 @@ Close the review findings on the hang trace, the parallel-files setup, `test-vct
 - 2026-09-03: created by /milestone-plan from the M52 candidate row and the test-file halves of the M37 and M34 rows; the criteria audit ran in reduced mode on a fresh [O] reader and returned findings on AC2 (no target of the ended file, not an empty set), AC3 (`stderr()` plus message capture), AC5 (name the workflows, no hit count), AC6 (parse blocks, not grep), AC7 (name the probed methods; one scan disposition), and none on AC1, AC4 and AC8.
 - 2026-09-03: plan gate chose removing the `collect_metrics(` source scan over hardening its positional filter and comment handling because the runtime refusal already errors on a positional argument past `...` and the scan is a second checker over the repo's own files; falsified by a positional `collect_metrics()` call reaching the default branch that no test executes.
 - 2026-09-03: plan gate chose a duplicate-description scan test and per-worker cache comments over a reporter occurrence counter and a disk-backed shared cache because both structural answers add failure modes for a trace that misattributes nothing today; falsified by a hang the trace misattributes to the wrong block, or by a fixture build count that dominates a leg's wall clock.
+
+- 2026-09-03: T1 done; `helper-test-source.R` parses a file's `test_that()` calls (shared with T6), the scan in `test-hang-trace.R` found no duplicate in the 57 files and reported one planted into a tempdir copy of the suite before it was trusted green.
 
 ## Decisions
 

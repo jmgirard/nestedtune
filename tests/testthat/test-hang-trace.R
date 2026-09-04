@@ -205,3 +205,62 @@ test_that("under parallel files every file and block gets exactly one live pair"
     0.4
   )
 })
+
+# --- Duplicate descriptions (M57) --------------------------------------------
+#
+# The trace keys a block by `<file> :: <description>`, so two blocks in one file
+# sharing a description share one key: the second never prints a `start`, and
+# the first `end` closes both. A hang in the second block would then be read
+# as a hang in the first. M52's review weighed an occurrence counter in the
+# reporter and chose this instead: the suite simply has no such pair, and the
+# scan below is what keeps it so.
+
+# Every `<file> :: <description>` that a second block in the same file repeats.
+duplicated_descriptions <- function(dir) {
+  files <- list.files(dir, pattern = "^test-.*[.]R$")
+  unlist(lapply(files, function(file) {
+    desc <- test_that_descriptions(file.path(dir, file))
+    dup <- unique(desc[!is.na(desc) & duplicated(desc)])
+    # `paste()` on an empty vector would answer with a bare `<file> :: `.
+    if (length(dup) == 0L) {
+      return(character())
+    }
+    paste(file, "::", dup)
+  }))
+}
+
+test_that("no two test_that() blocks in one file share a description", {
+  dir <- test_path(".")
+  files <- list.files(dir, pattern = "^test-.*[.]R$")
+  # The scan is worthless over an empty directory, and one that reads no
+  # block at all is the same failure one level down.
+  expect_gt(length(files), 0L)
+  expect_gt(
+    length(unlist(lapply(file.path(dir, files), test_that_descriptions))),
+    0L
+  )
+
+  expect_identical(duplicated_descriptions(dir), character())
+})
+
+test_that("the duplicate-description scan reports a planted duplicate", {
+  dir <- tempfile("hang-trace-duplicates-")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  writeLines(
+    c(
+      'test_that("twice", { expect_true(TRUE) })',
+      'test_that("once", { expect_true(TRUE) })',
+      'test_that("twice", { expect_true(TRUE) })'
+    ),
+    file.path(dir, "test-planted.R")
+  )
+  writeLines(
+    'test_that("twice", { expect_true(TRUE) })',
+    file.path(dir, "test-clean.R")
+  )
+
+  # Named, not counted: the same description in a different file is a
+  # different key and must not be reported.
+  expect_identical(duplicated_descriptions(dir), "test-planted.R :: twice")
+})
