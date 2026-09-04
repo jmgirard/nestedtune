@@ -1,6 +1,6 @@
 # M56: The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -47,7 +47,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - [x] T4: Swap `check_dots_empty()` and `abort_no_extract_method()` in both default methods (`R/nested-final-fit-extract.R:86-96`, `:175-179`), keeping the `current_env()` comment valid; test with `rlang::catch_cnd()` on each generic.
 - [x] T5: Add a racing branch (`tune_race_anova()`/`tune_race_win_loss()`, grid, `control_race()`) and an annealing branch (`tune_sim_anneal()`, `iter`, `initial`, `control_sim_anneal()`) to the recipe at `R/nested-final-fit.R:130-148`, cross-checked against `reference_anneal_final_fit()` and the racing reference loop; add "read on finetune 1.3.0" beside the `workflow_size` sentence in `R/nested-tune-sim-anneal.R:154-168` and `R/nested-tune-race.R:136-147`; `devtools::document()`; test over `man/nested_final_fit.Rd` and `tuner_registry`.
 - [x] T6: NEWS entries per AC6.
-- [ ] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -61,6 +61,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: T5 done; the recipe gained a racing branch (both racers, `grid`, the recorded `control_race()` as is) and an annealing branch (`iter`, `initial`, the recorded `control_sim_anneal()` as is), argument names checked against finetune 1.3.0's workflow methods and the two reference final fits; the racing and annealing pages say the `workflow_size` classification was read on finetune 1.3.0 (its adding version is absent from finetune's NEWS, grep on the installed file); `document()` run; the Rd test in `test-tuner-registry.R` finds each registry name as a call in the recipe's one code block; registry and control-slots files clean.
 - 2026-09-03: T6 done; two NEWS entries, one on the `extract_` refusal order (enforced by the T4 test) and one compatibility note covering the token print, the duplicate-name shed through both doors and the rename rule (the T1, T2 and T3 tests).
 - 2026-09-03: full `devtools::test()` found the two `extract_` defaults failing `test-dots-barrier.R`'s AC5 loop, which fed every registered method a list and expected the dots refusal; the loop now expects those two to refuse the object by `nestedtune_no_extract_method`, named in a `NO_METHOD_DEFAULTS` list; per-task runs above were filtered to the touched files, the full suite ran once here (0 failures after the fix).
+- 2026-09-03: T7 done; `document()` leaves the tree clean, full `devtools::test()` 0 failures, `devtools::check()` 0 errors, 0 warnings, 0 notes; status set to review.
 
 ## Decisions
 
