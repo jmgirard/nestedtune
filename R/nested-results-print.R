@@ -80,6 +80,17 @@ print.nested_results <- function(x, ..., n = NULL, width = NULL) {
   # pass-through: any other tibble print option is not reachable from here.
   rlang::check_dots_empty()
   cli::cli_h1("Nested cross-validation results")
+  # A columnless object wearing the class is the type token `vec_cbind()`
+  # assembles into, reachable through `vctrs::vec_cbind_frame_ptype()` (see
+  # `vec_restore.nested_results()`). It holds no fold, so nothing below the
+  # rows is true of it: the outer label would describe a run it does not
+  # hold (IP4), and the fold count and candidate sets read columns it lacks
+  # (`.completed`, measured 2026-09-03). Its rows -- a tibble with no
+  # columns -- are all it can say.
+  if (!has_results_columns(x)) {
+    print_rows(x, n = n, width = width)
+    return(invisible(x))
+  }
   label <- attr(x, "outer_label")
   if (!is.null(label)) {
     cli::cli_text("Outer resamples: {label}")

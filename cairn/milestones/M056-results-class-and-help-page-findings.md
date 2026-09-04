@@ -41,7 +41,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 
 ## Tasks
 
-- [ ] T1: In `print.nested_results()` (`R/nested-results-print.R:82`), after the dots check, return after `print_rows()` when `has_results_columns(x)` is false, skipping the header and `candidate_sets()`; run `print(vctrs::vec_cbind_frame_ptype(res))` first to confirm which call errors today; test beside the token test at `tests/testthat/test-vctrs-compat.R:142`.
+- [x] T1: In `print.nested_results()` (`R/nested-results-print.R:82`), after the dots check, return after `print_rows()` when `has_results_columns(x)` is false, skipping the header and `candidate_sets()`; run `print(vctrs::vec_cbind_frame_ptype(res))` first to confirm which call errors today; test beside the token test at `tests/testthat/test-vctrs-compat.R:142`.
 - [ ] T2: Add `anyDuplicated(names(x)) > 0L` to the shed disjunction in `vec_restore.nested_results()` (`R/nested-results.R:363-374`); extend `expect_no_record()` (`tests/testthat/test-vctrs-compat.R:33-41`) to loop over `c(results_attributes(), template_attributes())`; test mirroring the block at `:276` with `.name_repair = "minimal"`.
 - [ ] T3: In `names<-.nested_results()` (`R/nested-results.R:603-609`), compare the record columns' names before and after and return the object unchanged when they survive, else `bare_results(out)`, with a comment on why the name check suffices; loop test over `record_columns(res)` and one non-record column.
 - [ ] T4: Swap `check_dots_empty()` and `abort_no_extract_method()` in both default methods (`R/nested-final-fit-extract.R:86-96`, `:175-179`), keeping the `current_env()` comment valid; test with `rlang::catch_cnd()` on each generic.
@@ -54,6 +54,7 @@ Close the review findings on `R/nested-results.R`, the two `extract_` default me
 - 2026-09-03: created by /milestone-plan from the M37, M34 and M51 candidate rows; the criteria audit ran in full mode on a fresh [O] reader and returned findings on AC1 (narrowed to the header and fold-count lines), AC2 (helper clause moved to T2), the dropped cast/rbind criterion (IP4), AC3 (loop over record columns), AC5 (call, not mention), AC6 (narrowed to two entries), and none on AC4 and AC7.
 - 2026-09-03: plan gate chose stating the finetune version in the two help pages over raising the finetune floor because the adding version is unnamed in finetune's NEWS and a re-pin installs a newer finetune for every racing and annealing user; falsified by a user on finetune between 1.0.1 and the adding version reaching a `workflow_size` error the pages do not explain.
 - 2026-09-03: plan gate dropped the `vec_cast` re-templating (the audit found it would stamp the destination's run description onto rows it did not produce, IP4) and the `rbind` re-templating (no observable change) rather than implement them; falsified by a user reaching a cast whose result carries the wrong id columns.
+- 2026-09-03: T1 done; `print()` on the columnless token wrote the label line and then errored on `.completed` (reproduced before the fix); the method now returns after the rows when `has_results_columns()` is false; test beside the token test in `test-vctrs-compat.R`; vctrs-compat and results-print files clean.
 
 ## Decisions
 

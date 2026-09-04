@@ -153,6 +153,27 @@ test_that("the frame prototype carries the run's description and no fold counts"
   expect_null(attr(token, "folds_completed"))
 })
 
+# Printing the token says only what it holds. The outer-label line would
+# describe a run the token has no rows of, and the fold-count line reads a
+# column it does not carry: before M56, `print()` wrote the label and then
+# errored on the missing `.completed` (measured 2026-09-03).
+test_that("printing the frame prototype emits neither the outer label nor a fold count", {
+  skip_if_no_engines()
+  res <- compat_results()
+  token <- vctrs::vec_cbind_frame_ptype(res)
+
+  lines <- NULL
+  expect_no_error(lines <- cli::cli_fmt(print(token)))
+  expect_false(any(grepl("Outer resamples", lines, fixed = TRUE)))
+  expect_false(any(grepl("did not complete", lines, fixed = TRUE)))
+
+  # The passing control: the same method on the object the token came from
+  # writes the label line, so the two absences above are the token's and not
+  # the method's.
+  full <- cli::cli_fmt(print(res))
+  expect_true(any(grepl("Outer resamples", full, fixed = TRUE)))
+})
+
 # AC4. A results object casts down to a table; a table does not cast up to a
 # results object. The refusal is asserted by the condition class vctrs assigns
 # it, not by its message, and `vctrs_error_cast_lossy` is excluded so the
