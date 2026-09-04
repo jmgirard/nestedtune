@@ -1,17 +1,16 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-03 (status pass after the triage: validate green, 18 references advisories, inboxes empty, no outside merges, #35 confirmed closed by PR #61. ROADMAP.md at 23,831 B of its 24,000 B budget; LESSONS.md 33,003 B against 20,000 B, 49 of 50 lines. No row changed.)_
+_Last hygiene check: 2026-09-03 (M55 done and archived; M50's row pruned under the five-terminal-row rule; one LESSONS line added and the stalest pruned to hold the 50-line cap, its byte overage pre-existing; no candidate row touched; no Known issues entry. Validate green, 18 references advisories.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | review | — | normal | milestones/M55-design-entry-checks.md |
+| M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | done | — | normal | milestones/archive/M55-design-entry-checks.md |
 | M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | done | — | normal | milestones/archive/M54-inner-finalize-analysis-frame.md |
 | M53 | `nested_final_fit()` refuses a results object whose every outer fold failed | done | — | normal | milestones/archive/M53-final-fit-all-failed.md |
 | M52 | The test suite runs its files in parallel and fits its CI caps with headroom | done | — | high | milestones/archive/M52-parallel-test-files.md |
-| M50 | `nested_tune_race_anova()` and `nested_tune_race_win_loss()` run finetune's racing tuners inside the outer loop | done | — | normal | milestones/archive/M50-finetune-racing.md |
 | M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | done | M50 | normal | milestones/archive/M51-sim-anneal.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
