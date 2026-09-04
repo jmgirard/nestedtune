@@ -379,6 +379,30 @@ test_that("each shared check fires through both racing exports", {
   }
 })
 
+# M55: every design shape check_nested() refuses, refused through both
+# racing exports -- with the one class and the export's own name on the
+# condition, never the shared internal's. What each message names is held to
+# the planted positions by the grid driver's tests.
+
+test_that("every malformed design is refused at entry, by both racers (M55)", {
+  skip_if_no_race_fixture()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  ctrl <- race_control()
+  planted <- malformed_designs(d)
+  expect_gt(length(planted), 20L)
+
+  for (fn in RACERS) {
+    for (nm in names(planted)) {
+      cnd <- refusal(race_call(fn, wf, planted[[nm]]$design, control = ctrl))
+      expect_s3_class(cnd, "nestedtune_bad_design")
+      expect_false(inherits(cnd, "nestedtune_sentinel"), info = nm)
+      expect_identical(conditionCall(cnd)[[1L]], as.name(export_name(fn)))
+    }
+  }
+})
+
 test_that("a control naming another event level is refused at entry", {
   skip_if_no_race_fixture()
 

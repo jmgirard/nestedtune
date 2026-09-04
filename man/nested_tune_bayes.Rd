@@ -22,12 +22,20 @@ nested_tune_bayes(
 for tuning with \code{\link[tune:tune]{tune::tune()}}.}
 
 \item{resamples}{A nested resampling design, from \code{\link[=nested_resamples]{nested_resamples()}} or
-\code{\link[rsample:nested_cv]{rsample::nested_cv()}}. Its \code{splits} column must hold \code{rsplit} objects and
-its \code{inner_resamples} column an \code{rset} per outer fold. Both are checked
-before anything is fitted, because \code{\link[rsample:nested_cv]{rsample::nested_cv()}} builds a design
-whatever its \code{inside} argument returned — so a specification that produces
-no \code{rset} gives a design that cannot be run, where \code{\link[=nested_resamples]{nested_resamples()}}
-refuses one at construction.}
+\code{\link[rsample:nested_cv]{rsample::nested_cv()}}: a data frame whose \code{splits} column holds one
+\code{rsplit} per outer fold, whose \code{inner_resamples} column holds one \code{rset}
+with at least one row per outer fold, and whose every other column
+labels the outer folds. A label column must be named \code{id}, or \code{id}
+followed by a digit from 1 to 9 (the names rsample and tune read id
+columns by), and hold character or factor values; taken together, the
+label columns must give every outer fold a distinct label with no \code{NA}.
+A design breaking any of this, or using a bootstrap for the outer loop,
+is refused at the call, before anything is fitted, with condition class
+\code{nestedtune_bad_design} and every offending row or column named. The
+checks exist because \code{\link[rsample:nested_cv]{rsample::nested_cv()}} builds a design whatever its
+\code{inside} argument returned — a specification that produces no \code{rset}, or
+an empty one, gives a design that cannot be run, where
+\code{\link[=nested_resamples]{nested_resamples()}} refuses one at construction.}
 
 \item{...}{A control object as \code{control} -- what \code{\link[tune:control_grid]{tune::control_grid()}}
 returns for \code{nested_tune_grid()}, what \code{\link[tune:control_bayes]{tune::control_bayes()}} returns for

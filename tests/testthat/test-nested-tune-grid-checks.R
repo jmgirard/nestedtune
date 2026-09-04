@@ -300,6 +300,7 @@ test_that("a non-rset element of inner_resamples is refused", {
   # What it holds instead, so the reader is not left guessing.
   expect_match(conditionMessage(cnd), "string")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+  expect_s3_class(cnd, "nestedtune_bad_design")
 })
 
 test_that("a non-rsplit element of splits is refused", {
@@ -319,6 +320,7 @@ test_that("a non-rsplit element of splits is refused", {
   expect_match(conditionMessage(cnd), "Element 1")
   expect_match(conditionMessage(cnd), "`resamples`")
   expect_identical(conditionCall(cnd)[[1]], as.name("nested_tune_grid"))
+  expect_s3_class(cnd, "nestedtune_bad_design")
 })
 
 # The reachable route to such a design is not hand-editing: rsample's own
@@ -633,4 +635,164 @@ test_that("the control refusals fire before the RNG is drawn from (M48)", {
     control = tune::control_grid(event_level = "second")
   ))
   expect_identical(get(".Random.seed", envir = globalenv()), before)
+})
+
+# M55: every design refusal carries one class, names the driver the user
+# called, and names every offending position or column -- not the first one
+# found. The shapes are built by malformed_designs(); each record says what
+# the message must name.
+
+# The refusal as the condition it raised, with fitting replaced by a sentinel
+# so a check that ran after the loop began surfaces as the sentinel's class.
+refusal <- function(expr) {
+  sentinel <- function(...) {
+    rlang::abort("fitting began", class = "nestedtune_sentinel")
+  }
+  testthat::local_mocked_bindings(dispatch_folds = sentinel)
+  # Wide enough that cli never wraps a joined position list, so the
+  # all-positions assertions read the positions and not the line breaks.
+  rlang::local_options(cli.width = 500L)
+  tryCatch(expr, error = function(cnd) cnd)
+}
+
+# cli joins a vector as "1, 2, and 3"; the planted positions are the fact held
+# independently of the check, cli only the spelling.
+joined <- function(x) cli::format_inline("{x}")
+
+test_that("every planted design is refused, naming every offender (M55, AC1-AC4)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  planted <- malformed_designs(d)
+  expect_gt(length(planted), 20L)
+
+  for (nm in names(planted)) {
+    record <- planted[[nm]]
+    cnd <- refusal(nested_tune_grid(wf, record$design, grid = det_grid()))
+    expect_s3_class(cnd, "nestedtune_bad_design")
+    expect_false(inherits(cnd, "nestedtune_sentinel"), info = nm)
+    expect_identical(conditionCall(cnd)[[1L]], as.name("nested_tune_grid"))
+    msg <- conditionMessage(cnd)
+    expect_match(msg, "`resamples`", info = nm)
+    if (length(record$rows) > 0L) {
+      expect_match(msg, joined(record$rows), fixed = TRUE, info = nm)
+    }
+    for (column in record$columns) {
+      expect_match(msg, paste0("\\b", column, "\\b"), info = nm)
+    }
+  }
+})
+
+test_that("each refusal says which defect it found (M55, AC1-AC3)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  planted <- malformed_designs(d)
+  said <- function(nm) {
+    conditionMessage(refusal(
+      nested_tune_grid(wf, planted[[nm]]$design, grid = det_grid())
+    ))
+  }
+
+  expect_match(said("inner_empty_first"), "no rows")
+  expect_match(said("inner_empty_last"), "no rows")
+  expect_match(said("label_na_first"), "NA")
+  expect_match(said("label_na_last"), "NA")
+  expect_match(said("label_na_level_first"), "NA")
+  expect_match(said("label_na_level_last"), "NA")
+  # An NA-only refusal is headed by missingness, not by the uniqueness claim.
+  expect_no_match(said("label_na_first"), "uniquely")
+  expect_match(said("label_repeat_last"), "uniquely")
+  expect_match(said("label_repeat_last"), "1 and 3")
+  expect_match(said("id_integer"), "integer")
+  expect_match(said("id2_integer_before"), "integer")
+  expect_match(said("weights_character_after"), "not named as rsample")
+  expect_match(said("id10_character_after"), "not named as rsample")
+  expect_match(said("id10_character_after"), "id9")
+  expect_match(said("weights_numeric_before"), "weights")
+  expect_match(said("extra_list_after"), "extra")
+  # Both columns of a design carrying two, in one message.
+  expect_match(said("two_columns"), "weights")
+  expect_match(said("two_columns"), "extra")
+})
+
+test_that("the whole-object refusals carry the class too (M55, AC4)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  folds <- det_nested(d)
+  empty <- folds[0, ]
+  class(empty) <- class(folds)
+  no_id <- data.frame(row.names = seq_len(nrow(folds)))
+  no_id$splits <- folds$splits
+  no_id$inner_resamples <- folds$inner_resamples
+  set.seed(1)
+  boot <- suppressWarnings(rsample::nested_cv(
+    d,
+    outside = rsample::bootstraps(times = 2),
+    inside = rsample::vfold_cv(v = 2)
+  ))
+
+  whole <- list(
+    not_a_design = rsample::vfold_cv(d, v = 2),
+    no_outer_folds = empty,
+    no_id = no_id,
+    bootstrap = boot
+  )
+  for (nm in names(whole)) {
+    cnd <- refusal(nested_tune_grid(wf, whole[[nm]], grid = det_grid()))
+    expect_s3_class(cnd, "nestedtune_bad_design")
+    expect_identical(conditionCall(cnd)[[1L]], as.name("nested_tune_grid"))
+  }
+})
+
+test_that("a well-formed design passes the entry check unchanged (M55, AC5)", {
+  skip_if_no_engines()
+
+  d <- make_reg_data()
+  set.seed(1)
+  from_rsample <- rsample::nested_cv(
+    d,
+    outside = rsample::vfold_cv(v = 2, repeats = 2),
+    inside = rsample::vfold_cv(v = 2)
+  )
+  set.seed(1)
+  from_constructor <- nested_resamples(
+    d,
+    outside = rsample::vfold_cv(v = 2, repeats = 2),
+    inside = rsample::vfold_cv(v = 2)
+  )
+  # The two repeated designs carry `id` and `id2`, `id` repeating across
+  # repeats while the pair is unique -- the shape the tuple rule must admit.
+  expect_identical(
+    names(from_rsample),
+    c("splits", "id", "id2", "inner_resamples")
+  )
+  expect_true(anyDuplicated(from_rsample$id) > 0L)
+
+  factor_labels <- det_nested(d)
+  factor_labels$id <- factor(factor_labels$id)
+
+  well_formed <- list(
+    det_nested = det_nested(d),
+    factor_labels = factor_labels,
+    valid_folds = valid_folds(d),
+    repeated_design = repeated_design(),
+    nested_resamples = from_constructor,
+    nested_cv = from_rsample
+  )
+  for (nm in names(well_formed)) {
+    design <- well_formed[[nm]]
+    expect_invisible(check_nested(design))
+    expect_identical(check_nested(design), design, info = nm)
+  }
+
+  # And the unaltered fixture the plantings start from is not refused by the
+  # driver either: the refusal is about the planting, not the fixture.
+  wf <- det_workflow(d)
+  cnd <- refusal(nested_tune_grid(wf, det_nested(d), grid = det_grid()))
+  expect_s3_class(cnd, "nestedtune_sentinel")
 })

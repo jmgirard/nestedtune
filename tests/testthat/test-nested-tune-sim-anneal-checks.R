@@ -337,6 +337,32 @@ test_that("each shared check fires through nested_tune_sim_anneal()", {
   }
 })
 
+# M55: every design shape check_nested() refuses, refused here too -- with
+# the one class and this export's name on the condition. What each message
+# names is held to the planted positions by the grid driver's tests.
+
+test_that("every malformed design is refused at entry (M55)", {
+  skip_if_no_anneal_fixture()
+
+  d <- make_reg_data()
+  wf <- det_workflow(d)
+  ctrl <- anneal_control()
+  planted <- malformed_designs(d)
+  expect_gt(length(planted), 20L)
+
+  for (nm in names(planted)) {
+    cnd <- refusal(
+      nested_tune_sim_anneal(wf, planted[[nm]]$design, control = ctrl)
+    )
+    expect_s3_class(cnd, "nestedtune_bad_design")
+    expect_false(inherits(cnd, "nestedtune_sentinel"), info = nm)
+    expect_identical(
+      conditionCall(cnd)[[1L]],
+      as.name("nested_tune_sim_anneal")
+    )
+  }
+})
+
 test_that("`...` accepts `control` and nothing else", {
   skip_if_no_anneal_fixture()
 

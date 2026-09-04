@@ -106,6 +106,10 @@ check_model_spec <- function(spec, call = rlang::caller_env()) {
 }
 
 check_nested <- function(resamples, call = rlang::caller_env()) {
+  # Every refusal here carries one class, so a caller can catch a malformed
+  # design at any of the five drivers alike (M55); each names every offending
+  # position or column rather than the first found, so one fix does not
+  # merely reveal the next.
   if (
     !is.data.frame(resamples) ||
       !all(c("splits", "inner_resamples") %in% names(resamples))
@@ -117,22 +121,31 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
         i = "Build one with {.fn nested_resamples} or \\
              {.fn rsample::nested_cv}."
       ),
+      class = "nestedtune_bad_design",
       call = call
     )
   }
   if (nrow(resamples) == 0L) {
-    cli::cli_abort("{.arg resamples} has no outer folds.", call = call)
+    cli::cli_abort(
+      "{.arg resamples} has no outer folds.",
+      class = "nestedtune_bad_design",
+      call = call
+    )
   }
-  # The results object labels its rows from these. Without one, the loop would
-  # run to completion and only then assemble a malformed object -- the whole
-  # cost paid before anything complains, which is what checking here prevents.
-  if (!any(grepl("^id", names(resamples)))) {
+  # Every column beside the two list columns labels the outer folds: the
+  # results object records exactly this set (D-036) and names its rows by it.
+  labels <- setdiff(names(resamples), c("splits", "inner_resamples"))
+  # Without one, the loop would run to completion and only then assemble a
+  # malformed object -- the whole cost paid before anything complains, which
+  # is what checking here prevents.
+  if (!any(is_id_name(labels))) {
     cli::cli_abort(
       c(
         "{.arg resamples} has no {.field id} column naming its outer folds.",
         i = "Designs from {.fn nested_resamples} and {.fn rsample::nested_cv} \\
              always carry one."
       ),
+      class = "nestedtune_bad_design",
       call = call
     )
   }
@@ -149,10 +162,11 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
         i = "{.fn rsample::nested_cv} only warns here; {.fn nested_tune_grid} \\
              refuses."
       ),
+      class = "nestedtune_bad_design",
       call = call
     )
   }
-  # Last, because the checks above judge the whole object and these judge it
+  # Next, because the checks above judge the whole object and these judge it
   # element by element. Neither column is checked by anything upstream: a
   # design whose `inside` produced no rset is refused by nested_resamples()
   # (M18) but built without complaint by rsample::nested_cv(), and nothing at
@@ -179,15 +193,27 @@ check_nested <- function(resamples, call = rlang::caller_env()) {
             {.arg inside} that produces no {.cls rset} when the design is built.",
     call = call
   )
+  # Last, the three rules that hold the design to what rsample's and tune's
+  # readers expect of it (D-047): after the class checks, so each may assume
+  # the elements it reads are what they claim to be.
+  check_inner_rows(resamples, call = call)
+  check_label_columns(resamples, labels, call = call)
+  check_label_values(resamples, labels, call = call)
   invisible(resamples)
 }
 
-# One list column, every element, reporting the first that is wrong.
-#
-# The first rather than all of them: no observed design has more than one
-# offending element, and a caller who fixes the named one gets told about the
-# next on the following call. Class inspection only -- nothing here evaluates
-# or draws, so it stays safe to run before the seeds are taken.
+# The names under which rsample's and tune's readers find a design's id
+# columns: both packages' col_starts_with_id() is grepl() on this pattern
+# (rsample 1.3.2, tune 2.1.0), so a label column named outside it is one
+# tune's own summaries would ignore. Used by the entry check alone; the
+# results class reads its labels from the record D-036 fixed, never by name.
+is_id_name <- function(x) {
+  grepl("(^id$)|(^id[1-9]$)", x)
+}
+
+# One list column, every element, reporting all that are wrong. Class
+# inspection only -- nothing here evaluates or draws, so it stays safe to run
+# before the seeds are taken.
 check_column_class <- function(
   resamples,
   column,
@@ -200,14 +226,145 @@ check_column_class <- function(
   if (all(ok)) {
     return(invisible(resamples))
   }
-  i <- which(!ok)[[1L]]
+  bad <- which(!ok)
+  n <- length(bad)
+  types <- vapply(
+    elements[bad],
+    function(e) cli::format_inline("{.obj_type_friendly {e}}"),
+    character(1)
+  )
   cli::cli_abort(
     c(
       "{.arg resamples} has a malformed {.field {column}} column.",
-      x = "Element {i} is {.obj_type_friendly {elements[[i]]}}, not \\
-           {.cls {class}}.",
+      x = "{cli::qty(n)}Element{?s} {bad} {cli::qty(n)}{?is/are} {types}, \\
+           not {.cls {class}}.",
       i = hint
     ),
+    class = "nestedtune_bad_design",
+    call = call
+  )
+}
+
+# An inner design with no rows gives its fold nothing to tune on; tune would
+# fail that fold after the run with its own message rather than at the call.
+check_inner_rows <- function(resamples, call = rlang::caller_env()) {
+  rows <- vapply(resamples[["inner_resamples"]], nrow, integer(1))
+  bad <- which(rows == 0L)
+  if (length(bad) == 0L) {
+    return(invisible(resamples))
+  }
+  n <- length(bad)
+  cli::cli_abort(
+    c(
+      "{.arg resamples} has an inner design with no rows.",
+      x = "{cli::qty(n)}Element{?s} {bad} of {.field inner_resamples} \\
+           {cli::qty(n)}{?holds/hold} no resamples, so \\
+           {cli::qty(n)}{?that outer fold has/those outer folds have} \\
+           nothing to tune on.",
+      i = "Every outer fold needs an inner {.cls rset} with at least one row."
+    ),
+    class = "nestedtune_bad_design",
+    call = call
+  )
+}
+
+# Every label column must be one rsample's readers would find (is_id_name())
+# and hold the character or factor values a fold label is. A column failing
+# either rule would otherwise be pasted into every fold's label, or ignored by
+# tune's summaries, without a word (D-047).
+check_label_columns <- function(
+  resamples,
+  labels,
+  call = rlang::caller_env()
+) {
+  bad_name <- !is_id_name(labels)
+  bad_type <- !vapply(
+    labels,
+    function(col) is.character(resamples[[col]]) || is.factor(resamples[[col]]),
+    logical(1)
+  )
+  offenders <- which(bad_name | bad_type)
+  if (length(offenders) == 0L) {
+    return(invisible(resamples))
+  }
+  n <- length(offenders)
+  bullets <- vapply(
+    offenders,
+    function(i) {
+      col <- labels[[i]]
+      reasons <- c(
+        if (bad_name[[i]]) "is not named as rsample names an id column",
+        if (bad_type[[i]]) {
+          cli::format_inline(
+            "is {.obj_type_friendly {resamples[[col]]}}, not character or factor"
+          )
+        }
+      )
+      cli::format_inline("{.field {col}} {paste(reasons, collapse = ' and ')}.")
+    },
+    character(1)
+  )
+  cli::cli_abort(
+    c(
+      "{.arg resamples} has {cli::qty(n)}{?a column/columns} that cannot \\
+       label its outer folds.",
+      stats::setNames(bullets, rep("x", n)),
+      i = "Every column beside {.field splits} and {.field inner_resamples} \\
+           labels the outer folds. A label column is named {.code id}, or \\
+           {.code id2} through {.code id9}, as rsample's readers find them, \\
+           and holds character or factor values."
+    ),
+    class = "nestedtune_bad_design",
+    call = call
+  )
+}
+
+# An NA label leaves a fold's rows unattributable in the results object, and
+# a label two rows share makes autoplot() abort on the fitted run (D-047);
+# both are refused before anything is fitted.
+check_label_values <- function(
+  resamples,
+  labels,
+  call = rlang::caller_env()
+) {
+  # Read as labels, not as factors: a factor whose NA is a level (addNA())
+  # answers FALSE to is.na() but labels the fold with nothing all the same.
+  values <- lapply(labels, function(col) as.character(resamples[[col]]))
+  names(values) <- labels
+  missing <- Reduce(`|`, lapply(values, is.na))
+  repeated <- vctrs::vec_duplicate_detect(vctrs::new_data_frame(values))
+  # A row with an NA is reported as such, not also as a repeat of another.
+  repeated[missing] <- FALSE
+  if (!any(missing) && !any(repeated)) {
+    return(invisible(resamples))
+  }
+  na_rows <- which(missing)
+  n_na <- length(na_rows)
+  n_labels <- length(labels)
+  # Headed by what was found: missingness alone is not a uniqueness failure.
+  header <- if (n_na > 0L && any(repeated)) {
+    "{.arg resamples} has missing and repeated outer fold labels."
+  } else if (n_na > 0L) {
+    "{.arg resamples} has {cli::qty(n_na)}{?a missing outer fold label/missing \\
+     outer fold labels}."
+  } else {
+    "{.arg resamples} does not label every outer fold uniquely."
+  }
+  cli::cli_abort(
+    c(
+      header,
+      x = if (n_na > 0L) {
+        "{cli::qty(n_na)}Row{?s} {na_rows} {cli::qty(n_na)}{?has/have} an \\
+         {.code NA} label."
+      },
+      x = if (any(repeated)) {
+        "Rows {which(repeated)} carry the same label as another row."
+      },
+      i = "Each outer fold's label -- its {.field {labels}} \\
+           {cli::qty(n_labels)}{?value/values together} -- must be distinct \\
+           and not missing: the results object names the fold by it."
+    ),
+    class = "nestedtune_bad_design",
     call = call
   )
 }
