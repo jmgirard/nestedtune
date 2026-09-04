@@ -147,6 +147,22 @@ registered_s3_methods <- function() {
   sort(paste0(reg[, 1L], ".", reg[, 2L]))
 }
 
+# Methods the probe must reach, named (M57). The domain above is read from the
+# registry so a new method is probed unasked, and that is also its weakness: a
+# registry that lost a method -- a directive dropped from NAMESPACE, a
+# generic renamed -- would shrink the probe without a failure. These are the
+# methods a user calls on the two result objects, and the probe is asserted
+# to hold each one.
+DOTS_PROBED_METHODS <- c(
+  "print.nested_results",
+  "collect_metrics.nested_results",
+  "autoplot.nested_results",
+  "summary.nested_results",
+  "print.nested_final_fit",
+  "extract_tune_results.nested_final_fit",
+  "extract_scored_candidates.nested_final_fit"
+)
+
 test_that("AC5: every registered method whose `...` is unused fences it", {
   methods <- registered_s3_methods()
 
@@ -156,7 +172,8 @@ test_that("AC5: every registered method whose `...` is unused fences it", {
   expect_true(all(DOTS_EXEMPT_METHODS %in% methods))
 
   probed <- setdiff(methods, DOTS_EXEMPT_METHODS)
-  expect_gt(length(probed), 0L)
+  # Named, so the failure says which method left the probe.
+  expect_identical(setdiff(DOTS_PROBED_METHODS, probed), character())
 
   reg <- getNamespaceInfo(asNamespace("nestedtune"), "S3methods")
   for (i in seq_len(nrow(reg))) {
@@ -200,6 +217,12 @@ test_that("AC5: every registered method whose `...` is unused fences it", {
 })
 
 # AC6 -------------------------------------------------------------------
+#
+# The signature alone. M34 also scanned every in-repo `collect_metrics(` call
+# for a positional `summarize`; M57 removed the scan, since a positional
+# argument past `...` already errors at the call (test-collect-metrics.R
+# holds that), and a text scan over the repo's own files was a second checker
+# for the same fact.
 
 test_that("AC6: collect_metrics() puts `summarize` behind the barrier", {
   expect_identical(
@@ -208,122 +231,24 @@ test_that("AC6: collect_metrics() puts `summarize` behind the barrier", {
   )
 })
 
-# Every argument text of every `collect_metrics(` call in a file, one string
-# per argument. Text, not parsed code, because the corpus includes roxygen
-# examples and vignette chunks -- the call sites a parser of `R/` alone would
-# walk straight past.
-collect_metrics_call_args <- function(path) {
-  text <- paste(readLines(path, warn = FALSE), collapse = "\n")
-  starts <- gregexpr("collect_metrics\\(", text, perl = TRUE)[[1]]
-  if (identical(as.integer(starts), -1L)) {
-    return(list())
-  }
-  chars <- strsplit(text, "")[[1]]
-  out <- list()
-  for (s in starts) {
-    open <- s + attr(starts, "match.length")[which(starts == s)] - 1L
-    depth <- 1L
-    args <- character()
-    current <- ""
-    i <- open + 1L
-    while (i <= length(chars) && depth > 0L) {
-      ch <- chars[[i]]
-      # `[` and `{` count too: `collect_metrics(res[1L, ])` has a comma that
-      # belongs to the subscript, and a splitter blind to it reports a second
-      # positional argument that was never written.
-      if (ch %in% c("(", "[", "{")) {
-        depth <- depth + 1L
-      }
-      if (ch %in% c(")", "]", "}")) {
-        depth <- depth - 1L
-      }
-      if (depth == 0L) {
-        break
-      }
-      if (ch == "," && depth == 1L) {
-        args <- c(args, current)
-        current <- ""
-      } else {
-        current <- paste0(current, ch)
-      }
-      i <- i + 1L
-    }
-    args <- c(args, current)
-    args <- trimws(args)
-    out[[length(out) + 1L]] <- args[nzchar(args)]
-  }
-  out
-}
+test_that("AC6: a positional `summarize` is refused at the call, a named one is not", {
+  skip_if_not_installed("recipes")
+  d <- make_reg_data()
+  res <- memoised(nested_tune_grid(
+    det_workflow(d),
+    det_nested(d),
+    grid = det_grid(),
+    metrics = reg_metrics()
+  ))
 
-test_that("AC6: no in-repo call passes `summarize` positionally", {
-  root <- test_path("..", "..")
-  # Under `R CMD check` the suite runs from `<pkg>.Rcheck/tests/testthat`, so
-  # `root` is `<pkg>.Rcheck`: `R/` and `vignettes/` are not there and their
-  # `list.files()` calls return nothing. The two non-empty guards below are
-  # satisfied by `tests/` alone (45 files, 47 calls), so without this the scan
-  # would narrow to a third of its domain and still report green -- exactly the
-  # silently-empty domain M14 taught. Skipping says so; the same anchor and the
-  # same reasoning are in test-vignette-citations.R.
-  skip_if_not(
-    dir.exists(file.path(root, "R")) &&
-      dir.exists(file.path(root, "vignettes")),
-    "not the source tree: R/ and vignettes/ are absent, so the scan is partial"
-  )
-  files <- c(
-    list.files(file.path(root, "R"), pattern = "[.]R$", full.names = TRUE),
-    list.files(
-      file.path(root, "tests"),
-      pattern = "[.]R$",
-      full.names = TRUE,
-      recursive = TRUE
-    ),
-    list.files(
-      file.path(root, "vignettes"),
-      pattern = "[.]Rmd$",
-      full.names = TRUE
-    )
-  )
-  files <- files[file.exists(files)]
+  # The second positional argument lands in `...`, and the fence names it.
+  cnd <- rlang::catch_cnd(collect_metrics(res, FALSE))
+  expect_s3_class(cnd, "rlib_error_dots_nonempty")
 
-  # The scan is worthless if it reads nothing, and a `test_path()` that lands
-  # somewhere unexpected reads nothing while passing (M14's lesson).
-  expect_gt(length(files), 20L)
-
-  calls <- unlist(lapply(files, collect_metrics_call_args), recursive = FALSE)
-  expect_gt(length(calls), 10L)
-
-  positional <- Filter(
-    function(args) length(args) > 1L && !any(grepl("=", args[-1L])),
-    calls
-  )
-  expect_identical(
-    lapply(positional, paste, collapse = ", "),
-    list()
-  )
-})
-
-test_that("AC6: the positional-argument scan can see a positional argument", {
-  # Discrimination: the scan above reports nothing, which is also what a broken
-  # scan reports. Planting the defect in a temporary file proves it is the
-  # absence of positional calls being reported and not the absence of a scan.
-  path <- tempfile(fileext = ".R")
-  on.exit(unlink(path), add = TRUE)
-  # Assembled rather than written whole, so the scan above -- which reads this
-  # file along with every other -- does not find the planted defect here and
-  # report it against the repo.
-  writeLines(
-    c(
-      paste0("collect_", "metrics(res, FALSE)"),
-      paste0("collect_", "metrics(res, summarize = FALSE)")
-    ),
-    path
-  )
-  calls <- collect_metrics_call_args(path)
-  expect_length(calls, 2L)
-  positional <- Filter(
-    function(args) length(args) > 1L && !any(grepl("=", args[-1L])),
-    calls
-  )
-  expect_length(positional, 1L)
-  expect_identical(positional[[1L]], c("res", "FALSE"))
+  # The control passes for the claim's reason: the same value, named, goes
+  # through the fence and reaches `summarize`, which is what the unsummarised
+  # shape shows.
+  unsummarised <- collect_metrics(res, summarize = FALSE)
+  expect_true(".estimate" %in% names(unsummarised))
+  expect_false("mean" %in% names(unsummarised))
 })
