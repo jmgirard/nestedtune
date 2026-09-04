@@ -1,13 +1,13 @@
 # M56: The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4, GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — exported class methods and help pages
-- **Branch/PR:** —
+- **Branch/PR:** `m056-results-class-and-help-page-findings`
 
 ## Goal
 
