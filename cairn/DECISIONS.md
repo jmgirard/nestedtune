@@ -1429,6 +1429,38 @@ and handled by the parallel fat path. Falsified by a design rsample itself
 builds that the rule refuses, or by an rsample or tune release whose readers
 find id columns by another rule.
 
+### D-048 (2026-09-03): a duplicated record name sheds the class like a moved one, counted over the record's names alone, and `names<-.nested_results()` decides on the names alone — annotates the name-repair clause of D-035 and narrows the `rename()` clause of D-032, on M56's review
+
+**Context:** D-035 named name repair moving a record column as the one thing
+`vec_cbind()` can do wrong that a row count does not catch. M56's review
+found a second: with `.name_repair = "minimal"` a second column arrives
+under a record name, `x$splits` answers with whichever came first, and the
+record can no longer be found by name. Its first fix counted duplicates over
+every name, and the defect return showed a clash between two caller-added
+columns shedding the run's record. D-032 says `names<-.nested_results()`
+carries the rule `dplyr_reconstruct.nested_results()` carries, which
+compares values.
+
+**Decision:** `duplicated_record_names()` counts a duplicate over the
+record's names alone, and the three doors — `can_reconstruct_results()`,
+`vec_restore.nested_results()` and `names<-.nested_results()` — shed the
+class and every attribute on a duplicated or missing record name and keep
+the object otherwise: the doors vouch for the record by name and read no
+name outside it, so a clash between two caller-added columns is theirs to
+keep. `names<-.nested_results()` decides on the names alone, with no value
+comparison: base `names<-` relabels columns and never moves or alters a
+value, so the record is intact exactly when each record column keeps its
+name and no other column takes one. Considered and rejected: a name count
+over every column (sheds on a clash the record does not feel); keeping the
+value comparison on `names<-` (re-establishes what the names already
+settle).
+
+**Consequences:** the `rename()` method no longer shares
+`dplyr_reconstruct()`'s rule as D-032 states; the two doors agree on every
+input because a rename cannot move a value. Falsified by a `names<-` path
+that reorders or drops a column, or by a reader of the record that resolves
+a column by position rather than name.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

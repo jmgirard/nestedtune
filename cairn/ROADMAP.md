@@ -1,19 +1,18 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-03 (M55 done and archived; M50's row pruned under the five-terminal-row rule; one LESSONS line added and the stalest pruned to hold the 50-line cap, its byte overage pre-existing; no candidate row touched; no Known issues entry. Validate green, 18 references advisories.)_
+_Last hygiene check: 2026-09-03 (M56 done and archived; M51's row pruned under the five-terminal-row rule; D-048 added, annotating D-032 and D-035; one LESSONS line added and the stalest pruned to hold the 50-line cap, its byte overage pre-existing; no candidate row touched; no Known issues entry. Validate green, 18 references advisories.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M57 | The hang trace, the parallel-files setup and two test files close the M52, M37 and M34 review findings | planned | — | normal | milestones/M057-test-suite-and-ci-findings.md |
-| M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | review | — | normal | milestones/M056-results-class-and-help-page-findings.md |
+| M56 | The results class, the extract defaults and the final-fit page close the M37, M34 and M51 review findings | done | — | normal | milestones/archive/M56-results-class-and-help-page-findings.md |
 | M55 | Every driver refuses a design whose inner resamples are empty, whose fold labels do not uniquely name its folds, or whose columns are not an rsample design's | done | — | normal | milestones/archive/M55-design-entry-checks.md |
 | M54 | The inner tuning call finalizes an unknown parameter range on the outer fold's analysis rows | done | — | normal | milestones/archive/M54-inner-finalize-analysis-frame.md |
 | M53 | `nested_final_fit()` refuses a results object whose every outer fold failed | done | — | normal | milestones/archive/M53-final-fit-all-failed.md |
 | M52 | The test suite runs its files in parallel and fits its CI caps with headroom | done | — | high | milestones/archive/M52-parallel-test-files.md |
-| M51 | `nested_tune_sim_anneal()` runs finetune's simulated annealing inside the outer loop | done | M50 | normal | milestones/archive/M51-sim-anneal.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
