@@ -2,6 +2,33 @@
 
 ## nestedtune 0.0.0.9000
 
+- [`nested_tune_grid()`](https://nestedtune.tidymodels.org/reference/nested_tune_grid.md),
+  [`nested_tune_bayes()`](https://nestedtune.tidymodels.org/reference/nested_tune_bayes.md),
+  [`nested_tune_race_anova()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md),
+  [`nested_tune_race_win_loss()`](https://nestedtune.tidymodels.org/reference/nested_tune_race.md)
+  and
+  [`nested_tune_sim_anneal()`](https://nestedtune.tidymodels.org/reference/nested_tune_sim_anneal.md)
+  refuse a `resamples` design at the call, before any fold runs, in
+  three further shapes, under the same `nestedtune_bad_design` class: an
+  element of some fold’s inner `splits` list that is not an `rsplit`; a
+  fold whose inner splits do not all carry one frame that is the outer
+  split’s own data frame (as
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
+  builds them) or that split’s analysis set (as
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html)
+  builds them); and an inner split carrying the outer data frame whose
+  `in_id`, or non-`NA` `out_id`, holds a row index outside the outer
+  split’s `in_id`. Each refusal names every offending fold, split and
+  index. Before, an inner design over another frame was tuned as given
+  serially and sent down a slower path in parallel, and a hand-built
+  inner split indexing a row its outer fold holds out ran to completion.
+  Designs from
+  [`nested_resamples()`](https://nestedtune.tidymodels.org/reference/nested_resamples.md)
+  and
+  [`rsample::nested_cv()`](https://rsample.tidymodels.org/reference/nested_cv.html),
+  on a data frame or a tibble, and one whose outer `rset` repeats a row,
+  pass unchanged.
+
 - Before any fold is dispatched to mirai daemons, the startup check now
   asks every daemon for each package the workflow and the tuner need,
   and stops when one cannot load one of them, naming how many daemons
