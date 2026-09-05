@@ -7,7 +7,7 @@
 - **Principles touched:** IP3
 - **Resolves:** —
 - **Surface tier:** user-facing — the shipped vignettes and the site articles
-- **Branch/PR:** m066-vignette-sweep
+- **Branch/PR:** m066-vignette-sweep · https://github.com/tidymodels/nestedtune/pull/76
 
 ## Goal
 
@@ -21,12 +21,12 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 
 ## Acceptance criteria
 
-- [ ] AC1: A scripted sweep over the reader-facing chunks of every `.Rmd` under `vignettes/` (recursive), its command recorded in the Review evidence, finds no `vapply(`, `sapply(`, `lapply(`, `do.call(`, `Reduce(`, `Map(`, `<<-`, `withCallingHandlers(`, `function(`, `data.frame(`, or a bracket subset keyed on a `$` column (the pattern `[<name>$`), and finds `[[` only in a peek of the form `<object>$<column>[[<integer>]]`.
-- [ ] AC2: The same sweep finds no `pkg::` prefix on `nestedtune` or on any package in `tidymodels::core`; every page with a reader-facing chunk attaches `tidymodels` and then `nestedtune` in its libraries chunk, behind a guard that ends the page with one notice when tidymodels is absent.
-- [ ] AC3: No chunk under `vignettes/` reads `$tuning` off a final fit; `nested-cv.Rmd` reaches the tuning run through `extract_tune_results()` and its best score through `show_best()`, both in reader-facing chunks.
-- [ ] AC4: The reader-facing chunk that prints the guide's fold-by-selection table calls `collect_selections(res)`; the chunks that print the failed fold's and a completed fold's notes on `results.Rmd` call `collect_notes()`; the chunk that counts fits per fold on `tuners.Rmd` calls `collect_inner_metrics()` and summarises with dplyr; the chunks that show a warning's class on `results.Rmd` and `articles/parallel.Rmd` call `rlang::catch_cnd()`.
+- [x] AC1: A scripted sweep over the reader-facing chunks of every `.Rmd` under `vignettes/` (recursive), its command recorded in the Review evidence, finds no `vapply(`, `sapply(`, `lapply(`, `do.call(`, `Reduce(`, `Map(`, `<<-`, `withCallingHandlers(`, `function(`, `data.frame(`, or a bracket subset keyed on a `$` column (the pattern `[<name>$`), and finds `[[` only in a peek of the form `<object>$<column>[[<integer>]]`.
+- [x] AC2: The same sweep finds no `pkg::` prefix on `nestedtune` or on any package in `tidymodels::core`; every page with a reader-facing chunk attaches `tidymodels` and then `nestedtune` in its libraries chunk, behind a guard that ends the page with one notice when tidymodels is absent.
+- [x] AC3: No chunk under `vignettes/` reads `$tuning` off a final fit; `nested-cv.Rmd` reaches the tuning run through `extract_tune_results()` and its best score through `show_best()`, both in reader-facing chunks.
+- [x] AC4: The reader-facing chunk that prints the guide's fold-by-selection table calls `collect_selections(res)`; the chunks that print the failed fold's and a completed fold's notes on `results.Rmd` call `collect_notes()`; the chunk that counts fits per fold on `tuners.Rmd` calls `collect_inner_metrics()` and summarises with dplyr; the chunks that show a warning's class on `results.Rmd` and `articles/parallel.Rmd` call `rlang::catch_cnd()`.
 - [ ] AC5: The four CRAN vignettes build in under 150 s together, `tuners` under 45 s and `results` under 60 s, each the median of three `rmarkdown::render()` timings on one head.
-- [ ] AC6: Outside code chunks and inline `r` expressions, the six `.Rmd` files contain no em dash and no token matching `M\d\d`, and every `vignette("<name>")` string in them names one of `nested-cv`, `estimate`, `results`, `tuners`; each shown by a grep recorded in the Review evidence.
+- [x] AC6: Outside code chunks and inline `r` expressions, the six `.Rmd` files contain no em dash and no token matching `M\d\d`, and every `vignette("<name>")` string in them names one of `nested-cv`, `estimate`, `results`, `tuners`; each shown by a grep recorded in the Review evidence.
 - [ ] AC7: `test-vignette-citations.R` passes, `devtools::check()` reports 0 errors, 0 warnings, 0 notes, `pkgdown::check_pkgdown()` passes, and `pkgdown::build_articles()` renders both site articles locally with mirai and ranger installed.
 
 ## Coverage
@@ -85,3 +85,10 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - 2026-09-05 (T6 F23, rejected here): the em dash in the results print's candidates line is package output, not page prose, and changing it re-records snapshots outside this milestone's scope; captured as a ROADMAP candidate row.
 
 ## Review
+
+- 2026-09-05, PR #76 (https://github.com/tidymodels/nestedtune/pull/76), evidence on 345fd78 unless stated; the default branch had not moved since the branch was cut, so no merge-in was needed.
+- AC1: `Rscript benchmarks/sweep-vignette-idioms.R` over every `.Rmd` under `vignettes/` (recursive; six pages) prints `clean`, exit 0: no idiom hit in a reader-facing chunk and no `[[` outside the peek form. Verified.
+- AC2: the same run's prefix check is clean (no `pkg::` on nestedtune or a `tidymodels:::core` package in a shown chunk). `grep -n '^library(\|requireNamespace\|knit_exit'` over the six pages shows each of the five pages with a reader-facing chunk (`nested-cv`, `results`, `tuners`, `articles/parallel`, `articles/why-nest`) attaching `library(tidymodels)` then `library(nestedtune)` after a hidden `deps` chunk that names tidymodels and a `deps-notice` chunk that prints one notice naming the missing packages and calls `knitr::knit_exit()`; `estimate.Rmd` has only a hidden setup chunk. Verified.
+- AC3: `grep -rn '\$tuning\b' vignettes/` finds nothing. `nested-cv.Rmd` calls `extract_tune_results(final) |> show_best(metric = "rmse", n = 1)` at lines 261–262 inside the shown chunk `comparison` (header at line 260, no `echo`/`include` option). Verified.
+- AC4: `collect_selections(res)` at `nested-cv.Rmd:172` in the shown chunk `selected`; `collect_notes(failed)` at `results.Rmd:269` in the shown chunk `failed-notes`, whose `notes` table the shown chunk `completed-notes` filters for a completed fold; `collect_inner_metrics(race) |> filter() |> group_by(id) |> summarise()` at `tuners.Rmd:208` in the shown chunk `race-anova-inner`; `rlang::catch_cnd()` at `results.Rmd:319` (shown chunk `failed-summary-warning`) and `articles/parallel.Rmd:250` (shown chunk `no-dispatcher-warning`). Chunk membership read by an awk pass over the fences. Verified.
+- AC6: the sweep's prose check is clean, and an independent pass (`awk` dropping fenced `{r` chunks, `sed -E 's/`r[^`]*`//g'` dropping inline r spans, `grep -nE '—|\bM[0-9][0-9]\b'`) over the six pages finds no line; `grep -ohE 'vignette\("[^"]*"\)'` over the six pages finds only `estimate` (8), `nested-cv` (6), `results` (1) and `tuners` (3). Verified.
