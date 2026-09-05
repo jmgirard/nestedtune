@@ -1,6 +1,6 @@
 # M64: A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it, with nnet in Suggests
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
@@ -56,3 +56,4 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-04: second audit pass (full mode, a fresh [O] reader) returned two M64 findings, applied: the nested article's pkgdown name (AC5), and AC3 restated as absolute distances from the null with the nested median held within a stored tolerance, since the old inequality was satisfied by a nested median far below the null.
 - 2026-09-05: implement started; branch `m064-why-nest-article`. Gate chose 30 replicates (one replicate 80 s serially, so about 40 min a run) and a one-panel figure of paired points with median bars. T1 script written and run 1 in progress; the article draft, `nnet` in Suggests, the `_pkgdown.yml` entry and the NEWS entry written, none yet verified against a store. Checkpoint, half-done.
 - 2026-09-05: run 1 (script as committed at 734d2eb) wrote the store in 4108 s: median flat best 0.567, median nested 0.458, both AC3 conditions holding (0.067 above the null against 0.042 below, inside the 0.05 tolerance). Script reformatted by air and its top-level `on.exit()` dropped (inert in Rscript, the M09 lesson); run 2 started on that script. Article reworded for the nested median sitting below the null; `pkgdown::build_article()` builds it and the figure was rendered and read.
+- 2026-09-05: AC5's masked build is unsatisfiable: nnet is a recommended package in the system library, unmaskable from `.libPaths()`, and a stub mask shows it in the hard import closure (tune → recipes → ipred → nnet), so `library(nestedtune)` fails and pkgdown's autolinker fails resolving `tune::tune_grid()`; a fresh-process `rmarkdown::render()` of the article loads neither nnet, tune nor nestedtune. Mini gate offered replacing the clause with that render check; the user chose escalation. Blocked on RB06.
