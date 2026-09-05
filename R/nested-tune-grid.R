@@ -798,14 +798,14 @@ inner_metrics <- function(tuned, prototype) {
   if (!scored_anything(tuned)) {
     return(prototype)
   }
-  tryCatch(collect_inner_metrics(tuned), error = function(cnd) prototype)
+  tryCatch(inner_metrics_table(tuned), error = function(cnd) prototype)
 }
 
 # The one `collect_metrics()` call behind every reader of an inner run (M50,
 # D-043): tune's summary, and on a race every candidate the race scored --
 # `all_configs = TRUE` -- where finetune's default keeps the survivors alone.
 # IP4 records what ran, and an eliminated candidate ran on `n` resamples.
-collect_inner_metrics <- function(tuned) {
+inner_metrics_table <- function(tuned) {
   if (inherits(tuned, "tune_race")) {
     return(tune::collect_metrics(tuned, all_configs = TRUE))
   }
@@ -950,7 +950,7 @@ empty_param_column <- function(param) {
 # is the true answer, not a fallback.
 scored_candidates <- function(tuned) {
   tryCatch(
-    candidate_set(collect_inner_metrics(tuned)),
+    candidate_set(inner_metrics_table(tuned)),
     error = function(cnd) empty_candidates()
   )
 }

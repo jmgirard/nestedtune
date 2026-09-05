@@ -311,6 +311,13 @@ test_that("every nested_results method in NAMESPACE runs on a Bayesian result", 
     "S3method(collect_metrics,nested_results)" = function() {
       collect_metrics(res)
     },
+    "S3method(collect_inner_metrics,nested_results)" = function() {
+      collect_inner_metrics(res)
+    },
+    "S3method(collect_notes,nested_results)" = function() collect_notes(res),
+    "S3method(collect_selections,nested_results)" = function() {
+      collect_selections(res)
+    },
     "S3method(dplyr_reconstruct,nested_results)" = function() {
       dplyr::dplyr_reconstruct(df, res)
     },

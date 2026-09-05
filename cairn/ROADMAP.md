@@ -7,7 +7,7 @@ _Last hygiene check: 2026-09-05 (M64 done via PR #74, merged on green at 35421b8
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M65 | Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()` | planned | — | normal | milestones/M65-collect-readers.md |
+| M65 | Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()` | review | — | normal | milestones/M65-collect-readers.md |
 | M66 | The six vignette pages read the results through the package's readers under `library(tidymodels)`, and take a prose pass | planned | M65 | normal | milestones/M66-vignette-sweep.md |
 | M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | done | — | normal | milestones/archive/M60-guide-split.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | done | M60 | normal | milestones/archive/M61-tuner-vignette.md |

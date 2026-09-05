@@ -955,6 +955,63 @@ per_fold_metrics <- function(x) {
   new_tbl(cols)
 }
 
+# One per-fold list column stacked into a table, each fold's rows carrying
+# that fold's label columns first (M65, D-052). The labels are the record's
+# (id_columns(), D-036), never a pasted `id`: a repeated design contributes
+# `id` and `id2` as two columns, the shape fold_ids() folds into one string
+# for a message. Stacked through vctrs over the union of the tables' columns,
+# so a fold lacking a column holds NA there rather than the column being
+# dropped or filled from whichever fold came first (the rule agreement()
+# applies to the selections). A fold holding NULL in the column -- a failed
+# fold's `.selected` -- contributes no rows.
+#
+# `completed_only` is the readers' rule about failed folds: the selections
+# and inner tables are read over the completed folds, the way
+# collect_metrics() and agreement() read, while the notes are read over every
+# fold, a failed fold's notes being the point of asking.
+stack_fold_column <- function(
+  x,
+  column,
+  completed_only,
+  call = rlang::caller_env()
+) {
+  id_cols <- id_columns(x)
+  which <- if (completed_only) which(x$.completed) else seq_len(nrow(x))
+  rows <- lapply(which, function(i) {
+    tbl <- x[[column]][[i]]
+    if (is.null(tbl)) {
+      return(NULL)
+    }
+    # A stacked column named like a label column would be repaired to
+    # `id...1`/`id...2` by the tibble constructor, the label lost under a
+    # message: refuse it, the rule agreement() applies to `n` and `prop`
+    # (M44 lesson). Reachable through a parameter given the id `id`.
+    clash <- intersect(names(tbl), id_cols)
+    if (length(clash) > 0L) {
+      cli::cli_abort(
+        c(
+          "Cannot stack {.code {column}}: it carries a column named \\
+           {.val {clash}}, which is one of this object's fold label columns.",
+          i = "The fold label columns are {.val {id_cols}}; give the \\
+               parameter another id in {.fn tune::tune}."
+        ),
+        class = "nestedtune_collect_name_collision",
+        call = call
+      )
+    }
+    labels <- lapply(id_cols, function(nm) rep(x[[nm]][[i]], nrow(tbl)))
+    names(labels) <- id_cols
+    vctrs::new_data_frame(c(labels, as.list(tbl)))
+  })
+  rows <- rows[!vapply(rows, is.null, logical(1))]
+  if (length(rows) == 0L) {
+    labels <- lapply(id_cols, function(nm) x[[nm]][0L])
+    names(labels) <- id_cols
+    return(new_tbl(labels))
+  }
+  new_tbl(as.list(vctrs::vec_rbind(!!!rows)))
+}
+
 # The outer fold labels. A repeated design carries id and id2; pasting them
 # keeps each row's label unique without assuming which columns are present.
 # Asking id_columns() -- the constructor's record -- rather than a name pattern

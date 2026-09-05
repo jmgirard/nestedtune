@@ -13,3 +13,7 @@ ggplot2::autoplot
 #' @importFrom tune augment
 #' @export
 tune::augment
+
+#' @importFrom tune collect_notes
+#' @export
+tune::collect_notes

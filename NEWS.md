@@ -1,5 +1,17 @@
 # nestedtune 0.0.0.9000
 
+* Three new readers stack a per-fold list column of a `nested_results` into
+  one table with the design's fold labels beside it, read from the object's
+  record so a repeated design gives `id` and `id2`. `collect_notes()`, tune's
+  generic re-exported with a method here, stacks `.notes` over every outer
+  fold; the package's own `collect_selections()` and `collect_inner_metrics()`
+  stack `.selected` and `.inner_metrics` over the folds that completed, warn
+  once with class `nestedtune_partial_summary` on a partial run, and refuse a
+  run in which no fold completed with class `nestedtune_no_completed_folds`.
+  The stacked columns are the union across folds, `NA` where a fold lacks one,
+  `.config` kept as each fold recorded it. Their default methods refuse other
+  objects with class `nestedtune_no_collect_method`.
+
 * A new site-only article, "Why nest: a simulation" (`articles/why-nest` on
   the package site, not shipped in the package), reads a stored simulation in
   which each replicate draws wide data with no signal, tunes a small neural

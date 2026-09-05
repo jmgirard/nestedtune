@@ -44,6 +44,7 @@ reference:
   - nested_tune_race
   - nested_tune_sim_anneal
   - collect_metrics.nested_results
+  - collect_selections
   - print.nested_results
   - summary.nested_results
   - autoplot.nested_results
