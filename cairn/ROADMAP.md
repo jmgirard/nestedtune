@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-05 (M63 done via PR #73, merged on green at 984e12d
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | done | M60 | normal | milestones/archive/M61-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | done | M60 | normal | milestones/archive/M62-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | done | M60 | normal | milestones/archive/M63-parallel-article.md |
-| M64 | A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it | in-progress | M60 | normal | milestones/M064-why-nest-article.md |
+| M64 | A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it | review | M60 | normal | milestones/M064-why-nest-article.md |
 | M59 | Every driver refuses a design whose inner splits are not rsplits, do not share the outer fold's frame or its analysis set, or index rows the outer fold holds out | done | — | normal | milestones/archive/M59-inner-split-frame-checks.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
