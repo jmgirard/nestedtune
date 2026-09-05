@@ -155,7 +155,7 @@ reproducibility section shows how to restore them, and the help pages for
 one fold by hand.
 
 ```{r seeds}
-res[, c(".tuning_seed", ".outer_fit_seed")]
+select(res, .tuning_seed, .outer_fit_seed)
 ```
 
 The description of the run itself rides on the object as attributes rather
@@ -241,16 +241,26 @@ The run warns twice as it finishes: tune's own warning from the outer fit
 that produced nothing, then this package's, naming the fold. The chunk mutes
 tune's progress messages and keeps its warnings. The print counts the
 failure, `.completed` is `FALSE` for the fold that failed, and its `.notes`
-say where.
+say where. `collect_notes()` stacks every fold's `.notes` into one table with
+the fold label beside them, so the failed fold's notes are the rows carrying
+its label.
 
 ```{r failed-notes}
-which_failed <- which(!failed$.completed)
+failed_id <- failed |>
+  filter(!.completed) |>
+  pull(id)
 
-failed$.notes[[which_failed]][, c("location", "type", "note")]
+failed_id
+
+notes <- collect_notes(failed)
+
+failed_notes <- filter(notes, id == failed_id)
+
+select(failed_notes, location, type, note)
 ```
 
 The first row is this package's own note, and its `location` names the stage:
-`r failed$id[which_failed]` failed at the `r failed$.notes[[which_failed]]$location[1]`,
+`r failed_id` failed at the `r failed_notes$location[1]`,
 the fit and score on the outer split, after its inner tuning had finished.
 The rows after it are tune's notes about the cause, relabelled with the stage
 they came from. A fold that fails during inner tuning reads the same way with
@@ -262,16 +272,23 @@ held it out, and the range check refused that resample for every candidate.
 Some folds carry a second note of the same kind from the low end of the
 range, an inner resample that held out a car with less horsepower than any
 it trained on. Tuning still returned a candidate, from the inner resamples
-that ran, and the fold finished. Its notes say so.
+that ran, and the fold finished. Its notes say so. Counting the stacked
+notes by fold shows how many each carries (a fold with none would be absent
+from the count), and the first completed fold among them reads like this:
 
 ```{r completed-notes}
-vapply(failed$.notes, nrow, integer(1))
+count(notes, id)
 
-noted <- which(failed$.completed & vapply(failed$.notes, nrow, integer(1)) > 0)
+noted_id <- notes |>
+  filter(id != failed_id) |>
+  slice(1) |>
+  pull(id)
 
-failed$id[noted[1]]
+noted_id
 
-failed$.notes[[noted[1]]][, c("location", "type", "note")]
+notes |>
+  filter(id == noted_id) |>
+  select(location, type, note)
 ```
 
 The label in parentheses names the inner resample, a fold of this outer
@@ -280,20 +297,20 @@ fold's own inner design, not another outer fold. So `.completed` being
 less than the whole inner design it was given.
 
 `summary()` on a run with a failed fold still answers, and warns first. The
-chunk below catches the warning to show its class and its message, then
-prints the summary it returned.
+first chunk below catches the warning with `rlang::catch_cnd()` to show its
+class and its message. The second prints the summary, with the warning
+muted.
 
-```{r failed-summary}
-partial <- withCallingHandlers(
-  summary(failed),
-  warning = function(w) {
-    cat("class:", class(w)[1], "\n")
-    cat(conditionMessage(w), "\n")
-    invokeRestart("muffleWarning")
-  }
-)
+```{r failed-summary-warning}
+partial_warning <- rlang::catch_cnd(summary(failed), classes = "warning")
 
-partial
+class(partial_warning)
+
+cat(conditionMessage(partial_warning))
+```
+
+```{r failed-summary, warning = FALSE}
+summary(failed)
 ```
 
 The warning's class lets a script catch it and decide what a partial run is
@@ -318,12 +335,9 @@ an object that no longer holds what the run produced cannot answer for the
 run. Adding a column keeps the class.
 
 ```{r dplyr-mutate}
-with_rmse <- mutate(
-  res,
-  rmse = vapply(.metrics, function(m) m$.estimate[m$.metric == "rmse"], 1)
-)
+with_position <- mutate(res, position = row_number())
 
-class(with_rmse)
+class(with_position)
 ```
 
 Dropping a fold sheds it. The natural case is keeping only the folds that
@@ -396,7 +410,7 @@ event_time <- ifelse(
 )
 censor_time <- runif(n, 3, 60)
 
-surv_df <- data.frame(
+surv_df <- tibble(
   time = pmin(event_time, censor_time),
   event = as.numeric(event_time <= censor_time),
   x1 = x1,
@@ -422,7 +436,7 @@ surv_spec <- survival_reg(dist = tune()) |>
 
 surv_wf <- workflow(survival::Surv(time, event) ~ x1 + x2, surv_spec)
 
-surv_grid <- data.frame(dist = c("weibull", "lognormal", "exponential"))
+surv_grid <- tibble(dist = c("weibull", "lognormal", "exponential"))
 ```
 
 ```{r srv-metric-prose, eval = has_srv, echo = FALSE, results = "asis"}
