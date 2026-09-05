@@ -1,6 +1,6 @@
 # M65: Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -44,7 +44,7 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - [x] T3: `collect_selections()` generic, default method aborting with a classed condition in the `agreement()` shape (`R/nested-results-agreement.R:80-130`), and the `nested_results` method calling `check_any_completed()` then `warn_partial_summary(x, noun = "table")` before stacking `.selected`.
 - [x] T4: `collect_inner_metrics()` the same way over `.inner_metrics`.
 - [x] T5: One roxygen page documenting the three with executed examples on a small run, naming the completed-folds rule and that `.config` labels a row in that fold's own inner table; `_pkgdown.yml` rows under "Running the loop"; a NEWS entry naming the three; `agreement()` and `summary()` tests untouched and passing.
-- [ ] T6: `devtools::document()` (no diff), `devtools::test()`, `devtools::check()` 0/0/0, `air format --check` on the touched files.
+- [x] T6: `devtools::document()` (no diff), `devtools::test()`, `devtools::check()` 0/0/0, `air format --check` on the touched files.
 
 ## Work log
 
@@ -60,6 +60,7 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - 2026-09-05: T2, T3, T4 done: `stack_fold_column()` beside `fold_ids()`, the three readers and `abort_no_collect_method()` in `R/nested-results-collect.R`, `tune::collect_notes` re-exported; the file is green and `air format --check` clean.
 - 2026-09-05: T5 done: NEWS entry naming the three readers, `collect_selections` row under "Running the loop" (`pkgdown::check_pkgdown()` clean), the page's examples executed by hand; the full suite ran with one failure, the Bayesian method-table test in `test-nested-tune-bayes-oracles.R` that reads NAMESPACE, which gained calls for the three methods; `agreement()` and `summary()` files untouched and green.
 - 2026-09-05: correction to the T1 line: the red run's 26 is the reporter's capped listing (10 shown, 16 more announced), not a full count.
+- 2026-09-05: T6 done: `devtools::document()` no diff, `devtools::test()` green (the full run above plus the two re-run files), `devtools::check()` 0 errors, 0 warnings, 0 notes in 16m 50s, `air format --check` clean on `R/` and the two test files; status set to review.
 
 ## Decisions
 
