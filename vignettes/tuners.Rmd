@@ -135,8 +135,9 @@ Each fold scored `r 4 + 3` candidates on `r nrow(folds$inner_resamples[[1]])`
 inner resamples, which is `r nrow(folds$inner_resamples[[1]]) * (4 + 3)` fits
 per outer fold for tuning, against the
 `r nrow(folds$inner_resamples[[1]]) * nrow(grid)` the guide's grid costs. The
-print above notes that the folds did not search the same grid. That is the
-nature of the search rather than a fault: each fold proposes candidates from
+print above notes that the folds did not search the same grid: the same
+number of candidates each, but not the same ones. That is the nature of the
+search rather than a fault: each fold proposes candidates from
 its own scores, so no two folds need score the same set, and the note is
 there so that a reader of the summary does not mistake the selections for a
 vote over shared candidates.
@@ -240,14 +241,18 @@ cat(sprintf(
 ))
 ```
 
-The win/loss race records the same table, and reads the same way:
+The win/loss race records the same table, and reads the same way. Its fits
+per fold:
 
 ```{r race-win-loss, eval = has_race}
 set.seed(4)
 
 win_loss <- nested_tune_race_win_loss(wf, folds, grid = grid)
 
-win_loss$.inner_metrics[[1]]
+collect_inner_metrics(win_loss) |>
+  filter(.metric == "rmse") |>
+  group_by(id) |>
+  summarise(fits = sum(n))
 ```
 
 ## Simulated annealing
@@ -338,9 +343,8 @@ inner call is made.
 Every statistical step is tune's or finetune's, and the driver adds the loop
 around it. The differences a caller meets are these.
 
-A control reaches the inner call through `...`, as above, with `allow_par`
-forced off, `event_level` taken from the argument and the Bayesian `seed`
-supplied by the fold. Everything else on the control passes through as
+A control reaches the inner call through `...`, as above. Apart from the
+three slots the previous section names, everything on it passes through as
 given, including the slots that stop a search early, which is why one fold's
 `.inner_metrics` can be shorter than another's.
 

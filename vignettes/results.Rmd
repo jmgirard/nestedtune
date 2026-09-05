@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 
 Every driver in this package returns the same kind of object, a
 `nested_results`, and the getting-started guide, `vignette("nested-cv")`,
-reads three things off it: the print, the summary and the estimate. This page
+reads the print, the summary, the estimate and the selections off it. This page
 reads the whole object. It walks the columns one at a time, runs each of the
 readers on one result, shows what a run looks like when one outer fold fails,
 says which dplyr verbs keep the class and which shed it, and ends with the two
@@ -90,7 +90,8 @@ res
 ## What the columns hold
 
 The object is a tibble with one row per outer fold, and the print above
-shows its columns. Each holds one piece of what that fold did.
+shows most of its columns, `names()` the rest. Each holds one piece of what
+that fold did.
 
 ```{r columns}
 names(res)
@@ -119,8 +120,8 @@ res$.metrics[[1]]
 ```
 
 `.selected` is the candidate the fold's inner tuning chose, a one-row tibble
-of the tuned parameters. It is what `summary()`, `agreement()` and the
-default `autoplot()` read.
+of the tuned parameters. It is what `collect_selections()`, `summary()`,
+`agreement()` and the default `autoplot()` read.
 
 ```{r selected}
 res$.selected[[1]]
@@ -128,7 +129,8 @@ res$.selected[[1]]
 
 `.inner_metrics` is the whole table the inner search scored, every candidate
 on every inner resample, averaged. It is what the fold's selection was made
-from, and `vignette("tuners")` shows how its shape differs by search.
+from; `collect_inner_metrics()` stacks it across folds, and
+`vignette("tuners")` shows how its shape differs by search.
 
 ```{r inner-metrics}
 res$.inner_metrics[[1]]
@@ -179,6 +181,18 @@ rows, less `.config`, with the fold label beside them.
 collect_metrics(res)
 
 collect_metrics(res, summarize = FALSE)
+```
+
+`collect_selections()` and `collect_inner_metrics()` stack `.selected` and
+`.inner_metrics` over the folds that completed, with the fold label beside
+each row, so what every fold chose and everything every fold scored are read
+as one table each. `collect_notes()`, further down, does the same for
+`.notes` over every fold.
+
+```{r collect-stacked}
+collect_selections(res)
+
+collect_inner_metrics(res)
 ```
 
 `agreement()` counts the selections: one row per distinct combination the
@@ -357,16 +371,17 @@ class(res[, "id"])
 ```
 
 Both of those hand back the data and nothing more: a plain tibble print, no
-summary of the run, no `collect_metrics()`. That is the point. A four-row table
-cannot describe itself as a five-fold design, so it stops describing itself.
+summary of the run, no `collect_metrics()`. That is the point. A table that
+has lost a fold, or lost the columns the run wrote, cannot describe itself as
+a five-fold design, so it stops describing itself.
 To read a partial run, read the run: `collect_metrics(failed)` already
 averages the folds that completed, and warns that it did.
 
 ## Two more arguments: `event_level` and `eval_time`
 
 Every tuning driver takes two more arguments than the runs above used, and
-both reach tune untouched; `nested_final_fit()` reads them back from the
-results object instead. `event_level` is for classification: it names which
+both reach tune untouched; `nested_final_fit()` takes neither, and reads both
+back from the results object. `event_level` is for classification: it names which
 level of the outcome factor counts as the event, `"first"` unless you say
 otherwise, and it sets the same slot on the inner tuning and on the outer
 scoring fit at once. A regression or censored-regression run ignores it, as

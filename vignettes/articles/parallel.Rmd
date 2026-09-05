@@ -134,7 +134,7 @@ par_res
 ```
 
 The result carries no mark of how it was computed. That is deliberate,
-and the serial run below is why.
+and the serial run below shows what it buys.
 
 ## Stopping the pool
 
@@ -172,8 +172,8 @@ same
 ```
 
 `identical()` on the outer scores, the selections and the tuning seeds
-returns `r all(same)` for each. The two results are identical, and which
-one was computed on daemons is not recoverable from either. That is what
+returns `r all(same)` for each: the scores, the selections and the seeds
+match, and which run used daemons is not recoverable from either. That is what
 lets a pool be a matter of the session rather than of the analysis: a script
 gives the same answer on a laptop with no daemons and on a workstation with
 many.
@@ -190,8 +190,9 @@ indices plus one copy of the data per fold. Two things this does not reach,
 both of them objects you supply rather than anything the package builds. A
 recipe keeps a copy of the data it was created with, and a formula carries the
 environment it was written in, so a workflow built inside a function that
-holds a large object sends that object with every fold. Building the workflow
-at the top level avoids the second.
+holds a large object sends that object with every fold. The recipe's copy is
+the recipe's own record and travels with every fold; building the workflow at
+the top level avoids the second.
 
 ## Developing against daemons
 

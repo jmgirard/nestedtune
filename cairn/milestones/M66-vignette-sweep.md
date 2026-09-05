@@ -46,7 +46,7 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - [x] T3: `results.Rmd`: `select()` for the seed columns; `collect_notes(failed)` for both notes readings, the counts as `count(id)`; the `mutate()` example with a plain arithmetic column; `rlang::catch_cnd()` for the partial warning's class and message with the summary printed in a `warning = FALSE` chunk; `tibble()` for `surv_df`.
 - [x] T4: `tuners.Rmd`: `collect_inner_metrics(race)` with `filter()`, `group_by()` and `summarise()` for the fits per fold, `slice_min()` for the cheapest fold; the hidden count chunk may follow.
 - [x] T5: `articles/parallel.Rmd`: the dispatcher-less run in a `warning = FALSE` chunk, then `rlang::catch_cnd()` on a repeat call for the class, its message through `cli::ansi_strip()` (the M63 lesson); `articles/why-nest.Rmd`: the figure's long table via `tibble()` and `bind_rows()`.
-- [ ] T6: Prose pass: a fresh [O] reader over the six rendered pages for clarity, consistency between pages and plain style; every finding fixed or rejected with a one-line reason in this file's Decisions section.
+- [x] T6: Prose pass: a fresh [O] reader over the six rendered pages for clarity, consistency between pages and plain style; every finding fixed or rejected with a one-line reason in this file's Decisions section.
 - [ ] T7: Timings (median of three renders per page), `pkgdown::build_articles()`, `devtools::test()`, `devtools::check()` 0/0/0, `pkgdown::check_pkgdown()`, `air format --check`; the AC1, AC2 and AC6 sweeps run and recorded; NEWS entry.
 
 ## Work log
@@ -68,6 +68,14 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 
 - 2026-09-05: T7 started: NEWS entry written; the sweep script formatted by air; planted-page check shows every sweep class firing (idioms, prefix, attach order, guard, em dash, `M12`, a foreign `vignette()` name) with the peek, the hidden chunk and the inline span silent; `pkgdown::check_pkgdown()` clean. T6 reader and the test suite in flight.
 
+- 2026-09-05: T6 done. A fresh [O] reader over the six rendered pages returned 32 findings (nested-cv 9, estimate 6, results 7, tuners 4, parallel 3, why-nest 3); 28 fixed in the prose, one (results F16) by adding a `collect_selections(res)` and `collect_inner_metrics(res)` chunk to the readers section, one (tuners F25) by reading the win/loss race through `collect_inner_metrics()` too; four rejected, reasons in Decisions. The tuners F23 em dash lives in the results print method and goes to a candidate row. Sweep clean; tuners and results re-rendered.
+
 ## Decisions
+
+- 2026-09-05 (T6 prose pass): findings 2, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31 and 32 of the reader's list fixed as proposed or in equivalent words; F13's direction check confirmed the sentence had the sign wrong (the selection-time score is not reliably better-looking) and F14's figures confirmed against `references/tibshirani2009.md` as minimum CV error rates.
+- 2026-09-05 (T6 F1, rejected): the guide's notice says "guide" where the other pages say "page" because every other page calls it the getting-started guide, so the page names itself as the others name it.
+- 2026-09-05 (T6 F4, rejected): the guide counts distinct values per parameter with `n_distinct()` because that is the sentence's claim (how many values each parameter took); `agreement()` tabulates combinations and is introduced on the results page.
+- 2026-09-05 (T6 F10, rejected): "k-fold test error" is the cited source's name for the quantity (Bayle et al., 2026) and stays, the `v` in the same list item being this package's fold count.
+- 2026-09-05 (T6 F23, rejected here): the em dash in the results print's candidates line is package output, not page prose, and changing it re-records snapshots outside this milestone's scope; captured as a ROADMAP candidate row.
 
 ## Review
