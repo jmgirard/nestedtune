@@ -8,8 +8,8 @@
   `nested_tune_grid()`. The page prints the design, both medians and the
   distance of each from the true accuracy from the stored object, and draws
   both distributions across replicates against a line at the truth. The
-  script that produces the store, `vignettes/articles/why-nest-sim.R`, needs
-  the nnet package, which joins `Suggests`.
+  script that produces the store, `vignettes/articles/why-nest-sim.R`, is
+  not shipped either and says at its head what it needs.
 
 * A new site-only article, "Running the outer loop in parallel"
   (`articles/parallel` on the package site, not shipped in the package),

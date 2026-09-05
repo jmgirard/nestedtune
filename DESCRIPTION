@@ -35,7 +35,6 @@ Suggests:
     lobstr,
     mirai (>= 2.4.0),
     mlbench,
-    nnet,
     pkgload,
     R6,
     ranger,
