@@ -88,3 +88,4 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - After the fixes: `test-collect-readers.R` 15 tests, 0 failures; `devtools::document()` no diff; `air format --check` clean.
 - AC6 evidence, on the fixed head `49dd7ef`: `devtools::document()` no diff; `devtools::test()` full suite exit 0, every file `FAIL 0`; `devtools::check()` 0 errors, 0 warnings, 0 notes in 32m 27s (run beside the full test suite, hence the longer wall clock).
 - conversation: PR #75 — empty read (no reviews, no comments, no unresolved threads); CI on the pushed head a1f6b22 green on all eight checks, the fix commits not yet pushed.
+- 2026-09-05: step-7 approval: PR #75 approved for merge.
