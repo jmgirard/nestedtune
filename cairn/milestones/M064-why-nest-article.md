@@ -7,7 +7,7 @@
 - **Principles touched:** IP3, GP2
 - **Resolves:** —
 - **Surface tier:** user-facing — an article on the published site
-- **Branch/PR:** m064-why-nest-article
+- **Branch/PR:** m064-why-nest-article · https://github.com/tidymodels/nestedtune/pull/74
 
 ## Goal
 
@@ -22,13 +22,13 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 ## Acceptance criteria
 
 - [ ] AC1: `vignettes/articles/why-nest-sim.R` runs from a clean session with the package and `nnet` installed and writes `vignettes/articles/why-nest.rds`; a second run from the same seed writes an object `identical()` to the first once the `date` and `commit` fields are removed from both.
-- [ ] AC2: The stored object records `n`, `p`, the grid, the replicate count (at least 20), the seed, the null accuracy, the tolerance, the commit hash and the date it was produced, and the article prints each from the object rather than from prose.
-- [ ] AC3: In the stored object, the median over replicates of the flat best-candidate accuracy lies further from the null accuracy than the median nested estimate does, and the median nested estimate lies within the stored tolerance (0.05) of the null accuracy; the article states both medians as inline R over the object.
-- [ ] AC4: The built article's figure shows both quantities' distributions across replicates with a reference line at the stored null accuracy and carries a non-empty `fig.alt`.
-- [ ] AC5: `pkgdown::build_article("articles/why-nest")` succeeds on the development machine, and a fresh-process `rmarkdown::render()` of `vignettes/articles/why-nest.Rmd`, evaluating its chunks in that process rather than a child session, succeeds with `nnet`, `tune` and `nestedtune` all absent from `loadedNamespaces()` in that same process after the render returns.
-- [ ] AC6: The article cites Varma and Simon (2006) and lists it under `## References`, and the citation guard (M60) runs over the article from the source tree, not skipped, and passes, every entry the article lists backed by a shelf page.
+- [x] AC2: The stored object records `n`, `p`, the grid, the replicate count (at least 20), the seed, the null accuracy, the tolerance, the commit hash and the date it was produced, and the article prints each from the object rather than from prose.
+- [x] AC3: In the stored object, the median over replicates of the flat best-candidate accuracy lies further from the null accuracy than the median nested estimate does, and the median nested estimate lies within the stored tolerance (0.05) of the null accuracy; the article states both medians as inline R over the object.
+- [x] AC4: The built article's figure shows both quantities' distributions across replicates with a reference line at the stored null accuracy and carries a non-empty `fig.alt`.
+- [x] AC5: `pkgdown::build_article("articles/why-nest")` succeeds on the development machine, and a fresh-process `rmarkdown::render()` of `vignettes/articles/why-nest.Rmd`, evaluating its chunks in that process rather than a child session, succeeds with `nnet`, `tune` and `nestedtune` all absent from `loadedNamespaces()` in that same process after the render returns.
+- [x] AC6: The article cites Varma and Simon (2006) and lists it under `## References`, and the citation guard (M60) runs over the article from the source tree, not skipped, and passes, every entry the article lists backed by a shelf page.
 - [ ] AC7: The profile's `verify` slot is clean and `devtools::check()` reports no error, warning or note beyond those on the default branch.
-- [ ] AC8: `R CMD build`'s tarball listing (`untar(list = TRUE)`) contains no path under `vignettes/articles/`.
+- [x] AC8: `R CMD build`'s tarball listing (`untar(list = TRUE)`) contains no path under `vignettes/articles/`.
 
 ## Coverage
 
@@ -75,3 +75,15 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-05 (RR06 Q2): a repeatable measurement whose outcome is the criterion stays in the criterion with its instrument named; the command and its printed output go in T4 and the review evidence; the ipred mechanism goes to a lesson, not a criterion.
 - 2026-09-05 (RR06 Q5): the original AC5 is not ticked under any reading: a stub package is not "masked from `.libPaths()`", and under it "succeeds" is false.
 - 2026-09-05 (RR06 beyond the brief): a LESSONS line on checking an Import's recursive closure and a package's `Priority` before writing a masking or skip-on-absence criterion is scheduled for the review's post-merge hygiene, as the third instance after M61 (dials) and M57 (tibble), to be merged into the M06 line. The pkgdown job renders from the committed store, so the review evidence records the commit the store's `commit` field names.
+
+## Review
+
+- 2026-09-05: step 1: origin/main (69db830) is an ancestor of the branch head; nothing to merge. Step 2: draft PR #74 opened.
+- AC2 evidence (2026-09-05): `readRDS()` of the committed store lists `n` 60, `p` 200, a 20-row `grid`, `replicates` 30, `seed` 20260905, `null_accuracy` 0.5, `tolerance` 0.05, `commit` 3d715b6d…, `date` 2026-09-05; the built page (`pkgdown::build_article()`) prints each of these from the object, the commit hash, date and seed found in the HTML. Holds.
+- AC3 evidence (2026-09-05): from the store, median flat best 0.5667 and median nested 0.4583; distances from the null 0.0667 against 0.0417, the flat further; 0.0417 inside the 0.05 tolerance. The article states both medians as inline R over the object (`round(flat_median, 3)`, `round(nested_median, 3)`), the built page showing 0.567 and 0.458. Holds.
+- AC4 evidence (2026-09-05): `docs/articles/why-nest_files/figure-html/figure-1.png` rendered by the build and read: one panel, two columns of jittered points, a median crossbar on each, a dashed horizontal line at 0.5; the built HTML carries the chunk's non-empty `fig.alt` as the image's `alt`. Holds.
+- AC5 evidence (2026-09-05): `pkgdown::build_article("articles/why-nest")` exited 0 and wrote `docs/articles/why-nest.html`; the fresh-process `Rscript -e 'rmarkdown::render(...); print(c("nnet","tune","nestedtune") %in% loadedNamespaces())'` (default in-process knit, no child session) printed `FALSE FALSE FALSE`. Holds.
+- AC6 evidence (2026-09-05): the article cites Varma and Simon (2006) in four paragraphs and lists it under `## References` beside Ambroise and McLachlan (2002); `devtools::test(filter = "vignette-citations")` from the source tree ran 37 expectations, all passing, no skip; both entries have shelf pages (`cairn/references/varma2006.md`, `ambroise2002.md`). Holds.
+- AC8 evidence (2026-09-05): `R CMD build --no-build-vignettes` of the branch; `untar(list = TRUE)` lists 139 entries, none under `vignettes/articles/`; the four CRAN vignettes are the only `vignettes/` paths. Holds.
+- Consistency gate (2026-09-05): `cairn_validate.py` exit 0, all checks PASS, advisories only (sizing tripwire on M064's 8 criteria, references staleness on 18 shelf pages, both pre-existing); no DESIGN.md principle changed, `cairn_impact` skipped; `devtools::document()` no diff; `pkgdown::check_pkgdown()` no problems; README.md and README.Rmd last changed in the same commit; NEWS carries the article's entry with no milestone number; no new top-level file.
+- 2026-09-05: review step 3 in progress: AC2–AC6 and AC8 evidenced and ticked; AC1 (a third script run in a scratch dir), AC7 (`check()` and `test()`) and the three review lenses running. Checkpoint, half-done.
