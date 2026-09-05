@@ -98,10 +98,45 @@ one_replicate <- function(rep_seed) {
     metrics = metrics,
     control = tune::control_grid(verbose = FALSE)
   )
-  flat_best <- tune::show_best(flat, metric = "accuracy", n = 1)$mean
+  best <- tune::show_best(flat, metric = "accuracy", n = 1)
   nested <- nested_tune_grid(wf, nested_folds, grid = grid, metrics = metrics)
+  # A fold whose fit failed is dropped from both summaries with a warning, and
+  # its mean would then stand for a design that did not run. Stop instead.
+  if (best$n != v_outer || !all(nested$.completed)) {
+    stop(
+      "a fold failed (flat folds scored: ",
+      best$n,
+      " of ",
+      v_outer,
+      "; nested folds completed: ",
+      sum(nested$.completed),
+      " of ",
+      v_outer,
+      ")",
+      call. = FALSE
+    )
+  }
   nested_estimate <- collect_metrics(nested)$mean
-  c(flat_best = flat_best, nested_estimate = nested_estimate)
+  c(flat_best = best$mean, nested_estimate = nested_estimate)
+}
+
+# The commit is read before the run, so it names the tree the script ran from
+# rather than wherever HEAD sits when the run ends; a dirty tree is marked.
+commit <- tryCatch(
+  system2("git", c("rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE),
+  error = function(e) NA_character_,
+  warning = function(w) NA_character_
+)
+if (length(commit) != 1L) {
+  commit <- NA_character_
+}
+dirty <- tryCatch(
+  system2("git", c("status", "--porcelain"), stdout = TRUE, stderr = FALSE),
+  error = function(e) character(),
+  warning = function(w) character()
+)
+if (!is.na(commit) && length(dirty) > 0L) {
+  commit <- paste0(commit, "-dirty")
 }
 
 set.seed(seed)
@@ -126,15 +161,6 @@ results <- data.frame(
   flat_best = vapply(rows, `[[`, numeric(1), "flat_best"),
   nested_estimate = vapply(rows, `[[`, numeric(1), "nested_estimate")
 )
-
-commit <- tryCatch(
-  system2("git", c("rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE),
-  error = function(e) NA_character_,
-  warning = function(w) NA_character_
-)
-if (length(commit) != 1L) {
-  commit <- NA_character_
-}
 
 store <- list(
   n = n,

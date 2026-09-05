@@ -67,19 +67,20 @@ The same workflow is tuned twice on each replicate's data.
   estimate is the mean accuracy of each outer fold's winner on that fold's
   assessment rows.
 
-Both see the same grid and the same rows. What differs is whether the rows
-that score the winner took part in choosing it.
+Both see the same grid and the same rows, each run drawing its own fold
+assignment. What differs is whether the rows that score the winner took part
+in choosing it.
 
 ```{r design-table, echo = FALSE}
 knitr::kable(
   data.frame(
     setting = c(
-      "rows", "features", "candidates", "epochs", "outer folds",
-      "inner folds", "replicates", "seed"
+      "rows", "features", "candidates", "epochs", "weight cap (MaxNWts)",
+      "outer folds", "inner folds", "replicates", "seed"
     ),
     value = c(
-      sim$n, sim$p, nrow(sim$grid), sim$epochs, sim$v_outer, sim$v_inner,
-      sim$replicates, sim$seed
+      sim$n, sim$p, nrow(sim$grid), sim$epochs, sim$max_nwts, sim$v_outer,
+      sim$v_inner, sim$replicates, sim$seed
     )
   ),
   align = "lr"
@@ -104,8 +105,9 @@ c(flat = flat_median, nested = nested_median)
 Over `r sim$replicates` replicates the median of the flat run's best score is
 `r round(flat_median, 3)`, against a true accuracy of `r sim$null_accuracy`.
 The median nested estimate is `r round(nested_median, 3)`. The flat number
-sits `r round(flat_median - sim$null_accuracy, 3)` above the truth on data
-that carries no signal. The nested number sits
+sits `r round(abs(flat_median - sim$null_accuracy), 3)`
+`r if (flat_median < sim$null_accuracy) "below" else "above"` the truth on
+data that carries no signal. The nested number sits
 `r round(abs(nested_median - sim$null_accuracy), 3)`
 `r if (nested_median < sim$null_accuracy) "below" else "above"` it, inside the
 tolerance of `r sim$tolerance` the store carries.
@@ -125,12 +127,15 @@ long <- rbind(
 )
 long$quantity <- factor(long$quantity, levels = unique(long$quantity))
 
-set.seed(sim$seed)
 ggplot(long, aes(x = quantity, y = accuracy)) +
   geom_hline(yintercept = sim$null_accuracy, linetype = "dashed") +
-  geom_jitter(width = 0.15, height = 0, alpha = 0.6) +
+  geom_point(
+    position = position_jitter(width = 0.15, height = 0, seed = sim$seed),
+    alpha = 0.6
+  ) +
   stat_summary(
-    fun = median, geom = "crossbar", width = 0.4, linewidth = 0.6
+    fun = median, fun.min = median, fun.max = median,
+    geom = "crossbar", width = 0.4, linewidth = 0.6
   ) +
   labs(
     x = NULL,
@@ -144,22 +149,39 @@ ggplot(long, aes(x = quantity, y = accuracy)) +
   theme_minimal()
 ```
 
-Each point is one replicate. Both quantities vary from draw to draw, and the
-nested estimate varies more (a standard deviation of
-`r round(sd(sim$results$nested_estimate), 3)` against
-`r round(sd(sim$results$flat_best), 3)`), since each of its outer folds is
-scored on `r sim$n / sim$v_outer` rows. The flat run's best score is above
-the truth on `r sum(sim$results$flat_best > sim$null_accuracy)` of
-`r sim$replicates` replicates; the nested estimate is above it on
-`r sum(sim$results$nested_estimate > sim$null_accuracy)`.
+```{r counts, include = FALSE}
+tally <- function(x) {
+  c(
+    above = sum(x > sim$null_accuracy),
+    at = sum(x == sim$null_accuracy),
+    below = sum(x < sim$null_accuracy)
+  )
+}
+flat_tally <- tally(sim$results$flat_best)
+nested_tally <- tally(sim$results$nested_estimate)
+nested_mean <- mean(sim$results$nested_estimate)
+nested_se <- sd(sim$results$nested_estimate) / sqrt(sim$replicates)
+```
 
-The nested median sits a little below the truth rather than on it. That is
-what a split of a small sample with no signal does. When the rows a fold
-trains on lean toward one label, the network tends to predict that label,
-and the rows it is scored on are the rest of the sample, which lean the
-other way, so the fold's accuracy falls short of chance. The effect shrinks as the folds grow
-and is a property of scoring on held-out rows, not of nesting; it is the
-opposite sign from the selection bias the flat number carries.
+Each point is one replicate. Both quantities vary from draw to draw, with a
+standard deviation of `r round(sd(sim$results$flat_best), 3)` for the flat
+run's best score and `r round(sd(sim$results$nested_estimate), 3)` for the
+nested estimate. Of the `r sim$replicates` replicates, the flat run's best
+score is above the truth on `r flat_tally[["above"]]`, at it on
+`r flat_tally[["at"]]` and below it on `r flat_tally[["below"]]`; the nested
+estimate is above the truth on `r nested_tally[["above"]]`, at it on
+`r nested_tally[["at"]]` and below it on `r nested_tally[["below"]]`.
+
+The nested median sits a little below the truth rather than on it. The
+design gives no reason to expect that: every label is an independent coin
+toss, so whatever a fold's network predicts, the rows it is scored on agree
+with it half the time in expectation, and the nested estimate's expectation
+is the null accuracy. The mean nested estimate over the replicates is
+`r round(nested_mean, 3)`, `r round(abs(nested_mean - sim$null_accuracy), 3)`
+`r if (nested_mean < sim$null_accuracy) "below" else "above"` the truth
+against a standard error of `r round(nested_se, 3)`. The median is the
+summary the page holds to its tolerance, and on this many replicates it
+lands where the draws put it.
 
 ## Why the flat number is high
 
@@ -168,12 +190,16 @@ candidate on the same folds and reports the maximum. Each of those scores is
 an unbiased estimate of an accuracy that, on this data, is the same for every
 candidate. The maximum of a set of noisy estimates of one value is not an
 unbiased estimate of that value; it is biased upward, and more so the larger
-the set. Their expression for the probability that the minimum error over a
-grid of candidates falls below the truth is one minus one half to the power
-of the grid size, which for this page's `r nrow(sim$grid)` candidates is
-`r 1 - 0.5^nrow(sim$grid)`, indistinguishable from certainty. The best
-candidate's score describes how lucky the search was, not how good the
-winner is.
+the set. For candidates whose estimates are independent, their expression
+for the probability that the minimum error over the grid falls below the
+truth is one minus one half to the power of the grid size, so the chance
+that it does not is one half to that power, for this page's
+`r nrow(sim$grid)` candidates one in
+`r format(2^nrow(sim$grid), big.mark = ",", scientific = FALSE)`. Here the
+candidates are scored on the same folds, so their estimates are not
+independent and that figure overstates the case, but the direction is the
+same. The best candidate's score describes how lucky the search was, not how
+good the winner is.
 
 The nested run's outer folds are not part of that search. Each fold's winner
 is chosen on the inner folds and then scored once on rows the search never
@@ -192,20 +218,27 @@ parameters barely change its fit, would show a different gap, and on data
 with real signal the flat number is high for the same reason but the truth
 is no longer known. Varma and Simon (2006) report the same design with two
 other learners and much wider data, and Ambroise and McLachlan (2002) reach
-the same conclusion from labels permuted rather than drawn at random.
+a matching conclusion for feature selection rather than tuning, from labels
+permuted rather than drawn at random.
 
 The nested estimate is not free of every bias. Each outer fold's winner is
 fit on fewer rows than the model you would deploy, so on data with signal the
 nested number runs slightly pessimistic. `vignette("estimate")` sizes that.
-On this page there is no signal for a smaller training set to lose, so the
-effect has nothing to act on.
+On this page every label is an independent coin toss, so a training set of
+any size has the same true accuracy and the nested mean sits within a
+standard error of the truth. Varma and Simon (2006), whose null data fixes
+twenty rows per class, report a nested estimate 4.2 points pessimistic on
+it.
 
 ## Provenance
 
 The stored result was produced by `vignettes/articles/why-nest-sim.R` at
 commit `r sim$commit` on `r sim$date`, from seed `r sim$seed` under the
-`r sim$rng_kind[[1]]` generator, and the script writes the same object from
-the same seed apart from those two provenance fields. The tolerance the store
+`r sim$rng_kind[[1]]` generator. The commit is one on the branch that added
+this page, reachable through that pull request's history. On one machine and
+one set of package versions, the script writes the same object from the same
+seed apart from those two provenance fields; other versions of R or of the
+fitting packages may not reproduce the fits. The tolerance the store
 carries, `r sim$tolerance`, is the distance from the null accuracy inside
 which the nested median is held when the result is regenerated.
 

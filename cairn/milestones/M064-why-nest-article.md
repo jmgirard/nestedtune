@@ -27,7 +27,7 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - [x] AC4: The built article's figure shows both quantities' distributions across replicates with a reference line at the stored null accuracy and carries a non-empty `fig.alt`.
 - [x] AC5: `pkgdown::build_article("articles/why-nest")` succeeds on the development machine, and a fresh-process `rmarkdown::render()` of `vignettes/articles/why-nest.Rmd`, evaluating its chunks in that process rather than a child session, succeeds with `nnet`, `tune` and `nestedtune` all absent from `loadedNamespaces()` in that same process after the render returns.
 - [x] AC6: The article cites Varma and Simon (2006) and lists it under `## References`, and the citation guard (M60) runs over the article from the source tree, not skipped, and passes, every entry the article lists backed by a shelf page.
-- [ ] AC7: The profile's `verify` slot is clean and `devtools::check()` reports no error, warning or note beyond those on the default branch.
+- [x] AC7: The profile's `verify` slot is clean and `devtools::check()` reports no error, warning or note beyond those on the default branch.
 - [x] AC8: `R CMD build`'s tarball listing (`untar(list = TRUE)`) contains no path under `vignettes/articles/`.
 
 ## Coverage
@@ -87,3 +87,25 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - AC8 evidence (2026-09-05): `R CMD build --no-build-vignettes` of the branch; `untar(list = TRUE)` lists 139 entries, none under `vignettes/articles/`; the four CRAN vignettes are the only `vignettes/` paths. Holds.
 - Consistency gate (2026-09-05): `cairn_validate.py` exit 0, all checks PASS, advisories only (sizing tripwire on M064's 8 criteria, references staleness on 18 shelf pages, both pre-existing); no DESIGN.md principle changed, `cairn_impact` skipped; `devtools::document()` no diff; `pkgdown::check_pkgdown()` no problems; README.md and README.Rmd last changed in the same commit; NEWS carries the article's entry with no milestone number; no new top-level file.
 - 2026-09-05: review step 3 in progress: AC2–AC6 and AC8 evidenced and ticked; AC1 (a third script run in a scratch dir), AC7 (`check()` and `test()`) and the three review lenses running. Checkpoint, half-done.
+- AC7 evidence (2026-09-05): `devtools::test()` on the branch clean (no failure, no skip, exit 0); `devtools::check()` 0 errors, 0 warnings, 0 notes, so nothing beyond the default branch. Holds.
+- Step 5 reviewers (2026-09-05): [O] diff-bug 17 findings; [S] blame-history 2 notes, no defect; [S] prior-review record "no prior-review evidence", 0 findings (the one real GitHub thread is topepo's on PR #30, an untouched file). Dispositions below were applied on the branch before the gate and stand for the maintainer's acceptance or reversal there.
+- O1 (fix now): the article said the nested estimate varies more because each outer fold is scored on 12 rows; the flat run's folds are the same size, so the clause could not explain the gap. Removed; the two standard deviations are stated without a cause.
+- O2 (fix now): the paragraph explaining the below-null nested median (training rows leaning one way, assessment rows the other; "shrinks as the folds grow") was composed, not derived, and wrong for independently drawn labels. Rewritten from the store: with every label an independent coin toss the nested expectation is the null, the mean is 0.485, 0.015 below against a standard error of 0.016, the median landing where the draws put it.
+- O3 (fix now): the page asserted and then denied the nested expectation; O2's rewrite removes the contradiction.
+- O4 (fix now): "no signal for a smaller training set to lose" contradicted `varma2006.md`'s +4.2 null residual; replaced by the iid-label argument beside Varma and Simon's fixed class counts and their 4.2-point pessimistic nested estimate.
+- O5 (fix now): the `1 − (1/2)^K` sentence now states the independence premise, that the shared folds break it, and prints the chance as one in `2^K` (1,048,576) rather than a rounded probability.
+- O6 (fix now): the script stops when `show_best()$n != v_outer` or any outer fold's `.completed` is FALSE, so a dropped fold can no longer be stored as a full design (IP4); store regenerated (run 4).
+- O7 (fix now): the script reads the commit before the run and appends `-dirty` on a non-clean tree; the provenance paragraph says the commit is one on the branch that added the page, reachable through the pull request; store regenerated from the committed script.
+- O8 (fix now): the reproducibility sentence is limited to one machine and one set of package versions.
+- O9 (fix now): the flat distance takes `abs()` and a below/above switch like the nested one.
+- O10 (fix now): folded into O5; `format(2^K, big.mark = ",")` is exact for any grid size.
+- O11 (fix now): "each run drawing its own fold assignment" added.
+- O12 (fix now): Ambroise and McLachlan (2002) described as feature selection rather than tuning.
+- O13 (fix now): replicate counts given as above / at / below the truth (flat 25 / 3 / 2, nested 11 / 1 / 18).
+- O14 (fix now in part): `MaxNWts` added to the design table; the `v_outer` coupling rejected, the script and page being versioned together and the store's field being the flat run's fold count by construction.
+- O15 (reject): the script does not assert serial execution; IP2 promises worker-count invariance and each replicate seeds on entry.
+- O16 (fix now): the 93-character line was inside the paragraph O2 rewrote.
+- O17 (fix now): `position_jitter(seed = sim$seed)` replaces `set.seed()` before the plot; `fun.min` and `fun.max` set explicitly on the crossbar.
+- B1 (follow-up, already scheduled): the LESSONS line on an Import's recursive closure and `Priority` lands at post-merge hygiene, per the Decisions section.
+- B2 (reject): D-024 and D-025's "(D-050)" predates this branch and cites the cairn plugin's release-timing decision, as tracking-rules does; no collision in this repo's numbering.
+- Re-verification after the fixes (2026-09-05): `pkgdown::build_article()` exit 0; the figure re-rendered and read (same layout, points re-jittered); the fresh-process render printed `FALSE FALSE FALSE`; the guard ran 37 expectations, no skip; the script parses and `air format` is clean. AC2 and AC3 to be re-read against run 4's store.
