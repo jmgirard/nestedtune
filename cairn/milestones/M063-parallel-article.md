@@ -1,6 +1,6 @@
 # M63: A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
@@ -42,7 +42,7 @@ Ship `vignettes/articles/parallel.Rmd` ("Running the outer loop in parallel"), b
 - [x] T1: Draft the article with the guards (`requireNamespace()` on `mirai` and `ranger` + `knit_exit()`), the pool start, the run, the pool stop, and prose sections for the pre-flight, the wire, the `load_all()` caveat and interrupts drawn from `?nested_tune_grid`'s parallel section as cross-references rather than restatements; digits in prose inside backtick spans or inline R.
 - [x] T2: The identity chunk: the serial run under the same seed, `identical()` on the three columns, the inline read.
 - [x] T3: The dispatcher chunk: `daemons(2, dispatcher = FALSE)`, `withCallingHandlers()` capturing the warning, class printed, `daemons(0)` in the same chunk.
-- [ ] T4: `_pkgdown.yml` entry under an Articles section; `R CMD build` and `untar(list = TRUE)` for AC4; one masked build each for AC5; push and read the pkgdown job log for AC1; run the guard and the verify slot; after the merge, read the published `articles/parallel.html` for the `daemons(2)` output and log it.
+- [x] T4: `_pkgdown.yml` entry under an Articles section; `R CMD build` and `untar(list = TRUE)` for AC4; one masked build each for AC5; push and read the pkgdown job log for AC1; run the guard and the verify slot; after the merge, read the published `articles/parallel.html` for the `daemons(2)` output and log it.
 
 ## Work log
 
@@ -55,3 +55,5 @@ Ship `vignettes/articles/parallel.Rmd` ("Running the outer loop in parallel"), b
 - 2026-09-04: T2: the serial run under `set.seed(2)` and `identical()` on `.metrics`, `.selected` and `.tuning_seed` executed `TRUE` for each, the prose reading `all(same)` inline; the probe also showed `identical()` on the whole objects `TRUE`.
 - 2026-09-04: T3: `daemons(2, dispatcher = FALSE)`, the run under `withCallingHandlers()` muffling the warning, `class()` printed with `nestedtune_pool_not_cancellable` first, `.metrics` identical to the serial run, `daemons(0)` in the same chunk; the message shown through `cli::ansi_strip()` since the raw `conditionMessage()` carried ANSI codes into the HTML.
 - 2026-09-04: draft PR #73 opened from implement because no workflow runs on a branch push and `workflow_dispatch` on pkgdown.yaml would deploy the branch site to gh-pages; T4 reads AC1's CI half from the PR's pkgdown job, and review skips `gh pr create` (its resume route d).
+- 2026-09-04: T4: `R CMD build --no-build-vignettes` tarball lists 139 paths, none under `vignettes/articles/` (AC4); two masked builds from a symlinked library lacking `mirai` and then `ranger` each print the one notice naming the missing package and exit at `knit_exit()`, HTML text 1,090 chars against 10,152 full (AC5); pkgdown run 33943096826 on PR #73 head 4d925bd succeeded, its log listing `mirai 2.7.2` and `ranger 0.18.0` installed and `Reading vignettes/articles/parallel.Rmd` then `Writing articles/parallel.html` in 32 s (AC1 CI half); `devtools::test()` 7042 pass 0 fail, `pkgdown::check_pkgdown()` clean, citation guard 37 (AC6). The post-merge read of the published page waits for review, since the site deploys only from the default branch.
+- 2026-09-04: status → review; tracking commits after the PR push held local per the M50 lesson.
