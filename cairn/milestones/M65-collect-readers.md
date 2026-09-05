@@ -26,7 +26,7 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - [x] AC3: `collect_inner_metrics()` on a `nested_results` returns one row per row of each completed fold's `.inner_metrics` table: the recorded label columns, then the union of those tables' columns stacked with vctrs, `NA` where a fold lacks one; the partial warning and all-failed refusal are AC2's.
 - [x] AC4: Each of the three readers takes its label columns from the object's record: on a repeated outer design (`vfold_cv(v = 2, repeats = 2)`) every reader carries `id` and `id2`, and on the single-label design it carries `id` alone, asserted by tests on both designs.
 - [x] AC5: `collect_selections()` and `collect_inner_metrics()` are package-owned S3 generics whose default method aborts with a classed nestedtune condition, asserted by a test on a plain data frame.
-- [ ] AC6: `devtools::document()` produces no diff, `devtools::test()` is clean, and `devtools::check()` reports 0 errors, 0 warnings, 0 notes.
+- [x] AC6: `devtools::document()` produces no diff, `devtools::test()` is clean, and `devtools::check()` reports 0 errors, 0 warnings, 0 notes.
 
 ## Coverage
 
@@ -86,3 +86,4 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - F10 (O9, S2) noted: AC6 unticked while the T6 work-log line reports a clean check; the check is re-run here on the fixed head, its evidence below.
 - F11 (S3) rejected: method-table order in `test-nested-tune-bayes-oracles.R` is cosmetic; the test compares sets.
 - After the fixes: `test-collect-readers.R` 15 tests, 0 failures; `devtools::document()` no diff; `air format --check` clean.
+- AC6 evidence, on the fixed head `49dd7ef`: `devtools::document()` no diff; `devtools::test()` full suite exit 0, every file `FAIL 0`; `devtools::check()` 0 errors, 0 warnings, 0 notes in 32m 27s (run beside the full test suite, hence the longer wall clock).
