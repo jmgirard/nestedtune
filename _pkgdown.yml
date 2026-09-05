@@ -14,12 +14,16 @@ template:
 
 articles:
 - title: Guides
-  navbar: ~
+  navbar: Guides
   contents:
   - nested-cv
   - estimate
   - tuners
   - results
+- title: Articles
+  navbar: Articles
+  contents:
+  - articles/parallel
 
 reference:
 - title: Nested resampling
