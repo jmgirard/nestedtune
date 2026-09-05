@@ -16,31 +16,44 @@ knitr::opts_chunk$set(
 
 Every driver in this package returns the same kind of object, a
 `nested_results`, and the getting-started guide, `vignette("nested-cv")`,
-reads three things off it: the print, the summary and the estimate. This page
-reads the whole object. It walks the columns one at a time, runs each of the
-readers on one result, shows what a run looks like when one outer fold fails,
-says which dplyr verbs keep the class and which shed it, and ends with the two
-arguments the runs above do not use, `event_level` and `eval_time`.
-
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
+reads the print, the summary, the estimate, the selections and both plots
+off it. This page reads the whole object. It walks the columns one at a time,
+runs each of the readers on one result, shows what a run looks like when one
+outer fold fails, says which dplyr verbs keep the class and which shed it, and
+ends with the two arguments the runs above do not use, `event_level` and
+`eval_time`.
 
 ```{r deps, include = FALSE}
-has_ranger <- requireNamespace("ranger", quietly = TRUE)
+needed <- c("tidymodels", "ranger")
+missing_pkgs <- needed[
+  !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
+]
+has_deps <- length(missing_pkgs) == 0L
 ```
 
-```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "The runs below fit random forests with the **ranger** package, which is",
-  "not installed here, so the rest of this page has been skipped. Install",
-  "ranger and rebuild to see it.\n"
+  "This page attaches the **tidymodels** packages and fits random forests",
+  "with the **ranger** package.",
+  if (length(missing_pkgs) == 1L) {
+    sprintf("The **%s** package is not installed here,", missing_pkgs)
+  } else {
+    sprintf(
+      "The **%s** packages are not installed here,",
+      paste(missing_pkgs, collapse = "** and **")
+    )
+  },
+  "so the rest of this page has been skipped. Install",
+  if (length(missing_pkgs) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ## The run
@@ -78,7 +91,8 @@ res
 ## What the columns hold
 
 The object is a tibble with one row per outer fold, and the print above
-shows its columns. Each holds one piece of what that fold did.
+shows the columns that fit, its footer naming the rest. Each holds one
+piece of what that fold did.
 
 ```{r columns}
 names(res)
@@ -107,8 +121,8 @@ res$.metrics[[1]]
 ```
 
 `.selected` is the candidate the fold's inner tuning chose, a one-row tibble
-of the tuned parameters. It is what `summary()`, `agreement()` and the
-default `autoplot()` read.
+of the tuned parameters. It is what `collect_selections()`, `summary()`,
+`agreement()` and the default `autoplot()` read.
 
 ```{r selected}
 res$.selected[[1]]
@@ -116,7 +130,8 @@ res$.selected[[1]]
 
 `.inner_metrics` is the whole table the inner search scored, every candidate
 on every inner resample, averaged. It is what the fold's selection was made
-from, and `vignette("tuners")` shows how its shape differs by search.
+from; `collect_inner_metrics()` stacks it across folds, and
+`vignette("tuners")` shows how its shape differs by search.
 
 ```{r inner-metrics}
 res$.inner_metrics[[1]]
@@ -143,7 +158,7 @@ reproducibility section shows how to restore them, and the help pages for
 one fold by hand.
 
 ```{r seeds}
-res[, c(".tuning_seed", ".outer_fit_seed")]
+select(res, .tuning_seed, .outer_fit_seed)
 ```
 
 The description of the run itself rides on the object as attributes rather
@@ -167,6 +182,18 @@ rows, less `.config`, with the fold label beside them.
 collect_metrics(res)
 
 collect_metrics(res, summarize = FALSE)
+```
+
+`collect_selections()` and `collect_inner_metrics()` stack `.selected` and
+`.inner_metrics` over the folds that completed, with the fold label beside
+each row, so what every fold chose and everything every fold scored are read
+as one table each. `collect_notes()`, further down, does the same for
+`.notes` over every fold.
+
+```{r collect-stacked}
+collect_selections(res)
+
+collect_inner_metrics(res)
 ```
 
 `agreement()` counts the selections: one row per distinct combination the
@@ -206,9 +233,7 @@ car, the Maserati Bora, has far more horsepower than any other in `mtcars`,
 `r max(mtcars$hp)` against `r sort(mtcars$hp, decreasing = TRUE)[2]` for the
 next. The fold that holds it out cannot score it, and that fold fails.
 
-```{r failed-recipe, message = FALSE}
-library(recipes)
-
+```{r failed-recipe}
 rec <- recipe(mpg ~ ., data = mtcars) |>
   check_range(hp)
 
@@ -231,16 +256,26 @@ The run warns twice as it finishes: tune's own warning from the outer fit
 that produced nothing, then this package's, naming the fold. The chunk mutes
 tune's progress messages and keeps its warnings. The print counts the
 failure, `.completed` is `FALSE` for the fold that failed, and its `.notes`
-say where.
+say where. `collect_notes()` stacks every fold's `.notes` into one table with
+the fold label beside them, so the failed fold's notes are the rows carrying
+its label.
 
 ```{r failed-notes}
-which_failed <- which(!failed$.completed)
+failed_id <- failed |>
+  filter(!.completed) |>
+  pull(id)
 
-failed$.notes[[which_failed]][, c("location", "type", "note")]
+failed_id
+
+notes <- collect_notes(failed)
+
+failed_notes <- filter(notes, id == failed_id)
+
+select(failed_notes, location, type, note)
 ```
 
 The first row is this package's own note, and its `location` names the stage:
-`r failed$id[which_failed]` failed at the `r failed$.notes[[which_failed]]$location[1]`,
+`r failed_id` failed at the `r failed_notes$location[1]`,
 the fit and score on the outer split, after its inner tuning had finished.
 The rows after it are tune's notes about the cause, relabelled with the stage
 they came from. A fold that fails during inner tuning reads the same way with
@@ -252,16 +287,24 @@ held it out, and the range check refused that resample for every candidate.
 Some folds carry a second note of the same kind from the low end of the
 range, an inner resample that held out a car with less horsepower than any
 it trained on. Tuning still returned a candidate, from the inner resamples
-that ran, and the fold finished. Its notes say so.
+that ran, and the fold finished. Its notes say so. Counting the stacked
+notes by fold shows how many each carries (a fold with none would be absent
+from the count), and the first fold in the table other than the failed one
+reads like this:
 
 ```{r completed-notes}
-vapply(failed$.notes, nrow, integer(1))
+count(notes, id)
 
-noted <- which(failed$.completed & vapply(failed$.notes, nrow, integer(1)) > 0)
+noted_id <- notes |>
+  filter(id != failed_id) |>
+  slice(1) |>
+  pull(id)
 
-failed$id[noted[1]]
+noted_id
 
-failed$.notes[[noted[1]]][, c("location", "type", "note")]
+notes |>
+  filter(id == noted_id) |>
+  select(location, type, note)
 ```
 
 The label in parentheses names the inner resample, a fold of this outer
@@ -270,20 +313,23 @@ fold's own inner design, not another outer fold. So `.completed` being
 less than the whole inner design it was given.
 
 `summary()` on a run with a failed fold still answers, and warns first. The
-chunk below catches the warning to show its class and its message, then
-prints the summary it returned.
+first chunk below catches the warning with `rlang::catch_cnd()` to show its
+class and its message. The second prints the summary, with the warning
+muted.
 
-```{r failed-summary}
-partial <- withCallingHandlers(
+```{r failed-summary-warning}
+partial_warning <- rlang::catch_cnd(
   summary(failed),
-  warning = function(w) {
-    cat("class:", class(w)[1], "\n")
-    cat(conditionMessage(w), "\n")
-    invokeRestart("muffleWarning")
-  }
+  classes = "nestedtune_partial_summary"
 )
 
-partial
+class(partial_warning)
+
+cat(conditionMessage(partial_warning))
+```
+
+```{r failed-summary, warning = FALSE}
+summary(failed)
 ```
 
 The warning's class lets a script catch it and decide what a partial run is
@@ -291,12 +337,13 @@ worth. The message names how many folds the summary covers and how many the
 design asked for, and the summary itself describes the folds that ran: the
 selections are those `r sum(failed$.completed)` folds' selections, and the
 estimate is the mean over their `r sum(failed$.completed)` scores, with the
-failed fold absent rather than filled in. `collect_metrics()` and
-`agreement()` warn the same way, and `autoplot()` leaves the failed fold's
-place on its axis empty. A run in which no fold completed is different:
-`summary()` still describes it, but `collect_metrics()`, `agreement()`,
-`autoplot()` and `nested_final_fit()` refuse it, because there is no estimate
-to report for a design that did not execute.
+failed fold absent rather than filled in. `collect_metrics()`,
+`agreement()`, `collect_selections()` and `collect_inner_metrics()` warn the
+same way, and `autoplot()` leaves the failed fold's place on its axis empty.
+A run in which no fold completed is different: `summary()` still describes
+it, but `collect_metrics()`, `agreement()`, `collect_selections()`,
+`collect_inner_metrics()`, `autoplot()` and `nested_final_fit()` refuse it,
+because there is no estimate to report for a design that did not execute.
 
 ## What dplyr keeps and what it sheds
 
@@ -308,19 +355,16 @@ an object that no longer holds what the run produced cannot answer for the
 run. Adding a column keeps the class.
 
 ```{r dplyr-mutate}
-with_rmse <- dplyr::mutate(
-  res,
-  rmse = vapply(.metrics, function(m) m$.estimate[m$.metric == "rmse"], 1)
-)
+with_position <- mutate(res, position = row_number())
 
-class(with_rmse)
+class(with_position)
 ```
 
 Dropping a fold sheds it. The natural case is keeping only the folds that
 completed on the run above, which removes one row.
 
 ```{r dplyr-filter}
-completed_only <- dplyr::filter(failed, .completed)
+completed_only <- filter(failed, .completed)
 
 class(completed_only)
 ```
@@ -333,17 +377,18 @@ class(res[, "id"])
 ```
 
 Both of those hand back the data and nothing more: a plain tibble print, no
-summary of the run, no `collect_metrics()`. That is the point. A four-row table
-cannot describe itself as a five-fold design, so it stops describing itself.
+summary of the run, no `collect_metrics()`. That is the point. A table that
+has lost a fold, or lost the columns the run wrote, cannot describe itself as
+a five-fold design, so it stops describing itself.
 To read a partial run, read the run: `collect_metrics(failed)` already
 averages the folds that completed, and warns that it did.
 
 ## Two more arguments: `event_level` and `eval_time`
 
 Every tuning driver takes two more arguments than the runs above used, and
-both reach tune untouched; `nested_final_fit()` reads them back from the
-results object instead. `event_level` is for classification: it names which
-level of the outcome factor counts as the event, `"first"` unless you say
+both reach tune untouched; `nested_final_fit()` takes neither, and reads both
+back from the results object. `event_level` is for classification: it names
+which level of the outcome factor counts as the event, `"first"` unless you say
 otherwise, and it sets the same slot on the inner tuning and on the outer
 scoring fit at once. A regression or censored-regression run ignores it, as
 tune does. `eval_time` is for censored regression, and it changes the shape
@@ -386,7 +431,7 @@ event_time <- ifelse(
 )
 censor_time <- runif(n, 3, 60)
 
-surv_df <- data.frame(
+surv_df <- tibble(
   time = pmin(event_time, censor_time),
   event = as.numeric(event_time <= censor_time),
   x1 = x1,
@@ -412,7 +457,7 @@ surv_spec <- survival_reg(dist = tune()) |>
 
 surv_wf <- workflow(survival::Surv(time, event) ~ x1 + x2, surv_spec)
 
-surv_grid <- data.frame(dist = c("weibull", "lognormal", "exponential"))
+surv_grid <- tibble(dist = c("weibull", "lognormal", "exponential"))
 ```
 
 ```{r srv-metric-prose, eval = has_srv, echo = FALSE, results = "asis"}
@@ -441,7 +486,7 @@ surv_res <- nested_tune_grid(
   surv_wf,
   surv_folds,
   grid = surv_grid,
-  metrics = yardstick::metric_set(yardstick::brier_survival),
+  metrics = metric_set(brier_survival),
   eval_time = c(0.5, 10)
 )
 

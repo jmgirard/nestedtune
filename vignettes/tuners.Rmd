@@ -24,25 +24,37 @@ each fold records about its search, shows how a tune control object reaches
 the inner call, and says what differs from calling tune or finetune
 directly.
 
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
-
 ```{r deps, include = FALSE}
-has_ranger <- requireNamespace("ranger", quietly = TRUE)
+needed <- c("tidymodels", "ranger")
+missing_pkgs <- needed[
+  !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
+]
+has_deps <- length(missing_pkgs) == 0L
 ```
 
-```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "The runs below fit random forests with the **ranger** package, which is",
-  "not installed here, so the rest of this page has been skipped. Install",
-  "ranger and rebuild to see it.\n"
+  "This page attaches the **tidymodels** packages and fits random forests",
+  "with the **ranger** package.",
+  if (length(missing_pkgs) == 1L) {
+    sprintf("The **%s** package is not installed here,", missing_pkgs)
+  } else {
+    sprintf(
+      "The **%s** packages are not installed here,",
+      paste(missing_pkgs, collapse = "** and **")
+    )
+  },
+  "so the rest of this page has been skipped. Install",
+  if (length(missing_pkgs) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ```{r deps-optional, include = FALSE}
@@ -90,9 +102,9 @@ the size of an inner analysis set here.
 
 ```{r param-info}
 params <- update(
-  tune::extract_parameter_set_dials(wf),
-  mtry = dials::mtry(c(2L, 8L)),
-  min_n = dials::min_n(c(2L, 10L))
+  extract_parameter_set_dials(wf),
+  mtry = mtry(c(2L, 8L)),
+  min_n = min_n(c(2L, 10L))
 )
 
 params
@@ -124,8 +136,9 @@ Each fold scored `r 4 + 3` candidates on `r nrow(folds$inner_resamples[[1]])`
 inner resamples, which is `r nrow(folds$inner_resamples[[1]]) * (4 + 3)` fits
 per outer fold for tuning, against the
 `r nrow(folds$inner_resamples[[1]]) * nrow(grid)` the guide's grid costs. The
-print above notes that the folds did not search the same grid. That is the
-nature of the search rather than a fault: each fold proposes candidates from
+print above notes that the folds did not search the same grid: the same
+number of candidates each, but not the same ones. That is the nature of the
+search rather than a fault: each fold proposes candidates from
 its own scores, so no two folds need score the same set, and the note is
 there so that a reader of the summary does not mistake the selections for a
 vote over shared candidates.
@@ -187,27 +200,29 @@ race
 
 A fold's `.inner_metrics` from a race is the whole grid, and the `n` column
 says how many inner resamples each candidate was scored on before it was
-dropped or the race ended. The fold that spent the fewest fits is the one
-where elimination did the most work:
+dropped or the race ended. `collect_inner_metrics()` stacks those tables
+with the fold label beside them, so summing `n` over one metric's rows
+counts the fits each fold spent on tuning. The fold that spent the fewest
+is the one where elimination did the most work:
 
 ```{r race-anova-inner, eval = has_race}
-fits <- vapply(
-  race$.inner_metrics,
-  function(m) sum(m$n[m$.metric == "rmse"]),
-  numeric(1)
-)
-names(fits) <- race$id
-fits
+fits_per_fold <- collect_inner_metrics(race) |>
+  filter(.metric == "rmse") |>
+  group_by(id) |>
+  summarise(fits = sum(n))
 
-cheapest <- which.min(fits)
+fits_per_fold
 
-race$.inner_metrics[[cheapest]]
+cheapest <- slice_min(fits_per_fold, fits, n = 1, with_ties = FALSE)
+
+collect_inner_metrics(race) |>
+  filter(id == cheapest$id)
 ```
 
 ```{r race-anova-count, eval = has_race, include = FALSE}
 inner_v <- nrow(folds$inner_resamples[[1]])
-rmse_rows <- race$.inner_metrics[[cheapest]]
-rmse_rows <- rmse_rows[rmse_rows$.metric == "rmse", ]
+rmse_rows <- collect_inner_metrics(race) |>
+  filter(id == cheapest$id, .metric == "rmse")
 eliminated <- sum(rmse_rows$n < inner_v)
 ```
 
@@ -218,23 +233,27 @@ cat(sprintf(
     "resamples, so they were dropped before the race ended, and the fold ",
     "spent %d fits on tuning where the full grid costs %d.\n"
   ),
-  race$id[cheapest],
+  cheapest$id,
   eliminated,
   nrow(rmse_rows),
   inner_v,
-  fits[[cheapest]],
+  cheapest$fits,
   inner_v * nrow(grid)
 ))
 ```
 
-The win/loss race records the same table, and reads the same way:
+The win/loss race records the same table, and reads the same way. Its fits
+per fold:
 
 ```{r race-win-loss, eval = has_race}
 set.seed(4)
 
 win_loss <- nested_tune_race_win_loss(wf, folds, grid = grid)
 
-win_loss$.inner_metrics[[1]]
+collect_inner_metrics(win_loss) |>
+  filter(.metric == "rmse") |>
+  group_by(id) |>
+  summarise(fits = sum(n))
 ```
 
 ## Simulated annealing
@@ -283,8 +302,8 @@ cat(sprintf(
 
 ## Passing a control through `...`
 
-None of the four drivers on this page has a `control` argument of its own. A control object of
-the matching kind, `tune::control_bayes()` for the Bayesian driver,
+None of the four drivers on this page has a `control` argument of its own. A
+control object of the matching kind, `control_bayes()` for the Bayesian driver,
 `finetune::control_race()` and `finetune::control_sim_anneal()` for the
 others, is passed as `control` through `...`, and reaches the inner tuning
 call in every fold. Here the Bayesian run is repeated under a control that
@@ -299,7 +318,7 @@ stopped <- nested_tune_bayes(
   param_info = params,
   initial = 4,
   iter = 3,
-  control = tune::control_bayes(verbose = FALSE, no_improve = 3)
+  control = control_bayes(verbose = FALSE, no_improve = 3)
 )
 
 procedure <- attr(stopped, "procedure")
@@ -325,9 +344,8 @@ inner call is made.
 Every statistical step is tune's or finetune's, and the driver adds the loop
 around it. The differences a caller meets are these.
 
-A control reaches the inner call through `...`, as above, with `allow_par`
-forced off, `event_level` taken from the argument and the Bayesian `seed`
-supplied by the fold. Everything else on the control passes through as
+A control reaches the inner call through `...`, as above. Apart from the
+three slots the previous section names, everything on it passes through as
 given, including the slots that stop a search early, which is why one fold's
 `.inner_metrics` can be shorter than another's.
 

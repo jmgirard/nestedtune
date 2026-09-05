@@ -26,15 +26,8 @@ each daemon, what to do while developing the package, and how a run stops.
 `?nested_tune_grid` carries the reference version of each of those under its
 parallel section. This page shows them running.
 
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
-
 ```{r deps, include = FALSE}
-needed <- c("mirai", "ranger")
+needed <- c("tidymodels", "mirai", "ranger")
 missing_pkgs <- needed[
   !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
 ]
@@ -43,8 +36,8 @@ has_deps <- length(missing_pkgs) == 0L
 
 ```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "This page runs the outer loop on **mirai** daemons and fits random",
-  "forests with the **ranger** package.",
+  "This page attaches the **tidymodels** packages, runs the outer loop on",
+  "**mirai** daemons and fits random forests with the **ranger** package.",
   if (length(missing_pkgs) == 1L) {
     sprintf("The **%s** package is not installed here,", missing_pkgs)
   } else {
@@ -59,6 +52,11 @@ cat(
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ## The design and the workflow
@@ -136,7 +134,7 @@ par_res
 ```
 
 The result carries no mark of how it was computed. That is deliberate,
-and the serial run below is why.
+and the serial run below shows what it buys.
 
 ## Stopping the pool
 
@@ -174,8 +172,8 @@ same
 ```
 
 `identical()` on the outer scores, the selections and the tuning seeds
-returns `r all(same)` for each. The two results are identical, and which
-one was computed on daemons is not recoverable from either. That is what
+returns `r all(same)` for each: the scores, the selections and the seeds
+match, and which run used daemons is not recoverable from either. That is what
 lets a pool be a matter of the session rather than of the analysis: a script
 gives the same answer on a laptop with no daemons and on a workstation with
 many.
@@ -192,8 +190,9 @@ indices plus one copy of the data per fold. Two things this does not reach,
 both of them objects you supply rather than anything the package builds. A
 recipe keeps a copy of the data it was created with, and a formula carries the
 environment it was written in, so a workflow built inside a function that
-holds a large object sends that object with every fold. Building the workflow
-at the top level avoids the second.
+holds a large object sends that object with every fold. The recipe's copy is
+the recipe's own record and travels with every fold; building the workflow at
+the top level avoids the second.
 
 ## Developing against daemons
 
@@ -231,27 +230,29 @@ pool are correct, and it is not refused. What it lacks is the ability to
 stop, and the call says so at dispatch with a warning of class
 `nestedtune_pool_not_cancellable`, once per run.
 
-Here is that pool, with the warning caught by a handler and its class
-printed. The results it returns are the same as before.
+Here is that pool. The first chunk runs the loop on it with the warning
+muted and checks the result against the serial run. The second repeats the
+call and catches the warning with `rlang::catch_cnd()` to show its class.
 
-```{r no-dispatcher}
+```{r no-dispatcher, warning = FALSE}
 mirai::daemons(2, dispatcher = FALSE)
-
-caught <- NULL
 
 set.seed(2)
 
-nd_res <- withCallingHandlers(
+nd_res <- nested_tune_grid(wf, folds, grid = grid)
+
+identical(nd_res$.metrics, ser_res$.metrics)
+```
+
+```{r no-dispatcher-warning}
+set.seed(2)
+
+caught <- rlang::catch_cnd(
   nested_tune_grid(wf, folds, grid = grid),
-  nestedtune_pool_not_cancellable = function(w) {
-    caught <<- w
-    invokeRestart("muffleWarning")
-  }
+  classes = "nestedtune_pool_not_cancellable"
 )
 
 class(caught)
-
-identical(nd_res$.metrics, ser_res$.metrics)
 
 mirai::daemons(0)
 ```

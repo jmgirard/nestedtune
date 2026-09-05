@@ -30,27 +30,41 @@ What comes back is a property of the procedure, never of any one fitted model.
 The model you eventually deploy is a separate object, produced further down
 this page, and it has no honest performance number of its own. This page walks
 the path from a design to a write-up. What the estimate means, and what it does
-not, is the subject of `vignette("estimate")`.
-
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
+not, is the subject of `vignette("estimate")`; `vignette("results")` reads the
+whole results object, and `vignette("tuners")` swaps in the other inner
+searches.
 
 ```{r deps, include = FALSE}
-has_ranger <- requireNamespace("ranger", quietly = TRUE)
+needed <- c("tidymodels", "ranger")
+missing_pkgs <- needed[
+  !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
+]
+has_deps <- length(missing_pkgs) == 0L
 ```
 
-```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "The worked example below fits random forests with the **ranger** package,",
-  "which is not installed here, so the rest of this guide has been skipped.",
-  "Install ranger and rebuild to see it.\n"
+  "This guide attaches the **tidymodels** packages and fits random forests",
+  "with the **ranger** package.",
+  if (length(missing_pkgs) == 1L) {
+    sprintf("The **%s** package is not installed here,", missing_pkgs)
+  } else {
+    sprintf(
+      "The **%s** packages are not installed here,",
+      paste(missing_pkgs, collapse = "** and **")
+    )
+  },
+  "so the rest of this guide has been skipped. Install",
+  if (length(missing_pkgs) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ## The design
@@ -80,8 +94,9 @@ folds$inner_resamples[[1]]
 
 `mtcars` has `r nrow(mtcars)` rows, which keeps this page fast to build. With
 that little data the tuning step is unstable, and the fold-to-fold selections
-further down show it directly. It is not the case where nesting removes the
-most. That is wide data searched hard, and `vignette("estimate")` says why.
+further down show it directly. This example is not where nesting removes the
+most bias; that is wide data searched hard, and `vignette("estimate")` says
+why.
 
 ## The model and the grid
 
@@ -134,7 +149,7 @@ summary(res)
 est <- collect_metrics(res)
 est
 
-rmse_row <- est[est$.metric == "rmse", ]
+rmse_row <- filter(est, .metric == "rmse")
 ```
 
 Report that. The RMSE of `r round(rmse_row$mean, 2)` is the mean of
@@ -148,19 +163,20 @@ why two of these numbers cannot be subtracted to compare workflows.
 
 ## What each fold chose
 
-The summary above reported this, and `.selected` holds it exactly: a list
-column of one-row tibbles, one per outer fold, each holding the parameters that
-fold's inner tuning chose. Stacked up, with the fold each came from:
+The summary above listed what each fold selected, and `.selected` is where
+those choices live: a list column of one-row tibbles, one per outer fold, each
+holding the parameters that fold's inner tuning chose. `collect_selections()`
+stacks them, with the fold each came from beside it:
 
 ```{r selected}
-selected <- do.call(rbind, res$.selected)
+selected <- collect_selections(res)
 
-data.frame(fold = res$id, mtry = selected$mtry, min_n = selected$min_n)
+selected
 ```
 
 ```{r instability}
-n_mtry <- length(unique(selected$mtry))
-n_min_n <- length(unique(selected$min_n))
+n_mtry <- n_distinct(selected$mtry)
+n_min_n <- n_distinct(selected$min_n)
 ```
 
 Across `r nrow(res)` outer folds, `mtry` took `r n_mtry` distinct selected
@@ -168,8 +184,9 @@ values and `min_n` took `r n_min_n`. Most tools throw this away. nestedtune
 keeps it, because it is information about the procedure rather than noise in
 it.
 
-`autoplot()` draws the same thing, one panel per tuned parameter and one point
-per outer fold. A flat row means the folds agreed. Scatter means they did not.
+`autoplot()` draws those same selections, one panel per tuned parameter and
+one point per outer fold. A flat row means the folds agreed. Scatter means
+they did not.
 
 ```{r autoplot-parameters, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per tuned parameter, with one point per outer fold at the value that fold's inner tuning selected."}
 autoplot(res)
@@ -188,7 +205,10 @@ The per-fold scores are worth a look for the same reason:
 per_fold <- collect_metrics(res, summarize = FALSE)
 per_fold
 
-fold_rmse <- per_fold$.estimate[per_fold$.metric == "rmse"]
+fold_rmse <- per_fold |>
+  filter(.metric == "rmse") |>
+  pull(.estimate)
+
 c(sd = sd(fold_rmse), std_err = sd(fold_rmse) / sqrt(length(fold_rmse)))
 ```
 
@@ -200,7 +220,7 @@ the second as though it described the folds understates their disagreement.
 
 The other view of `autoplot()` shows that spread, with the dashed line at the
 nested estimate. It is the same number `collect_metrics()` reports, so the
-figure and the summary cannot drift apart.
+figure and the reported estimate cannot drift apart.
 
 ```{r autoplot-performance, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per metric, with one point per outer fold's score and a dashed line at the mean across folds."}
 autoplot(res, type = "performance")
@@ -212,8 +232,8 @@ Nothing above produced a model you can predict with, and that is deliberate.
 The estimate describes the procedure. The model is a separate object, built by
 running that same procedure once more with the whole dataset in hand. The
 procedure is read from `res` (the design's inner resampling specification, the
-grid, the metrics), so it cannot be restated: the model and the estimate come
-from one search.
+grid, the metrics), so you cannot accidentally specify it differently: the
+model and the estimate come from one search.
 
 ```{r final}
 set.seed(3)
@@ -234,29 +254,31 @@ workflow's own methods, and `extract_workflow()` returns the workflow itself:
 predict(final, new_data = mtcars[1:3, ])
 ```
 
-`final$tuning` is the tuning run this model's parameters were selected from,
-and its best score is the number a user is most tempted to report:
+`extract_tune_results()` returns the tuning run this model's parameters were
+selected from, an ordinary tune result, and `show_best()` on it gives the
+number a user is most tempted to report:
 
 ```{r comparison}
-selection_scores <- collect_metrics(final$tuning)
-selection_rmse <- selection_scores[selection_scores$.metric == "rmse", ]
-best_selection_rmse <- min(selection_rmse$mean)
+best_selection <- extract_tune_results(final) |>
+  show_best(metric = "rmse", n = 1)
 
-data.frame(
+best_selection
+
+tibble(
   quantity = c("nested estimate (report this)", "best selection-time score"),
-  rmse = c(rmse_row$mean, best_selection_rmse)
+  rmse = c(rmse_row$mean, best_selection$mean)
 )
 ```
 
 The selection-time score is
-`r ifelse(best_selection_rmse < rmse_row$mean, "lower", "higher")` than the
-nested estimate here, `r round(best_selection_rmse, 2)` against
+`r ifelse(best_selection$mean < rmse_row$mean, "lower", "higher")` than the
+nested estimate here, `r round(best_selection$mean, 2)` against
 `r round(rmse_row$mean, 2)`. Do not read the direction as the lesson. With
 `r nrow(mtcars)` rows a difference this size is well inside what resampling
 noise produces, and the point stands whichever way it falls: the selection-time
 number was computed on the very resamples that chose the winner, so it is not
 an estimate of performance on anything. It is kept on the object because it is
-the record of what selection saw, and `collect_metrics()` will hand it over
+the record of what selection saw, and tune's readers will hand it over
 without warning you.
 
 The model in hand has no honest number of its own. Everything computable from
@@ -268,11 +290,11 @@ what they would surface is the selection-time score dressed as a performance
 number.
 
 ```{r refusals, error = TRUE}
-tune::show_best(res, metric = "rmse")
+show_best(res, metric = "rmse")
 ```
 
 ```{r refusals-final, error = TRUE}
-tune::select_best(final, metric = "rmse")
+select_best(final, metric = "rmse")
 ```
 
 ## Where this example sits
@@ -292,7 +314,8 @@ where nesting pays best.
 Seed the session before the call, as elsewhere in tidymodels. Neither function
 takes a seed of its own. Each draws and pins its own per-step seeds from the
 session state instead, and stores them, so any single piece is reproducible by
-hand:
+hand. The final fit carries the two seeds too, as `tuning_seed` and
+`fit_seed`:
 
 ```{r seeds}
 res$.tuning_seed
