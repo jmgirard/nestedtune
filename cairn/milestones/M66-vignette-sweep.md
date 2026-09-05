@@ -1,6 +1,6 @@
 # M66: The six vignette pages read the results through the package's readers under `library(tidymodels)`, and take a prose pass
 
-- **Status:** blocked
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M65
 - **Driving RR:** —
@@ -47,7 +47,7 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - [x] T4: `tuners.Rmd`: `collect_inner_metrics(race)` with `filter()`, `group_by()` and `summarise()` for the fits per fold, `slice_min()` for the cheapest fold; the hidden count chunk may follow.
 - [x] T5: `articles/parallel.Rmd`: the dispatcher-less run in a `warning = FALSE` chunk, then `rlang::catch_cnd()` on a repeat call for the class, its message through `cli::ansi_strip()` (the M63 lesson); `articles/why-nest.Rmd`: the figure's long table via `tibble()` and `bind_rows()`.
 - [x] T6: Prose pass: a fresh [O] reader over the six rendered pages for clarity, consistency between pages and plain style; every finding fixed or rejected with a one-line reason in this file's Decisions section.
-- [ ] T7: Timings (median of three renders per page), `pkgdown::build_articles()`, `devtools::test()`, `devtools::check()` 0/0/0, `pkgdown::check_pkgdown()`, `air format --check`; the AC1, AC2 and AC6 sweeps run and recorded; NEWS entry.
+- [x] T7: Timings (median of three renders per page), `pkgdown::build_articles()`, `devtools::test()`, `devtools::check()` 0/0/0, `pkgdown::check_pkgdown()`, `air format --check`; the AC1, AC2 and AC6 sweeps run and recorded; NEWS entry.
 
 ## Work log
 
@@ -73,6 +73,8 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - 2026-09-05: T7: `test-vignette-citations.R` passes and the AC6 grep finds nothing on e26e722. First AC5 timing attempt on e26e722 under outside load (a game and a lualatex job each near a full core, load average 15.8): medians nested-cv 27.0 s, estimate 0.2 s, results 26.2 s, tuners 56.1 s (runs 143.0 / 36.9 / 56.1), total 109.5 s; tuners over its 45 s cap on that run, to be re-timed on a quieter machine (the T1 render measured it at 33.1 s). `devtools::check()` started.
 
 - 2026-09-05: T7 all but the timings: `devtools::check()` 0 errors, 0 warnings, 0 notes (25m 54s); `pkgdown::build_articles()` renders both site articles with mirai and ranger; `pkgdown::check_pkgdown()` clean; `air format --check` clean; `devtools::test()` green; the AC1/AC2 sweep (`Rscript benchmarks/sweep-vignette-idioms.R`) and the AC6 grep clean on 542ac4c. Second AC5 run at load average 12 (the game, a lualatex job, and the user's own `devtools::test()` and a tidymedia `devtools::check()` in other sessions): medians nested-cv 24.2 s, estimate 0.7 s, results 49.2 s, tuners 146.1 s (runs 146.1 / 147.0 / 104.1), total 220.2 s; ranger's fits are multithreaded, so the page's elapsed time tracks the contention. Blocked: AC5 needs three renders per page on a machine without that outside load; resume with `/milestone-implement M66` runs the timing script once and, under the caps, sets review.
+
+- 2026-09-05: T7 done. AC5 timings on 5a29070 (`Rscript benchmarks/time-vignettes.R <dir>`), the game and the lualatex job gone and one outside `devtools::test()` on one core, load average 7.5 falling to 5.9: medians nested-cv 5.7 s, estimate 0.2 s, results 10.8 s, tuners 31.9 s (runs 31.9 / 31.7 / 32.7), total 48.5 s; all four under the caps. An earlier run this session at load average 11.8 gave tuners 131.4 s and total 175.5 s; an A/B on main's `tuners.Rmd` under that same load rendered in 135.3 and 131.3 s against the branch's 129.1 and 79.1 s, so the excess was contention and the branch's page is no slower than main's. `benchmarks/time-vignettes.R` sits under the `.Rbuildignore`d `benchmarks/` and passes `air format --check`. Status set to review.
 
 ## Decisions
 
