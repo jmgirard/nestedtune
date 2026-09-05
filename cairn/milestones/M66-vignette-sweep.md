@@ -42,7 +42,7 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 ## Tasks
 
 - [x] T1: Install tidymodels locally (absent on 2026-09-05); add it to Suggests; on each of the five code pages fold `requireNamespace("tidymodels")` into the existing `has_*` guard so one notice names what is missing, and replace the libraries chunk with `library(tidymodels)` then `library(nestedtune)`; drop `library(recipes)` and `library(ggplot2)` where tidymodels attaches them; strip `tune::`, `dplyr::`, `dials::`, `yardstick::`, `tibble::` prefixes.
-- [ ] T2: `nested-cv.Rmd`: `filter()` for the rmse rows; `collect_selections(res)` for the fold table and `n_distinct()` for the counts; `tibble()` for the comparison table; `extract_tune_results(final)` piped to `show_best(metric = "rmse", n = 1)` for the selection-time score, in the hidden writeup chunk too; the refusal chunks unprefixed.
+- [x] T2: `nested-cv.Rmd`: `filter()` for the rmse rows; `collect_selections(res)` for the fold table and `n_distinct()` for the counts; `tibble()` for the comparison table; `extract_tune_results(final)` piped to `show_best(metric = "rmse", n = 1)` for the selection-time score, in the hidden writeup chunk too; the refusal chunks unprefixed.
 - [ ] T3: `results.Rmd`: `select()` for the seed columns; `collect_notes(failed)` for both notes readings, the counts as `count(id)`; the `mutate()` example with a plain arithmetic column; `rlang::catch_cnd()` for the partial warning's class and message with the summary printed in a `warning = FALSE` chunk; `tibble()` for `surv_df`.
 - [ ] T4: `tuners.Rmd`: `collect_inner_metrics(race)` with `filter()`, `group_by()` and `summarise()` for the fits per fold, `slice_min()` for the cheapest fold; the hidden count chunk may follow.
 - [ ] T5: `articles/parallel.Rmd`: the dispatcher-less run in a `warning = FALSE` chunk, then `rlang::catch_cnd()` on a repeat call for the class, its message through `cli::ansi_strip()` (the M63 lesson); `articles/why-nest.Rmd`: the figure's long table via `tibble()` and `bind_rows()`.
@@ -56,9 +56,9 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - 2026-09-05: plan gate chose keeping `expand.grid()` over `dials::grid_regular()` because the call shows the six candidates the page runs; falsified by a reader mistaking the grid for a dials object.
 - 2026-09-05: plan gate chose a review-time token sweep and a prose ledger over a permanent test enforcing the idiom list, because a style lint over in-repo prose is a checker over internal artifacts; falsified by a later page reintroducing the idioms unnoticed at its review.
 - 2026-09-05: plan gate chose `rlang::catch_cnd()` over knitr's default warning display because the warning's class is the didactic point; falsified by the repeat call the parallel article needs costing more than the page's budget allows.
-
-
 - 2026-09-05: T1 done. tidymodels installed locally and added to Suggests; the five code pages guard on tidymodels plus their optional packages with one notice, then attach `library(tidymodels)` and `library(nestedtune)`; core-package prefixes stripped from chunks; `library(recipes)` and `library(ggplot2)` dropped. `benchmarks/sweep-vignette-idioms.R` written for the AC1, AC2 and AC6 sweeps; on the pre-T2 pages it reports 23 idiom hits and no prefix or prose hit. All five pages render; nestedtune reinstalled so the parallel article's daemons see the M65 readers.
+
+- 2026-09-05: T2 done. `nested-cv.Rmd` reads the rmse row with `filter()`, the fold table with `collect_selections()` and `n_distinct()`, the per-fold scores with `filter()` and `pull()`, the selection-time score with `extract_tune_results(final) |> show_best(metric = "rmse", n = 1)` and the comparison table with `tibble()`; the page renders and the sweep reports nothing on it. The rendered comparison shows the selection-time rmse higher than the nested estimate, as before.
 
 ## Decisions
 

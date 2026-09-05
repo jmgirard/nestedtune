@@ -146,7 +146,7 @@ summary(res)
 est <- collect_metrics(res)
 est
 
-rmse_row <- est[est$.metric == "rmse", ]
+rmse_row <- filter(est, .metric == "rmse")
 ```
 
 Report that. The RMSE of `r round(rmse_row$mean, 2)` is the mean of
@@ -162,17 +162,18 @@ why two of these numbers cannot be subtracted to compare workflows.
 
 The summary above reported this, and `.selected` holds it exactly: a list
 column of one-row tibbles, one per outer fold, each holding the parameters that
-fold's inner tuning chose. Stacked up, with the fold each came from:
+fold's inner tuning chose. `collect_selections()` stacks them, with the fold
+each came from beside it:
 
 ```{r selected}
-selected <- do.call(rbind, res$.selected)
+selected <- collect_selections(res)
 
-data.frame(fold = res$id, mtry = selected$mtry, min_n = selected$min_n)
+selected
 ```
 
 ```{r instability}
-n_mtry <- length(unique(selected$mtry))
-n_min_n <- length(unique(selected$min_n))
+n_mtry <- n_distinct(selected$mtry)
+n_min_n <- n_distinct(selected$min_n)
 ```
 
 Across `r nrow(res)` outer folds, `mtry` took `r n_mtry` distinct selected
@@ -200,7 +201,10 @@ The per-fold scores are worth a look for the same reason:
 per_fold <- collect_metrics(res, summarize = FALSE)
 per_fold
 
-fold_rmse <- per_fold$.estimate[per_fold$.metric == "rmse"]
+fold_rmse <- per_fold |>
+  filter(.metric == "rmse") |>
+  pull(.estimate)
+
 c(sd = sd(fold_rmse), std_err = sd(fold_rmse) / sqrt(length(fold_rmse)))
 ```
 
@@ -246,29 +250,31 @@ workflow's own methods, and `extract_workflow()` returns the workflow itself:
 predict(final, new_data = mtcars[1:3, ])
 ```
 
-`final$tuning` is the tuning run this model's parameters were selected from,
-and its best score is the number a user is most tempted to report:
+`extract_tune_results()` returns the tuning run this model's parameters were
+selected from, an ordinary tune result, and `show_best()` on it gives the
+number a user is most tempted to report:
 
 ```{r comparison}
-selection_scores <- collect_metrics(final$tuning)
-selection_rmse <- selection_scores[selection_scores$.metric == "rmse", ]
-best_selection_rmse <- min(selection_rmse$mean)
+best_selection <- extract_tune_results(final) |>
+  show_best(metric = "rmse", n = 1)
 
-data.frame(
+best_selection
+
+tibble(
   quantity = c("nested estimate (report this)", "best selection-time score"),
-  rmse = c(rmse_row$mean, best_selection_rmse)
+  rmse = c(rmse_row$mean, best_selection$mean)
 )
 ```
 
 The selection-time score is
-`r ifelse(best_selection_rmse < rmse_row$mean, "lower", "higher")` than the
-nested estimate here, `r round(best_selection_rmse, 2)` against
+`r ifelse(best_selection$mean < rmse_row$mean, "lower", "higher")` than the
+nested estimate here, `r round(best_selection$mean, 2)` against
 `r round(rmse_row$mean, 2)`. Do not read the direction as the lesson. With
 `r nrow(mtcars)` rows a difference this size is well inside what resampling
 noise produces, and the point stands whichever way it falls: the selection-time
 number was computed on the very resamples that chose the winner, so it is not
 an estimate of performance on anything. It is kept on the object because it is
-the record of what selection saw, and `collect_metrics()` will hand it over
+the record of what selection saw, and tune's readers will hand it over
 without warning you.
 
 The model in hand has no honest number of its own. Everything computable from
