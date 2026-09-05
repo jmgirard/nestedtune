@@ -90,3 +90,6 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - conversation: PR #75 — empty read (no reviews, no comments, no unresolved threads); CI on the pushed head a1f6b22 green on all eight checks, the fix commits not yet pushed.
 - 2026-09-05: step-7 approval: PR #75 approved for merge.
 - 2026-09-05: CI wait on PR #75 head 5940786 hit the 590 s ceiling; watcher stopped; at the stop, format-suggest and pkgdown pass, the six check legs and test-coverage pending; resume via /milestone-review M65.
+- 2026-09-05: resume: PR #75 OPEN at head 7abd94a; re-entering at step 1 (route c); `origin/main` still an ancestor of HEAD, no default-branch movement, step 3 not re-run; held tracking commit pushed.
+- conversation: PR #75 — empty read on resume (no reviews, no comments, no unresolved threads).
+- 2026-09-05: step-7 approval: PR #75 re-approved for merge on resume.
