@@ -89,3 +89,4 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - AC6 evidence, on the fixed head `49dd7ef`: `devtools::document()` no diff; `devtools::test()` full suite exit 0, every file `FAIL 0`; `devtools::check()` 0 errors, 0 warnings, 0 notes in 32m 27s (run beside the full test suite, hence the longer wall clock).
 - conversation: PR #75 — empty read (no reviews, no comments, no unresolved threads); CI on the pushed head a1f6b22 green on all eight checks, the fix commits not yet pushed.
 - 2026-09-05: step-7 approval: PR #75 approved for merge.
+- 2026-09-05: CI wait on PR #75 head 5940786 hit the 590 s ceiling; watcher stopped; at the stop, format-suggest and pkgdown pass, the six check legs and test-coverage pending; resume via /milestone-review M65.
