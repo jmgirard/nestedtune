@@ -27,7 +27,7 @@ Ship `vignettes/results.Rmd` ("Reading the results"), which walks the `nested_re
 - [x] AC4: A censored-regression section runs `nested_tune_grid()` with `eval_time` at two times on `survival_reg(dist = tune())` and shows `collect_metrics()` carrying `.eval_time`, with the prose reading both times inline; with `censored` masked from `.libPaths()` the section is replaced by one notice naming `censored` as the absent package and the rest of the page builds; with `ranger` masked the page prints its notice and the built HTML holds nothing after it; verified by two masked builds, one with `censored` masked and one with `ranger` masked.
 - [x] AC5: The built HTML contains both `autoplot()` figures, each with a non-empty `fig.alt`.
 - [x] AC6: The citation guard (M60) passes over the page; its build time, measured as M61 AC6 measures (`tools::buildVignettes()` with `skip =` naming every other vignette, median of three), is at most 60 seconds, and the combined figure without `skip =` at most 150 seconds.
-- [ ] AC7: The profile's `verify` slot is clean and `devtools::check()` reports no error, warning or note beyond those on the default branch.
+- [x] AC7: The profile's `verify` slot is clean and `devtools::check()` reports no error, warning or note beyond those on the default branch.
 
 ## Coverage
 
@@ -74,3 +74,8 @@ Reviewed 2026-09-04 against commit a27fefe on `m062-results-vignette`, PR #72. B
 - AC4 — pass: the survival run is `survival_reg(dist = tune())` with `eval_time = c(0.5, 10)`; `collect_metrics()` carries `.eval_time` with rows at 0.5 and 10, the per-fold table the same, and the prose reads "the Brier score at 0.5 and at 10". Censored masked: the page builds (six sections, eleven tibble prints), the section's chunks produce no output, and one notice names censored as the package not installed; the unexecuted chunks' source and the prose between them remain visible after the notice, which the built page shows and the M61 page shares. Ranger masked: the notice is the page's last content (no headings, no output, no figures after it). Two masked builds, one per package.
 - AC5 — pass: the built HTML holds two `<img>` elements, one per `autoplot()` view, each with a non-empty `alt` naming the panels and the points.
 - AC6 — pass: the citation guard (`tests/testthat/test-vignette-citations.R`) 22 tests, 37 expectations, 0 failures at e32cc5c; `tools::buildVignettes(skip = c("estimate", "nested-cv", "tuners"))` on a copy of the package, after the background check had finished, three runs 11.9, 10.8, 10.7 s, median 10.8 s against the 60 s cap; all four vignettes 44.5, 44.9, 45.6 s, median 44.9 s against 150.
+- AC7 — pass: `devtools::test()` 633 tests, 7042 expectations, 0 failures, 0 warnings, 0 skips; `devtools::check()` at a27fefe 0 errors, 0 warnings, 0 notes (8m 30s), the same as the default branch.
+
+Consistency gate: `cairn_validate.py` all checks pass (18 references-staleness advisories, standing); no principle changed, so no impact report; `devtools::document()` no diff; README.md and README.Rmd last changed in the same commit (2aac24a), branch touches neither; `pkgdown::check_pkgdown()` no problems; NEWS entry present with no milestone number; no new top-level file; check 0/0/0.
+
+Independent review (three lenses, fresh context): [O] diff-bug 16 findings, [S] blame-history none, [S] prior-review three (P1–P3, all the M06 F5 shape: a behavior claim with no executed chunk behind it). Dispositions recorded at the gate below.
