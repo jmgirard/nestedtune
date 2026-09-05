@@ -26,15 +26,8 @@ each daemon, what to do while developing the package, and how a run stops.
 `?nested_tune_grid` carries the reference version of each of those under its
 parallel section. This page shows them running.
 
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
-
 ```{r deps, include = FALSE}
-needed <- c("mirai", "ranger")
+needed <- c("tidymodels", "mirai", "ranger")
 missing_pkgs <- needed[
   !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
 ]
@@ -43,8 +36,8 @@ has_deps <- length(missing_pkgs) == 0L
 
 ```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "This page runs the outer loop on **mirai** daemons and fits random",
-  "forests with the **ranger** package.",
+  "This page attaches the **tidymodels** packages, runs the outer loop on",
+  "**mirai** daemons and fits random forests with the **ranger** package.",
   if (length(missing_pkgs) == 1L) {
     sprintf("The **%s** package is not installed here,", missing_pkgs)
   } else {
@@ -59,6 +52,11 @@ cat(
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ## The design and the workflow

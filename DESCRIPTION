@@ -42,6 +42,7 @@ Suggests:
     rmarkdown,
     survival,
     testthat (>= 3.0.0),
+    tidymodels,
     tibble,
     vdiffr,
     yardstick

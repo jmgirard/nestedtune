@@ -32,25 +32,37 @@ this page, and it has no honest performance number of its own. This page walks
 the path from a design to a write-up. What the estimate means, and what it does
 not, is the subject of `vignette("estimate")`.
 
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
-
 ```{r deps, include = FALSE}
-has_ranger <- requireNamespace("ranger", quietly = TRUE)
+needed <- c("tidymodels", "ranger")
+missing_pkgs <- needed[
+  !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
+]
+has_deps <- length(missing_pkgs) == 0L
 ```
 
-```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "The worked example below fits random forests with the **ranger** package,",
-  "which is not installed here, so the rest of this guide has been skipped.",
-  "Install ranger and rebuild to see it.\n"
+  "This guide attaches the **tidymodels** packages and fits random forests",
+  "with the **ranger** package.",
+  if (length(missing_pkgs) == 1L) {
+    sprintf("The **%s** package is not installed here,", missing_pkgs)
+  } else {
+    sprintf(
+      "The **%s** packages are not installed here,",
+      paste(missing_pkgs, collapse = "** and **")
+    )
+  },
+  "so the rest of this guide has been skipped. Install",
+  if (length(missing_pkgs) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ## The design
@@ -268,11 +280,11 @@ what they would surface is the selection-time score dressed as a performance
 number.
 
 ```{r refusals, error = TRUE}
-tune::show_best(res, metric = "rmse")
+show_best(res, metric = "rmse")
 ```
 
 ```{r refusals-final, error = TRUE}
-tune::select_best(final, metric = "rmse")
+select_best(final, metric = "rmse")
 ```
 
 ## Where this example sits

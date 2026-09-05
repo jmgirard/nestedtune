@@ -22,25 +22,37 @@ readers on one result, shows what a run looks like when one outer fold fails,
 says which dplyr verbs keep the class and which shed it, and ends with the two
 arguments the runs above do not use, `event_level` and `eval_time`.
 
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
-
 ```{r deps, include = FALSE}
-has_ranger <- requireNamespace("ranger", quietly = TRUE)
+needed <- c("tidymodels", "ranger")
+missing_pkgs <- needed[
+  !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
+]
+has_deps <- length(missing_pkgs) == 0L
 ```
 
-```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "The runs below fit random forests with the **ranger** package, which is",
-  "not installed here, so the rest of this page has been skipped. Install",
-  "ranger and rebuild to see it.\n"
+  "This page attaches the **tidymodels** packages and fits random forests",
+  "with the **ranger** package.",
+  if (length(missing_pkgs) == 1L) {
+    sprintf("The **%s** package is not installed here,", missing_pkgs)
+  } else {
+    sprintf(
+      "The **%s** packages are not installed here,",
+      paste(missing_pkgs, collapse = "** and **")
+    )
+  },
+  "so the rest of this page has been skipped. Install",
+  if (length(missing_pkgs) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
+```
+
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
 ```
 
 ## The run
@@ -206,9 +218,7 @@ car, the Maserati Bora, has far more horsepower than any other in `mtcars`,
 `r max(mtcars$hp)` against `r sort(mtcars$hp, decreasing = TRUE)[2]` for the
 next. The fold that holds it out cannot score it, and that fold fails.
 
-```{r failed-recipe, message = FALSE}
-library(recipes)
-
+```{r failed-recipe}
 rec <- recipe(mpg ~ ., data = mtcars) |>
   check_range(hp)
 
@@ -308,7 +318,7 @@ an object that no longer holds what the run produced cannot answer for the
 run. Adding a column keeps the class.
 
 ```{r dplyr-mutate}
-with_rmse <- dplyr::mutate(
+with_rmse <- mutate(
   res,
   rmse = vapply(.metrics, function(m) m$.estimate[m$.metric == "rmse"], 1)
 )
@@ -320,7 +330,7 @@ Dropping a fold sheds it. The natural case is keeping only the folds that
 completed on the run above, which removes one row.
 
 ```{r dplyr-filter}
-completed_only <- dplyr::filter(failed, .completed)
+completed_only <- filter(failed, .completed)
 
 class(completed_only)
 ```
@@ -441,7 +451,7 @@ surv_res <- nested_tune_grid(
   surv_wf,
   surv_folds,
   grid = surv_grid,
-  metrics = yardstick::metric_set(yardstick::brier_survival),
+  metrics = metric_set(brier_survival),
   eval_time = c(0.5, 10)
 )
 

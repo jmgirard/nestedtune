@@ -24,27 +24,38 @@ each fold records about its search, shows how a tune control object reaches
 the inner call, and says what differs from calling tune or finetune
 directly.
 
-```{r libraries, message = FALSE}
-library(nestedtune)
-library(parsnip)
-library(rsample)
-library(workflows)
-```
-
 ```{r deps, include = FALSE}
-has_ranger <- requireNamespace("ranger", quietly = TRUE)
+needed <- c("tidymodels", "ranger")
+missing_pkgs <- needed[
+  !vapply(needed, requireNamespace, logical(1), quietly = TRUE)
+]
+has_deps <- length(missing_pkgs) == 0L
 ```
 
-```{r deps-notice, eval = !has_ranger, echo = FALSE, results = "asis"}
+```{r deps-notice, eval = !has_deps, echo = FALSE, results = "asis"}
 cat(
-  "The runs below fit random forests with the **ranger** package, which is",
-  "not installed here, so the rest of this page has been skipped. Install",
-  "ranger and rebuild to see it.\n"
+  "This page attaches the **tidymodels** packages and fits random forests",
+  "with the **ranger** package.",
+  if (length(missing_pkgs) == 1L) {
+    sprintf("The **%s** package is not installed here,", missing_pkgs)
+  } else {
+    sprintf(
+      "The **%s** packages are not installed here,",
+      paste(missing_pkgs, collapse = "** and **")
+    )
+  },
+  "so the rest of this page has been skipped. Install",
+  if (length(missing_pkgs) == 1L) "it" else "them",
+  "and rebuild to see it.\n"
 )
 
 knitr::knit_exit()
 ```
 
+```{r libraries, message = FALSE}
+library(tidymodels)
+library(nestedtune)
+```
 ```{r deps-optional, include = FALSE}
 has_finetune <- requireNamespace("finetune", quietly = TRUE)
 has_race <- has_finetune &&
@@ -90,9 +101,9 @@ the size of an inner analysis set here.
 
 ```{r param-info}
 params <- update(
-  tune::extract_parameter_set_dials(wf),
-  mtry = dials::mtry(c(2L, 8L)),
-  min_n = dials::min_n(c(2L, 10L))
+  extract_parameter_set_dials(wf),
+  mtry = mtry(c(2L, 8L)),
+  min_n = min_n(c(2L, 10L))
 )
 
 params
@@ -299,7 +310,7 @@ stopped <- nested_tune_bayes(
   param_info = params,
   initial = 4,
   iter = 3,
-  control = tune::control_bayes(verbose = FALSE, no_improve = 3)
+  control = control_bayes(verbose = FALSE, no_improve = 3)
 )
 
 procedure <- attr(stopped, "procedure")
