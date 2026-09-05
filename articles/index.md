@@ -8,3 +8,5 @@
   means](https://nestedtune.tidymodels.org/articles/estimate.md):
 - [Choosing the inner
   tuner](https://nestedtune.tidymodels.org/articles/tuners.md):
+- [Reading the
+  results](https://nestedtune.tidymodels.org/articles/results.md):
