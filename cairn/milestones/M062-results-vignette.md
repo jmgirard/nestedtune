@@ -64,6 +64,7 @@ Ship `vignettes/results.Rmd` ("Reading the results"), which walks the `nested_re
 - 2026-09-04: T6 `results` under Guides in `_pkgdown.yml` (`check_pkgdown()` clean), NEWS entry; AC6 at commit 19608aa (the final page): `tools::buildVignettes(skip = c("estimate", "nested-cv", "tuners"))` on a temporary copy, three runs 15.0, 13.6, 13.8 s, median 13.8 s against the 60 s cap, and all four vignettes 59.9, 60.7, 61.2 s, median 60.7 s against 150; masked renders through `rmarkdown::render()`: censored masked gives six sections, fourteen tibble prints and one notice naming censored; ranger masked gives the notice and nothing after it (0 headings); recipes masked cannot load the package (tune imports it, the amendment above); citation guard green (37); `devtools::test()` no failures; `devtools::check()` 0 errors, 0 warnings, 0 notes (7m 54s). Status to review.
 - 2026-09-04: review checkpoint: PR #72 opened as draft; AC1–AC5 verified (evidence in the Review section); AC6 timing and AC7 pending the background check; three reviewers spawned, the blame-history lens reported no findings.
 - 2026-09-04: review: three lenses reported (dispositions in the Review section); the user accepted the recommended triage, the 14 fix-now edits landed at 04735ea and were re-verified; step-7 approval: PR #72 approved for merge.
+- 2026-09-04: CI wait on PR #72 hit the session ceiling after the approval push re-triggered the matrix: pkgdown and format-suggest pass, seven checks pending on a32a970; watcher stopped, resume via /milestone-review M62 (route c).
 
 ## Review
 
