@@ -1,13 +1,13 @@
 # M64: A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it, with nnet in Suggests
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
 - **Principles touched:** IP3, GP2
 - **Resolves:** —
 - **Surface tier:** user-facing — an article on the published site
-- **Branch/PR:** —
+- **Branch/PR:** m064-why-nest-article
 
 ## Goal
 
@@ -54,3 +54,4 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-04: plan gate chose returning to the gate on a failed AC3 inequality over restating the criterion to whatever direction the store shows, because the page exists to demonstrate the effect and a store that does not show it is not the page; falsified by no affordable design showing the effect.
 - 2026-09-04: criteria audit (full mode, the M60 reader) returned seven findings: AC1's `identical()` contradicted AC2's date field (provenance fields excluded), AC1 and AC4 bound verification acts (moved to T1 and T3), AC3's stochastic outcome given the fallback above, D-050 written at plan time, and the null accuracy stored so the article's line and medians read it inline.
 - 2026-09-04: second audit pass (full mode, a fresh [O] reader) returned two M64 findings, applied: the nested article's pkgdown name (AC5), and AC3 restated as absolute distances from the null with the nested median held within a stored tolerance, since the old inequality was satisfied by a nested median far below the null.
+- 2026-09-05: implement started; branch `m064-why-nest-article`. Gate chose 30 replicates (one replicate 80 s serially, so about 40 min a run) and a one-panel figure of paired points with median bars. T1 script written and run 1 in progress; the article draft, `nnet` in Suggests, the `_pkgdown.yml` entry and the NEWS entry written, none yet verified against a store. Checkpoint, half-done.

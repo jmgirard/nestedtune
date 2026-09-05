@@ -1,5 +1,16 @@
 # nestedtune 0.0.0.9000
 
+* A new site-only article, "Why nest: a simulation" (`articles/why-nest` on
+  the package site, not shipped in the package), reads a stored simulation in
+  which each replicate draws wide data with no signal, tunes a small neural
+  network over a grid, and records the best candidate's cross-validation
+  accuracy from a flat `tune::tune_grid()` run beside the estimate from
+  `nested_tune_grid()`. The page prints the design, both medians and the
+  distance of each from the true accuracy from the stored object, and draws
+  both distributions across replicates against a line at the truth. The
+  script that produces the store, `vignettes/articles/why-nest-sim.R`, needs
+  the nnet package, which joins `Suggests`.
+
 * A new site-only article, "Running the outer loop in parallel"
   (`articles/parallel` on the package site, not shipped in the package),
   starts two mirai daemons, runs the getting-started guide's loop on them,
