@@ -1,13 +1,13 @@
 # M66: The six vignette pages read the results through the package's readers under `library(tidymodels)`, and take a prose pass
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M65
 - **Driving RR:** —
 - **Principles touched:** IP3
 - **Resolves:** —
 - **Surface tier:** user-facing — the shipped vignettes and the site articles
-- **Branch/PR:** —
+- **Branch/PR:** m066-vignette-sweep
 
 ## Goal
 
