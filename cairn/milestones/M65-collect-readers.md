@@ -7,7 +7,7 @@
 - **Principles touched:** IP4, GP3
 - **Resolves:** —
 - **Surface tier:** user-facing — three exported readers on the results object
-- **Branch/PR:** `m065-collect-readers`
+- **Branch/PR:** `m065-collect-readers` — https://github.com/tidymodels/nestedtune/pull/75
 
 ## Goal
 
@@ -21,11 +21,11 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 
 ## Acceptance criteria
 
-- [ ] AC1: `collect_notes()` on a `nested_results` returns one row per note across every fold: the recorded label columns, then `location`, `type`, `note` and `trace`; equal to `dplyr::bind_rows()` of the `.notes` column with each fold's labels prepended, asserted on a run with a failed fold and on a run with no note, where it returns zero rows with those same columns.
-- [ ] AC2: `collect_selections()` on a `nested_results` returns one row per completed fold: the recorded label columns, then the union of the columns of the completed folds' `.selected` rows stacked with vctrs, `NA` where a fold lacks one; on a partial run it warns once with class `nestedtune_partial_summary`; on a run in which no fold completed it aborts with the condition `check_any_completed()` raises.
-- [ ] AC3: `collect_inner_metrics()` on a `nested_results` returns one row per row of each completed fold's `.inner_metrics` table: the recorded label columns, then the union of those tables' columns stacked with vctrs, `NA` where a fold lacks one; the partial warning and all-failed refusal are AC2's.
-- [ ] AC4: Each of the three readers takes its label columns from the object's record: on a repeated outer design (`vfold_cv(v = 2, repeats = 2)`) every reader carries `id` and `id2`, and on the single-label design it carries `id` alone, asserted by tests on both designs.
-- [ ] AC5: `collect_selections()` and `collect_inner_metrics()` are package-owned S3 generics whose default method aborts with a classed nestedtune condition, asserted by a test on a plain data frame.
+- [x] AC1: `collect_notes()` on a `nested_results` returns one row per note across every fold: the recorded label columns, then `location`, `type`, `note` and `trace`; equal to `dplyr::bind_rows()` of the `.notes` column with each fold's labels prepended, asserted on a run with a failed fold and on a run with no note, where it returns zero rows with those same columns.
+- [x] AC2: `collect_selections()` on a `nested_results` returns one row per completed fold: the recorded label columns, then the union of the columns of the completed folds' `.selected` rows stacked with vctrs, `NA` where a fold lacks one; on a partial run it warns once with class `nestedtune_partial_summary`; on a run in which no fold completed it aborts with the condition `check_any_completed()` raises.
+- [x] AC3: `collect_inner_metrics()` on a `nested_results` returns one row per row of each completed fold's `.inner_metrics` table: the recorded label columns, then the union of those tables' columns stacked with vctrs, `NA` where a fold lacks one; the partial warning and all-failed refusal are AC2's.
+- [x] AC4: Each of the three readers takes its label columns from the object's record: on a repeated outer design (`vfold_cv(v = 2, repeats = 2)`) every reader carries `id` and `id2`, and on the single-label design it carries `id` alone, asserted by tests on both designs.
+- [x] AC5: `collect_selections()` and `collect_inner_metrics()` are package-owned S3 generics whose default method aborts with a classed nestedtune condition, asserted by a test on a plain data frame.
 - [ ] AC6: `devtools::document()` produces no diff, `devtools::test()` is clean, and `devtools::check()` reports 0 errors, 0 warnings, 0 notes.
 
 ## Coverage
@@ -65,3 +65,10 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 ## Decisions
 
 ## Review
+
+- 2026-09-05: PR #75 opened as draft; branch cut from and up to date with `origin/main` (no default-branch movement, `origin/main` an ancestor of HEAD).
+- AC1 evidence: `test-collect-readers.R` run fresh, 14 tests, 0 failures. On the failed-fold fixture `collect_notes()` is named `id`, `location`, `type`, `note`, `trace`, its row count equals the sum over `.notes`, only the failed fold's label appears, and `expect_equal()` against `dplyr::bind_rows()` of `.notes` with `id` mutated first passes; on the clean run it is zero rows with those five columns, equal to the same hand stack.
+- AC2 evidence: same run. `collect_selections()` on the clean run is one row per fold equal to the vctrs hand stack; on the failed-fold fixture `expect_warning(class = "nestedtune_partial_summary")` passes and a handler counts the warning once; on the all-failed fixture the caught condition's class is identical to `collect_metrics()`'s (`nestedtune_no_completed_folds`); on a hand-built object whose folds selected `num_comp` and `threshold` the result is the union with `NA` where absent.
+- AC3 evidence: same run. `collect_inner_metrics()` on the clean run has one row per inner row, `id` repeated per fold's row count, equal to the hand stack; the partial warning counted once and the all-failed class identical to `collect_metrics()`'s; the union test over three inner tables gives `.iter` as `NA, NA, 0L, NA`.
+- AC4 evidence: same run. On `repeated_design(v = 2, repeats = 2)` built through the constructor, `attr(res, "id_columns")` is `c("id", "id2")` and each of the three readers has `id`, `id2` as its first two columns, equal to the hand stack; on `det_nested()` the record is `"id"` and each reader has `id` first with no `id2`.
+- AC5 evidence: same run. On a data frame, a list and an integer vector both generics raise `nestedtune_no_collect_method`, the message naming the generic and `nested_results`, `conditionCall()` the generic's own name; `collect_notes` is `identical()` to `tune::collect_notes`.
