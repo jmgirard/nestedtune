@@ -41,7 +41,7 @@ Ship `vignettes/articles/parallel.Rmd` ("Running the outer loop in parallel"), b
 
 - [x] T1: Draft the article with the guards (`requireNamespace()` on `mirai` and `ranger` + `knit_exit()`), the pool start, the run, the pool stop, and prose sections for the pre-flight, the wire, the `load_all()` caveat and interrupts drawn from `?nested_tune_grid`'s parallel section as cross-references rather than restatements; digits in prose inside backtick spans or inline R.
 - [x] T2: The identity chunk: the serial run under the same seed, `identical()` on the three columns, the inline read.
-- [ ] T3: The dispatcher chunk: `daemons(2, dispatcher = FALSE)`, `withCallingHandlers()` capturing the warning, class printed, `daemons(0)` in the same chunk.
+- [x] T3: The dispatcher chunk: `daemons(2, dispatcher = FALSE)`, `withCallingHandlers()` capturing the warning, class printed, `daemons(0)` in the same chunk.
 - [ ] T4: `_pkgdown.yml` entry under an Articles section; `R CMD build` and `untar(list = TRUE)` for AC4; one masked build each for AC5; push and read the pkgdown job log for AC1; run the guard and the verify slot; after the merge, read the published `articles/parallel.html` for the `daemons(2)` output and log it.
 
 ## Work log
@@ -53,3 +53,4 @@ Ship `vignettes/articles/parallel.Rmd` ("Running the outer loop in parallel"), b
 - 2026-09-04: question gate: no executed timings on the page (the example is too small to show a speedup and a runner figure would drift build to build); the article lists under a new `Articles` section in `_pkgdown.yml` below `Guides`, where M64 will join it.
 - 2026-09-04: T1: `vignettes/articles/parallel.Rmd` drafted with the mirai+ranger guard (one notice, singular and plural branches, then `knit_exit()`), the pool start printing `status()$connections`, the run, the pool stop, and prose sections for the pre-flight, the wire, the `load_all()` caveat and interrupts drawn from `?nested_tune_grid`; `_pkgdown.yml` gains the `Articles` section (both sections now carry a navbar heading so the menu shows the split); `build_article("articles/parallel")` executed with connections `2` then `0`; citation guard 37 green.
 - 2026-09-04: T2: the serial run under `set.seed(2)` and `identical()` on `.metrics`, `.selected` and `.tuning_seed` executed `TRUE` for each, the prose reading `all(same)` inline; the probe also showed `identical()` on the whole objects `TRUE`.
+- 2026-09-04: T3: `daemons(2, dispatcher = FALSE)`, the run under `withCallingHandlers()` muffling the warning, `class()` printed with `nestedtune_pool_not_cancellable` first, `.metrics` identical to the serial run, `daemons(0)` in the same chunk; the message shown through `cli::ansi_strip()` since the raw `conditionMessage()` carried ANSI codes into the HTML.
