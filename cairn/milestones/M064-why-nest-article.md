@@ -43,9 +43,9 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 
 ## Tasks
 
-- [ ] T1: Write the script: the design from the plan gate's probe (n = 60, p = 200, a 20-candidate `hidden_units` × `penalty` grid, `epochs = 50`, `MaxNWts` raised), replicates in a seeded loop, each replicate's flat best accuracy and nested estimate kept, the metadata attached; run it twice for AC1 and log the runtime; if either AC3 condition fails on the store, stop and return to the plan gate through the amendment protocol (raise `p`, the grid or the replicate count) before writing the article.
-- [ ] T2: Write the article: the design read from the store, the two medians, the Varma and Simon (2006) design it follows, the caveat that this is one learner on one design; digits in prose as inline R over the store or inside backtick spans.
-- [ ] T3: The figure: both distributions on one panel or two, a dashed line at the stored null accuracy, `fig.alt`; render to PNG and look at it before committing (the M08 lesson), and log the file.
+- [x] T1: Write the script: the design from the plan gate's probe (n = 60, p = 200, a 20-candidate `hidden_units` × `penalty` grid, `epochs = 50`, `MaxNWts` raised), replicates in a seeded loop, each replicate's flat best accuracy and nested estimate kept, the metadata attached; run it twice for AC1 and log the runtime; if either AC3 condition fails on the store, stop and return to the plan gate through the amendment protocol (raise `p`, the grid or the replicate count) before writing the article.
+- [x] T2: Write the article: the design read from the store, the two medians, the Varma and Simon (2006) design it follows, the caveat that this is one learner on one design; digits in prose as inline R over the store or inside backtick spans.
+- [x] T3: The figure: both distributions on one panel or two, a dashed line at the stored null accuracy, `fig.alt`; render to PNG and look at it before committing (the M08 lesson), and log the file.
 - [ ] T4: `_pkgdown.yml` entry; `R CMD build` listing; the fresh-process render check (`Rscript -e 'rmarkdown::render("vignettes/articles/why-nest.Rmd", output_dir = tempdir(), quiet = TRUE); print(c("nnet", "tune", "nestedtune") %in% loadedNamespaces())'`, three `FALSE` logged); the guard run from the source tree, the verify slot and `devtools::check()`.
 
 ## Work log
@@ -66,6 +66,7 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-05: re-audit: AC5 (full) — a render farming chunks to a child session would pass vacuously; fixed by pinning chunk evaluation to the same process. Second line, the stop: further churn goes to the user.
 - 2026-09-05: re-audit: AC6 (full) — the real-tree guard skips under `R CMD check`, so a skip could be read as a pass; fixed by requiring the source-tree run. Second line, the stop.
 - 2026-09-05: gate chose the second reader's tightened AC5 and AC6 over the first-audit wording. RB06/RR06 archived; status back to in-progress.
+- 2026-09-05: run 2 (script as committed at c51349b, store's commit field 3d715b6) wrote the store; `identical()` to run 1's store once `date` and `commit` are removed from both, so AC1 holds and T1 is done; run 2's store committed. T2 checked against the store: every design figure, both medians, the distances, the commit and the date read inline from the object; the prose-digit sweep finds only citation years. T3: `pkgdown::build_article()` rendered the figure (`docs/articles/why-nest_files/figure-html/figure-1.png`), read: flat column above the dashed null line with its median bar at 0.567, nested column straddling below with its bar at 0.458; the built page carries the `fig.alt`. T4 so far: the fresh-process render printed `FALSE FALSE FALSE`; the source-tree guard ran 37 expectations with no skip; the tarball lists 139 entries, none under `vignettes/articles/`; verify slot and `check()` running.
 
 ## Decisions
 
