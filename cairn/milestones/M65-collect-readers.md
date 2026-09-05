@@ -1,13 +1,13 @@
 # M65: Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP4, GP3
 - **Resolves:** —
 - **Surface tier:** user-facing — three exported readers on the results object
-- **Branch/PR:** —
+- **Branch/PR:** `m065-collect-readers`
 
 ## Goal
 
@@ -39,10 +39,10 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 
 ## Tasks
 
-- [ ] T1: Tests first, `tests/testthat/test-collect-readers.R`: the `bind_rows()` equality on the failed-fold fixture (`helper-orchestration.R`) and on a clean run (zero rows, same columns); the two stackers on the clean run, on the failed-fold fixture (one `nestedtune_partial_summary` warning, `expect_warning()` with the class) and on the all-failed fixture (the `check_any_completed()` condition); the union stacking on a run whose folds selected different columns, or a hand-built object where no fixture does; the repeated design (`vfold_cv(v = 2, repeats = 2)`) and the single-label design for AC4; the default methods on a data frame for AC5.
-- [ ] T2: An internal stacker in `R/nested-results.R` (beside `fold_ids()`) taking the column name and whether to keep completed folds only, prepending the label columns and stacking with `vctrs::vec_rbind()`; `collect_notes.nested_results()` in a new `R/nested-results-collect.R`; `tune::collect_notes` re-exported in `R/reexports.R`.
-- [ ] T3: `collect_selections()` generic, default method aborting with a classed condition in the `agreement()` shape (`R/nested-results-agreement.R:80-130`), and the `nested_results` method calling `check_any_completed()` then `warn_partial_summary(x, noun = "table")` before stacking `.selected`.
-- [ ] T4: `collect_inner_metrics()` the same way over `.inner_metrics`.
+- [x] T1: Tests first, `tests/testthat/test-collect-readers.R`: the `bind_rows()` equality on the failed-fold fixture (`helper-orchestration.R`) and on a clean run (zero rows, same columns); the two stackers on the clean run, on the failed-fold fixture (one `nestedtune_partial_summary` warning, `expect_warning()` with the class) and on the all-failed fixture (the `check_any_completed()` condition); the union stacking on a run whose folds selected different columns, or a hand-built object where no fixture does; the repeated design (`vfold_cv(v = 2, repeats = 2)`) and the single-label design for AC4; the default methods on a data frame for AC5.
+- [x] T2: An internal stacker in `R/nested-results.R` (beside `fold_ids()`) taking the column name and whether to keep completed folds only, prepending the label columns and stacking with `vctrs::vec_rbind()`; `collect_notes.nested_results()` in a new `R/nested-results-collect.R`; `tune::collect_notes` re-exported in `R/reexports.R`.
+- [x] T3: `collect_selections()` generic, default method aborting with a classed condition in the `agreement()` shape (`R/nested-results-agreement.R:80-130`), and the `nested_results` method calling `check_any_completed()` then `warn_partial_summary(x, noun = "table")` before stacking `.selected`.
+- [x] T4: `collect_inner_metrics()` the same way over `.inner_metrics`.
 - [ ] T5: One roxygen page documenting the three with executed examples on a small run, naming the completed-folds rule and that `.config` labels a row in that fold's own inner table; `_pkgdown.yml` rows under "Running the loop"; a NEWS entry naming the three; `agreement()` and `summary()` tests untouched and passing.
 - [ ] T6: `devtools::document()` (no diff), `devtools::test()`, `devtools::check()` 0/0/0, `air format --check` on the touched files.
 
@@ -54,6 +54,10 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - 2026-09-05: plan gate chose completed folds only, with the partial warning, for the two stackers over stacking every fold that holds a value, because `collect_metrics()` and `agreement()` already read that way and one rule is easier to state; falsified by a user needing a failed fold's inner table from the reader rather than from `.inner_metrics[[i]]`.
 - 2026-09-05: plan gate chose stacking `.selected` and `.inner_metrics` columns as they are, `.config` included, over dropping `.config` as `agreement()` does, because a per-fold row's `.config` labels a row in that fold's own inner table; falsified by a reader mistaking `.config` for a cross-fold identity.
 - 2026-09-05: plan gate chose helpers over adding purrr to Suggests for the vignettes (user choice, the recommended option), because once the readers exist no reader-facing chunk needs an apply call; falsified by a vignette needing a per-fold computation none of the three readers gives.
+- 2026-09-05: /milestone-implement started on branch `m065-collect-readers`; no question gate, the plan left nothing open at the user's level.
+- 2026-09-05: minor amendment: `R/nested-tune-grid.R` already carried an internal `collect_inner_metrics(tuned)` reading tune's summary of one inner run, so the exported generic would have shadowed it; renamed to `inner_metrics_table()` at its three sites, no behavior change.
+- 2026-09-05: T1 done: `test-collect-readers.R` ran red on the missing functions (26 failures, every one "could not find function") before any code; a `stub_results()` builder in the file hands the constructor hand-written folds for the union and repeated-design shapes.
+- 2026-09-05: T2, T3, T4 done: `stack_fold_column()` beside `fold_ids()`, the three readers and `abort_no_collect_method()` in `R/nested-results-collect.R`, `tune::collect_notes` re-exported; the file is green and `air format --check` clean.
 
 ## Decisions
 

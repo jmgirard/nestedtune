@@ -6,7 +6,12 @@ S3method(agreement,default)
 S3method(agreement,nested_results)
 S3method(augment,nested_final_fit)
 S3method(autoplot,nested_results)
+S3method(collect_inner_metrics,default)
+S3method(collect_inner_metrics,nested_results)
 S3method(collect_metrics,nested_results)
+S3method(collect_notes,nested_results)
+S3method(collect_selections,default)
+S3method(collect_selections,nested_results)
 S3method(dplyr_reconstruct,nested_results)
 S3method(extract_scored_candidates,default)
 S3method(extract_scored_candidates,nested_final_fit)
@@ -36,7 +41,10 @@ S3method(vec_restore,nested_results)
 export(agreement)
 export(augment)
 export(autoplot)
+export(collect_inner_metrics)
 export(collect_metrics)
+export(collect_notes)
+export(collect_selections)
 export(extract_scored_candidates)
 export(extract_tune_results)
 export(extract_workflow)
@@ -53,6 +61,7 @@ importFrom(rlang,.data)
 importFrom(tune,
   augment,
   collect_metrics,
+  collect_notes,
   extract_workflow
 )
 importFrom(vctrs,
