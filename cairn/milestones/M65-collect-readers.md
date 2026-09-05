@@ -43,7 +43,7 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - [x] T2: An internal stacker in `R/nested-results.R` (beside `fold_ids()`) taking the column name and whether to keep completed folds only, prepending the label columns and stacking with `vctrs::vec_rbind()`; `collect_notes.nested_results()` in a new `R/nested-results-collect.R`; `tune::collect_notes` re-exported in `R/reexports.R`.
 - [x] T3: `collect_selections()` generic, default method aborting with a classed condition in the `agreement()` shape (`R/nested-results-agreement.R:80-130`), and the `nested_results` method calling `check_any_completed()` then `warn_partial_summary(x, noun = "table")` before stacking `.selected`.
 - [x] T4: `collect_inner_metrics()` the same way over `.inner_metrics`.
-- [ ] T5: One roxygen page documenting the three with executed examples on a small run, naming the completed-folds rule and that `.config` labels a row in that fold's own inner table; `_pkgdown.yml` rows under "Running the loop"; a NEWS entry naming the three; `agreement()` and `summary()` tests untouched and passing.
+- [x] T5: One roxygen page documenting the three with executed examples on a small run, naming the completed-folds rule and that `.config` labels a row in that fold's own inner table; `_pkgdown.yml` rows under "Running the loop"; a NEWS entry naming the three; `agreement()` and `summary()` tests untouched and passing.
 - [ ] T6: `devtools::document()` (no diff), `devtools::test()`, `devtools::check()` 0/0/0, `air format --check` on the touched files.
 
 ## Work log
@@ -58,6 +58,8 @@ Give `nested_results` three readers that stack a per-fold list column with the r
 - 2026-09-05: minor amendment: `R/nested-tune-grid.R` already carried an internal `collect_inner_metrics(tuned)` reading tune's summary of one inner run, so the exported generic would have shadowed it; renamed to `inner_metrics_table()` at its three sites, no behavior change.
 - 2026-09-05: T1 done: `test-collect-readers.R` ran red on the missing functions (26 failures, every one "could not find function") before any code; a `stub_results()` builder in the file hands the constructor hand-written folds for the union and repeated-design shapes.
 - 2026-09-05: T2, T3, T4 done: `stack_fold_column()` beside `fold_ids()`, the three readers and `abort_no_collect_method()` in `R/nested-results-collect.R`, `tune::collect_notes` re-exported; the file is green and `air format --check` clean.
+- 2026-09-05: T5 done: NEWS entry naming the three readers, `collect_selections` row under "Running the loop" (`pkgdown::check_pkgdown()` clean), the page's examples executed by hand; the full suite ran with one failure, the Bayesian method-table test in `test-nested-tune-bayes-oracles.R` that reads NAMESPACE, which gained calls for the three methods; `agreement()` and `summary()` files untouched and green.
+- 2026-09-05: correction to the T1 line: the red run's 26 is the reporter's capped listing (10 shown, 16 more announced), not a full count.
 
 ## Decisions
 
