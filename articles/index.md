@@ -10,3 +10,8 @@
   tuner](https://nestedtune.tidymodels.org/articles/tuners.md):
 - [Reading the
   results](https://nestedtune.tidymodels.org/articles/results.md):
+
+### Articles
+
+- [Running the outer loop in
+  parallel](https://nestedtune.tidymodels.org/articles/parallel.md):

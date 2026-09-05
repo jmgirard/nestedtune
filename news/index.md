@@ -2,6 +2,18 @@
 
 ## nestedtune 0.0.0.9000
 
+- A new site-only article, “Running the outer loop in parallel”
+  (`articles/parallel` on the package site, not shipped in the package),
+  starts two mirai daemons, runs the getting-started guide’s loop on
+  them, shows [`identical()`](https://rdrr.io/r/base/identical.html) on
+  the outer scores, the selections and the tuning seeds against the same
+  run made serially returning `TRUE`, and walks the daemon pre-flight,
+  what crosses the wire to each daemon, developing against daemons under
+  `devtools::load_all()`, interrupting a run, and the
+  `nestedtune_pool_not_cancellable` warning a pool started without a
+  dispatcher raises. The page builds only where mirai and ranger are
+  installed, and is one notice otherwise.
+
 - A new vignette,
   [`vignette("results")`](https://nestedtune.tidymodels.org/articles/results.md)
   (“Reading the results”), reads the `nested_results` object: one
