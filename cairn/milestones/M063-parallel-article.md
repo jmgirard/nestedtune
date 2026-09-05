@@ -7,7 +7,7 @@
 - **Principles touched:** IP2
 - **Resolves:** —
 - **Surface tier:** user-facing — an article on the published site
-- **Branch/PR:** m063-parallel-article
+- **Branch/PR:** m063-parallel-article · https://github.com/tidymodels/nestedtune/pull/73
 
 ## Goal
 
@@ -54,3 +54,4 @@ Ship `vignettes/articles/parallel.Rmd` ("Running the outer loop in parallel"), b
 - 2026-09-04: T1: `vignettes/articles/parallel.Rmd` drafted with the mirai+ranger guard (one notice, singular and plural branches, then `knit_exit()`), the pool start printing `status()$connections`, the run, the pool stop, and prose sections for the pre-flight, the wire, the `load_all()` caveat and interrupts drawn from `?nested_tune_grid`; `_pkgdown.yml` gains the `Articles` section (both sections now carry a navbar heading so the menu shows the split); `build_article("articles/parallel")` executed with connections `2` then `0`; citation guard 37 green.
 - 2026-09-04: T2: the serial run under `set.seed(2)` and `identical()` on `.metrics`, `.selected` and `.tuning_seed` executed `TRUE` for each, the prose reading `all(same)` inline; the probe also showed `identical()` on the whole objects `TRUE`.
 - 2026-09-04: T3: `daemons(2, dispatcher = FALSE)`, the run under `withCallingHandlers()` muffling the warning, `class()` printed with `nestedtune_pool_not_cancellable` first, `.metrics` identical to the serial run, `daemons(0)` in the same chunk; the message shown through `cli::ansi_strip()` since the raw `conditionMessage()` carried ANSI codes into the HTML.
+- 2026-09-04: draft PR #73 opened from implement because no workflow runs on a branch push and `workflow_dispatch` on pkgdown.yaml would deploy the branch site to gh-pages; T4 reads AC1's CI half from the PR's pkgdown job, and review skips `gh pr create` (its resume route d).
