@@ -11,4 +11,5 @@ to see their documentation.
 
   [`augment`](https://generics.r-lib.org/reference/augment.html),
   [`collect_metrics()`](https://tune.tidymodels.org/reference/collect_predictions.html),
+  [`collect_notes()`](https://tune.tidymodels.org/reference/collect_predictions.html),
   [`extract_workflow`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)

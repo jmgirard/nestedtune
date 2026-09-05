@@ -26,6 +26,11 @@ the outer split — and keep what each fold chose.
   : Run the nested cross-validation loop with simulated annealing inside
 - [`collect_metrics(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/collect_metrics.nested_results.md)
   : Collect the metrics from a nested resampling run
+- [`collect_selections()`](https://nestedtune.tidymodels.org/reference/collect_selections.md)
+  [`collect_inner_metrics()`](https://nestedtune.tidymodels.org/reference/collect_selections.md)
+  [`collect_notes(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/collect_selections.md)
+  : Stack a per-fold column of a nested resampling run across the outer
+  folds
 - [`print(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/print.nested_results.md)
   : Print a nested cross-validation result
 - [`summary(`*`<nested_results>`*`)`](https://nestedtune.tidymodels.org/reference/summary.nested_results.md)
@@ -65,4 +70,5 @@ the results.
   [`extract_workflow`](https://nestedtune.tidymodels.org/reference/reexports.md)
   [`autoplot`](https://nestedtune.tidymodels.org/reference/reexports.md)
   [`augment`](https://nestedtune.tidymodels.org/reference/reexports.md)
+  [`collect_notes`](https://nestedtune.tidymodels.org/reference/reexports.md)
   : Objects exported from other packages

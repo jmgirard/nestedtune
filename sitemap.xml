@@ -19,6 +19,7 @@
 <url><loc>https://nestedtune.tidymodels.org/reference/agreement.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/autoplot.nested_results.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/collect_metrics.nested_results.html</loc></url>
+<url><loc>https://nestedtune.tidymodels.org/reference/collect_selections.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/extract_scored_candidates.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/extract_tune_results.html</loc></url>
 <url><loc>https://nestedtune.tidymodels.org/reference/index.html</loc></url>
