@@ -185,7 +185,8 @@ keeps it, because it is information about the procedure rather than noise in
 it.
 
 `autoplot()` draws those same selections, one panel per tuned parameter and
-one point per outer fold. A flat row means the folds agreed. Scatter means they did not.
+one point per outer fold. A flat row means the folds agreed. Scatter means
+they did not.
 
 ```{r autoplot-parameters, fig.width = 7, fig.height = 3.6, fig.alt = "One panel per tuned parameter, with one point per outer fold at the value that fold's inner tuning selected."}
 autoplot(res)
@@ -313,8 +314,8 @@ where nesting pays best.
 Seed the session before the call, as elsewhere in tidymodels. Neither function
 takes a seed of its own. Each draws and pins its own per-step seeds from the
 session state instead, and stores them, so any single piece is reproducible by
-hand. The final fit carries the same records as the results columns, without
-the leading dot:
+hand. The final fit carries the two seeds too, as `tuning_seed` and
+`fit_seed`:
 
 ```{r seeds}
 res$.tuning_seed

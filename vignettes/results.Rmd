@@ -16,11 +16,12 @@ knitr::opts_chunk$set(
 
 Every driver in this package returns the same kind of object, a
 `nested_results`, and the getting-started guide, `vignette("nested-cv")`,
-reads the print, the summary, the estimate and the selections off it. This page
-reads the whole object. It walks the columns one at a time, runs each of the
-readers on one result, shows what a run looks like when one outer fold fails,
-says which dplyr verbs keep the class and which shed it, and ends with the two
-arguments the runs above do not use, `event_level` and `eval_time`.
+reads the print, the summary, the estimate, the selections and both plots
+off it. This page reads the whole object. It walks the columns one at a time,
+runs each of the readers on one result, shows what a run looks like when one
+outer fold fails, says which dplyr verbs keep the class and which shed it, and
+ends with the two arguments the runs above do not use, `event_level` and
+`eval_time`.
 
 ```{r deps, include = FALSE}
 needed <- c("tidymodels", "ranger")
@@ -90,8 +91,8 @@ res
 ## What the columns hold
 
 The object is a tibble with one row per outer fold, and the print above
-shows most of its columns, `names()` the rest. Each holds one piece of what
-that fold did.
+shows the columns that fit, its footer naming the rest. Each holds one
+piece of what that fold did.
 
 ```{r columns}
 names(res)
@@ -288,7 +289,8 @@ range, an inner resample that held out a car with less horsepower than any
 it trained on. Tuning still returned a candidate, from the inner resamples
 that ran, and the fold finished. Its notes say so. Counting the stacked
 notes by fold shows how many each carries (a fold with none would be absent
-from the count), and the first completed fold among them reads like this:
+from the count), and the first fold in the table other than the failed one
+reads like this:
 
 ```{r completed-notes}
 count(notes, id)
@@ -316,7 +318,10 @@ class and its message. The second prints the summary, with the warning
 muted.
 
 ```{r failed-summary-warning}
-partial_warning <- rlang::catch_cnd(summary(failed), classes = "warning")
+partial_warning <- rlang::catch_cnd(
+  summary(failed),
+  classes = "nestedtune_partial_summary"
+)
 
 class(partial_warning)
 
@@ -332,12 +337,13 @@ worth. The message names how many folds the summary covers and how many the
 design asked for, and the summary itself describes the folds that ran: the
 selections are those `r sum(failed$.completed)` folds' selections, and the
 estimate is the mean over their `r sum(failed$.completed)` scores, with the
-failed fold absent rather than filled in. `collect_metrics()` and
-`agreement()` warn the same way, and `autoplot()` leaves the failed fold's
-place on its axis empty. A run in which no fold completed is different:
-`summary()` still describes it, but `collect_metrics()`, `agreement()`,
-`autoplot()` and `nested_final_fit()` refuse it, because there is no estimate
-to report for a design that did not execute.
+failed fold absent rather than filled in. `collect_metrics()`,
+`agreement()`, `collect_selections()` and `collect_inner_metrics()` warn the
+same way, and `autoplot()` leaves the failed fold's place on its axis empty.
+A run in which no fold completed is different: `summary()` still describes
+it, but `collect_metrics()`, `agreement()`, `collect_selections()`,
+`collect_inner_metrics()`, `autoplot()` and `nested_final_fit()` refuse it,
+because there is no estimate to report for a design that did not execute.
 
 ## What dplyr keeps and what it sheds
 
@@ -381,8 +387,8 @@ averages the folds that completed, and warns that it did.
 
 Every tuning driver takes two more arguments than the runs above used, and
 both reach tune untouched; `nested_final_fit()` takes neither, and reads both
-back from the results object. `event_level` is for classification: it names which
-level of the outcome factor counts as the event, `"first"` unless you say
+back from the results object. `event_level` is for classification: it names
+which level of the outcome factor counts as the event, `"first"` unless you say
 otherwise, and it sets the same slot on the inner tuning and on the outer
 scoring fit at once. A regression or censored-regression run ignores it, as
 tune does. `eval_time` is for censored regression, and it changes the shape

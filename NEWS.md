@@ -1,6 +1,6 @@
 # nestedtune 0.0.0.9000
 
-* The four vignettes and the two site articles attach `tidymodels`, new in
+* The three code vignettes and the two site articles attach `tidymodels`, new in
   Suggests, before `nestedtune`, behind a guard that ends the page with one
   notice naming whichever of it and the page's other optional packages is
   absent, and read the results object through the package's readers and

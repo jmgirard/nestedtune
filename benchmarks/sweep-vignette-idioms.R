@@ -48,7 +48,11 @@ chunk_map <- function(lines) {
   kind
 }
 
-core <- c("nestedtune", tidymodels:::core) # the unexported list `library(tidymodels)` attaches
+if (!requireNamespace("tidymodels", quietly = TRUE)) {
+  stop("the sweep reads the core package list from tidymodels; install it")
+}
+# the unexported list `library(tidymodels)` attaches
+core <- c("nestedtune", tidymodels:::core)
 prefix_re <- paste0("\\b(", paste(core, collapse = "|"), ")::")
 idiom_re <- paste0(
   "vapply\\(|sapply\\(|lapply\\(|do\\.call\\(|Reduce\\(|Map\\(|<<-|",
@@ -63,6 +67,12 @@ for (page in pages) {
 
   # idioms
   report("idioms ", page, lines, shown[grepl(idiom_re, lines[shown])])
+  report(
+    "idioms ",
+    page,
+    lines,
+    shown[grepl("\\(", lines[shown], fixed = TRUE)]
+  )
   stripped <- gsub(peek_re, "", lines[shown])
   report("idioms ", page, lines, shown[grepl("[[", stripped, fixed = TRUE)])
 
@@ -73,11 +83,18 @@ for (page in pages) {
     libs <- sub("^library\\((.*)\\)$", "\\1", lines[lib])
     order_ok <- length(libs) >= 2L &&
       identical(libs[1:2], c("tidymodels", "nestedtune"))
-    guard <- grep("requireNamespace|\"tidymodels\"", lines)
+    # the guard: one hidden chunk names tidymodels, and the chunk holding
+    # knit_exit() is gated on the guard variable (`eval = !has_...`) and sits
+    # before the first attach
+    exits <- grep("knit_exit", lines)
+    headers <- which(kind == "header")
+    exit_header <- if (length(exits)) max(headers[headers < exits[1]]) else NA
     guard_ok <- any(grepl("tidymodels", lines[kind == "hidden"])) &&
-      any(grepl("knit_exit", lines)) &&
+      length(exits) == 1L &&
+      !is.na(exit_header) &&
+      grepl("eval\\s*=\\s*!has_", lines[exit_header]) &&
       length(lib) &&
-      min(lib) > max(grep("knit_exit", lines))
+      min(lib) > exits
     if (!order_ok) {
       cat(sprintf(
         "prefix  vignettes/%s: libraries are %s\n",
@@ -97,7 +114,7 @@ for (page in pages) {
 
   # prose
   prose <- which(kind == "prose")
-  text <- gsub("`r[^`]*`", "", lines[prose], perl = TRUE)
+  text <- gsub("`r [^`]*`", "", lines[prose], perl = TRUE)
   report("prose  ", page, lines, prose[grepl("—", text)])
   report(
     "prose  ",

@@ -56,6 +56,7 @@ knitr::knit_exit()
 library(tidymodels)
 library(nestedtune)
 ```
+
 ```{r deps-optional, include = FALSE}
 has_finetune <- requireNamespace("finetune", quietly = TRUE)
 has_race <- has_finetune &&
@@ -301,8 +302,8 @@ cat(sprintf(
 
 ## Passing a control through `...`
 
-None of the four drivers on this page has a `control` argument of its own. A control object of
-the matching kind, `tune::control_bayes()` for the Bayesian driver,
+None of the four drivers on this page has a `control` argument of its own. A
+control object of the matching kind, `control_bayes()` for the Bayesian driver,
 `finetune::control_race()` and `finetune::control_sim_anneal()` for the
 others, is passed as `control` through `...`, and reaches the inner tuning
 call in every fold. Here the Bayesian run is repeated under a control that

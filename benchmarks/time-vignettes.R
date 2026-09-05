@@ -2,6 +2,9 @@
 # Run from the package root on a quiet machine: Rscript benchmarks/time-vignettes.R <output dir>
 pkgload::load_all(".", quiet = TRUE)
 out <- commandArgs(trailingOnly = TRUE)[1]
+if (is.na(out)) {
+  stop("give an output directory as the one argument")
+}
 pages <- c("nested-cv.Rmd", "estimate.Rmd", "results.Rmd", "tuners.Rmd")
 med <- numeric()
 for (p in pages) {
@@ -11,7 +14,7 @@ for (p in pages) {
       file.path("vignettes", p),
       output_dir = out,
       intermediates_dir = tempfile(),
-      envir = new.env(),
+      envir = new.env(parent = globalenv()),
       quiet = TRUE
     ))[["elapsed"]]
   )

@@ -42,8 +42,8 @@ Suggests:
     rmarkdown,
     survival,
     testthat (>= 3.0.0),
-    tidymodels,
     tibble,
+    tidymodels,
     vdiffr,
     yardstick
 VignetteBuilder: knitr

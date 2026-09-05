@@ -82,12 +82,12 @@ those as two data points rather than a trend. They differ in data, metric and
 baseline, and the same study reports a cell where the nested estimate came out
 optimistic instead.
 
-Two cautions on reading those measurements. The gap is a property of the estimator, not a
-prediction about any one run. At a small sample size it is small next to
-fold-to-fold noise, so one run's numbers can land either way, and no single run
-demonstrates it. And "pessimistic" is a claim about the procedure's error,
-never a licence to adjust the reported figure upward. There is no correction
-here to apply.
+Two cautions on reading those measurements. The gap is a property of the
+estimator, not a prediction about any one run. At a small sample size it is
+small next to fold-to-fold noise, so one run's numbers can land either way,
+and no single run demonstrates it. And "pessimistic" is a claim about the
+procedure's error, never a licence to adjust the reported figure upward. There
+is no correction here to apply.
 
 ## The standard error
 
