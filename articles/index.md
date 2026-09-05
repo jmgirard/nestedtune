@@ -15,3 +15,5 @@
 
 - [Running the outer loop in
   parallel](https://nestedtune.tidymodels.org/articles/parallel.md):
+- [Why nest: a
+  simulation](https://nestedtune.tidymodels.org/articles/why-nest.md):
