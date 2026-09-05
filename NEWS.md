@@ -1,5 +1,17 @@
 # nestedtune 0.0.0.9000
 
+* A new vignette, `vignette("results")` ("Reading the results"), reads the
+  `nested_results` object: one sentence and an executed peek per column,
+  `summary()`, `collect_metrics()` with and without `summarize = FALSE`,
+  `agreement()` and both `autoplot()` views; a run in which one outer fold
+  fails on a `recipes::check_range()` step, that fold's `.notes`, and the
+  `nestedtune_partial_summary` warning `summary()` raises over it; which
+  dplyr operations keep the class and which shed it; and a censored-regression
+  run with `eval_time` at two times whose `collect_metrics()` carries
+  `.eval_time`, with `event_level` explained beside it. The censored-regression
+  section runs only where censored and survival are installed, and is one
+  notice otherwise.
+
 * A new vignette, `vignette("tuners")` ("Choosing the inner tuner"), runs
   `nested_tune_bayes()`, `nested_tune_race_anova()`,
   `nested_tune_race_win_loss()` and `nested_tune_sim_anneal()` on the
