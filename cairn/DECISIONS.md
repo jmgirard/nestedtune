@@ -1542,6 +1542,71 @@ AC5 measures a fresh render loading neither nnet, tune nor nestedtune).
 Falsified by a tarball path, a test, an example or a CRAN vignette, coming to
 name `nnet`, at which point it re-enters Suggests for the D-029 reason.
 
+### D-052 (2026-09-05): `collect_notes()` gains a `nested_results` method on tune's generic, and `collect_selections()` and `collect_inner_metrics()` are package-owned generics stacking a per-fold list column with the recorded labels — extends the owned-generic set D-039 last added to, and takes up the stacking shape D-039 said the `collect_` name promises
+
+**Context:** The vignettes stack `.selected`, `.notes` and `.inner_metrics`
+across folds with `do.call(rbind, ...)` and `vapply()` loops that put
+`res$id` beside the rows by hand, where D-036 has every reader take the label
+columns from the object's record; on a repeated design that hand-built table
+is wrong. tune exports a `collect_notes()` generic whose `tune_results`
+method returns `id`, `location`, `type`, `note` and `trace`; neither tune,
+hardhat, generics, dplyr, rsample, workflows, yardstick nor parsnip defines
+`collect_selections` or `collect_inner_metrics` (verified 2026-09-05 by
+execution against the installed namespaces). D-039 rejected
+`collect_selections()` as the name for `agreement()`'s tally because tune's
+`collect_` family stacks per-resample rows rather than tallying them, which
+names exactly the shape wanted here.
+
+**Decision:** `collect_notes()` gets a `nested_results` method and the generic
+is re-exported beside `collect_metrics()`. `collect_selections()` and
+`collect_inner_metrics()` are package-owned S3 generics with a
+`nested_results` method and a default that aborts as a classed nestedtune
+condition, on D-023's and D-039's pattern. All three return the recorded
+label columns first and then the stacked rows, columns as the list column
+holds them (`.config` included) over the union of columns with `NA` where a
+fold lacks one. The two stackers read completed folds only, warn once with
+`nestedtune_partial_summary` on a partial run and refuse an all-failed run
+through `check_any_completed()`, the rule `collect_metrics()` and
+`agreement()` share (IP4). Considered and rejected at the M65 plan gate:
+purrr in Suggests so the vignettes stack with `map()` and `bind_rows()` (a
+dependency for the pages alone, and the hand-built label column stays);
+`tidyr::unnest()` on the pages (not a dependency, and the same label
+problem); an argument on `collect_metrics()` switching it to the inner table
+(a knob on one name for two shapes, GP3).
+
+**Consequences:** The export list gains two owned names and one re-exported
+generic; a later upstream definition of either owned name is a masking
+conflict resolved by dropping ours, pre-1.0 without a deprecation cycle
+(D-003). D-010's and D-014's refusals stand: nothing here ranks outer folds
+or names a model. Falsified by a user needing a failed fold's inner table
+from the reader, which would reopen the completed-folds rule for the
+stackers.
+
+### D-053 (2026-09-05): `tidymodels` joins Suggests as the attach every code page under `vignettes/` makes — extends the dependency set D-051 last touched, and is the first Suggests entry whose only reader is a `library()` call on a page
+
+**Context:** The pages attach parsnip, rsample and workflows and reach tune
+and dplyr through `pkg::` prefixes, which no tidymodels article does. The
+M66 plan gate offered attaching the Imports individually (recommended),
+keeping the prefixes, or the meta-package, and the user chose the
+meta-package. `tidymodels` sits in no Import's closure, so it is maskable
+and absent on CRAN's no-Suggests flavor, unlike the Imports it attaches;
+`Config/Needs/website` already names it for the site build.
+
+**Decision:** `tidymodels` is declared in Suggests. Every page with a
+reader-facing chunk calls `library(tidymodels)` before `library(nestedtune)`,
+behind the page's existing guard extended with `requireNamespace("tidymodels")`,
+so an absent meta-package ends the page with one notice (the M06 lesson's
+shape). Optional packages outside the meta-package (finetune, mirai,
+censored, cli) keep their prefixes or their own guarded `library()` calls.
+
+**Consequences:** Building the CRAN vignettes now needs tidymodels installed,
+which the maintainer's library lacked on 2026-09-05, so M66's first task
+installs it. `library(tidymodels)` also attaches purrr and tidyr, which the
+pages do not need once M65's readers exist and which M66's idiom sweep does
+not admit for stacking. Falsified by the attach cost pushing a page past its
+build cap or the guard failing on a CRAN flavor, at which point the pages
+attach tune, dplyr and ggplot2 individually and the entry leaves Suggests.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title
