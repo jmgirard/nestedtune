@@ -1,7 +1,7 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-04 (M62 done via PR #72, merged on green at bf3d093 after two ceiling stops, each preceded by a pushed docs-only commit that restarted the matrix against the M50 lesson; validate green with the references advisories; ROADMAP and LESSONS under budget; the M06 lesson extended, the M09 conditionMessage line retired since R-CMD-check-hard fails on its mistake; no candidate row, no known issue, nothing graduated.)_
+_Last hygiene check: 2026-09-05 (M63 done via PR #73, merged on green at 984e12d after one ceiling stop with the held-local commits carried here; the published article read for its executed pool output; validate green with the references advisories; ROADMAP and LESSONS under budget; the M17, M09 and M28 lessons trimmed to fit an M63 line on ANSI codes and warning handlers in knitted output; M58's row pruned to keep five terminal rows; no candidate row, no known issue, nothing graduated.)_
 
 ## Milestones
 
@@ -10,10 +10,9 @@ _Last hygiene check: 2026-09-04 (M62 done via PR #72, merged on green at bf3d093
 | M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | done | — | normal | milestones/archive/M60-guide-split.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | done | M60 | normal | milestones/archive/M61-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | done | M60 | normal | milestones/archive/M62-results-vignette.md |
-| M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | review | M60 | normal | milestones/M063-parallel-article.md |
+| M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | done | M60 | normal | milestones/archive/M63-parallel-article.md |
 | M64 | A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it, with nnet in Suggests | planned | M60 | normal | milestones/M064-why-nest-article.md |
 | M59 | Every driver refuses a design whose inner splits are not rsplits, do not share the outer fold's frame or its analysis set, or index rows the outer fold holds out | done | — | normal | milestones/archive/M59-inner-split-frame-checks.md |
-| M58 | The startup check asks every daemon for each package the workflow and the tuner need, and the host's entry check reads the same list | done | — | normal | milestones/archive/M58-preflight-workflow-pkgs.md |
 <!-- rows grouped by status, not sorted by ID; keep only the 5 most recent terminal (done/dropped) rows — older ones live in milestones/archive/ + git -->
 
 ## Candidates
