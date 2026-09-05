@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-05 (M65 done via PR #75, merged on green at f91d1ab
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M65 | Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()` | done | — | normal | milestones/archive/M65-collect-readers.md |
-| M66 | The six vignette pages read the results through the package's readers under `library(tidymodels)`, and take a prose pass | in-progress | M65 | normal | milestones/M66-vignette-sweep.md |
+| M66 | The six vignette pages read the results through the package's readers under `library(tidymodels)`, and take a prose pass | blocked | M65 | normal | milestones/M66-vignette-sweep.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | done | M60 | normal | milestones/archive/M61-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | done | M60 | normal | milestones/archive/M62-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | done | M60 | normal | milestones/archive/M63-parallel-article.md |
