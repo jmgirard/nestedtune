@@ -105,8 +105,10 @@ Over `r sim$replicates` replicates the median of the flat run's best score is
 `r round(flat_median, 3)`, against a true accuracy of `r sim$null_accuracy`.
 The median nested estimate is `r round(nested_median, 3)`. The flat number
 sits `r round(flat_median - sim$null_accuracy, 3)` above the truth on data
-that carries no signal, and the nested number sits within
-`r round(abs(nested_median - sim$null_accuracy), 3)` of it.
+that carries no signal. The nested number sits
+`r round(abs(nested_median - sim$null_accuracy), 3)`
+`r if (nested_median < sim$null_accuracy) "below" else "above"` it, inside the
+tolerance of `r sim$tolerance` the store carries.
 
 ```{r figure, fig.width = 7, fig.height = 4, fig.alt = "One panel with two columns of points, one per replicate: the flat run's best accuracy on the left and the nested estimate on the right, each column with a horizontal bar at its median, and a dashed line across the panel at the true accuracy of one half. The left column sits above the line and the right column straddles it."}
 library(ggplot2)
@@ -143,11 +145,21 @@ ggplot(long, aes(x = quantity, y = accuracy)) +
 ```
 
 Each point is one replicate. Both quantities vary from draw to draw, and the
-nested estimate varies more, since each of its outer folds is scored on
-`r sim$n / sim$v_outer` rows. Its median is where it should be. The flat
-run's best score is above the truth on
-`r sum(sim$results$flat_best > sim$null_accuracy)` of `r sim$replicates`
-replicates.
+nested estimate varies more (a standard deviation of
+`r round(sd(sim$results$nested_estimate), 3)` against
+`r round(sd(sim$results$flat_best), 3)`), since each of its outer folds is
+scored on `r sim$n / sim$v_outer` rows. The flat run's best score is above
+the truth on `r sum(sim$results$flat_best > sim$null_accuracy)` of
+`r sim$replicates` replicates; the nested estimate is above it on
+`r sum(sim$results$nested_estimate > sim$null_accuracy)`.
+
+The nested median sits a little below the truth rather than on it. That is
+what a split of a small sample with no signal does. When the rows a fold
+trains on lean toward one label, the network tends to predict that label,
+and the rows it is scored on are the rest of the sample, which lean the
+other way, so the fold's accuracy falls short of chance. The effect shrinks as the folds grow
+and is a property of scoring on held-out rows, not of nesting; it is the
+opposite sign from the selection bias the flat number carries.
 
 ## Why the flat number is high
 

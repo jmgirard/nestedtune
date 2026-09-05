@@ -25,8 +25,15 @@
 # `vignettes/articles/`, which `.Rbuildignore` excludes, so neither the
 # tarball nor the pkgdown build runs it; the article reads the store.
 
-for (pkg in c("nestedtune", "nnet", "parsnip", "rsample", "workflows",
-              "tune", "yardstick")) {
+for (pkg in c(
+  "nestedtune",
+  "nnet",
+  "parsnip",
+  "rsample",
+  "workflows",
+  "tune",
+  "yardstick"
+)) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     stop("package '", pkg, "' is needed to run this script", call. = FALSE)
   }
@@ -58,10 +65,9 @@ grid <- expand.grid(
 # 200 inputs need 8 * 201 + 9 = 1617.
 max_nwts <- 5000L
 
-# The RNG kind is pinned so the seed means the same thing on every machine,
-# and restored on exit.
-old_kind <- RNGkind("Mersenne-Twister", "Inversion", "Rejection")
-on.exit(do.call(RNGkind, as.list(old_kind)), add = TRUE)
+# The RNG kind is pinned so the seed means the same thing on every machine.
+# The pin lasts for this process, which ends with the script.
+RNGkind("Mersenne-Twister", "Inversion", "Rejection")
 
 spec <- mlp(hidden_units = tune(), penalty = tune(), epochs = epochs) |>
   set_engine("nnet", MaxNWts = max_nwts) |>
@@ -107,7 +113,10 @@ for (i in seq_len(replicates)) {
   rows[[i]] <- one_replicate(replicate_seeds[[i]])
   message(sprintf(
     "replicate %2d of %d: flat best %.3f, nested %.3f (%.0f s elapsed)",
-    i, replicates, rows[[i]][["flat_best"]], rows[[i]][["nested_estimate"]],
+    i,
+    replicates,
+    rows[[i]][["flat_best"]],
+    rows[[i]][["nested_estimate"]],
     as.numeric(difftime(Sys.time(), started, units = "secs"))
   ))
 }
@@ -123,7 +132,9 @@ commit <- tryCatch(
   error = function(e) NA_character_,
   warning = function(w) NA_character_
 )
-if (length(commit) != 1L) commit <- NA_character_
+if (length(commit) != 1L) {
+  commit <- NA_character_
+}
 
 store <- list(
   n = n,
@@ -148,6 +159,8 @@ out <- file.path("vignettes", "articles", "why-nest.rds")
 saveRDS(store, out)
 message(sprintf(
   "wrote %s: median flat best %.3f, median nested %.3f, %.0f s total",
-  out, median(results$flat_best), median(results$nested_estimate),
+  out,
+  median(results$flat_best),
+  median(results$nested_estimate),
   as.numeric(difftime(Sys.time(), started, units = "secs"))
 ))
