@@ -70,6 +70,8 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 
 - 2026-09-05: T6 done. A fresh [O] reader over the six rendered pages returned 32 findings (nested-cv 9, estimate 6, results 7, tuners 4, parallel 3, why-nest 3); 28 fixed in the prose, one (results F16) by adding a `collect_selections(res)` and `collect_inner_metrics(res)` chunk to the readers section, one (tuners F25) by reading the win/loss race through `collect_inner_metrics()` too; four rejected, reasons in Decisions. The tuners F23 em dash lives in the results print method and goes to a candidate row. Sweep clean; tuners and results re-rendered.
 
+- 2026-09-05: T7: `test-vignette-citations.R` passes and the AC6 grep finds nothing on e26e722. First AC5 timing attempt on e26e722 under outside load (a game and a lualatex job each near a full core, load average 15.8): medians nested-cv 27.0 s, estimate 0.2 s, results 26.2 s, tuners 56.1 s (runs 143.0 / 36.9 / 56.1), total 109.5 s; tuners over its 45 s cap on that run, to be re-timed on a quieter machine (the T1 render measured it at 33.1 s). `devtools::check()` started.
+
 ## Decisions
 
 - 2026-09-05 (T6 prose pass): findings 2, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31 and 32 of the reader's list fixed as proposed or in equivalent words; F13's direction check confirmed the sentence had the sign wrong (the selection-time score is not reliably better-looking) and F14's figures confirmed against `references/tibshirani2009.md` as minimum CV error rates.
