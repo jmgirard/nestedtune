@@ -57,14 +57,15 @@ stub_fold <- function(
 hand_stacked <- function(x, column, which = seq_len(nrow(x))) {
   id_cols <- attr(x, "id_columns")
   rows <- lapply(which, function(i) {
-    tbl <- x[[column]][[i]]
-    labels <- lapply(id_cols, function(nm) rep(x[[nm]][[i]], nrow(tbl)))
-    names(labels) <- id_cols
-    vctrs::vec_cbind(vctrs::new_data_frame(labels), tbl)
+    tbl <- tibble::as_tibble(x[[column]][[i]])
+    for (nm in rev(id_cols)) {
+      tbl <- dplyr::mutate(tbl, !!nm := x[[nm]][[i]], .before = 1L)
+    }
+    tbl
   })
-  # A tibble, which the readers promise; the stubs' plain data frames would
-  # otherwise stack to a bare one and differ in class alone.
-  new_tbl(as.list(vctrs::vec_rbind(!!!rows)))
+  # dplyr's stack rather than the reader's vctrs::vec_rbind(), so the two
+  # agree only where both are right (review round 1, M65).
+  dplyr::bind_rows(!!!rows)
 }
 
 clean_run <- function(d) {
@@ -405,6 +406,31 @@ test_that("collect_selections() and collect_inner_metrics() refuse other objects
     collect_selections(data.frame(a = 1), foo = 1),
     class = "rlib_error_dots_nonempty"
   )
+})
+
+test_that("a stacked column named like a fold label is refused, not renamed", {
+  skip_if_no_engines()
+  d <- make_reg_data()
+  res <- stub_results(
+    det_nested(d),
+    list(
+      stub_fold(selected = data.frame(id = "x", num_comp = 1L)),
+      stub_fold(),
+      stub_fold()
+    )
+  )
+  cnd <- rlang::catch_cnd(
+    collect_selections(res),
+    "nestedtune_collect_name_collision"
+  )
+  expect_s3_class(cnd, "nestedtune_collect_name_collision")
+  expect_match(conditionMessage(cnd), ".selected", fixed = TRUE)
+  expect_match(conditionMessage(cnd), "\"id\"", fixed = TRUE)
+  expect_identical(conditionCall(cnd)[[1L]], as.name("collect_selections"))
+  # The other columns stack as before: the guard reads the stacked column
+  # alone.
+  expect_no_error(collect_inner_metrics(res))
+  expect_no_error(collect_notes(res))
 })
 
 test_that("collect_notes() is tune's generic, re-exported", {

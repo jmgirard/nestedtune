@@ -39,9 +39,12 @@
 #'   v-fold design, `id` and `id2` on a repeated one. Then the columns of the
 #'   stacked tables, as the list column holds them, over the union of the
 #'   columns any stacked fold carries; a fold lacking one of them holds `NA`
-#'   there. For `collect_notes()` those are tune's `location`, `type`, `note`
-#'   and `trace`, and a run that recorded no note gives zero rows with the
-#'   same columns.
+#'   there, in the same way as a fold whose recorded value is `NA`, so the
+#'   two are not told apart. For `collect_notes()` those are tune's
+#'   `location`, `type`, `note` and `trace`, and a run that recorded no note
+#'   gives zero rows with the same columns. A stacked table carrying a column
+#'   named like a fold label column (a parameter given the id `id`) is
+#'   refused with condition class `nestedtune_collect_name_collision`.
 #'
 #' @details
 #' `collect_selections()` and `collect_inner_metrics()` read the folds that
@@ -110,7 +113,12 @@ collect_selections.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
   check_any_completed(x, action = "collect")
   warn_partial_summary(x, noun = "table")
-  stack_fold_column(x, ".selected", completed_only = TRUE)
+  stack_fold_column(
+    x,
+    ".selected",
+    completed_only = TRUE,
+    call = rlang::current_env()
+  )
 }
 
 #' @rdname collect_selections
@@ -135,14 +143,24 @@ collect_inner_metrics.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
   check_any_completed(x, action = "collect")
   warn_partial_summary(x, noun = "table")
-  stack_fold_column(x, ".inner_metrics", completed_only = TRUE)
+  stack_fold_column(
+    x,
+    ".inner_metrics",
+    completed_only = TRUE,
+    call = rlang::current_env()
+  )
 }
 
 #' @rdname collect_selections
 #' @export
 collect_notes.nested_results <- function(x, ...) {
   rlang::check_dots_empty()
-  stack_fold_column(x, ".notes", completed_only = FALSE)
+  stack_fold_column(
+    x,
+    ".notes",
+    completed_only = FALSE,
+    call = rlang::current_env()
+  )
 }
 
 # The refusal for every object the two owned generics have no method for,

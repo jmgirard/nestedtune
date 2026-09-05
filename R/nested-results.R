@@ -969,13 +969,35 @@ per_fold_metrics <- function(x) {
 # and inner tables are read over the completed folds, the way
 # collect_metrics() and agreement() read, while the notes are read over every
 # fold, a failed fold's notes being the point of asking.
-stack_fold_column <- function(x, column, completed_only) {
+stack_fold_column <- function(
+  x,
+  column,
+  completed_only,
+  call = rlang::caller_env()
+) {
   id_cols <- id_columns(x)
   which <- if (completed_only) which(x$.completed) else seq_len(nrow(x))
   rows <- lapply(which, function(i) {
     tbl <- x[[column]][[i]]
     if (is.null(tbl)) {
       return(NULL)
+    }
+    # A stacked column named like a label column would be repaired to
+    # `id...1`/`id...2` by the tibble constructor, the label lost under a
+    # message: refuse it, the rule agreement() applies to `n` and `prop`
+    # (M44 lesson). Reachable through a parameter given the id `id`.
+    clash <- intersect(names(tbl), id_cols)
+    if (length(clash) > 0L) {
+      cli::cli_abort(
+        c(
+          "Cannot stack {.code {column}}: it carries a column named \\
+           {.val {clash}}, which is one of this object's fold label columns.",
+          i = "The fold label columns are {.val {id_cols}}; give the \\
+               parameter another id in {.fn tune::tune}."
+        ),
+        class = "nestedtune_collect_name_collision",
+        call = call
+      )
     }
     labels <- lapply(id_cols, function(nm) rep(x[[nm]][[i]], nrow(tbl)))
     names(labels) <- id_cols

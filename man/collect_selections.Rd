@@ -31,9 +31,12 @@ the object's record rather than recognized by name: \code{id} on a plain
 v-fold design, \code{id} and \code{id2} on a repeated one. Then the columns of the
 stacked tables, as the list column holds them, over the union of the
 columns any stacked fold carries; a fold lacking one of them holds \code{NA}
-there. For \code{collect_notes()} those are tune's \code{location}, \code{type}, \code{note}
-and \code{trace}, and a run that recorded no note gives zero rows with the
-same columns.
+there, in the same way as a fold whose recorded value is \code{NA}, so the
+two are not told apart. For \code{collect_notes()} those are tune's
+\code{location}, \code{type}, \code{note} and \code{trace}, and a run that recorded no note
+gives zero rows with the same columns. A stacked table carrying a column
+named like a fold label column (a parameter given the id \code{id}) is
+refused with condition class \code{nestedtune_collect_name_collision}.
 }
 \description{
 A \code{nested_results} object keeps three of its records as one table per outer

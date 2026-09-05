@@ -69,9 +69,12 @@ naming convention.
   call by an internal *tuner description* — the tune or finetune function's
   name and its static arguments (`R/tuner.R`, D-040), resolved against the
   tuner registry there (M50) — plus the `collect_metrics()` method on the
-  `nested_results` object both return and `agreement()`, the package-owned
+  `nested_results` object both return, `agreement()`, the package-owned
   generic tabulating how often each selected parameter combination was chosen
-  across the outer folds (D-039). The suffix names the inner tuning method
+  across the outer folds (D-039), and the three readers that stack a per-fold
+  list column with the recorded fold labels beside it: `collect_notes()`, a
+  method on tune's generic, and the package-owned `collect_selections()` and
+  `collect_inner_metrics()` (D-052). The suffix names the inner tuning method
   (D-010).
 - **Final fit** — `nested_final_fit(object, results)`, returning a
   `nested_final_fit` object that answers `predict()` and `augment()` with the
@@ -308,7 +311,7 @@ kind pin is what makes a fresh worker agree with a serial run.
 — split, id, metrics, selected parameters, the inner tuning run's
 `collect_metrics()` table as `.inner_metrics` (M49, D-043; the candidate set a
 reader needs is its distinct parameter rows; on a race, `all_configs = TRUE`
-through `collect_inner_metrics()`, so eliminated candidates are in it with
+through `inner_metrics_table()`, so eliminated candidates are in it with
 their `n`, M50), notes, and the fold's two seeds —
 as a plain tibble carrying class `nested_results`. It deliberately does **not**
 inherit `tune_results`: that would bring `show_best()` and `select_best()`
