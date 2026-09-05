@@ -1511,6 +1511,37 @@ so the slot would install a package it does not use).
 Falsified by a CRAN check flagging an unused Suggests entry, or by the
 article's store being regenerated without the package.
 
+### D-051 (2026-09-05): `nnet` leaves Suggests — supersedes D-050, on RR06's finding that the entry has no reader
+
+**Context:** D-050 put `nnet` in Suggests for the simulation script behind
+the site-only article, on the reasoning that a package producing a shipped
+page's figures should declare what the producing script needs. The plan gate
+chose Suggests twice without the fact that decides the question: `nnet` is a
+recommended package in every R installation and sits in the package's hard
+import closure through tune → recipes → ipred, so it is installed and loaded
+wherever nestedtune loads, and cannot be masked from `.libPaths()`. M64's
+implement gate found the masked-build criterion unsatisfiable on that fact,
+and RB06 escalated the question.
+
+**Decision:** `nnet` is not declared in DESCRIPTION. Nothing in the tarball
+names it (the script and the article are build-ignored), `R CMD check`
+exercises Suggests only through examples, tests and vignettes and has no
+branch for a declared Suggests that nothing uses, and its one warning on
+Suggests, a declared package not installed, cannot fire while tune's closure
+installs it first; so D-050's falsifier, a CRAN check flagging an unused
+Suggests entry, names a check that does not exist. The script's own
+`requireNamespace()` loop and header comment declare its needs at the place
+someone running it reads. Considered and rejected: keeping the line as
+documentary (a reader of DESCRIPTION would find a package the built package
+never uses and go to this file to learn why); `Config/Needs/website` (D-050's
+reason stands, and the website job installs tune).
+
+**Consequences:** D-044's precedent is unchanged: a fitting package a shipped
+path needs is declared, and the article, the shipped path, needs none (M64's
+AC5 measures a fresh render loading neither nnet, tune nor nestedtune).
+Falsified by a tarball path, a test, an example or a CRAN vignette, coming to
+name `nnet`, at which point it re-enters Suggests for the D-029 reason.
+
 <!-- Template:
 
 ### D-00N (YYYY-MM-DD): Title

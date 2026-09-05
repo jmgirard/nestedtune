@@ -1,0 +1,252 @@
+---
+title: "Why nest: a simulation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Why nest: a simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+A tuning run reports a score for its winner. That score is the best of many
+resampling estimates, each noisy, and picking the best of a noisy set biases
+it upward. Nested cross-validation exists to remove that bias: each outer
+fold tunes on its own analysis rows and scores the winner on rows the tuning
+never saw. `vignette("estimate")` explains the argument. This page shows the
+size of the effect on data where the true answer is known.
+
+The design follows Varma and Simon (2006). Draw data with no signal at all,
+so that every classifier has the same true accuracy, then tune a learner on
+it and compare what the tuning run's best score says against what the nested
+estimate says. Repeat over fresh draws, and read the two distributions.
+
+## What this page reads
+
+Every replicate fits hundreds of small neural networks, so the page does not
+run the simulation. It reads a stored result that the script
+`vignettes/articles/why-nest-sim.R` in the package repository produces, and
+every number below is read from that object. The script's header says how to
+regenerate it.
+
+```{r read}
+sim <- readRDS("why-nest.rds")
+names(sim)
+```
+
+## The design
+
+Each replicate draws `r sim$n` rows of `r sim$p` independent standard normal
+features and a label that is a fair coin toss, independent of every feature.
+Nothing in the features predicts the label, so any classifier's true accuracy
+is `r sim$null_accuracy`, whatever its parameters. Features outnumber rows by
+`r round(sim$p / sim$n, 1)` to one, a smaller version of the wide null data
+Varma and Simon (2006) simulate.
+
+The learner is a single-layer neural network, `parsnip::mlp()` on the nnet
+engine, with `hidden_units` and `penalty` marked for tuning and `epochs` fixed
+at `r sim$epochs`. The grid holds `r nrow(sim$grid)` candidates:
+
+```{r grid}
+sim$grid
+```
+
+The same workflow is tuned twice on each replicate's data.
+
+- The **flat run** is `tune::tune_grid()` over `r sim$v_outer`-fold
+  cross-validation of all the rows. Its winner's mean accuracy across the folds
+  is the number a tuning run shows first, the figure a reader who stops there
+  would report.
+- The **nested run** is `nested_tune_grid()` over `r sim$v_outer` outer folds,
+  each tuning on `r sim$v_inner` inner folds of its own analysis rows. Its
+  estimate is the mean accuracy of each outer fold's winner on that fold's
+  assessment rows.
+
+Both see the same grid and the same rows, each run drawing its own fold
+assignment. What differs is whether the rows that score the winner took part
+in choosing it.
+
+```{r design-table, echo = FALSE}
+knitr::kable(
+  data.frame(
+    setting = c(
+      "rows", "features", "candidates", "epochs", "weight cap (MaxNWts)",
+      "outer folds", "inner folds", "replicates", "seed"
+    ),
+    value = c(
+      sim$n, sim$p, nrow(sim$grid), sim$epochs, sim$max_nwts, sim$v_outer,
+      sim$v_inner, sim$replicates, sim$seed
+    )
+  ),
+  align = "lr"
+)
+```
+
+## The result
+
+The store holds one row per replicate, with the flat run's best score and the
+nested estimate side by side.
+
+```{r results}
+head(sim$results)
+```
+
+```{r medians}
+flat_median <- median(sim$results$flat_best)
+nested_median <- median(sim$results$nested_estimate)
+c(flat = flat_median, nested = nested_median)
+```
+
+Over `r sim$replicates` replicates the median of the flat run's best score is
+`r round(flat_median, 3)`, against a true accuracy of `r sim$null_accuracy`.
+The median nested estimate is `r round(nested_median, 3)`. The flat number
+sits `r round(abs(flat_median - sim$null_accuracy), 3)`
+`r if (flat_median < sim$null_accuracy) "below" else "above"` the truth on
+data that carries no signal. The nested number sits
+`r round(abs(nested_median - sim$null_accuracy), 3)`
+`r if (nested_median < sim$null_accuracy) "below" else "above"` it, inside the
+tolerance of `r sim$tolerance` the store carries.
+
+```{r figure, fig.width = 7, fig.height = 4, fig.alt = "One panel with two columns of points, one per replicate: the flat run's best accuracy on the left and the nested estimate on the right, each column with a horizontal bar at its median, and a dashed line across the panel at the true accuracy of one half. The left column sits above the line and the right column straddles it."}
+library(ggplot2)
+
+long <- rbind(
+  data.frame(
+    quantity = "Flat run: best candidate's CV accuracy",
+    accuracy = sim$results$flat_best
+  ),
+  data.frame(
+    quantity = "Nested estimate",
+    accuracy = sim$results$nested_estimate
+  )
+)
+long$quantity <- factor(long$quantity, levels = unique(long$quantity))
+
+ggplot(long, aes(x = quantity, y = accuracy)) +
+  geom_hline(yintercept = sim$null_accuracy, linetype = "dashed") +
+  geom_point(
+    position = position_jitter(width = 0.15, height = 0, seed = sim$seed),
+    alpha = 0.6
+  ) +
+  stat_summary(
+    fun = median, fun.min = median, fun.max = median,
+    geom = "crossbar", width = 0.4, linewidth = 0.6
+  ) +
+  labs(
+    x = NULL,
+    y = "Accuracy",
+    title = "Accuracy on data with no signal",
+    subtitle = sprintf(
+      "%d replicates; bars at the median; dashed line at the true accuracy of %s",
+      sim$replicates, format(sim$null_accuracy)
+    )
+  ) +
+  theme_minimal()
+```
+
+```{r counts, include = FALSE}
+tally <- function(x) {
+  c(
+    above = sum(x > sim$null_accuracy),
+    at = sum(x == sim$null_accuracy),
+    below = sum(x < sim$null_accuracy)
+  )
+}
+flat_tally <- tally(sim$results$flat_best)
+nested_tally <- tally(sim$results$nested_estimate)
+nested_mean <- mean(sim$results$nested_estimate)
+nested_se <- sd(sim$results$nested_estimate) / sqrt(sim$replicates)
+```
+
+Each point is one replicate. Both quantities vary from draw to draw, with a
+standard deviation of `r round(sd(sim$results$flat_best), 3)` for the flat
+run's best score and `r round(sd(sim$results$nested_estimate), 3)` for the
+nested estimate. Of the `r sim$replicates` replicates, the flat run's best
+score is above the truth on `r flat_tally[["above"]]`, at it on
+`r flat_tally[["at"]]` and below it on `r flat_tally[["below"]]`; the nested
+estimate is above the truth on `r nested_tally[["above"]]`, at it on
+`r nested_tally[["at"]]` and below it on `r nested_tally[["below"]]`.
+
+The nested median sits a little below the truth rather than on it. The
+design gives no reason to expect that: every label is an independent coin
+toss, so whatever a fold's network predicts, the rows it is scored on agree
+with it half the time in expectation, and the nested estimate's expectation
+is the null accuracy. The mean nested estimate over the replicates is
+`r round(nested_mean, 3)`, `r round(abs(nested_mean - sim$null_accuracy), 3)`
+`r if (nested_mean < sim$null_accuracy) "below" else "above"` the truth
+against a standard error of `r round(nested_se, 3)`. The median is the
+summary the page holds to its tolerance, and on this many replicates it
+lands where the draws put it.
+
+## Why the flat number is high
+
+Varma and Simon (2006) give the mechanism. The flat run scores every
+candidate on the same folds and reports the maximum. Each of those scores is
+an unbiased estimate of an accuracy that, on this data, is the same for every
+candidate. The maximum of a set of noisy estimates of one value is not an
+unbiased estimate of that value; it is biased upward, and more so the larger
+the set. For candidates whose estimates are independent, their expression
+for the probability that the minimum error over the grid falls below the
+truth is one minus one half to the power of the grid size, so the chance
+that it does not is one half to that power, for this page's
+`r nrow(sim$grid)` candidates one in
+`r format(2^nrow(sim$grid), big.mark = ",", scientific = FALSE)`. Here the
+candidates are scored on the same folds, so their estimates are not
+independent and that figure overstates the case, but the direction is the
+same. The best candidate's score describes how lucky the search was, not how
+good the winner is.
+
+The nested run's outer folds are not part of that search. Each fold's winner
+is chosen on the inner folds and then scored once on rows the search never
+touched, so the score has no maximum taken over it. Its expectation is the
+true accuracy of the whole tune-and-fit procedure, which here is the null
+accuracy. That is the argument `vignette("estimate")` makes, and the figure
+above is what it looks like on data where the truth is known.
+
+## What this page does not show
+
+This is one learner on one design. The size of the gap depends on how many
+candidates the search compares, how noisy each candidate's resampling score
+is, and how much the candidates' true accuracies actually differ. A grid
+whose candidates fit the data very differently, or a learner whose tuning
+parameters barely change its fit, would show a different gap, and on data
+with real signal the flat number is high for the same reason but the truth
+is no longer known. Varma and Simon (2006) report the same design with two
+other learners and much wider data, and Ambroise and McLachlan (2002) reach
+a matching conclusion for feature selection rather than tuning, from labels
+permuted rather than drawn at random.
+
+The nested estimate is not free of every bias. Each outer fold's winner is
+fit on fewer rows than the model you would deploy, so on data with signal the
+nested number runs slightly pessimistic. `vignette("estimate")` sizes that.
+On this page every label is an independent coin toss, so a training set of
+any size has the same true accuracy and the nested mean sits within a
+standard error of the truth. Varma and Simon (2006), whose null data fixes
+twenty rows per class, report a nested estimate 4.2 points pessimistic on
+it.
+
+## Provenance
+
+The stored result was produced by `vignettes/articles/why-nest-sim.R` at
+commit `r sim$commit` on `r sim$date`, from seed `r sim$seed` under the
+`r sim$rng_kind[[1]]` generator. The commit is one on the branch that added
+this page, reachable through that pull request's history. On one machine and
+one set of package versions, the script writes the same object from the same
+seed apart from those two provenance fields; other versions of R or of the
+fitting packages may not reproduce the fits. The tolerance the store
+carries, `r sim$tolerance`, is the distance from the null accuracy inside
+which the nested median is held when the result is regenerated.
+
+## References
+
+Ambroise, C., & McLachlan, G. J. (2002). Selection bias in gene extraction on
+the basis of microarray gene-expression data. *Proceedings of the National
+Academy of Sciences*, 99(10), 6562–6566.
+
+Varma, S., & Simon, R. (2006). Bias in error estimation when using
+cross-validation for model selection. *BMC Bioinformatics*, 7, 91.

@@ -24,6 +24,7 @@ articles:
   navbar: Articles
   contents:
   - articles/parallel
+  - articles/why-nest
 
 reference:
 - title: Nested resampling
