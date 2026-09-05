@@ -229,27 +229,29 @@ pool are correct, and it is not refused. What it lacks is the ability to
 stop, and the call says so at dispatch with a warning of class
 `nestedtune_pool_not_cancellable`, once per run.
 
-Here is that pool, with the warning caught by a handler and its class
-printed. The results it returns are the same as before.
+Here is that pool. The first chunk runs the loop on it with the warning
+muted and checks the result against the serial run. The second repeats the
+call and catches the warning with `rlang::catch_cnd()` to show its class.
 
-```{r no-dispatcher}
+```{r no-dispatcher, warning = FALSE}
 mirai::daemons(2, dispatcher = FALSE)
-
-caught <- NULL
 
 set.seed(2)
 
-nd_res <- withCallingHandlers(
+nd_res <- nested_tune_grid(wf, folds, grid = grid)
+
+identical(nd_res$.metrics, ser_res$.metrics)
+```
+
+```{r no-dispatcher-warning}
+set.seed(2)
+
+caught <- rlang::catch_cnd(
   nested_tune_grid(wf, folds, grid = grid),
-  nestedtune_pool_not_cancellable = function(w) {
-    caught <<- w
-    invokeRestart("muffleWarning")
-  }
+  classes = "nestedtune_pool_not_cancellable"
 )
 
 class(caught)
-
-identical(nd_res$.metrics, ser_res$.metrics)
 
 mirai::daemons(0)
 ```

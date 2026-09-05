@@ -132,17 +132,17 @@ data that carries no signal. The nested number sits
 tolerance of `r sim$tolerance` the store carries.
 
 ```{r figure, fig.width = 7, fig.height = 4, fig.alt = "One panel with two columns of points, one per replicate: the flat run's best accuracy on the left and the nested estimate on the right, each column with a horizontal bar at its median, and a dashed line across the panel at the true accuracy of one half. The left column sits above the line and the right column straddles it."}
-long <- rbind(
-  data.frame(
+long <- bind_rows(
+  tibble(
     quantity = "Flat run: best candidate's CV accuracy",
     accuracy = sim$results$flat_best
   ),
-  data.frame(
+  tibble(
     quantity = "Nested estimate",
     accuracy = sim$results$nested_estimate
   )
-)
-long$quantity <- factor(long$quantity, levels = unique(long$quantity))
+) |>
+  mutate(quantity = factor(quantity, levels = unique(quantity)))
 
 ggplot(long, aes(x = quantity, y = accuracy)) +
   geom_hline(yintercept = sim$null_accuracy, linetype = "dashed") +

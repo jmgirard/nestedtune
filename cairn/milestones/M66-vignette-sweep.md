@@ -45,7 +45,7 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - [x] T2: `nested-cv.Rmd`: `filter()` for the rmse rows; `collect_selections(res)` for the fold table and `n_distinct()` for the counts; `tibble()` for the comparison table; `extract_tune_results(final)` piped to `show_best(metric = "rmse", n = 1)` for the selection-time score, in the hidden writeup chunk too; the refusal chunks unprefixed.
 - [x] T3: `results.Rmd`: `select()` for the seed columns; `collect_notes(failed)` for both notes readings, the counts as `count(id)`; the `mutate()` example with a plain arithmetic column; `rlang::catch_cnd()` for the partial warning's class and message with the summary printed in a `warning = FALSE` chunk; `tibble()` for `surv_df`.
 - [x] T4: `tuners.Rmd`: `collect_inner_metrics(race)` with `filter()`, `group_by()` and `summarise()` for the fits per fold, `slice_min()` for the cheapest fold; the hidden count chunk may follow.
-- [ ] T5: `articles/parallel.Rmd`: the dispatcher-less run in a `warning = FALSE` chunk, then `rlang::catch_cnd()` on a repeat call for the class, its message through `cli::ansi_strip()` (the M63 lesson); `articles/why-nest.Rmd`: the figure's long table via `tibble()` and `bind_rows()`.
+- [x] T5: `articles/parallel.Rmd`: the dispatcher-less run in a `warning = FALSE` chunk, then `rlang::catch_cnd()` on a repeat call for the class, its message through `cli::ansi_strip()` (the M63 lesson); `articles/why-nest.Rmd`: the figure's long table via `tibble()` and `bind_rows()`.
 - [ ] T6: Prose pass: a fresh [O] reader over the six rendered pages for clarity, consistency between pages and plain style; every finding fixed or rejected with a one-line reason in this file's Decisions section.
 - [ ] T7: Timings (median of three renders per page), `pkgdown::build_articles()`, `devtools::test()`, `devtools::check()` 0/0/0, `pkgdown::check_pkgdown()`, `air format --check`; the AC1, AC2 and AC6 sweeps run and recorded; NEWS entry.
 
@@ -63,6 +63,8 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 - 2026-09-05: T3 done. `results.Rmd` reads the seeds with `select()`, both notes readings through `collect_notes()` with `filter()` on the fold label and the counts as `count(notes, id)`, the partial warning's class and message with `rlang::catch_cnd()` and the summary in a `warning = FALSE` chunk, the `mutate()` example as a `row_number()` column, and `surv_df` and `surv_grid` as tibbles. The rendered page shows no ANSI code in the warning's message, so it prints through `cat()` alone. Renders; the sweep reports nothing on it.
 
 - 2026-09-05: T4 done. `tuners.Rmd` counts the fits per fold as `collect_inner_metrics(race) |> filter() |> group_by(id) |> summarise(fits = sum(n))`, takes the cheapest fold with `slice_min(with_ties = FALSE)` and shows its table by filtering the stacked metrics on its label; the hidden count chunk reads the same stack. Renders; the sweep reports nothing on it; the rendered prose still names Fold3 at 23 fits against 30.
+
+- 2026-09-05: T5 done. `articles/parallel.Rmd` runs the dispatcher-less pool in a `warning = FALSE` chunk and catches the class on a repeat call with `rlang::catch_cnd()`, which returns at the dispatch-time warning before any fold runs; the hidden message chunk keeps `cli::ansi_strip()`. `articles/why-nest.Rmd` builds the figure's long table with `bind_rows()` and `tibble()` and levels it in `mutate()`. Both render; the sweep is clean over the whole tree.
 
 ## Decisions
 
