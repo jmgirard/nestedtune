@@ -1,15 +1,14 @@
 # Roadmap
 
 _The only authority on milestone status. Grouped by status, not ID._
-_Last hygiene check: 2026-09-05 (M64 done via PR #74, merged on green at 35421b8 after two ceiling stops, the held tracking line carried here; validate green; ROADMAP and LESSONS under budget; the M06 lesson extended with the Import-closure and `Priority` check, M57's overlapping clause folded into it; M59's row pruned to keep five terminal rows; no candidate row, no known issue, nothing graduated.)_
+_Last hygiene check: 2026-09-05 (M65 done via PR #75, merged on green at f91d1ab after two ceiling stops, the held tracking line carried to the archive; validate green; ROADMAP and LESSONS under budget; the M41 lesson extended with the internal-name shadowing case; M60's row pruned to keep five terminal rows; the `procedure` accessor candidate row already present from the plan; no known issue, nothing graduated.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M65 | Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()` | review | — | normal | milestones/M65-collect-readers.md |
+| M65 | Three readers stack a per-fold list column with the fold labels beside it: `collect_notes()`, `collect_selections()` and `collect_inner_metrics()` | done | — | normal | milestones/archive/M65-collect-readers.md |
 | M66 | The six vignette pages read the results through the package's readers under `library(tidymodels)`, and take a prose pass | planned | M65 | normal | milestones/M66-vignette-sweep.md |
-| M60 | The guide splits into a getting-started path and a page on what the estimate means, and the citation guard sweeps every page under vignettes/ | done | — | normal | milestones/archive/M60-guide-split.md |
 | M61 | A vignette runs the four alternative inner tuners on one design and shows what each records | done | M60 | normal | milestones/archive/M61-tuner-vignette.md |
 | M62 | A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments | done | M60 | normal | milestones/archive/M62-results-vignette.md |
 | M63 | A site-only article runs the outer loop on mirai daemons and shows the result identical to the serial run | done | M60 | normal | milestones/archive/M63-parallel-article.md |
