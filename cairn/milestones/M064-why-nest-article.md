@@ -1,6 +1,6 @@
-# M64: A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it, with nnet in Suggests
+# M64: A site-only article repeats a null-data simulation showing tuned-CV optimism and the nested estimate removing it
 
-- **Status:** blocked
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
@@ -15,7 +15,7 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 
 ## Scope
 
-**In:** the script (n rows, p ≫ n Gaussian features, a fair-coin label, a `parsnip::mlp()` on the `nnet` engine tuned over a grid, flat `tune_grid()` best accuracy against `nested_tune_grid()`'s estimate, R replicates, seeded); the stored `vignettes/articles/why-nest.rds` carrying the replicate results, the design, the seed, the null accuracy, a tolerance for the nested median, the commit and the date; the article reading the store; `nnet` in Suggests (D-050); the `_pkgdown.yml` entry.
+**In:** the script (n rows, p ≫ n Gaussian features, a fair-coin label, a `parsnip::mlp()` on the `nnet` engine tuned over a grid, flat `tune_grid()` best accuracy against `nested_tune_grid()`'s estimate, R replicates, seeded); the stored `vignettes/articles/why-nest.rds` carrying the replicate results, the design, the seed, the null accuracy, a tolerance for the nested median, the commit and the date; the article reading the store; the `_pkgdown.yml` entry; no `nnet` declaration in DESCRIPTION (D-051).
 
 **Out:** a live build (minutes of fits; the store is the deliverable and the script its provenance); any learner beyond the one the gate chose; the concept page's literature (M60); a test that re-runs the script (too slow; the review re-runs it once).
 
@@ -25,9 +25,10 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - [ ] AC2: The stored object records `n`, `p`, the grid, the replicate count (at least 20), the seed, the null accuracy, the tolerance, the commit hash and the date it was produced, and the article prints each from the object rather than from prose.
 - [ ] AC3: In the stored object, the median over replicates of the flat best-candidate accuracy lies further from the null accuracy than the median nested estimate does, and the median nested estimate lies within the stored tolerance (0.05) of the null accuracy; the article states both medians as inline R over the object.
 - [ ] AC4: The built article's figure shows both quantities' distributions across replicates with a reference line at the stored null accuracy and carries a non-empty `fig.alt`.
-- [ ] AC5: `pkgdown::build_article("articles/why-nest")` succeeds on the development machine with `nnet` masked from `.libPaths()` (the article reads the store), and `R CMD build`'s tarball listing (`untar(list = TRUE)`) contains no path under `vignettes/articles/`.
-- [ ] AC6: `nnet` is in `Suggests`, and the citation guard (M60) passes over the article, its cited sources (at least `varma2006`) each backed by a shelf page.
+- [ ] AC5: `pkgdown::build_article("articles/why-nest")` succeeds on the development machine, and a fresh-process `rmarkdown::render()` of `vignettes/articles/why-nest.Rmd`, evaluating its chunks in that process rather than a child session, succeeds with `nnet`, `tune` and `nestedtune` all absent from `loadedNamespaces()` in that same process after the render returns.
+- [ ] AC6: The article cites Varma and Simon (2006) and lists it under `## References`, and the citation guard (M60) runs over the article from the source tree, not skipped, and passes, every entry the article lists backed by a shelf page.
 - [ ] AC7: The profile's `verify` slot is clean and `devtools::check()` reports no error, warning or note beyond those on the default branch.
+- [ ] AC8: `R CMD build`'s tarball listing (`untar(list = TRUE)`) contains no path under `vignettes/articles/`.
 
 ## Coverage
 
@@ -38,13 +39,14 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - AC5 → T4
 - AC6 → T4
 - AC7 → T4
+- AC8 → T4
 
 ## Tasks
 
 - [ ] T1: Write the script: the design from the plan gate's probe (n = 60, p = 200, a 20-candidate `hidden_units` × `penalty` grid, `epochs = 50`, `MaxNWts` raised), replicates in a seeded loop, each replicate's flat best accuracy and nested estimate kept, the metadata attached; run it twice for AC1 and log the runtime; if either AC3 condition fails on the store, stop and return to the plan gate through the amendment protocol (raise `p`, the grid or the replicate count) before writing the article.
 - [ ] T2: Write the article: the design read from the store, the two medians, the Varma and Simon (2006) design it follows, the caveat that this is one learner on one design; digits in prose as inline R over the store or inside backtick spans.
 - [ ] T3: The figure: both distributions on one panel or two, a dashed line at the stored null accuracy, `fig.alt`; render to PNG and look at it before committing (the M08 lesson), and log the file.
-- [ ] T4: `nnet` to Suggests; `_pkgdown.yml` entry; `R CMD build` listing; a build with `nnet` masked; the guard, the verify slot and `devtools::check()`.
+- [ ] T4: `_pkgdown.yml` entry; `R CMD build` listing; the fresh-process render check (`Rscript -e 'rmarkdown::render("vignettes/articles/why-nest.Rmd", output_dir = tempdir(), quiet = TRUE); print(c("nnet", "tune", "nestedtune") %in% loadedNamespaces())'`, three `FALSE` logged); the guard run from the source tree, the verify slot and `devtools::check()`.
 
 ## Work log
 
@@ -57,3 +59,17 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-05: implement started; branch `m064-why-nest-article`. Gate chose 30 replicates (one replicate 80 s serially, so about 40 min a run) and a one-panel figure of paired points with median bars. T1 script written and run 1 in progress; the article draft, `nnet` in Suggests, the `_pkgdown.yml` entry and the NEWS entry written, none yet verified against a store. Checkpoint, half-done.
 - 2026-09-05: run 1 (script as committed at 734d2eb) wrote the store in 4108 s: median flat best 0.567, median nested 0.458, both AC3 conditions holding (0.067 above the null against 0.042 below, inside the 0.05 tolerance). Script reformatted by air and its top-level `on.exit()` dropped (inert in Rscript, the M09 lesson); run 2 started on that script. Article reworded for the nested median sitting below the null; `pkgdown::build_article()` builds it and the figure was rendered and read.
 - 2026-09-05: AC5's masked build is unsatisfiable: nnet is a recommended package in the system library, unmaskable from `.libPaths()`, and a stub mask shows it in the hard import closure (tune → recipes → ipred → nnet), so `library(nestedtune)` fails and pkgdown's autolinker fails resolving `tune::tune_grid()`; a fresh-process `rmarkdown::render()` of the article loads neither nnet, tune nor nestedtune. Mini gate offered replacing the clause with that render check; the user chose escalation. Blocked on RB06.
+- 2026-09-05: RR06 received (advisory, no binding criteria) and ingested. Gate adopted its AC5 rewording, split the tarball listing into AC8 mapped to T4, and removed `nnet` from Suggests by D-051 superseding D-050; the title, Scope In, AC6, T4, NEWS and DESCRIPTION amended together. AC1 unchanged (the script still needs `nnet`).
+- 2026-09-05: re-audit: AC5 (full) — the process evaluating `loadedNamespaces()` was unstated and the trailing "since" clause read as an unenumerated universal; both fixed.
+- 2026-09-05: re-audit: AC6 (full) — the wording was satisfied by the shelf page existing without the article citing it; fixed to require the citation and the listing.
+- 2026-09-05: re-audit: AC8 (full) — nothing.
+- 2026-09-05: re-audit: AC5 (full) — a render farming chunks to a child session would pass vacuously; fixed by pinning chunk evaluation to the same process. Second line, the stop: further churn goes to the user.
+- 2026-09-05: re-audit: AC6 (full) — the real-tree guard skips under `R CMD check`, so a skip could be read as a pass; fixed by requiring the source-tree run. Second line, the stop.
+- 2026-09-05: gate chose the second reader's tightened AC5 and AC6 over the first-audit wording. RB06/RR06 archived; status back to in-progress.
+
+## Decisions
+
+- 2026-09-05 (RR06 Q1, Q4): AC5 certifies the article's independence by a fresh-process render leaving `nnet`, `tune` and `nestedtune` unloaded, naming all three so the check does not rest on ipred's import of nnet; the tarball listing is its own criterion, as M63's was. Rejected: naming `nnet` alone (passes by an upstream accident); dropping the clause (certifies nothing about dependence); a static grep of the chunks (cannot see a transitive load).
+- 2026-09-05 (RR06 Q2): a repeatable measurement whose outcome is the criterion stays in the criterion with its instrument named; the command and its printed output go in T4 and the review evidence; the ipred mechanism goes to a lesson, not a criterion.
+- 2026-09-05 (RR06 Q5): the original AC5 is not ticked under any reading: a stub package is not "masked from `.libPaths()`", and under it "succeeds" is false.
+- 2026-09-05 (RR06 beyond the brief): a LESSONS line on checking an Import's recursive closure and a package's `Priority` before writing a masking or skip-on-absence criterion is scheduled for the review's post-merge hygiene, as the third instance after M61 (dials) and M57 (tibble), to be merged into the M06 line. The pkgdown job renders from the committed store, so the review evidence records the commit the store's `commit` field names.
