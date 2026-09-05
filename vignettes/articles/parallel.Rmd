@@ -136,8 +136,8 @@ par_res <- nested_tune_grid(wf, folds, grid = grid)
 par_res
 ```
 
-The result carries no mark of how it was computed. That is deliberate, and
-the next section is why.
+The result carries no mark of how it was computed. That is deliberate,
+and the serial run below is why.
 
 ## Stopping the pool
 
@@ -149,6 +149,37 @@ mirai::daemons(0)
 
 mirai::status()$connections
 ```
+
+## The same run, serially
+
+The seed is the same, so the serial run is the same procedure on the same
+resamples. Each outer fold draws its tuning seed from the session state at
+entry, by its position in the design, before anything is dispatched, and
+each daemon then pins the same generator kind the serial path uses. So the
+fold's inner tuning sees the same random stream whichever process runs it.
+
+```{r run-serial}
+set.seed(2)
+
+ser_res <- nested_tune_grid(wf, folds, grid = grid)
+```
+
+```{r identity}
+same <- c(
+  metrics = identical(par_res$.metrics, ser_res$.metrics),
+  selected = identical(par_res$.selected, ser_res$.selected),
+  tuning_seed = identical(par_res$.tuning_seed, ser_res$.tuning_seed)
+)
+
+same
+```
+
+`identical()` on the outer scores, the selections and the tuning seeds
+returns `r all(same)` for each. The two results are the same object, and
+which one was computed on daemons is not recoverable from it. That is what
+lets a pool be a matter of the session rather than of the analysis: a script
+gives the same answer on a laptop with no daemons and on a workstation with
+many.
 
 ## What crosses the wire
 
