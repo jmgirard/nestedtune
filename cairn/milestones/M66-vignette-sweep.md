@@ -66,6 +66,8 @@ Rewrite every reader-facing chunk on the six pages under `vignettes/` to read th
 
 - 2026-09-05: T5 done. `articles/parallel.Rmd` runs the dispatcher-less pool in a `warning = FALSE` chunk and catches the class on a repeat call with `rlang::catch_cnd()`, which returns at the dispatch-time warning before any fold runs; the hidden message chunk keeps `cli::ansi_strip()`. `articles/why-nest.Rmd` builds the figure's long table with `bind_rows()` and `tibble()` and levels it in `mutate()`. Both render; the sweep is clean over the whole tree.
 
+- 2026-09-05: T7 started: NEWS entry written; the sweep script formatted by air; planted-page check shows every sweep class firing (idioms, prefix, attach order, guard, em dash, `M12`, a foreign `vignette()` name) with the peek, the hidden chunk and the inline span silent; `pkgdown::check_pkgdown()` clean. T6 reader and the test suite in flight.
+
 ## Decisions
 
 ## Review

@@ -76,13 +76,21 @@ for (page in pages) {
     guard <- grep("requireNamespace|\"tidymodels\"", lines)
     guard_ok <- any(grepl("tidymodels", lines[kind == "hidden"])) &&
       any(grepl("knit_exit", lines)) &&
-      length(lib) && min(lib) > max(grep("knit_exit", lines))
+      length(lib) &&
+      min(lib) > max(grep("knit_exit", lines))
     if (!order_ok) {
-      cat(sprintf("prefix  vignettes/%s: libraries are %s\n", page, toString(libs)))
+      cat(sprintf(
+        "prefix  vignettes/%s: libraries are %s\n",
+        page,
+        toString(libs)
+      ))
       hits <- hits + 1L
     }
     if (!guard_ok) {
-      cat(sprintf("prefix  vignettes/%s: no tidymodels guard before the attach\n", page))
+      cat(sprintf(
+        "prefix  vignettes/%s: no tidymodels guard before the attach\n",
+        page
+      ))
       hits <- hits + 1L
     }
   }
@@ -91,12 +99,23 @@ for (page in pages) {
   prose <- which(kind == "prose")
   text <- gsub("`r[^`]*`", "", lines[prose], perl = TRUE)
   report("prose  ", page, lines, prose[grepl("—", text)])
-  report("prose  ", page, lines, prose[grepl("\\bM[0-9][0-9]\\b", text, perl = TRUE)])
+  report(
+    "prose  ",
+    page,
+    lines,
+    prose[grepl("\\bM[0-9][0-9]\\b", text, perl = TRUE)]
+  )
   named <- regmatches(text, gregexpr("vignette\\(\"[^\"]*\"\\)", text))
-  bad <- vapply(named, function(v) {
-    any(!sub("vignette\\(\"(.*)\"\\)", "\\1", v) %in%
-      c("nested-cv", "estimate", "results", "tuners"))
-  }, logical(1))
+  bad <- vapply(
+    named,
+    function(v) {
+      any(
+        !sub("vignette\\(\"(.*)\"\\)", "\\1", v) %in%
+          c("nested-cv", "estimate", "results", "tuners")
+      )
+    },
+    logical(1)
+  )
   report("prose  ", page, lines, prose[bad])
 }
 

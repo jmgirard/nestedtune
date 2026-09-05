@@ -1,5 +1,17 @@
 # nestedtune 0.0.0.9000
 
+* The four vignettes and the two site articles attach `tidymodels`, new in
+  Suggests, before `nestedtune`, behind a guard that ends the page with one
+  notice naming whichever of it and the page's other optional packages is
+  absent, and read the results object through the package's readers and
+  dplyr: `collect_selections()` for the guide's fold-by-selection table,
+  `collect_notes()` for a failed fold's and a completed fold's notes on the
+  results page, `collect_inner_metrics()` for the fits each racing fold spent
+  on the tuners page, `extract_tune_results()` with `show_best()` for the
+  selection-time score, and `rlang::catch_cnd()` where a page shows a
+  warning's class. No shown chunk on those pages calls the apply family,
+  `do.call()`, `withCallingHandlers()` or `data.frame()` any more.
+
 * Three new readers stack a per-fold list column of a `nested_results` into
   one table with the design's fold labels beside it, read from the object's
   record so a repeated design gives `id` and `id2`. `collect_notes()`, tune's
