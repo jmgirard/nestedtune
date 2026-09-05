@@ -65,6 +65,7 @@ Ship `vignettes/results.Rmd` ("Reading the results"), which walks the `nested_re
 - 2026-09-04: review checkpoint: PR #72 opened as draft; AC1–AC5 verified (evidence in the Review section); AC6 timing and AC7 pending the background check; three reviewers spawned, the blame-history lens reported no findings.
 - 2026-09-04: review: three lenses reported (dispositions in the Review section); the user accepted the recommended triage, the 14 fix-now edits landed at 04735ea and were re-verified; step-7 approval: PR #72 approved for merge.
 - 2026-09-04: CI wait on PR #72 hit the session ceiling after the approval push re-triggered the matrix: pkgdown and format-suggest pass, seven checks pending on a32a970; watcher stopped, resume via /milestone-review M62 (route c).
+- 2026-09-04: resume: PR #72 OPEN at a32a970, all seven boxes evidenced, approval recorded; route (c): default branch unmoved (origin/main eb915b0), branch pushed, step-7 chip re-posed.
 
 ## Review
 
