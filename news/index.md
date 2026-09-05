@@ -39,7 +39,7 @@
   and both
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
   views; a run in which one outer fold fails on a
-  [`recipes::check_range()`](https://recipes.tidymodels.org/reference/check_range.html)
+  [`recipes::check_range()`](https://rdrr.io/pkg/recipes/man/check_range.html)
   step, that fold’s `.notes`, and the `nestedtune_partial_summary`
   warning [`summary()`](https://rdrr.io/r/base/summary.html) raises over
   it; which dplyr operations keep the class and which shed it; and a
@@ -581,7 +581,7 @@
 
 - Fixed a failure where every outer fold errored under parallel
   processing if the workflow’s recipe used unqualified selectors such as
-  [`all_numeric_predictors()`](https://recipes.tidymodels.org/reference/has_role.html).
+  [`all_numeric_predictors()`](https://rdrr.io/pkg/recipes/man/has_role.html).
   The packages a workflow declares are now attached inside each `mirai`
   daemon before any fold is dispatched, so a selector that resolves from
   your own attached packages resolves on a worker too. The same call ran
