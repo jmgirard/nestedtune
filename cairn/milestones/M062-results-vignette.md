@@ -1,6 +1,6 @@
 # M62: A vignette reads the results object: summary, agreement, both plots, a failed fold, dplyr and the survival arguments
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M60
 - **Driving RR:** —
@@ -46,7 +46,7 @@ Ship `vignettes/results.Rmd` ("Reading the results"), which walks the `nested_re
 - [x] T3: The failed-fold section: a recipe step that errors on a value present in one fold's analysis set, the chunk's `stopifnot(sum(!res$.completed) == 1L)`, `.notes[[i]]` printed, `summary()` under `withCallingHandlers()` printing the warning class and message.
 - [x] T4: The dplyr section: the three `class()` chunks and the one-sentence rule.
 - [x] T5: The survival section with `has_srv <- requireNamespace("censored", quietly = TRUE) && requireNamespace("survival", quietly = TRUE)`, chunks `eval = has_srv`, inline reads confined to guarded chunks; a notice chunk `eval = !has_srv`; the fixture shape of `tests/testthat/helper-orchestration.R`'s `srv_data()` as the data.
-- [ ] T6: `_pkgdown.yml` entry; measure AC6's two figures and log them with date and commit; run the guard, the verify slot and `devtools::check()`; one masked build each for `censored` and for `ranger`.
+- [x] T6: `_pkgdown.yml` entry; measure AC6's two figures and log them with date and commit; run the guard, the verify slot and `devtools::check()`; one masked build each for `censored` and for `ranger`.
 
 ## Work log
 
@@ -61,3 +61,4 @@ Ship `vignettes/results.Rmd` ("Reading the results"), which walks the `nested_re
 - 2026-09-04: T5 the survival section: `has_srv` guard over `censored` and `survival`, `srv_data()`'s simulation inline (180 rows, seed 51), `survival_reg(dist = tune())` over three distributions on a 3x3 design with `eval_time = c(0.5, 10)` and `yardstick::brier_survival`; `collect_metrics()` both ways carry `.eval_time`, the two times read inline from a `results = "asis"` chunk under the guard, `.selected[[1]]` shown; the run chunk mutes tune's per-fold `select_best()` warning that the first time is used (`warning = FALSE`, said in prose); `event_level` explained in prose, not run; one notice chunk `eval = !has_srv` naming what is absent; rendered and read; citation guard green.
 - 2026-09-04: amendment (substantive, mini gate): the recipes clause dropped from AC4 and the `recipes` guard from the page, Scope In, T1 and T6 reworded to match, because tune imports recipes, so a recipes-masked build fails at `library(nestedtune)` before any guard runs (the same shape as M61's dials finding); AC1 keeps naming recipes among the installed packages. Found at T6's masked builds; the same builds also caught the notice's singular branch reading "is installed here" for "is not", fixed in both notices.
 - 2026-09-04: re-audit: AC4 (full) — three findings: `survival` is unmaskable from `.libPaths()` (system library) so the disjunction should name `censored` alone, "each verified by one masked build" should say two builds explicitly, and "exits at `knitr::knit_exit()`" should state the built-page observable; reachability, bounded promise and proportionality returned nothing. The user chose the reader's wording at a second mini gate; AC4 is written as it now reads and takes no further reader.
+- 2026-09-04: T6 `results` under Guides in `_pkgdown.yml` (`check_pkgdown()` clean), NEWS entry; AC6 at commit 19608aa (the final page): `tools::buildVignettes(skip = c("estimate", "nested-cv", "tuners"))` on a temporary copy, three runs 15.0, 13.6, 13.8 s, median 13.8 s against the 60 s cap, and all four vignettes 59.9, 60.7, 61.2 s, median 60.7 s against 150; masked renders through `rmarkdown::render()`: censored masked gives six sections, fourteen tibble prints and one notice naming censored; ranger masked gives the notice and nothing after it (0 headings); recipes masked cannot load the package (tune imports it, the amendment above); citation guard green (37); `devtools::test()` no failures; `devtools::check()` 0 errors, 0 warnings, 0 notes (7m 54s). Status to review.
