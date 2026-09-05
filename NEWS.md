@@ -8,8 +8,9 @@
   `nestedtune_partial_summary` warning `summary()` raises over it; which
   dplyr operations keep the class and which shed it; and a censored-regression
   run with `eval_time` at two times whose `collect_metrics()` carries
-  `.eval_time`, with `event_level` explained beside it. The censored section
-  builds only where censored and survival are installed.
+  `.eval_time`, with `event_level` explained beside it. The censored-regression
+  section runs only where censored and survival are installed, and is one
+  notice otherwise.
 
 * A new vignette, `vignette("tuners")` ("Choosing the inner tuner"), runs
   `nested_tune_bayes()`, `nested_tune_race_anova()`,

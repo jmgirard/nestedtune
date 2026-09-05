@@ -20,7 +20,7 @@ reads three things off it: the print, the summary and the estimate. This page
 reads the whole object. It walks the columns one at a time, runs each of the
 readers on one result, shows what a run looks like when one outer fold fails,
 says which dplyr verbs keep the class and which shed it, and ends with the two
-arguments a censored-regression run adds.
+arguments the runs above do not use, `event_level` and `eval_time`.
 
 ```{r libraries, message = FALSE}
 library(nestedtune)
@@ -138,7 +138,9 @@ res$.completed
 
 `.tuning_seed` and `.outer_fit_seed` are the two seeds each fold ran under,
 drawn at entry and fixed by the fold's position in the design. The guide's
-reproducibility section says how to replay one fold by hand from them.
+reproducibility section shows how to restore them, and the help pages for
+`nested_tune_grid()` and `nested_final_fit()` give the recipe for replaying
+one fold by hand.
 
 ```{r seeds}
 res[, c(".tuning_seed", ".outer_fit_seed")]
@@ -158,8 +160,8 @@ summary(res)
 
 `collect_metrics()` is the estimate as a table, the mean and standard error
 of the outer scores. With `summarize = FALSE` it is the outer scores
-themselves, one row per fold and metric, which is `.metrics` stacked with
-the fold labels beside it.
+themselves, one row per fold and metric, which is each fold's `.metrics`
+rows, less `.config`, with the fold label beside them.
 
 ```{r collect-metrics}
 collect_metrics(res)
@@ -168,7 +170,8 @@ collect_metrics(res, summarize = FALSE)
 ```
 
 `agreement()` counts the selections: one row per distinct combination the
-folds chose, with how many completed folds chose it. The most frequent row
+folds chose, with how many completed folds chose it, `n`, and that count as
+a share of the completed folds, `prop`. The most frequent row
 describes how stable the tuning procedure's choice was on this data. It is
 not the final model's parameters, which come from `nested_final_fit()`
 running the procedure once more on the whole dataset.
@@ -197,7 +200,8 @@ A fold that fails does not end the run. The other folds keep their results,
 and the fold that failed is recorded rather than dropped. To show that on the
 guide's run, the workflow below adds one preprocessing step a careful reader
 might write anyway: a range check on horsepower, which refuses to predict for
-a car whose horsepower lies outside the range the model was trained on. One
+a car whose horsepower lies outside the range the model was trained on,
+beyond a small slack. One
 car, the Maserati Bora, has far more horsepower than any other in `mtcars`,
 `r max(mtcars$hp)` against `r sort(mtcars$hp, decreasing = TRUE)[2]` for the
 next. The fold that holds it out cannot score it, and that fold fails.
@@ -217,7 +221,9 @@ set.seed(2)
 failed <- nested_tune_grid(wf_checked, folds, grid = grid)
 
 stopifnot(sum(!failed$.completed) == 1L)
+```
 
+```{r failed-print}
 failed
 ```
 
@@ -242,20 +248,26 @@ they came from. A fold that fails during inner tuning reads the same way with
 
 A fold can also complete and carry notes. The Maserati sits in the analysis
 set of every other fold, so each of those folds had one inner resample that
-held it out, and the range check refused that one resample for every
-candidate. Tuning still returned a candidate, from the inner resamples that
-ran, and the fold finished. Its notes say so.
+held it out, and the range check refused that resample for every candidate.
+Some folds carry a second note of the same kind from the low end of the
+range, an inner resample that held out a car with less horsepower than any
+it trained on. Tuning still returned a candidate, from the inner resamples
+that ran, and the fold finished. Its notes say so.
 
 ```{r completed-notes}
 vapply(failed$.notes, nrow, integer(1))
 
 noted <- which(failed$.completed & vapply(failed$.notes, nrow, integer(1)) > 0)
 
+failed$id[noted[1]]
+
 failed$.notes[[noted[1]]][, c("location", "type", "note")]
 ```
 
-So `.completed` being `TRUE` beside a non-empty `.notes` means exactly this:
-the fold worked, on less than the whole inner design it was given.
+The label in parentheses names the inner resample, a fold of this outer
+fold's own inner design, not another outer fold. So `.completed` being
+`TRUE` beside a non-empty `.notes` means exactly this: the fold worked, on
+less than the whole inner design it was given.
 
 `summary()` on a run with a failed fold still answers, and warns first. The
 chunk below catches the warning to show its class and its message, then
@@ -291,9 +303,9 @@ to report for a design that did not execute.
 The object is a tibble, so dplyr's verbs work on it, and one rule decides
 what they hand back: a verb that only reorders the rows or adds or reorders
 columns returns a `nested_results`, and a verb that adds or removes a row, or
-drops one of the columns above, returns a bare tibble, because an object that
-no longer holds the rows the run produced cannot answer for the run. Adding a
-column keeps the class.
+drops or overwrites one of the columns above, returns a bare tibble, because
+an object that no longer holds what the run produced cannot answer for the
+run. Adding a column keeps the class.
 
 ```{r dplyr-mutate}
 with_rmse <- dplyr::mutate(
@@ -313,22 +325,24 @@ completed_only <- dplyr::filter(failed, .completed)
 class(completed_only)
 ```
 
-So does a column subset that leaves the run's record behind.
+So does a column subset that leaves the run's record behind, through base
+`[` rather than a dplyr verb, since the same rule governs it.
 
 ```{r subset}
 class(res[, "id"])
 ```
 
-Both of those hand back the data and nothing more: no print method, no
-`summary()`, no `collect_metrics()`. That is the point. A four-row table
+Both of those hand back the data and nothing more: a plain tibble print, no
+summary of the run, no `collect_metrics()`. That is the point. A four-row table
 cannot describe itself as a five-fold design, so it stops describing itself.
 To read a partial run, read the run: `collect_metrics(failed)` already
 averages the folds that completed, and warns that it did.
 
-## The two arguments a censored-regression run adds
+## Two more arguments: `event_level` and `eval_time`
 
-Every driver takes two more arguments than the runs above used, and both
-reach tune untouched. `event_level` is for classification: it names which
+Every tuning driver takes two more arguments than the runs above used, and
+both reach tune untouched; `nested_final_fit()` reads them back from the
+results object instead. `event_level` is for classification: it names which
 level of the outcome factor counts as the event, `"first"` unless you say
 otherwise, and it sets the same slot on the inner tuning and on the outer
 scoring fit at once. A regression or censored-regression run ignores it, as
@@ -357,7 +371,7 @@ cat(
 )
 ```
 
-```{r srv-data, eval = has_srv}
+```{r srv-data, eval = has_srv, include = has_srv}
 set.seed(51)
 
 n <- 180
@@ -380,12 +394,16 @@ surv_df <- data.frame(
 )
 ```
 
-The data is simulated: two predictors, a time, and an event indicator that
-is zero where the observation was censored before its event. The model is a
-parametric survival regression whose one tunable is the distribution of the
-event times, and the grid names three.
+```{r srv-data-prose, eval = has_srv, echo = FALSE, results = "asis"}
+cat(
+  "The data is simulated: two predictors, a time, and an event indicator that",
+  "is zero where the observation was censored before its event. The model is a",
+  "parametric survival regression whose one tunable is the distribution of the",
+  "event times, and the grid names three.\n"
+)
+```
 
-```{r srv-workflow, eval = has_srv, message = FALSE}
+```{r srv-workflow, eval = has_srv, include = has_srv, message = FALSE}
 library(censored)
 
 surv_spec <- survival_reg(dist = tune()) |>
@@ -397,14 +415,18 @@ surv_wf <- workflow(survival::Surv(time, event) ~ x1 + x2, surv_spec)
 surv_grid <- data.frame(dist = c("weibull", "lognormal", "exponential"))
 ```
 
-A dynamic survival metric is evaluated at a time: the Brier score at one
-time asks how well the model predicts who has survived to that point. So the
-metric has one value per time, and `eval_time` is where the times are given.
-They reach the inner tuning, which selects on the first of them and warns
-once per fold to say so (the chunk mutes those warnings), and the outer
-scoring fit, which scores at each.
+```{r srv-metric-prose, eval = has_srv, echo = FALSE, results = "asis"}
+cat(
+  "A dynamic survival metric is evaluated at a time: the Brier score at one",
+  "time asks how well the model predicts who has survived to that point. So the",
+  "metric has one value per time, and `eval_time` is where the times are given.",
+  "They reach the inner tuning, which selects on the first of them and warns",
+  "once per fold to say so (the chunk mutes those warnings), and the outer",
+  "scoring fit, which scores at each.\n"
+)
+```
 
-```{r srv-run, eval = has_srv, warning = FALSE}
+```{r srv-run, eval = has_srv, include = has_srv, warning = FALSE}
 set.seed(61)
 
 surv_folds <- nested_resamples(
@@ -441,13 +463,27 @@ cat(sprintf(
 ))
 ```
 
-```{r srv-per-fold, eval = has_srv}
+```{r srv-per-fold, eval = has_srv, include = has_srv}
 collect_metrics(surv_res, summarize = FALSE)
 
 surv_res$.selected[[1]]
 ```
 
-Everything else reads as before. `summary()`, `agreement()` and the default
-`autoplot()` report the selected distribution the way they report `mtry`
-above, and `autoplot(type = "performance")` draws one panel per metric and
-time.
+```{r srv-agreement-prose, eval = has_srv, echo = FALSE, results = "asis"}
+cat(
+  "Everything else reads as before. `agreement()` counts the selected",
+  "distributions the way it counted `mtry` above:\n"
+)
+```
+
+```{r srv-agreement, eval = has_srv, include = has_srv}
+agreement(surv_res)
+```
+
+```{r srv-close-prose, eval = has_srv, echo = FALSE, results = "asis"}
+cat(
+  "`summary()` and the default `autoplot()` read the same `.selected` column,",
+  "and `autoplot(type = \"performance\")` draws one panel per metric and",
+  "time.\n"
+)
+```
