@@ -70,6 +70,7 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-05: T4 done: `devtools::test()` clean (no failure, no skip) and `devtools::check()` 0 errors, 0 warnings, 0 notes in 7 min on the branch, so nothing to compare against the default branch; the `_pkgdown.yml` entry stood from the first checkpoint. All tasks checked; status review.
 - 2026-09-05: step-7 approval: PR #74 approved for merge, the sixteen applied fixes accepted as logged.
 - 2026-09-05: CI wait on PR #74 stopped at the harness ceiling with seven checks pending (format-suggest and pkgdown green) on 7687840; the marker is written, the PR marked ready; resume at step 8 via /milestone-review M64.
+- 2026-09-05: resume: PR #74 open, main unmoved, conversation read empty; step-7 chip re-posed and PR #74 approved for merge again; re-entering at step 8.
 
 ## Decisions
 
