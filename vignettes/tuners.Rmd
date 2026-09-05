@@ -198,27 +198,29 @@ race
 
 A fold's `.inner_metrics` from a race is the whole grid, and the `n` column
 says how many inner resamples each candidate was scored on before it was
-dropped or the race ended. The fold that spent the fewest fits is the one
-where elimination did the most work:
+dropped or the race ended. `collect_inner_metrics()` stacks those tables
+with the fold label beside them, so summing `n` over one metric's rows
+counts the fits each fold spent on tuning. The fold that spent the fewest
+is the one where elimination did the most work:
 
 ```{r race-anova-inner, eval = has_race}
-fits <- vapply(
-  race$.inner_metrics,
-  function(m) sum(m$n[m$.metric == "rmse"]),
-  numeric(1)
-)
-names(fits) <- race$id
-fits
+fits_per_fold <- collect_inner_metrics(race) |>
+  filter(.metric == "rmse") |>
+  group_by(id) |>
+  summarise(fits = sum(n))
 
-cheapest <- which.min(fits)
+fits_per_fold
 
-race$.inner_metrics[[cheapest]]
+cheapest <- slice_min(fits_per_fold, fits, n = 1, with_ties = FALSE)
+
+collect_inner_metrics(race) |>
+  filter(id == cheapest$id)
 ```
 
 ```{r race-anova-count, eval = has_race, include = FALSE}
 inner_v <- nrow(folds$inner_resamples[[1]])
-rmse_rows <- race$.inner_metrics[[cheapest]]
-rmse_rows <- rmse_rows[rmse_rows$.metric == "rmse", ]
+rmse_rows <- collect_inner_metrics(race) |>
+  filter(id == cheapest$id, .metric == "rmse")
 eliminated <- sum(rmse_rows$n < inner_v)
 ```
 
@@ -229,11 +231,11 @@ cat(sprintf(
     "resamples, so they were dropped before the race ended, and the fold ",
     "spent %d fits on tuning where the full grid costs %d.\n"
   ),
-  race$id[cheapest],
+  cheapest$id,
   eliminated,
   nrow(rmse_rows),
   inner_v,
-  fits[[cheapest]],
+  cheapest$fits,
   inner_v * nrow(grid)
 ))
 ```
