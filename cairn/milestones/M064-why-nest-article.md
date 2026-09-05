@@ -68,6 +68,7 @@ Ship `vignettes/articles/why-nest.Rmd` ("Why nest: a simulation"), built by pkgd
 - 2026-09-05: gate chose the second reader's tightened AC5 and AC6 over the first-audit wording. RB06/RR06 archived; status back to in-progress.
 - 2026-09-05: run 2 (script as committed at c51349b, store's commit field 3d715b6) wrote the store; `identical()` to run 1's store once `date` and `commit` are removed from both, so AC1 holds and T1 is done; run 2's store committed. T2 checked against the store: every design figure, both medians, the distances, the commit and the date read inline from the object; the prose-digit sweep finds only citation years. T3: `pkgdown::build_article()` rendered the figure (`docs/articles/why-nest_files/figure-html/figure-1.png`), read: flat column above the dashed null line with its median bar at 0.567, nested column straddling below with its bar at 0.458; the built page carries the `fig.alt`. T4 so far: the fresh-process render printed `FALSE FALSE FALSE`; the source-tree guard ran 37 expectations with no skip; the tarball lists 139 entries, none under `vignettes/articles/`; verify slot and `check()` running.
 - 2026-09-05: T4 done: `devtools::test()` clean (no failure, no skip) and `devtools::check()` 0 errors, 0 warnings, 0 notes in 7 min on the branch, so nothing to compare against the default branch; the `_pkgdown.yml` entry stood from the first checkpoint. All tasks checked; status review.
+- 2026-09-05: step-7 approval: PR #74 approved for merge, the sixteen applied fixes accepted as logged.
 
 ## Decisions
 
